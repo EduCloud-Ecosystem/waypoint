@@ -15,6 +15,13 @@ To publish an app, hand the platform admin four things:
    machine names. Cross-links to other hosted apps use their subdomains
    (<other-app>.<HOSTNAME>), not localhost or an old server.
 
+   Networking rule: the app must listen on 0.0.0.0 (all interfaces) inside the
+   container, on the port the Dockerfile EXPOSEs. Never bind 127.0.0.1 /
+   localhost only. Traefik reaches your container over the Docker network, so a
+   loopback-only bind is unreachable from the proxy and the app appears down.
+   The templates already do this (uvicorn --host 0.0.0.0, Shiny host 0.0.0.0,
+   gunicorn -b 0.0.0.0:PORT); keep it that way if you customize the start command.
+
 2. A declared environment, as a Dockerfile (canonical for production). Start
    from the repo templates:
    - R Shiny: templates/shiny.Dockerfile, with R_PKGS set to your package list.
@@ -37,6 +44,11 @@ To publish an app, hand the platform admin four things:
    - a named owner (a real person accountable for the app),
    - whether the app WRITES data (so a persistent volume is mounted and backed
      up), and the write path if so.
+
+   These publication details become the app's row in docs/TENANTS.md, the
+   registry of record for who owns what, its sensitivity, and its onboarding
+   status. An app is not considered onboarded until its row is present and
+   marked live there.
 
 ## What the platform does for you
 

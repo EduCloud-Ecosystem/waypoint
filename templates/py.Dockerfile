@@ -35,7 +35,10 @@ EXPOSE 8000
 # data survives restarts and is included in backups. Harmless if unused.
 ENV DATA_DIR=/data
 
-# Start command per framework. Override START_CMD per tenant. Examples:
+# Start command per framework. Override START_CMD per tenant.
+# RULE: the server MUST bind 0.0.0.0 (all interfaces) on the EXPOSEd port, never
+# 127.0.0.1/localhost. Traefik reaches the container over the Docker network; a
+# loopback-only bind is unreachable and the app appears down. Examples:
 #   Dash:             gunicorn app:server -b 0.0.0.0:8000 --workers 2
 #   Flask:            gunicorn app:app -b 0.0.0.0:8000 --workers 2
 #   FastAPI (ASGI):   uvicorn app:app --host 0.0.0.0 --port 8000

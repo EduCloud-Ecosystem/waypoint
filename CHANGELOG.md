@@ -37,6 +37,9 @@ deliverables for history.
   Dockerfile from templates as the canonical artifact (nixpacks preview-only),
   secrets by name only, and publication details (subdomain, sensitivity,
   audience, owner, write path). Admin auth-wiring recipe stubbed for Phase 3.
+  Post-review edits: added the 0.0.0.0 container networking rule, and stated
+  that publication details become the app's row in docs/TENANTS.md (registry
+  of record). py.Dockerfile gained an explicit 0.0.0.0 bind rule comment.
 
 ### templates/ (new)
 - shiny.Dockerfile: rocker/r2u (Ubuntu 24.04 noble) base, install.r for CRAN
