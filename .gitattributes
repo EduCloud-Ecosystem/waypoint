@@ -1,0 +1,6 @@
+# Enforce LF line endings across the repo, even when edited from Windows.
+* text=auto eol=lf
+
+# Dockerfiles and shell scripts must stay LF regardless of detection.
+*.Dockerfile text eol=lf
+*.sh text eol=lf

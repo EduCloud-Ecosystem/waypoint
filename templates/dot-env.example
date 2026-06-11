@@ -1,0 +1,24 @@
+# dot-env.example: environment variable NAMES only. No real values, ever.
+#
+# Values are entered in Coolify's environment/secret UI per app, never in this
+# repo and never in chat. This file documents which NAMES an app expects. Copy
+# the names you need into Coolify; keep all secret values out of git entirely.
+
+# --- Generic app settings ---
+# PORT=8000                 # container listen port (matches Dockerfile EXPOSE)
+# APP_ENV=production
+
+# --- Persistent write path (for data-writing apps, e.g. demo-survey) ---
+# DATA_DIR=/data            # Coolify-mounted persistent volume; app writes here
+
+# --- Example secret (demo-dash-secret) ---
+# Value is set ONLY in Coolify's env UI. This file documents the NAME so the app
+# is reproducible without ever exposing the secret.
+# DEMO_API_KEY=             # dummy API key; proves env/secret handling
+
+# --- Visitor auth (oauth2-proxy, wired in Phase 3; set values in Coolify) ---
+# OAUTH2_PROXY_OIDC_ISSUER_URL=     # https://auth.<HOSTNAME>/realms/educloud
+# OAUTH2_PROXY_CLIENT_ID=           # OIDC client id for the protected app
+# OAUTH2_PROXY_CLIENT_SECRET=       # secret; value only in Coolify
+# OAUTH2_PROXY_COOKIE_SECRET=       # secret; value only in Coolify
+# OAUTH2_PROXY_COOKIE_SECURE=true   # set false ONLY for HTTP-only dev; flip at promotion
