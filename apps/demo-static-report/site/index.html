@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>demo-static-report</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 720px; margin: 2rem auto;
+           line-height: 1.5; color: #222; padding: 0 1rem; }
+    h1 { margin-bottom: 0.25rem; }
+    .sub { color: #666; margin-top: 0; }
+    table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+    th, td { border: 1px solid #ddd; padding: 0.5rem 0.75rem; text-align: left; }
+    th { background: #f4f4f4; }
+    .bar { fill: steelblue; }
+    figure { margin: 1.5rem 0; }
+    figcaption { color: #666; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <h1>demo-static-report</h1>
+  <p class="sub">Public static report on the EduCloud hosting layer. No app
+     process, no login, no external assets.</p>
+
+  <p>This page proves the static-serving path: a self-contained HTML report
+     served by a single static container. Everything (styles, the chart below)
+     is inline, so it renders identically anywhere it is hosted.</p>
+
+  <h2>Sample figures</h2>
+  <table>
+    <thead><tr><th>Quarter</th><th>Published apps</th></tr></thead>
+    <tbody>
+      <tr><td>Q1</td><td>3</td></tr>
+      <tr><td>Q2</td><td>7</td></tr>
+      <tr><td>Q3</td><td>12</td></tr>
+      <tr><td>Q4</td><td>18</td></tr>
+    </tbody>
+  </table>
+
+  <figure>
+    <svg width="100%" viewBox="0 0 320 160" role="img"
+         aria-label="Bar chart of published apps per quarter">
+      <rect class="bar" x="20"  y="120" width="50" height="30"></rect>
+      <rect class="bar" x="90"  y="90"  width="50" height="60"></rect>
+      <rect class="bar" x="160" y="40"  width="50" height="110"></rect>
+      <rect class="bar" x="230" y="10"  width="50" height="140"></rect>
+      <line x1="10" y1="150" x2="310" y2="150" stroke="#999"></line>
+    </svg>
+    <figcaption>Published apps per quarter (illustrative).</figcaption>
+  </figure>
+</body>
+</html>

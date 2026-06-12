@@ -7,6 +7,29 @@ changes a planning document adds an entry here.
 
 ---
 
+## Release 6 (June 2026): Phase 1.5 pre-build inserted (LOCAL)
+
+Trigger: provisioning deferred pending budget approval. Rather than idle, the
+user directed a local pre-build so that the server phases become transplanting
+proven pieces rather than first-time integration.
+
+### PLAN.1.md
+- New Phase 1.5 (LOCAL) inserted between Phase 1 and Phase 2: (1) write working
+  source for all five demo apps into apps/; (2) instantiate each app's final
+  Dockerfile from the templates; (3) if Docker Desktop is available, build all
+  images locally and run Traefik plus Keycloak plus oauth2-proxy plus the demo
+  apps via docker-compose.dev.yml to prove the Phase 3 auth round trip on
+  localhost, otherwise stop at build-ready; (4) pre-write the Keycloak realm and
+  OIDC client recipe with both local-compose and server placeholder values.
+- CHECKPOINT 1.5 added. Nothing in Phases 2 through 9 changes; this phase
+  de-risks them. All Phase 1.5 output is reused unchanged on the server.
+
+### Note
+- Phase 1 (provisioning) remains open and is unblocked when budget is approved;
+  Phase 1.5 does not depend on it and runs entirely locally.
+
+---
+
 ## Release 5 (June 2026): Provider change Hetzner to DigitalOcean (Phase 1)
 
 Trigger: during Phase 1 provisioning, Hetzner required government ID

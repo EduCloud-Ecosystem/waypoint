@@ -86,6 +86,44 @@ User says go.
 
 ---
 
+## Phase 1.5 (LOCAL): Pre-build before any server exists
+
+Inserted by amendment (CHANGELOG Release 6) because provisioning is deferred
+pending budget approval. Goal: when the server arrives, Phases 2 through 7
+become transplanting proven pieces rather than first-time integration. All work
+here is local and throws nothing away; the same Dockerfiles and Keycloak recipe
+deploy unchanged on the server (only hostnames and the dev scheme change).
+
+1. Write the working source code for all five demo apps from docs/TENANTS.md
+   into apps/ in this repo, one directory per app. Each app is hello-world level
+   but genuinely exercises its flagged behavior (public load with interactive
+   control; internal app behind the gate; env/secret read; persistent write to
+   DATA_DIR; static serving). Apps bind 0.0.0.0 on their EXPOSEd port.
+2. Instantiate each app's final Dockerfile from the templates (R_PKGS baked for
+   Shiny; START_CMD set per framework for Python; an nginx static image for the
+   report). These are the artifacts that later ship to Coolify unchanged.
+3. If Docker Desktop is available on this machine (ASK THE USER FIRST), build
+   all images locally and write docker-compose.dev.yml that runs Traefik,
+   Keycloak (with its Postgres), oauth2-proxy, and the demo apps on localhost,
+   proving the Phase 3 auth round trip locally: a clean browser hitting an
+   internal app is challenged by Keycloak, a realm user passes, a non-user does
+   not. If Docker Desktop is NOT available, stop at build-ready: Dockerfiles and
+   compose file written and reviewed, build deferred to the server.
+4. Pre-write the Keycloak realm and OIDC client configuration as a documented
+   recipe (realm name, client id, client type, redirect URIs, group/role
+   mapping, oauth2-proxy settings), with both the local-compose values and the
+   placeholder-domain server values, so Phase 3 on the server is configuration
+   transfer, not research. Fold the recipe into docs/ONBOARDING.md admin section.
+
+CHECKPOINT 1.5: All five demo apps written and their Dockerfiles instantiated.
+If Docker Desktop was available, all images build and the local auth round trip
+is demonstrated end to end; otherwise everything is build-ready with the build
+deferred to the server, recorded as such. Keycloak realm/OIDC recipe written.
+Secrets (the demo API key, any local Keycloak admin password) stay out of the
+repo; local-only values live in an untracked .env that .gitignore excludes.
+
+---
+
 ## Phase 2 (SERVER): Install and secure Coolify
 
 1. Check the current official installation command at https://coolify.io/docs

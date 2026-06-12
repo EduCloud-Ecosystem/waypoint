@@ -1,0 +1,12 @@
+# Local-only secrets and env. Never commit real values. The committed example
+# lives at templates/dot-env.example.
+.env
+.env.*
+
+# Local persistent-volume data from docker-compose.dev.yml (e.g. demo-survey).
+**/data/
+.data/
+
+# Python bytecode.
+__pycache__/
+*.pyc
