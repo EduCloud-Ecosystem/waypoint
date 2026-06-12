@@ -46,6 +46,13 @@ anywhere, so routing, subdomain propagation, OIDC redirects, cookies, and
 cross-app links can all be exercised off-LAN. Provider, region, size, and IP
 are chosen and recorded in server/NOTES.md during Phase 1.
 
+Provider: DigitalOcean (Basic Droplet, 4 vCPU / 8 GB, resizable, Ubuntu 24.04).
+Hetzner was the initial choice but was dropped before any server was created
+because it required government ID verification at signup; the provider choice is
+not architecturally significant (any cloud VPS with a public IPv4 satisfies the
+requirement) and DigitalOcean meets the same intent. Logged in CHANGELOG
+Release 5.
+
 Topology is one VM for dev. The single point of failure is accepted in writing
 for the dev build (settled decision 2). The control-plane / workload split is a
 promotion-time concern, documented in docs/PROMOTION.md, not built here.

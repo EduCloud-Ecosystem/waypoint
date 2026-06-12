@@ -7,6 +7,33 @@ changes a planning document adds an entry here.
 
 ---
 
+## Release 5 (June 2026): Provider change Hetzner to DigitalOcean (Phase 1)
+
+Trigger: during Phase 1 provisioning, Hetzner required government ID
+verification at signup, which the user declined; that account is being deleted.
+No server had been created yet, so this is a clean swap with no rebuild. The
+provider is not architecturally significant: any cloud VPS with a public IPv4
+satisfies the requirement, and DigitalOcean meets the same intent (Ubuntu 24.04,
+4 vCPU / 8 GB resizable, public IPv4, existing SSH key, provider firewall with
+22 restricted to the user IP and 80/443 open, backups enabled).
+
+### docs/REQUIREMENTS.md
+- Section 1 now names DigitalOcean as the chosen provider and records the
+  Hetzner-to-DigitalOcean reason, with a note that the provider choice is not
+  architecturally significant.
+
+### server/NOTES.md
+- Provider section rewritten for DigitalOcean (Basic Droplet 4 vCPU / 8 GB /
+  ~160 GB SSD, resizable; resize-up remedy to 8 vCPU / 16 GB; DO resize
+  semantics noted). SSH user root (DO default). DigitalOcean backups enabled.
+- Firewall section records the implemented rules (22 to home IP, 80/443 open,
+  8000 closed).
+
+### Plan
+- Nothing else changes. Phase 1 procedure and all later phases are unaffected.
+
+---
+
 ## Release 4 (June 2026): Phase 0 deliverables created (LOCAL)
 
 Trigger: Phase 0 of PLAN.1.md executed on the local machine. Requirements and
