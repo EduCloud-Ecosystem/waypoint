@@ -23,8 +23,11 @@ ui <- fluidPage(
 
 server <- function(input, output, session) {
   output$whoami <- renderText({
-    # oauth2-proxy forwards the authenticated identity in this header.
-    user <- session$request$HTTP_X_FORWARDED_USER
+    # The oauth2-proxy forward-auth gate sets X-Auth-Request-User on the request
+    # it lets through (Traefik forwards it via authResponseHeaders). Fall back to
+    # X-Forwarded-User in case a deployment passes the legacy header instead.
+    user <- session$request$HTTP_X_AUTH_REQUEST_USER
+    if (is.null(user) || user == "") user <- session$request$HTTP_X_FORWARDED_USER
     if (is.null(user) || user == "") {
       "No forwarded user header seen (running without the proxy in front)."
     } else {

@@ -22,3 +22,15 @@
 # OAUTH2_PROXY_CLIENT_SECRET=       # secret; value only in Coolify
 # OAUTH2_PROXY_COOKIE_SECRET=       # secret; value only in Coolify
 # OAUTH2_PROXY_COOKIE_SECURE=true   # set false ONLY for HTTP-only dev; flip at promotion
+
+# --- Phase 1.5 LOCAL compose (.env at repo root) names ---
+# These are the NAMES docker-compose.dev.yml expects in the untracked repo-root
+# .env for the local proof. Copy to ../.env and fill with throwaway local values;
+# never commit them, never reuse them on the server (Coolify holds server values).
+# KC_ADMIN_PASSWORD=              # Keycloak bootstrap (master realm) admin password
+# KC_DB_PASSWORD=                 # Keycloak Postgres password
+# OAUTH2_PROXY_CLIENT_SECRET=     # shared by the Keycloak client and oauth2-proxy
+# OAUTH2_PROXY_COOKIE_SECRET=     # EXACTLY 16/24/32 bytes (openssl rand -hex 16 = 32 chars)
+# DEMO_ALICE_PASSWORD=            # demo realm user in /educloud-users (passes the gate)
+# DEMO_MALLORY_PASSWORD=          # demo realm user with no group (denied by the gate)
+# DEMO_API_KEY=                   # dummy value for demo-dash-secret env/secret demo

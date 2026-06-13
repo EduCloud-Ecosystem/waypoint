@@ -7,6 +7,60 @@ changes a planning document adds an entry here.
 
 ---
 
+## Release 7 (June 2026): Phase 1.5 executed locally, auth round trip proven
+
+Trigger: Docker Desktop installed on the local machine, unblocking Phase 1.5
+steps 3 and 4. The full hosting stack was built and run on localhost and the
+Phase 3 auth round trip was demonstrated before any server exists. All output is
+reused unchanged on the server.
+
+### New deliverables (not planning documents; recorded here for history)
+- docker-compose.dev.yml: the local stand-in for the Coolify stack. Traefik (sole
+  entrance) plus Keycloak 26.6 and its Postgres, oauth2-proxy (keycloak-oidc,
+  forward-auth), and the five demo tenants, on apps.127-0-0-1.nip.io (nip.io
+  wildcard to 127.0.0.1). Traefik carries the auth and oauth2 hostnames as Docker
+  network aliases so the OIDC issuer URL resolves identically from the host
+  browser and from inside the containers, keeping the token issuer consistent end
+  to end. HTTP only; cookie-secure off and realm sslRequired none, both dev-only.
+- traefik/dynamic.yml: file-provider routers, services, and the two gate
+  middlewares (forwardAuth to oauth2-proxy /oauth2/auth; errors on 401-403
+  redirecting to /oauth2/sign_in with statusRewrites 401 to 302), plus a
+  high-priority PathPrefix(/oauth2/) router so the login bounce completes.
+- keycloak/realm-export.json (+ keycloak/README.md): the educloud realm with the
+  confidential oauth2-proxy client, group-membership and audience mappers, group
+  /educloud-users, and users alice (passes) and mallory (denied). No secrets in
+  the file: client secret and user passwords are ${ENV_VAR} placeholders resolved
+  at import from the untracked .env, so the hard rule (no secrets in the repo)
+  holds while the realm stays reproducible.
+- dev/verify-auth.sh: drives the real OIDC Authorization Code flow with curl and
+  asserts the matrix. Result on this machine: public apps load with no challenge
+  (200); the unauthenticated internal app is challenged (302 to Keycloak); alice
+  passes (200); mallory is denied (403); the secret app reads DEMO_API_KEY from
+  env (masked); the survey volume persists across a container restart.
+
+### docs/ONBOARDING.md
+- Admin section (auth-gate recipe), previously a Phase 3 stub, is now the full
+  proven recipe: a local-vs-server values table, the Keycloak realm/OIDC client
+  settings (confidential client, redirect URIs, group and audience mappers,
+  authorization by group), the oauth2-proxy deployment flags, the Traefik
+  middlewares and routers (file-provider and Coolify-label forms), the
+  cookie-secure / sslRequired HTTP-dev caveat, and the clean-session verification
+  steps. The cookie-secret length pitfall (32 chars, not base64-44) is noted.
+
+### apps/demo-internal-shiny
+- app.R whoami now reads X-Auth-Request-User (the header the forward-auth gate
+  emits) with a fallback to X-Forwarded-User, so the demo can display the
+  authenticated identity.
+
+### Note
+- Tool versions verified against current docs at execution time: Keycloak 26.6
+  (bootstrap admin env vars, KC_HOSTNAME URL form, realm-import ${ENV}
+  substitution), oauth2-proxy v7.15.3 (keycloak-oidc provider, allowed-group,
+  PKCE), Traefik v3 (errors middleware statusRewrites). Phase 1 (provisioning)
+  remains open; nothing here depends on it.
+
+---
+
 ## Release 6 (June 2026): Phase 1.5 pre-build inserted (LOCAL)
 
 Trigger: provisioning deferred pending budget approval. Rather than idle, the

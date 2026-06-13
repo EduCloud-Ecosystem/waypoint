@@ -1,0 +1,176 @@
+# docker-compose.dev.yml: Phase 1.5 LOCAL proof of the full hosting stack.
+#
+# Brings up the same shape the server will run under Coolify: Traefik as the sole
+# entrance, Keycloak (+ its Postgres) for identity, oauth2-proxy as the
+# forward-auth gate, and the five demo tenants. It proves the Phase 3 auth round
+# trip on localhost before any server exists.
+#
+# Domain: apps.127-0-0-1.nip.io. nip.io resolves every *.127-0-0-1.nip.io to
+# 127.0.0.1 (this host), where Traefik publishes port 80. The Traefik service
+# also carries the auth/oauth2 hostnames as Docker network ALIASES, so the OIDC
+# issuer URL (http://auth.apps.127-0-0-1.nip.io/realms/educloud) resolves to the
+# SAME place from the host browser AND from inside oauth2-proxy. That single
+# canonical URL is what keeps the token issuer consistent end to end, exactly as
+# a real auth.<HOSTNAME> does on the server.
+#
+# Secrets come only from the untracked .env (see templates/dot-env.example for
+# the names). Nothing secret is in this file or in any committed file. HTTP only
+# in dev; cookie-secure is off and realm sslRequired is none, both flipped at
+# promotion (docs/PROMOTION.md).
+#
+# Usage:
+#   cp templates/dot-env.example .env   # then fill in local dev values
+#   docker compose -f docker-compose.dev.yml up -d --build
+
+name: educloud-dev
+
+networks:
+  educloud:
+    name: educloud
+
+volumes:
+  keycloak-db-data:
+  survey-data:
+
+services:
+  traefik:
+    image: traefik:v3
+    restart: unless-stopped
+    command:
+      - --providers.file.filename=/etc/traefik/dynamic.yml
+      - --providers.file.watch=true
+      - --entrypoints.web.address=:80
+      - --api.dashboard=true
+      - --api.insecure=true
+      - --log.level=INFO
+      - --accesslog=true
+    ports:
+      - "80:80"
+      - "8080:8080"   # Traefik dashboard (dev only)
+    volumes:
+      - ./traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
+    networks:
+      educloud:
+        # Back-channel resolution: containers reach the auth and oauth2 hosts at
+        # Traefik, so the issuer URL works from inside the network too.
+        aliases:
+          - auth.apps.127-0-0-1.nip.io
+          - oauth2.apps.127-0-0-1.nip.io
+
+  keycloak-db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: ${KC_DB_PASSWORD}
+    volumes:
+      - keycloak-db-data:/var/lib/postgresql/data
+    networks: [educloud]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keycloak -d keycloak"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.6
+    restart: unless-stopped
+    command: ["start", "--import-realm"]
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: ${KC_DB_PASSWORD}
+      # Bootstrap admin (Keycloak 26 names). Master-realm admin, dev only.
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_ADMIN_PASSWORD}
+      # Fixed frontend URL so the token issuer is stable behind the proxy.
+      KC_HOSTNAME: http://auth.apps.127-0-0-1.nip.io
+      KC_HOSTNAME_STRICT: "false"
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY_HEADERS: xforwarded
+      KC_HEALTH_ENABLED: "true"
+      # Resolved into realm-export.json at import via ${ENV} substitution.
+      OAUTH2_PROXY_CLIENT_SECRET: ${OAUTH2_PROXY_CLIENT_SECRET}
+      DEMO_ALICE_PASSWORD: ${DEMO_ALICE_PASSWORD}
+      DEMO_MALLORY_PASSWORD: ${DEMO_MALLORY_PASSWORD}
+    volumes:
+      - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+    networks: [educloud]
+    depends_on:
+      keycloak-db:
+        condition: service_healthy
+    healthcheck:
+      # The Keycloak image has bash but no curl/wget; use bash /dev/tcp against
+      # the management port (9000) health endpoint enabled by KC_HEALTH_ENABLED.
+      test:
+        - "CMD"
+        - "bash"
+        - "-c"
+        - "exec 3<>/dev/tcp/127.0.0.1/9000; printf 'GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3; grep -q UP <&3"
+      interval: 5s
+      timeout: 5s
+      retries: 40
+      start_period: 60s
+
+  oauth2-proxy:
+    image: quay.io/oauth2-proxy/oauth2-proxy:v7.15.3
+    restart: unless-stopped
+    command:
+      - --http-address=0.0.0.0:4180
+      - --reverse-proxy=true
+      - --provider=keycloak-oidc
+      - --oidc-issuer-url=http://auth.apps.127-0-0-1.nip.io/realms/educloud
+      - --client-id=oauth2-proxy
+      - --redirect-url=http://oauth2.apps.127-0-0-1.nip.io/oauth2/callback
+      - --cookie-domain=.apps.127-0-0-1.nip.io
+      - --whitelist-domain=.apps.127-0-0-1.nip.io
+      - --cookie-secure=false
+      - --email-domain=*
+      - --allowed-group=/educloud-users
+      - --scope=openid email profile
+      - --upstream=static://200
+      - --set-xauthrequest=true
+      - --pass-access-token=true
+      - --skip-provider-button=true
+      - --code-challenge-method=S256
+    environment:
+      # Secrets only; everything non-secret is a flag above for readability.
+      OAUTH2_PROXY_CLIENT_SECRET: ${OAUTH2_PROXY_CLIENT_SECRET}
+      OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH2_PROXY_COOKIE_SECRET}
+    networks: [educloud]
+    depends_on:
+      keycloak:
+        condition: service_healthy
+
+  demo-public-shiny:
+    build: ./apps/demo-public-shiny
+    restart: unless-stopped
+    networks: [educloud]
+
+  demo-internal-shiny:
+    build: ./apps/demo-internal-shiny
+    restart: unless-stopped
+    networks: [educloud]
+
+  demo-dash-secret:
+    build: ./apps/demo-dash-secret
+    restart: unless-stopped
+    environment:
+      DEMO_API_KEY: ${DEMO_API_KEY}
+    networks: [educloud]
+
+  demo-survey:
+    build: ./apps/demo-survey
+    restart: unless-stopped
+    environment:
+      DATA_DIR: /data
+    volumes:
+      - survey-data:/data
+    networks: [educloud]
+
+  demo-static-report:
+    build: ./apps/demo-static-report
+    restart: unless-stopped
+    networks: [educloud]

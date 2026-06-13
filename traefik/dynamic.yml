@@ -1,0 +1,119 @@
+# traefik/dynamic.yml: file-provider routing for the Phase 1.5 local proof.
+#
+# This is the LOCAL stand-in for what Coolify generates from labels on the
+# server. It proves the same shape: Traefik is the sole entrance, public apps
+# route straight through, internal apps go through the oauth2-proxy forward-auth
+# gate (settled decision 3: forward-auth wired as a Traefik middleware), and
+# Keycloak plus oauth2-proxy each get their own host.
+#
+# Local domain: apps.127-0-0-1.nip.io (nip.io resolves any *.127-0-0-1.nip.io to
+# 127.0.0.1, the Docker host, where Traefik publishes port 80). The server uses
+# the identical shape on apps.<VM-IP-dashed>.sslip.io. HTTP only in dev.
+
+http:
+  routers:
+    # The oauth2-proxy endpoints (/oauth2/sign_in, /oauth2/start, /oauth2/callback,
+    # /oauth2/auth) must be reachable on EVERY host, ungated, and must win over the
+    # per-app routers. High priority + no auth middleware. This is what lets the
+    # forward-auth bounce (sign_in -> Keycloak -> callback) complete cleanly and
+    # keeps the CSRF cookie on the shared .apps cookie domain.
+    oauth2-endpoints:
+      rule: "PathPrefix(`/oauth2/`)"
+      entryPoints: [web]
+      service: oauth2-proxy
+      priority: 1000
+
+    # --- Public apps: no auth gate ---
+    public-shiny:
+      rule: "Host(`demo-public-shiny.apps.127-0-0-1.nip.io`)"
+      entryPoints: [web]
+      service: demo-public-shiny
+
+    static-report:
+      rule: "Host(`demo-static-report.apps.127-0-0-1.nip.io`)"
+      entryPoints: [web]
+      service: demo-static-report
+
+    # --- Internal apps: Keycloak gate via oauth2-proxy forward-auth ---
+    internal-shiny:
+      rule: "Host(`demo-internal-shiny.apps.127-0-0-1.nip.io`)"
+      entryPoints: [web]
+      service: demo-internal-shiny
+      middlewares: [oauth-errors, oauth-auth]
+
+    dash-secret:
+      rule: "Host(`demo-dash-secret.apps.127-0-0-1.nip.io`)"
+      entryPoints: [web]
+      service: demo-dash-secret
+      middlewares: [oauth-errors, oauth-auth]
+
+    survey:
+      rule: "Host(`demo-survey.apps.127-0-0-1.nip.io`)"
+      entryPoints: [web]
+      service: demo-survey
+      middlewares: [oauth-errors, oauth-auth]
+
+    # --- Identity and the auth gate's own hosts ---
+    keycloak:
+      rule: "Host(`auth.apps.127-0-0-1.nip.io`)"
+      entryPoints: [web]
+      service: keycloak
+
+    oauth2-proxy:
+      rule: "Host(`oauth2.apps.127-0-0-1.nip.io`)"
+      entryPoints: [web]
+      service: oauth2-proxy
+
+  middlewares:
+    # Calls oauth2-proxy on every request to a gated app. 202 lets the request
+    # through and forwards the authenticated identity; 401 triggers oauth-errors.
+    oauth-auth:
+      forwardAuth:
+        address: "http://oauth2-proxy:4180/oauth2/auth"
+        trustForwardHeader: true
+        authResponseHeaders:
+          - X-Auth-Request-User
+          - X-Auth-Request-Email
+          - X-Auth-Request-Groups
+
+    # On a 401/403 from the gate, fetch oauth2-proxy's sign_in (a 302 to
+    # Keycloak) and rewrite the status to 302 so the browser actually redirects.
+    # rd={url} carries the originally requested app URL back through the login.
+    oauth-errors:
+      errors:
+        status:
+          - "401-403"
+        service: oauth2-proxy
+        query: "/oauth2/sign_in?rd={url}"
+        statusRewrites:
+          "401": 302
+
+  services:
+    demo-public-shiny:
+      loadBalancer:
+        servers:
+          - url: "http://demo-public-shiny:3838"
+    demo-internal-shiny:
+      loadBalancer:
+        servers:
+          - url: "http://demo-internal-shiny:3838"
+    demo-dash-secret:
+      loadBalancer:
+        servers:
+          - url: "http://demo-dash-secret:8000"
+    demo-survey:
+      loadBalancer:
+        servers:
+          - url: "http://demo-survey:8000"
+    demo-static-report:
+      loadBalancer:
+        servers:
+          - url: "http://demo-static-report:80"
+    keycloak:
+      loadBalancer:
+        servers:
+          - url: "http://keycloak:8080"
+    oauth2-proxy:
+      loadBalancer:
+        servers:
+          - url: "http://oauth2-proxy:4180"
