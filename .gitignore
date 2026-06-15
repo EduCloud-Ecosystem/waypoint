@@ -10,3 +10,8 @@
 # Python bytecode.
 __pycache__/
 *.pyc
+
+# Not part of this project: a personal website working copy and a throwaway
+# resume note that lived in this folder. Excluded so they are never published.
+/index.HTML
+/RESTART_POST_DOCKER.MD
