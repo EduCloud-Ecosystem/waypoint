@@ -15,3 +15,6 @@ __pycache__/
 # resume note that lived in this folder. Excluded so they are never published.
 /index.HTML
 /RESTART_POST_DOCKER.MD
+
+# Local session handoff notes (resume aids), not for publication.
+/SESSION_HANDOFF_*.md
