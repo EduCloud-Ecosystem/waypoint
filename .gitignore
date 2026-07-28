@@ -18,3 +18,5 @@ __pycache__/
 
 # Local session handoff notes (resume aids), not for publication.
 /SESSION_HANDOFF_*.md
+
+_git_locks_to_delete/
