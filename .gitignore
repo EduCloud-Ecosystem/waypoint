@@ -20,3 +20,5 @@ __pycache__/
 /SESSION_HANDOFF_*.md
 
 _git_locks_to_delete/
+
+.DS_Store
