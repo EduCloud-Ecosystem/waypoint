@@ -7,6 +7,53 @@ changes a planning document adds an entry here.
 
 ---
 
+## Release 8 (August 2026): analogue scan, LTI 1.3 added as a must-have
+
+Trigger: a survey of the self-hosted PaaS field, the open-source identity field,
+the education-federation stack, and what universities actually run today, run to
+find anything Waypoint is about to build that already exists and anything it is
+about to omit that a university will require. Full scan with sources lives in the
+Cowork project as outfitter-waypoint-landscape-2026-08-08.md.
+
+### New: docs/decisions/2026-08-08-analogue-scan.md
+- Records the scan as a decision document. Changes no code and no phase plan
+  ordering. Three substantive outputs:
+- **LTI 1.3 plus Advantage is now a must-have, and was absent from the plan.** A
+  classroom tool that cannot LTI-launch from Canvas, Moodle, or Blackboard is dead
+  on arrival at most universities. The document records what the Tool side actually
+  requires (registration with JWKS, OIDC launch validation, Deep Linking, NRPS,
+  AGS) and names PyLTI1p3 (MIT) and ltijs (Apache-2.0) as the mature libraries, so
+  the JWT handling is not written by hand. NRPS replaces GitHub Classroom roster
+  import outright, which matters for the August 28 migration story. Cairn carries
+  NRPS at Phase 4 stretch; this raises the underlying capability to Waypoint scope
+  because it is an identity concern first.
+- **Structural reframing: the tenancy layer must live above Coolify.** Coolify
+  v4.0.0 has teams and roles but no per-team CPU, RAM, or disk quota primitive, its
+  isolation is logical rather than enforced, multi-server is experimental with no
+  scheduler, and v5 is an unreleased ground-up rewrite. Every surveyed alternative
+  either has real multi-tenancy under a bad license (Dokploy relicensed SSO and
+  RBAC to Source Available in January 2026; Portainer gates RBAC to Business; Nomad
+  is BUSL and gates resource quotas to Enterprise) or a good license with no
+  tenancy (Dokku, CapRover, Kamal). Waypoint's differentiator is therefore the
+  tenancy control plane, with Coolify as a swappable execution backend behind an
+  interface. Coolify stays as the v1 backend for a single institution.
+- **Keycloak confirmed, with one decision recorded: Organizations, not realms**,
+  for departments and courses; realms reserved for genuinely separate institutions.
+  Keycloak 26.7.0 improved this materially (delegation roles, organization group
+  role inheritance, realm discovery by display name, and multi-cluster v2 dropping
+  the external Infinispan requirement). CILogon is to be configured as an OIDC
+  identity provider inside Keycloak so federation stays a config entry.
+- Also records Open OnDemand (MIT, over 2,100 organizations) as an integration
+  target rather than a competitor, since it authenticates via mod_auth_openidc and
+  can be pointed at Waypoint's Keycloak, plus its Per-User NGINX model as a cheaper
+  per-user isolation primitive than a container where one will do.
+
+### Note
+- Nothing in Phase 1 (provisioning) changes. This is a planning-document addition
+  only, per the maintenance rule at the top of this file.
+
+---
+
 ## Release 7 (June 2026): Phase 1.5 executed locally, auth round trip proven
 
 Trigger: Docker Desktop installed on the local machine, unblocking Phase 1.5
