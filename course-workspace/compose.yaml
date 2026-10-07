@@ -1,0 +1,31 @@
+name: ${WORKSPACE_INSTANCE:?set WORKSPACE_INSTANCE}
+services:
+  hub:
+    build: ./hub
+    image: ${WORKSPACE_INSTANCE}-hub:pilot
+    container_name: ${WORKSPACE_INSTANCE}-hub
+    restart: unless-stopped
+    init: true
+    env_file: ${WORKSPACE_ENV_FILE:-.env}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - hub-data:/data
+    ports:
+      - "127.0.0.1:${WORKSPACE_PORT:-18000}:8000"
+    labels:
+      educloud.workspace.instance: ${WORKSPACE_INSTANCE}
+      educloud.workspace.kind: hub
+    stop_grace_period: 60s
+    mem_limit: 1g
+    cpus: 1
+  course-image:
+    profiles: [build]
+    build: ./course
+    image: ${WORKSPACE_IMAGE:?set WORKSPACE_IMAGE}
+    entrypoint: ["true"]
+volumes:
+  hub-data:
+    name: ${WORKSPACE_INSTANCE}-hub-data
+    labels:
+      educloud.workspace.instance: ${WORKSPACE_INSTANCE}
+      educloud.workspace.kind: hub
