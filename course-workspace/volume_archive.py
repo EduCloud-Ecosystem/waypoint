@@ -8,8 +8,10 @@ archive = '/archive/data.tar.gz'
 if mode == 'pack':
     with tarfile.open(archive, 'w:gz') as out:
         out.add('/data', arcname='.', recursive=True)
-    os.chown(archive, int(uid), int(gid))
+    # Set permissions while the helper still owns the file. After chown,
+    # Linux requires CAP_FOWNER for chmod; we deliberately do not grant it.
     os.chmod(archive, 0o600)
+    os.chown(archive, int(uid), int(gid))
 elif mode == 'unpack':
     if os.listdir('/data'):
         raise RuntimeError('restore destination is not empty')
