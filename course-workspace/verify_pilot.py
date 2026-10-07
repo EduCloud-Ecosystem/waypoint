@@ -5,8 +5,9 @@ from pathlib import Path
 import uuid
 import requests
 
-from backup import docker
-from pilot import ROOT, initialize, start, compose
+from backup import docker, restore
+from checkpoint import checkpoint
+from pilot import ROOT, initialize, start, compose, locked
 from smoke import login, kernel, change, xsrf, runtime_policy
 from verify import cleanup, port
 
@@ -47,6 +48,8 @@ def main():
     args = parser.parse_args()
     directory = ROOT / 'output' / ('verify-small-' + uuid.uuid4().hex[:10])
     env = initialize(directory, port())
+    recovered_dir = directory / 'recovered'
+    recovered = initialize(recovered_dir, port())
     try:
         if args.reuse_hub_image:
             docker('tag', args.reuse_hub_image, env['WORKSPACE_INSTANCE'] + '-hub:pilot')
@@ -55,9 +58,21 @@ def main():
         compose(directory, 'stop', 'hub')
         start(directory, env, build=False)
         check(env, restored=True)
-        (directory / 'PASS.txt').write_text('Small trial kernels, capacity, limits and restart persistence passed.\n')
+        archive = directory / 'checkpoint'
+        with locked(directory):
+            checkpoint(directory, env, archive)
+        for item in archive.iterdir():
+            assert item.stat().st_mode & 0o777 == 0o600
+        check(env, restored=True)
+        compose(directory, 'stop', 'hub')
+        restore(recovered['WORKSPACE_INSTANCE'], archive, recovered['WORKSPACE_IMAGE'])
+        docker('tag', env['WORKSPACE_INSTANCE'] + '-hub:pilot', recovered['WORKSPACE_INSTANCE'] + '-hub:pilot')
+        start(recovered_dir, recovered, build=False)
+        check(recovered, restored=True)
+        (directory / 'PASS.txt').write_text('Small trial kernels, capacity, limits, restart, checkpoint resume and fresh-volume recovery passed.\n')
     finally:
         cleanup(env['WORKSPACE_INSTANCE'], directory / 'pilot.env')
+        cleanup(recovered['WORKSPACE_INSTANCE'], recovered_dir / 'pilot.env')
 
 
 if __name__ == '__main__':

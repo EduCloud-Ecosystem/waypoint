@@ -2,6 +2,7 @@
 """Private, synthetic, one-learner trial. No cloud account or public ports."""
 import argparse
 from contextlib import contextmanager
+from datetime import datetime, timezone
 import fcntl
 from http.client import HTTPException
 import json
@@ -109,10 +110,11 @@ def start(directory, env, build=True):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('operation', choices=['init', 'start', 'stop', 'status'])
+    parser.add_argument('operation', choices=['init', 'start', 'stop', 'status', 'checkpoint'])
     parser.add_argument('--directory', type=Path, default=DEFAULT)
     parser.add_argument('--port', type=int, default=18000, help='init only; use the same SSH tunnel local port')
     parser.add_argument('--no-build', action='store_true', help='start using existing local images')
+    parser.add_argument('--destination', type=Path, help='checkpoint only; a new directory under an existing parent')
     args = parser.parse_args()
     directory = args.directory.resolve()
     try:
@@ -126,6 +128,10 @@ def main():
             elif args.operation == 'stop':
                 compose(directory, 'stop', 'hub')
                 print('Stopped. Saved files and configuration retained.')
+            elif args.operation == 'checkpoint':
+                from checkpoint import checkpoint
+                destination = args.destination or directory / ('checkpoint-' + datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%fZ'))
+                checkpoint(directory, env, destination.absolute())
             else:
                 compose(directory, 'ps', '-a')
                 print(f"URL: {env['WORKSPACE_PUBLIC_URL']}; one learner, 1 GiB, 1 CPU; synthetic data only")

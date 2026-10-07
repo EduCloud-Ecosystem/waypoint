@@ -41,6 +41,44 @@ python3 pilot.py start --no-build
 These commands never remove home volumes. Use the full [acceptance test](README.md)
 to test two simultaneous users and isolation separately.
 
+## Checkpoint and recover
+
+Save your notebooks first. A checkpoint interrupts running kernels; unsaved
+browser edits and in-memory variables are not captured.
+
+```sh
+python3 pilot.py checkpoint
+# Or name an archive under an existing backup directory:
+python3 pilot.py checkpoint --destination /secure/backups/trial-001
+```
+
+The command stops the Hub and its learner server, creates checksummed private
+archives, records runtime image IDs/architecture, then resumes the same Hub.
+A failed backup also attempts to resume it; a previously stopped Hub remains
+stopped. Concurrent pilot commands are refused. Direct Docker commands are not
+covered by this lock: do not run them during maintenance. An orphaned live writer
+causes backup refusal rather than an inconsistent copy.
+
+Archives remain local and unencrypted, appropriate only for this synthetic
+trial. Copy them securely to another machine and preserve the tested images
+using `docker image save` or an immutable registry digest. See README.md for
+restore commands. There is no automatic retention/deletion or cloud upload.
+
+To exercise the small trial, including checkpoint, automatic resume, and recovery
+into fresh volumes (uses unique disposable instances):
+
+```sh
+python3 -m venv .venv
+.venv/bin/pip install -r requirements-test.txt
+.venv/bin/python verify_pilot.py
+```
+
+The verifier checks Python/R kernels, saved files, runtime limits, Internet
+denial, admission refusal for a second learner, restart and recovered files.
+It cleans only its generated containers/networks/volumes. Evidence and synthetic
+archives remain in ignored `output/verify-small-*/`. Fresh-volume recovery on one
+host is not proof of transfer to a second physical host.
+
 ## Optional small Droplet
 
 The proposed remote test target is a **separate Ubuntu 24.04 Droplet with 4 GiB
