@@ -1,0 +1,52 @@
+name: Synthetic course rehearsal
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'course-workspace/rehearsal/**'
+      - 'course-workspace/hub/**'
+      - 'course-workspace/public_course.py'
+      - '.github/workflows/course-rehearsal.yml'
+permissions:
+  contents: read
+jobs:
+  course:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: /tmp/educloud-rehearsal-browsers
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: EduCloud-Ecosystem/cairn
+          ref: f63fc87a8d11e2c9ceddb7904657a5996b1128d6
+          path: output/cairn-source
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+          cache-dependency-path: output/cairn-source/go.sum
+      - run: sudo apt-get update && sudo apt-get install -y xfsprogs openssl
+      - run: pip install -r course-workspace/rehearsal/requirements.txt
+      - run: python -m playwright install --with-deps chromium
+      - run: go build -o "$RUNNER_TEMP/cairn" ./cmd/cairn
+        working-directory: output/cairn-source
+      - run: sudo --preserve-env=PLAYWRIGHT_BROWSERS_PATH "$(command -v python)" course-workspace/rehearsal/verify_course.py --cairn-binary "$RUNNER_TEMP/cairn" --cairn-source output/cairn-source --output /tmp/educloud-course-rehearsal
+      - name: Publish synthetic evidence only
+        if: success()
+        run: |
+          mkdir -p output/rehearsal-evidence
+          sudo cp /tmp/educloud-course-rehearsal/PASS.json output/rehearsal-evidence/
+          sudo cp /tmp/educloud-course-rehearsal/course/student-workspace-link.png output/rehearsal-evidence/
+          sudo cp /tmp/educloud-course-rehearsal/course/student-grade.png output/rehearsal-evidence/
+          sudo cp /tmp/educloud-course-rehearsal/notebook/notebook.png output/rehearsal-evidence/
+          sudo chmod 644 output/rehearsal-evidence/*
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: synthetic-course-evidence
+          path: output/rehearsal-evidence
+          retention-days: 7
