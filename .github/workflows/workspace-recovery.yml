@@ -1,6 +1,13 @@
 name: Independent worker recovery
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - 'course-workspace/recovery.py'
+      - 'course-workspace/backup.py'
+      - 'course-workspace/checkpoint.py'
+      - 'course-workspace/verify_recovery.py'
+      - '.github/workflows/workspace-recovery.yml'
 permissions:
   contents: read
 jobs:
