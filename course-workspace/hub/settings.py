@@ -38,6 +38,13 @@ def load(env):
             raise ValueError('WORKSPACE_' + key + ' must be positive')
         result[key.lower()] = value
     result['image'] = required('WORKSPACE_IMAGE')
+    result['home_root'] = env.get('WORKSPACE_HOME_ROOT', '').rstrip('/')
+    result['home_quota_mb'] = int(env.get('WORKSPACE_HOME_QUOTA_MB', '0'))
+    if result['home_root']:
+        if not re.fullmatch(r'/[a-zA-Z0-9_/-]+', result['home_root']) or result['home_quota_mb'] < 16:
+            raise ValueError('quota homes require an absolute storage root and at least 16 MiB')
+    elif result['home_quota_mb']:
+        raise ValueError('WORKSPACE_HOME_ROOT is required with a home quota')
     if mode == 'oidc':
         issuer = urlsplit(required('WORKSPACE_OIDC_ISSUER'))
         if issuer.scheme != 'https' or not issuer.hostname or issuer.username or issuer.password or issuer.query or issuer.fragment:

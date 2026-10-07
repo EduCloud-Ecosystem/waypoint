@@ -1,0 +1,4 @@
+services:
+  hub:
+    volumes:
+      - ${WORKSPACE_HOME_ROOT:?set WORKSPACE_HOME_ROOT}/.educloud-status:/quota-status:ro

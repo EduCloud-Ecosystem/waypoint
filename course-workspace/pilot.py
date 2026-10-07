@@ -78,8 +78,12 @@ def compose(directory, *args):
     # Parent-shell overrides must not redirect this private trial's deployment.
     clean = {k: v for k, v in os.environ.items()
              if not k.startswith(('WORKSPACE_', 'COMPOSE_'))}
-    subprocess.run(['docker', 'compose', '--env-file', str(directory / 'pilot.env'),
-                    '-f', str(ROOT / 'compose.yaml'), *args],
+    files = ['-f', str(ROOT / 'compose.yaml')]
+    envfile = directory / 'pilot.env'
+    if envfile.exists() and 'WORKSPACE_HOME_ROOT=' in envfile.read_text():
+        if settings(directory).get('WORKSPACE_HOME_ROOT'):
+            files += ['-f', str(ROOT / 'quota-compose.yaml')]
+    subprocess.run(['docker', 'compose', '--env-file', str(envfile), *files, *args],
                    cwd=ROOT, env=clean, check=True)
 
 
