@@ -106,6 +106,7 @@ proxy_set_header X-Forwarded-Port {self.port}; proxy_set_header X-Forwarded-For 
             'environment':{'SSL_CERT_FILE':'/fixture-ca.pem','REQUESTS_CA_BUNDLE':'/fixture-ca.pem'},
             'volumes':[str(self.root/'ca.pem')+':/fixture-ca.pem:ro']}}}
         (self.root/'override.json').write_text(json.dumps(override))
+        print('Building the current notebook images.',flush=True)
         self.compose('--profile','build','build')
         self.compose('up','-d','hub')
         run('docker','run','-d','--name',self.instance+'-proxy','--network',self.network,
@@ -130,10 +131,11 @@ proxy_set_header X-Forwarded-Port {self.port}; proxy_set_header X-Forwarded-For 
         else:
             raise AssertionError('OIDC fixture did not become ready')
         inspect(self.homes,self.instance)
+        print('Keycloak discovery, TLS and Hub are ready.',flush=True)
 
     def login(self, page, user):
         page.goto(self.origin+'/hub/login')
-        page.get_by_role('link', name='Sign in with').click()
+        page.get_by_role('button', name='Sign in with').click()
         page.locator('input[name="username"]').fill(user)
         page.locator('input[name="password"]').fill(self.password)
         page.locator('input[type="submit"],button[type="submit"]').click()
@@ -239,8 +241,10 @@ proxy_set_header X-Forwarded-Port {self.port}; proxy_set_header X-Forwarded-For 
         ids=docker('ps','-q','--filter','label=educloud.workspace.instance='+self.instance,
                    '--filter','label=educloud.workspace.kind=learner')
         assert not ids, 'removed learner still has an active server'
+        home = self.instance + '-home-' + hashlib.sha256(SUBJECTS['alice'].encode()).hexdigest()[:24]
+        assert (self.homes/home/'work/solution.py').read_text() == SOLUTION, 'revocation must retain saved work'
         denied.close()
-        self.report += ['unrostered-login-denied','active-server-stopped','old-session-denied','removed-roster-respawn-denied']
+        self.report += ['unrostered-login-denied','active-server-stopped','old-session-denied','removed-roster-respawn-denied','revocation-retains-files']
         (self.root/'identity-PASS.json').write_text(json.dumps({'checks':self.report},indent=2)+'\n')
         print('PASS: OIDC allowed/denied identities, TLS notebook handoff, active-session roster revocation.',flush=True)
 

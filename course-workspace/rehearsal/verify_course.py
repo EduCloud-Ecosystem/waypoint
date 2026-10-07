@@ -36,6 +36,9 @@ def main():
         report['cairn_revision'] = run('git', '-c', 'safe.directory='+str(args.cairn_source.resolve()),
                                        '-C', str(args.cairn_source.resolve()), 'rev-parse', 'HEAD')
         report['notebook_checks'] = notebook.report
+        report['waypoint_revision'] = run('git', '-c', 'safe.directory='+str(Path(__file__).resolve().parents[2]),
+                                          '-C', str(Path(__file__).resolve().parents[2]), 'rev-parse', 'HEAD')
+        report['course_image_id'] = run('docker', 'image', 'inspect', notebook.image, '--format', '{{.Id}}')
         (root/'PASS.json').write_text(json.dumps(report, indent=2)+'\n')
         print('PASS: Cairn → Keycloak → Python/R → saved file → Forgejo → pinned Cairn grading → revocation.',flush=True)
     finally:
