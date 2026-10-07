@@ -69,6 +69,14 @@ python3 /srv/educloud/recovered/runtime/pilot.py start --no-build \
   --directory /srv/educloud/recovered
 ```
 
+For a quota-backed trial, first prepare a dedicated replacement XFS mount and
+add `--home-root /srv/educloud/homes` to the restore command. Run as root with
+`xfsprogs` installed. Recovery provisions fresh named homes, preserves byte/inode
+limits from the environment, and refuses incompatible or occupied targets. Enable
+the replacement instance's quota health timer before continued use; see
+[hosted pilot preparation](HOSTED-PILOT.md). Ordinary Docker-volume trial backups
+remain compatible and omit `--home-root`.
+
 Restic verifies restored contents; EduCloud checks inventory, checksums, volume
 manifests and architecture. Recovery loads preserved images and creates a fresh
 namespace, refusing existing destinations/volumes. The original synthetic login

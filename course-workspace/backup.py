@@ -95,18 +95,28 @@ def backup(instance, output, image):
     print(f'Archived {len(names)} volumes. Protect this directory as learner data and credentials.')
 
 
-def restore(instance, source, image):
+def restore(instance, source, image, home_options=None):
     manifest = json.loads((source / 'manifest.json').read_text())
     validate_manifest(manifest, source)
     targets = [instance + '-' + item['suffix'] for item in manifest['volumes']]
     existing = set(docker('volume', 'ls', '--format', '{{.Name}}').splitlines())
-    if existing.intersection(targets):
+    home_options = home_options or {}
+    if set(home_options) - set(targets):
+        raise ValueError('pre-provisioned home is not part of this recovery')
+    if existing.intersection(targets) - set(home_options):
         raise ValueError('restore requires new volume names; refusing to overwrite existing data')
+    for name, expected in home_options.items():
+        if name not in existing or not name.startswith(instance + '-home-'):
+            raise ValueError('quota restore requires explicitly pre-provisioned homes')
+        volume = json.loads(docker('volume', 'inspect', name))[0]
+        if volume.get('Labels') != expected['labels'] or volume.get('Options') != expected['options'] or docker('ps', '-q', '--filter', 'volume=' + name):
+            raise ValueError('pre-provisioned home is not empty/offline with the expected quota mount')
     created = []
     try:
         for item, name in zip(manifest['volumes'], targets):
-            docker('volume', 'create', '--label', f'{LABEL}={instance}', '--label', f'{KIND}={item["kind"]}', name)
-            created.append(name)
+            if name not in home_options:
+                docker('volume', 'create', '--label', f'{LABEL}={instance}', '--label', f'{KIND}={item["kind"]}', name)
+                created.append(name)
             with tempfile.TemporaryDirectory() as scratch:
                 # Read-only archive bind; no untrusted extraction on the host.
                 shutil.copyfile(source / (item['suffix'] + '.tar.gz'), Path(scratch, 'data.tar.gz'))

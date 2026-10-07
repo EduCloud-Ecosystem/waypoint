@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from recovery import load_config, private_json, restic, retention, restore_repository, write_status, backup_repository
+from recovery import load_config, private_json, restic, retention, restore_repository, write_status, backup_repository, validate_bundle, BASE_CODE, digest
 
 
 class RecoveryTests(unittest.TestCase):
@@ -20,6 +20,46 @@ class RecoveryTests(unittest.TestCase):
         path = root / 'recovery.json'
         private_json(path, cfg)
         return path, cfg
+
+    def test_old_bundles_remain_recoverable_and_corruption_is_refused(self):
+        with tempfile.TemporaryDirectory() as d, patch('recovery.docker', return_value=json.dumps({'Architecture': 'x86_64'})):
+            root = Path(d)
+            (root / 'runtime').mkdir()
+            (root / 'volumes').mkdir()
+            for name in BASE_CODE:
+                (root / 'runtime' / name).write_text('fixture runtime')
+            (root / 'images.tar').write_bytes(b'fixture image archive')
+            (root / 'volumes/runtime.json').write_text('{}')
+            archive = root / 'volumes/hub-data.tar.gz'
+            archive.write_bytes(b'fixture volume')
+            (root / 'volumes/manifest.json').write_text(json.dumps({'version': 1, 'instance': 'trial-old',
+                'volumes': [{'suffix': 'hub-data', 'kind': 'hub', 'sha256': digest(archive)}]}))
+            env = {'WORKSPACE_AUTH_MODE': 'local-test', 'WORKSPACE_INSTANCE': 'trial-old'}
+            (root / 'environment.json').write_text(json.dumps(env))
+            meta = {'version': 1, 'instance': 'trial-old', 'images': {'hub': {
+                'id': 'sha256:' + 'a' * 64, 'os': 'linux', 'architecture': 'amd64'}}}
+            def inventory():
+                meta['files'] = {str(p.relative_to(root)): digest(p) for p in root.rglob('*')
+                                 if p.is_file() and p.name != 'bundle.json'}
+                (root / 'bundle.json').write_text(json.dumps(meta))
+            inventory()
+            self.assertEqual(validate_bundle(root)[1], env)
+            (root / 'images.tar').write_bytes(b'corrupted')
+            with self.assertRaisesRegex(ValueError, 'checksum'):
+                validate_bundle(root)
+            inventory()
+            meta['images']['hub']['architecture'] = 'arm64'
+            (root / 'bundle.json').write_text(json.dumps(meta))
+            with self.assertRaisesRegex(ValueError, 'architecture'):
+                validate_bundle(root)
+            env['WORKSPACE_HOME_ROOT'] = '/srv/homes'
+            (root / 'environment.json').write_text(json.dumps(env))
+            inventory()
+            with self.assertRaisesRegex(ValueError, 'quota recovery runtime'):
+                validate_bundle(root)
+            (root / 'linked').symlink_to(root / 'images.tar')
+            with self.assertRaisesRegex(ValueError, 'links'):
+                validate_bundle(root)
 
     def test_private_configuration_and_explicit_local_mode(self):
         with tempfile.TemporaryDirectory() as d:

@@ -17,8 +17,9 @@ from checkpoint import checkpoint
 from pilot import ROOT, initialize, locked, settings
 
 TAG = 'educloud-workspace-v1'
-CODE = ('pilot.py', 'checkpoint.py', 'backup.py', 'volume_archive.py',
+BASE_CODE = ('pilot.py', 'checkpoint.py', 'backup.py', 'volume_archive.py',
         'recovery.py', 'compose.yaml')
+CODE = BASE_CODE + ('quota-compose.yaml', 'homes.py')
 
 
 def private_json(path, data):
@@ -134,13 +135,15 @@ def validate_bundle(bundle):
     if actual != set(meta['files']):
         raise ValueError('bundle file inventory differs')
     required = {'images.tar', 'environment.json', 'volumes/manifest.json', 'volumes/runtime.json'}
-    required.update('runtime/' + name for name in CODE)
+    required.update('runtime/' + name for name in BASE_CODE)
     if not required.issubset(actual):
         raise ValueError('incomplete recovery bundle')
     for name, checksum in meta['files'].items():
         if digest(bundle / name) != checksum:
             raise ValueError('bundle checksum differs')
     env = json.loads((bundle / 'environment.json').read_text())
+    if env.get('WORKSPACE_HOME_ROOT') and not {'runtime/homes.py', 'runtime/quota-compose.yaml'}.issubset(actual):
+        raise ValueError('quota recovery runtime is incomplete')
     if env.get('WORKSPACE_AUTH_MODE') != 'local-test' or env.get('WORKSPACE_INSTANCE') != meta['instance']:
         raise ValueError('this recovery version supports the synthetic trial only')
     if validate_manifest(json.loads((bundle / 'volumes/manifest.json').read_text()), bundle / 'volumes') != meta['instance']:
@@ -178,7 +181,7 @@ def backup_repository(directory, cfg, apply_retention=False):
             raise
 
 
-def restore_repository(cfg, snapshot, destination, port):
+def restore_repository(cfg, snapshot, destination, port, home_root=None):
     if not re.fullmatch(r'[0-9a-f]{64}', snapshot):
         raise ValueError('restore requires an exact 64-character snapshot ID, never latest')
     if destination.exists() or destination.is_symlink() or not destination.parent.is_dir():
@@ -190,6 +193,8 @@ def restore_repository(cfg, snapshot, destination, port):
         restic(cfg, 'restore', snapshot, '--target', scratch, '--verify')
         bundle = Path(scratch) / 'bundle'
         meta, saved = validate_bundle(bundle)
+        if bool(saved.get('WORKSPACE_HOME_ROOT')) != bool(home_root):
+            raise ValueError('quota-backed recovery requires an explicit replacement --home-root; ordinary trials omit it')
         # Restore into a new namespace; never overwrite an existing home/config.
         env = initialize(destination, port)
         instance = env['WORKSPACE_INSTANCE']
@@ -205,12 +210,28 @@ def restore_repository(cfg, snapshot, destination, port):
         env.update(WORKSPACE_INSTANCE=instance, WORKSPACE_IMAGE=meta['images']['course']['id'],
                    WORKSPACE_PORT=str(port), WORKSPACE_PUBLIC_URL=f'http://127.0.0.1:{port}',
                    WORKSPACE_ENV_FILE=str(destination / 'pilot.env'))
+        if home_root:
+            env['WORKSPACE_HOME_ROOT'] = str(home_root)
         if any(not isinstance(v, str) or '\n' in v or '\r' in v for v in env.values()):
             raise ValueError('invalid restored environment')
         (destination / 'pilot.env').write_text(''.join(f'{k}={v}\n' for k, v in env.items()))
         settings(destination)  # Reapply the small trial's invariant settings.
         docker('tag', meta['images']['hub']['id'], instance + '-hub:pilot')
-        restore(instance, bundle / 'volumes', meta['images']['course']['id'])
+        home_options = {}
+        if home_root:
+            from homes import provision, registry, expected_volume
+            provision(home_root, instance, ['alice', 'bob'], int(env['WORKSPACE_HOME_QUOTA_MB']),
+                      int(env.get('WORKSPACE_HOME_INODE_LIMIT', '100000')))
+            records = registry(home_root)['homes']
+            volume_manifest = json.loads((bundle / 'volumes/manifest.json').read_text())
+            for item in volume_manifest['volumes']:
+                if item['kind'] == 'home':
+                    name = instance + '-' + item['suffix']
+                    home_options[name] = expected_volume(home_root, name, records[name])
+        restore(instance, bundle / 'volumes', meta['images']['course']['id'], home_options)
+        if home_root:
+            from homes import inspect
+            inspect(home_root, instance)
         runtime = destination / 'runtime'
         shutil.copytree(bundle / 'runtime', runtime)
         private_json(destination / 'recovery-source.json', {'snapshot_id': snapshot, 'source_instance': meta['instance']})
@@ -241,6 +262,7 @@ def main():
     parser.add_argument('--snapshot')
     parser.add_argument('--port', type=int, default=18000)
     parser.add_argument('--instance')
+    parser.add_argument('--home-root', type=Path, help='quota-backed restore only: a dedicated replacement XFS mount')
     parser.add_argument('--apply', action='store_true', help='retention only; otherwise preview')
     parser.add_argument('--apply-retention', action='store_true', help='backup only; prune this instance after a successful backup')
     args = parser.parse_args()
@@ -271,7 +293,7 @@ def main():
         elif args.operation == 'restore':
             if not args.destination or not args.snapshot:
                 raise ValueError('--destination and --snapshot are required')
-            restore_repository(cfg, args.snapshot, args.destination.absolute(), args.port)
+            restore_repository(cfg, args.snapshot, args.destination.absolute(), args.port, args.home_root)
         elif args.operation == 'retention':
             if not args.instance:
                 raise ValueError('--instance is required')

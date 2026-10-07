@@ -6,6 +6,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from settings import load
+from home_policy import quota_home
 
 s = load(os.environ)
 c = get_config()  # noqa: F821 - provided by JupyterHub
@@ -76,11 +77,20 @@ async def prepare_home(spawner):
     key = hashlib.sha256(spawner.user.name.encode()).hexdigest()[:24]
     labels = {'educloud.workspace.instance': instance, 'educloud.workspace.kind': 'home'}
     volume = f'{instance}-home-{key}'
+    quota = quota_home(s, key)
+    if quota:
+        labels = quota['labels']
     existing = await spawner.docker('volumes', filters={'name': volume})
+    found = False
     for item in existing.get('Volumes') or []:
-        if item['Name'] == volume and item.get('Labels') != labels:
-            raise ValueError('refusing a home volume not owned by this course')
-    await spawner.docker('create_volume', name=volume, labels=labels)
+        if item['Name'] == volume:
+            found = True
+            if item.get('Labels') != labels or (quota and item.get('Options') != quota['options']):
+                raise ValueError('refusing a home volume not owned/provisioned for this course')
+    if quota and not found:
+        raise ValueError('operator must provision this learner home with a hard quota')
+    if not quota:
+        await spawner.docker('create_volume', name=volume, labels=labels)
     spawner.volumes = {volume: '/home/learner'}
     spawner.extra_create_kwargs = {'user': '1000:1000', 'labels': {
         'educloud.workspace.instance': instance, 'educloud.workspace.kind': 'learner'}}
