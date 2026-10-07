@@ -25,11 +25,13 @@ from cairn_journey import run, port, SOLUTION
 
 KEYCLOAK_IMAGE = 'quay.io/keycloak/keycloak:26.8.0@sha256:b0f60d489d51c5d113390bdf5461d4c06e6051be026c05549f2e1e10ec352bcc'
 NGINX_IMAGE = 'nginx:1.28-alpine@sha256:a8b39bd9cf0f83869a2162827a0caf6137ddf759d50a171451b335cecc87d236'
-SUBJECTS = {user: str(uuid.uuid5(uuid.NAMESPACE_DNS, 'educloud-synthetic-' + user)) for user in ('alice', 'bob', 'mallory')}
+SUBJECTS = {user: str(uuid.uuid5(uuid.NAMESPACE_DNS, 'educloud-synthetic-' + user)) for user in ('alice', 'bob', 'carol', 'mallory')}
 
 
 class Notebook:
-    def __init__(self, root):
+    def __init__(self, root, extra_users=()):
+        self.users = ("alice", "bob", *extra_users)
+        self.load_report = {}
         self.root = root
         self.instance = 'rehearsal-' + uuid.uuid4().hex[:10]
         self.port = port()
@@ -66,12 +68,12 @@ class Notebook:
         xfs_run('mount', '-o', 'loop,prjquota', str(disk), str(self.homes))
         self.mounted = True
         nginx, client, self.env = render('work.rehearsal.test', self.auth + '/realms/course', 'course', self.instance,
-                                        [SUBJECTS['alice'], SUBJECTS['bob']], str(self.homes), port())
+                                        [SUBJECTS[user] for user in self.users], str(self.homes), port())
         self.env.update(WORKSPACE_PUBLIC_URL=self.origin, WORKSPACE_OIDC_CLIENT_SECRET=secrets.token_urlsafe(32),
                         WORKSPACE_HOME_QUOTA_MB='256', WORKSPACE_MEMORY_MB='1024', WORKSPACE_ACTIVE_LIMIT='2',
                         WORKSPACE_ENV_FILE=str(self.root / '.env'))
         self.write_env()
-        provision(self.homes, self.instance, [SUBJECTS['alice'], SUBJECTS['bob']], 256)
+        provision(self.homes, self.instance, [SUBJECTS[user] for user in self.users], 256)
         # A private fixture CA is trusted explicitly by Hub and HTTP clients.
         run('openssl', 'req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '1', '-subj', '/CN=EduCloud synthetic CA',
             '-keyout', str(self.root/'ca.key'), '-out', str(self.root/'ca.pem'))
@@ -218,6 +220,50 @@ proxy_set_header X-Forwarded-Port {self.port}; proxy_set_header X-Forwarded-For 
         self.report += ['keycloak-pkce-login','per-user-https','python-r-wss','saved-file-handoff','saved-file-visible-in-browser']
         return solution
 
+    def bounded_load(self, browser, alice, alice_url, bob, bob_url):
+        from concurrent.futures import ThreadPoolExecutor
+        # Independent HTTP sessions per request; no browser object crosses threads.
+        def request(n):
+            original,url=(alice,alice_url) if n%2==0 else (bob,bob_url)
+            with requests.Session() as client:
+                client.trust_env=False; client.verify=str(self.root/'ca.pem')
+                client.cookies.update(original.cookies)
+                started=time.monotonic()
+                response=client.get(url+'/api/contents',timeout=15)
+                assert response.status_code==200, f'bounded notebook request: {response.status_code}'
+                return time.monotonic()-started
+        with ThreadPoolExecutor(max_workers=6) as pool:
+            durations=sorted(pool.map(request,range(24)))
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            futures=[pool.submit(self.kernel,alice,alice_url,'python3','print("COURSE_OK")'),
+                     pool.submit(self.kernel,bob,bob_url,'ir','cat("COURSE_OK\\n")')]
+            for future in futures: future.result()
+        context=browser.new_context(ignore_https_errors=True); page=context.new_page()
+        self.login(page,'carol')
+        carol=self.http_session(context)
+        response=change(carol,'POST',self.origin+'/hub/api/users/'+SUBJECTS['carol']+'/server')
+        assert response.status_code==429, f'capacity denial returned {response.status_code}'
+        def active():
+            return docker('ps','-q','--filter','label=educloud.workspace.instance='+self.instance,
+                          '--filter','label=educloud.workspace.kind=learner').splitlines()
+        assert len(active())==2
+        response=change(bob,'DELETE',self.origin+'/hub/api/users/'+SUBJECTS['bob']+'/server')
+        assert response.status_code in (202,204)
+        for _ in range(60):
+            if len(active())==1: break
+            time.sleep(1)
+        else: raise AssertionError('notebook slot did not free')
+        inspect(self.homes,self.instance)
+        carol,carol_url=self.ready(page,'carol')
+        self.kernel(carol,carol_url,'python3','print("COURSE_OK")')
+        assert len(active())==2
+        assert alice.get(alice_url+'/api/contents/solution.py',timeout=15).json()['content']==SOLUTION
+        self.load_report={'active_limit':2,'http_requests':24,'parallel_http_requests':6,
+                          'http_p50_seconds':round(durations[12],4),'http_p95_seconds':round(durations[22],4),
+                          'overflow_status':429,'freed_slot_reused':True,'simultaneous_python_r':True}
+        self.report+=['bounded-notebook-traffic','active-limit-429','freed-slot-reused']
+        context.close()
+
     def revocation(self, browser):
         context, page, session, url=self.revoked
         denied=browser.new_context(ignore_https_errors=True)
@@ -232,6 +278,8 @@ proxy_set_header X-Forwarded-Port {self.port}; proxy_set_header X-Forwarded-For 
         assert bob_url != url
         peer=bob_session.get(url+'/api/contents/solution.py',timeout=15)
         assert peer.status_code in (403,404), f'cross-user file access returned {peer.status_code}'
+        if 'carol' in self.users:
+            self.bounded_load(browser,session,url,bob_session,bob_url)
         bob_context.close()
         self.report.append('authenticated-peer-file-denied')
         self.env['WORKSPACE_ALLOWED_SUBJECTS']=SUBJECTS['bob']

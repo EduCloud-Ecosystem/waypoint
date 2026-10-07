@@ -23,7 +23,7 @@ def main():
     root = args.output.resolve()
     notebook_root, course_root = root/'notebook', root/'course'
     notebook_root.mkdir(mode=0o700); course_root.mkdir(mode=0o700)
-    notebook = Notebook(notebook_root)
+    notebook = Notebook(notebook_root, extra_users=('carol',))
     try:
         notebook.start()
         with sync_playwright() as playwright:
@@ -36,6 +36,7 @@ def main():
         report['cairn_revision'] = run('git', '-c', 'safe.directory='+str(args.cairn_source.resolve()),
                                        '-C', str(args.cairn_source.resolve()), 'rev-parse', 'HEAD')
         report['notebook_checks'] = notebook.report
+        report['bounded_load'] = notebook.load_report
         report['waypoint_revision'] = run('git', '-c', 'safe.directory='+str(Path(__file__).resolve().parents[2]),
                                           '-C', str(Path(__file__).resolve().parents[2]), 'rev-parse', 'HEAD')
         report['course_image_id'] = run('docker', 'image', 'inspect', notebook.image, '--format', '{{.Id}}')

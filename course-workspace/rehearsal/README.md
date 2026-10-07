@@ -8,7 +8,7 @@ cloud account, real learner record or existing deployment is used.
 The workflow in `.github/workflows/course-rehearsal.yml` runs the complete path:
 
 1. Create a new temporary loop image and mount XFS with project quotas. Provision
-   two notebook homes with hard byte/inode limits. Only the newly created image
+   three notebook homes with hard byte/inode limits. Only the newly created image
    is formatted; no caller-supplied block device is accepted.
 2. Generate a one-day fixture CA/certificate, realm and confidential PKCE client.
    Start Keycloak, nginx and the current Hub on a private Docker network. Publish
@@ -20,17 +20,26 @@ The workflow in `.github/workflows/course-rehearsal.yml` runs the complete path:
    the notebook. These two identities are deliberately separate; there is no
    claim of unified sign-on or automatic roster synchronization.
 5. Execute Python and R over HTTPS notebook WebSockets. Save `solution.py`,
-   download its actual contents and upload those bytes through the learner's
-   authenticated Forgejo repository API. This represents the explicit file
-   transfer required today; saving a notebook alone does not submit coursework.
-6. Request grading as the instructor. A correct answer must receive 10/10; an
-   incorrect answer must receive 0/10 even when the learner supplies a forged
-   999-point `grading.json`. Check the learner-visible breakdown/history.
+   download its actual contents, commit those bytes and push Git as the learner.
+   This represents the explicit file transfer required today; saving a notebook
+   alone does not submit coursework. Forgejo delivers its registered signed hook
+   through a private fixture relay to Cairn; no instructor Grade request is sent.
+6. Push six commits rapidly with alternating correct/incorrect answers. Assert
+   each grade records its own immutable commit and scores 10/10 or 0/10 despite
+   the forged learner `grading.json`. Replay an actual signed delivery 12 times
+   concurrently and once after restarting Cairn; the history must still contain
+   six grades. Deny bad signatures and ignore a real draft-branch push. Inspect
+   the learner-visible test breakdown and commit-specific history.
 7. Reject an unrostered identity, student requests for instructor functions,
    another student's grade and another student's notebook file. Remove Alice
    from the Hub roster, stop active servers and recreate the Hub. Verify her
    previous notebook session and attempts to start another server are denied.
-8. Remove only the invocation's containers/networks/volumes and unmount its
+8. With two active notebooks, issue 24 authenticated content requests at up to
+   six concurrent requests and execute Python/R simultaneously. A third allowed
+   learner must receive HTTP 429; stop one server, then verify that learner can
+   start, run Python and leave the other learner's saved file intact. Record
+   observed request latencies, without claiming class-size capacity.
+9. Remove only the invocation's containers/networks/volumes and unmount its
    temporary filesystem. Preserve the evidence in the supplied private output
    directory; a failed run must not produce the overall `PASS.json`.
 
@@ -92,9 +101,22 @@ worker and off-host backup account, rehearse real roster changes, certificate
 renewal/reboot, quota monitoring and incident response, then repeat the course
 path with institution-approved synthetic accounts before enrolling learners.
 Cairn/Hub roster synchronization and automatic file transfer are not implemented.
-This run requests grading explicitly; Forgejo push-webhook delivery is a separate
-gate. Cairn's new session fix is merged, but no production service is upgraded by
-the rehearsal.
+Actual Forgejo Git push/webhook delivery is now exercised synthetically, including
+six queued revisions and replay after restart. Other hosts' live webhook paths,
+interrupted-worker recovery and real class-size capacity remain separate gates.
+No production service is upgraded by the rehearsal.
+
+The relay binds only the fixture Docker bridge on Linux or loopback on macOS;
+Forgejo's test allowlist is restricted to that bridge/host endpoint. It forwards
+the exact signed body/headers and records delivery status in private output.
+This is not a public relay service. Fixture setup follows the official
+[Forgejo webhook](https://forgejo.org/docs/v16.0/user/repository/webhooks/) and
+[webhook allowlist](https://forgejo.org/docs/v16.0/admin/config-cheat-sheet/#webhook-webhook)
+documentation.
+
+Cairn's `docs/llm-assessment.md` records the next assessment direction: flexible
+submission formats, LLM feedback and proposed rubric scores for instructor
+review. No LLM endpoint or score-publication workflow is implemented here.
 
 Fixture configuration follows the primary [Keycloak container](https://www.keycloak.org/server/containers)
 and [reverse-proxy](https://www.keycloak.org/server/reverseproxy) guidance and
