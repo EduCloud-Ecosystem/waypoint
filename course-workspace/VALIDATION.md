@@ -1,5 +1,40 @@
 # Observed continuity validation
 
+## October 7 recovery and hosted-preparation follow-up
+
+Implementation head `7649109` adds hard quota-backed storage and recovery plus
+reviewable HTTPS/Keycloak configuration. This follow-up supersedes the earlier
+October 6 statements about unimplemented quotas/encrypted recovery. It does not
+change the remaining live institutional acceptance gates.
+
+- 31 local unit tests passed, including old recovery-bundle compatibility,
+  checksum/architecture/link rejection, quota health and configuration refusal.
+- The generated private configuration was exercised through its CLI locally:
+  output mode 0700, file modes 0600, empty client secret, Compose loopback binding
+  and a read-only quota-status mount were verified. No service was enabled.
+- [Linux quota integration](https://github.com/EduCloud-Ecosystem/waypoint/actions/runs/37677205120)
+  passed at this implementation head: a new disposable loop-backed XFS volume
+  enforced 64 MiB/1,000-inode limits, a peer remained writable, Python/R and saved
+  files worked, an encrypted quota-backed package restored to a fresh namespace
+  with the same limits, and changed quota enforcement was detected. No physical
+  disk was formatted. This is not a target-host capacity or reboot result.
+- [Actual nginx verification](https://github.com/EduCloud-Ecosystem/waypoint/actions/runs/37677205127)
+  passed at this head: configuration syntax, HTTPS redirects, root/user-subdomain
+  TLS routing, replacement of spoofed forwarding headers, WebSocket upgrade and
+  unknown-host TLS rejection. Certificates and backend were synthetic fixtures.
+- [Independent-worker encrypted recovery](https://github.com/EduCloud-Ecosystem/waypoint/actions/runs/37673554357)
+  passed for PR #4 at `65d6188`: source and replacement jobs were separate Linux
+  runners; the replacement had no source images cached and recovered the saved
+  file and Python/R from the encrypted package. A wrong key was refused.
+
+No Droplet, institutional identity client, DNS/certificate or real off-host backup
+account was provisioned. Public login/revocation, full browser OIDC/TLS behavior,
+class-size load, selected-host recovery objectives and the full Cairn course
+journey remain unverified. Recovery currently supports synthetic local-test
+workspaces only. See [HOSTED-PILOT.md](HOSTED-PILOT.md) and [RECOVERY.md](RECOVERY.md).
+
+## Original October 6 rehearsal
+
 Executed October 6, 2026 (America/Los_Angeles), Docker Engine 29.4.3 on local
 Docker Desktop, linux/arm64 containers. Synthetic alice/bob data only. No cloud
 resources, institutional accounts or real learner records were used.
