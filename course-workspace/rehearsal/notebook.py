@@ -240,7 +240,15 @@ proxy_set_header X-Forwarded-Port {self.port}; proxy_set_header X-Forwarded-For 
         response=session.get(url+'/api/contents/solution.py',timeout=15,allow_redirects=False)
         assert response.status_code in (302,303,403,404,503), response.status_code
         page.goto(self.origin+'/hub/spawn/'+SUBJECTS['alice'])
-        assert '403' in page.text_content('body') or 'not allowed' in page.text_content('body').lower()
+        # Spawn uses an asynchronous progress page; wait for the roster denial,
+        # not just the initial successful HTTP response for that progress page.
+        for _ in range(30):
+            message=page.text_content('body').lower()
+            if any(reason in message for reason in ('403', 'not allowed', 'not in this course roster')):
+                break
+            time.sleep(1)
+        else:
+            raise AssertionError('respawn did not reach roster denial: '+message[:600])
         ids=docker('ps','-q','--filter','label=educloud.workspace.instance='+self.instance,
                    '--filter','label=educloud.workspace.kind=learner')
         assert not ids, 'removed learner still has an active server'

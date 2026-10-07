@@ -58,7 +58,7 @@ class Course:
         self.admin.auth = ('teacher', self.password)
 
     def api(self, method, path, data=None, user=None):
-        response = requests.request(method, self.forge + '/api/v1' + path, json=data,
+        response = self.admin.request(method, self.forge + '/api/v1' + path, json=data,
                                     auth=(user or 'teacher', self.password), timeout=30)
         if not response.ok:
             raise RuntimeError(f'Forgejo {method} {path} returned {response.status_code}')
@@ -121,7 +121,7 @@ class Course:
 
     def put(self, repo, name, content, user='teacher'):
         path = '/repos/' + repo + '/contents/' + name
-        existing = requests.get(self.forge + '/api/v1' + path, auth=(user, self.password), timeout=30)
+        existing = self.admin.get(self.forge + '/api/v1' + path, auth=(user, self.password), timeout=30)
         data = {'content': base64.b64encode(content.encode()).decode(), 'message': 'Synthetic coursework'}
         if existing.status_code == 200:
             data['sha'] = existing.json()['sha']
