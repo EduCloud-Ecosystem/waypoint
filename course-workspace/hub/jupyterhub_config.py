@@ -3,6 +3,7 @@ import hashlib
 import os
 import sys
 from pathlib import Path
+from tornado.web import HTTPError
 
 sys.path.insert(0, str(Path(__file__).parent))
 from settings import load
@@ -71,7 +72,9 @@ async def prepare_home(spawner):
     # Recheck the current operator roster even for an existing Hub login.
     allowed = s['subjects'] if s['mode'] == 'oidc' else {'alice', 'bob'}
     if spawner.user.name not in allowed:
-        raise ValueError('learner is not in this course roster')
+        error = HTTPError(403, 'learner is not in this course roster')
+        error.jupyterhub_message = 'Your account is not in this course roster. Contact your instructor.'
+        raise error
     # OIDC subject IDs stay stable across account display-name changes. The
     # course prefix prevents accidental volume sharing between deployments.
     key = hashlib.sha256(spawner.user.name.encode()).hexdigest()[:24]

@@ -9,6 +9,7 @@ import os
 import runpy
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
+from tornado.web import HTTPError
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT), str(ROOT / 'hub')]
@@ -42,8 +43,10 @@ class PolicyTests(unittest.TestCase):
             config = runpy.run_path(str(ROOT/'hub/jupyterhub_config.py'),
                                    init_globals={'get_config': MagicMock})
         stale_login = SimpleNamespace(user=SimpleNamespace(name='removed-learner'))
-        with self.assertRaisesRegex(ValueError, 'not in this course roster'):
+        with self.assertRaisesRegex(HTTPError, 'not in this course roster') as error:
             asyncio.run(config['prepare_home'](stale_login))
+        self.assertEqual(error.exception.status_code, 403)
+        self.assertIn('Contact your instructor', error.exception.jupyterhub_message)
 
     def test_invalid_resource_limits_rejected(self):
         for key, value in [('WORKSPACE_CPU_LIMIT','nan'), ('WORKSPACE_CPU_LIMIT','inf'),

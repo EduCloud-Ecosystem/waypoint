@@ -11,7 +11,8 @@ a small dedicated worker. It retains files between sessions.
 Continue with [encrypted recovery and dedicated worker setup](RECOVERY.md) for
 preserved images, Restic transfer, replacement-worker restore and maintenance timers.
 [Hosted pilot preparation](HOSTED-PILOT.md) covers hard home quotas, monitoring and
-reviewable nginx/Keycloak configuration.
+reviewable nginx/Keycloak configuration. The [synthetic course rehearsal](rehearsal/README.md)
+connects real Keycloak, notebook, Forgejo and Cairn services through the learner journey.
 
 ## Reproduce the acceptance test
 
