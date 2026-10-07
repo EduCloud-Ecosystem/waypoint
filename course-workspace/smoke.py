@@ -75,16 +75,16 @@ def kernel(session, base, username, name, code):
     print(f'{username}: {name} kernel executed through notebook WebSocket', flush=True)
 
 
-def runtime_policy(env):
+def runtime_policy(env, users=('alice', 'bob')):
     instance = env['WORKSPACE_INSTANCE']
     def docker(*args):
         return subprocess.check_output(['docker', *args], text=True)
     ids = docker('ps', '-q', '--filter', f'label=educloud.workspace.instance={instance}',
                  '--filter', 'label=educloud.workspace.kind=learner').split()
-    assert len(ids) == 2, 'expected exactly two synthetic learner containers'
+    assert len(ids) == len(users), 'unexpected number of synthetic learner containers'
     containers = json.loads(docker('inspect', *ids))
     by_user = {}
-    for username in ('alice', 'bob'):
+    for username in users:
         home = instance + '-home-' + hashlib.sha256(username.encode()).hexdigest()[:24]
         by_user[username] = next(c for c in containers if any(m.get('Name') == home for m in c['Mounts']))
     for c in containers:
@@ -99,9 +99,12 @@ def runtime_policy(env):
         networks = c['NetworkSettings']['Networks']
         assert len(networks) == 1
         assert json.loads(docker('network', 'inspect', next(iter(networks))))[0]['Internal']
-    alice, bob = by_user['alice'], by_user['bob']
-    assert set(alice['NetworkSettings']['Networks']).isdisjoint(bob['NetworkSettings']['Networks'])
-    peer = next(iter(bob['NetworkSettings']['Networks'].values()))['IPAddress']
+    alice = by_user['alice']
+    peer = '1.1.1.1'
+    if 'bob' in by_user:
+        bob = by_user['bob']
+        assert set(alice['NetworkSettings']['Networks']).isdisjoint(bob['NetworkSettings']['Networks'])
+        peer = next(iter(bob['NetworkSettings']['Networks'].values()))['IPAddress']
     probe = '''import socket, sys
 for host, port in [(sys.argv[1], 8888), ('1.1.1.1', 443)]:
     try:
@@ -112,7 +115,8 @@ for host, port in [(sys.argv[1], 8888), ('1.1.1.1', 443)]:
     raise SystemExit('unexpected network access')
 '''
     docker('exec', alice['Id'], 'python', '-c', probe, peer)
-    print('Runtime limits, separate internal networks, peer denial and Internet egress denial verified', flush=True)
+    print('Runtime limits and Internet egress denial verified' +
+          ('; separate networks and peer denial verified' if 'bob' in by_user else ''), flush=True)
 
 
 def main():
