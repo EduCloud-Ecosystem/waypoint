@@ -118,6 +118,12 @@ def package(directory, env, bundle):
     (bundle / 'images.tar').chmod(0o600)
     checkpoint(directory, env, bundle / 'volumes')
     runtime = json.loads((bundle / 'volumes' / 'runtime.json').read_text())
+    if env.get('WORKSPACE_HOME_ROOT'):
+        manifest = json.loads((bundle / 'volumes' / 'manifest.json').read_text())
+        archived = {env['WORKSPACE_INSTANCE'] + '-' + item['suffix'] for item in manifest['volumes'] if item['kind'] == 'home'}
+        registered = {name for name, entry in registry(root)['homes'].items() if entry['instance'] == env['WORKSPACE_INSTANCE']}
+        if archived != registered:
+            raise ValueError('archived homes differ from the verified quota registry')
     if runtime['hub_image_id'] != images['hub']['Id'] or runtime['course_image_id'] != images['course']['Id']:
         raise ValueError('runtime images changed during checkpoint; retry with deployments paused')
     private_json(bundle / 'environment.json', env)
@@ -148,6 +154,8 @@ def validate_bundle(bundle):
         raise ValueError('bundle file inventory differs')
     required = {'images.tar', 'environment.json', 'volumes/manifest.json', 'volumes/runtime.json'}
     required.update('runtime/' + name for name in BASE_CODE)
+    if meta['version'] == 2:
+        required.update('runtime/' + name for name in CODE)
     if not required.issubset(actual):
         raise ValueError('incomplete recovery bundle')
     for name, checksum in meta['files'].items():

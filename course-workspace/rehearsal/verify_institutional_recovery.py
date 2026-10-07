@@ -130,6 +130,25 @@ def main():
                 # Peer file and a retained removed-user home are not reachable by Bob.
                 peer=session.get(fixture.origin+'/user/'+SUBJECTS['alice']+'/api/contents/recovered.txt',timeout=15)
                 assert peer.status_code in (403,404)
+                # Revoke an active learner on the replacement using its own runtime.
+                compose(destination,'stop','hub')
+                updated=dict(recovered,WORKSPACE_ALLOWED_SUBJECTS='future-approved-id')
+                (destination/'.env').write_text(''.join(f'{k}={v}\n' for k,v in updated.items()))
+                # Recreate reads the changed env; fixture CA/routing must be reattached.
+                bundled_start()
+                docker('network','connect',fixture.network,hub)
+                docker('cp',str(source/'ca.pem'),hub+':/usr/local/share/ca-certificates/fixture.crt')
+                docker('exec',hub,'update-ca-certificates')
+                compose(destination,'stop','hub'); bundled_start()
+                docker('restart',source_instance+'-proxy')
+                denied=session.get(url+'/api/contents/recovered.txt',timeout=15,allow_redirects=False)
+                assert denied.status_code in (302,303,403,404,503)
+                page.goto(fixture.origin+'/hub/spawn/'+SUBJECTS['bob'])
+                page.get_by_text('Your account is not in this course roster. Contact your instructor.',exact=False).wait_for(state='visible',timeout=60000)
+                assert not docker('ps','-q','--filter','label=educloud.workspace.instance='+fixture.instance,
+                                  '--filter','label=educloud.workspace.kind=learner')
+                bob_home=fixture.instance+'-home-'+hashlib.sha256(SUBJECTS['bob'].encode()).hexdigest()[:24]
+                assert (homes/bob_home/'work/recovered.txt').read_text()==sessions['bob'][4]
                 # Quotas remain enforced on the newly created filesystem.
                 inspect(homes,fixture.instance)
                 try:
@@ -143,7 +162,7 @@ def main():
                         'checks':['encrypted-backup','source-resumed','wrong-key-denied','current-roster-required',
                                   'fresh-hub-sessions','removed-and-unrostered-login-denied','retained-removed-home',
                                   'preserved-images','bundled-runtime-start','restored-python-r','saved-file-visible',
-                                  'peer-file-denied','restored-hard-quotas','existing-destination-denied']}
+                                  'peer-file-denied','replacement-active-revocation','revocation-retains-files','restored-hard-quotas','existing-destination-denied']}
                 (root/'PASS.json').write_text(json.dumps(report,indent=2)+'\n')
                 print('PASS: encrypted OIDC recovery with current roster, fresh sessions, retained files, Python/R and quotas.',flush=True)
             finally: browser.close()
