@@ -15,7 +15,7 @@ def quota_home(settings, key, status_root=Path('/quota-status')):
     name = settings['instance'] + '-home-' + key
     record = status['volumes'].get(name)
     quota = settings['home_quota_mb'] * 1024**2
-    if not record or record['quota_bytes'] != quota:
+    if not record or record['quota_bytes'] != quota or record.get('inode_limit') != settings['home_inode_limit']:
         raise ValueError('learner home quota has not been provisioned')
     return {'name': name, 'labels': {'educloud.workspace.instance': settings['instance'],
                                     'educloud.workspace.kind': 'home',

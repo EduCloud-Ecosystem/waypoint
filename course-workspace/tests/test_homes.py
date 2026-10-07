@@ -14,13 +14,13 @@ from homes import limits, storage, registry
 
 class HomePolicyTests(unittest.TestCase):
     def test_missing_stale_or_wrong_quota_refuses_spawn(self):
-        s = {'home_root': '/srv/homes', 'instance': 'trial-test', 'home_quota_mb': 64}
+        s = {'home_root': '/srv/homes', 'instance': 'trial-test', 'home_quota_mb': 64, 'home_inode_limit': 1000}
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             with self.assertRaises(FileNotFoundError):
                 quota_home(s, 'abc', root)
             data = {'healthy': True, 'instance': 'trial-test', 'checked_at': time.time(),
-                    'volumes': {'trial-test-home-abc': {'quota_bytes': 64 * 1024**2, 'project_id': 10000}}}
+                    'volumes': {'trial-test-home-abc': {'quota_bytes': 64 * 1024**2, 'project_id': 10000, 'inode_limit': 1000}}}
             path = root / 'trial-test.json'
             path.write_text(json.dumps(data))
             self.assertEqual(quota_home(s, 'abc', root)['options']['device'], '/srv/homes/trial-test-home-abc')

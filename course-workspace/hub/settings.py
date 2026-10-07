@@ -40,6 +40,9 @@ def load(env):
     result['image'] = required('WORKSPACE_IMAGE')
     result['home_root'] = env.get('WORKSPACE_HOME_ROOT', '').rstrip('/')
     result['home_quota_mb'] = int(env.get('WORKSPACE_HOME_QUOTA_MB', '0'))
+    result['home_inode_limit'] = int(env.get('WORKSPACE_HOME_INODE_LIMIT', '100000'))
+    if result['home_inode_limit'] < 128:
+        raise ValueError('home inode limit must be at least 128')
     if result['home_root']:
         if not re.fullmatch(r'/[a-zA-Z0-9_/-]+', result['home_root']) or result['home_quota_mb'] < 16:
             raise ValueError('quota homes require an absolute storage root and at least 16 MiB')

@@ -17,8 +17,9 @@ from checkpoint import checkpoint
 from pilot import ROOT, initialize, locked, settings
 
 TAG = 'educloud-workspace-v1'
-CODE = ('pilot.py', 'checkpoint.py', 'backup.py', 'volume_archive.py',
-        'recovery.py', 'compose.yaml', 'quota-compose.yaml', 'homes.py')
+BASE_CODE = ('pilot.py', 'checkpoint.py', 'backup.py', 'volume_archive.py',
+        'recovery.py', 'compose.yaml')
+CODE = BASE_CODE + ('quota-compose.yaml', 'homes.py')
 
 
 def private_json(path, data):
@@ -134,13 +135,15 @@ def validate_bundle(bundle):
     if actual != set(meta['files']):
         raise ValueError('bundle file inventory differs')
     required = {'images.tar', 'environment.json', 'volumes/manifest.json', 'volumes/runtime.json'}
-    required.update('runtime/' + name for name in CODE)
+    required.update('runtime/' + name for name in BASE_CODE)
     if not required.issubset(actual):
         raise ValueError('incomplete recovery bundle')
     for name, checksum in meta['files'].items():
         if digest(bundle / name) != checksum:
             raise ValueError('bundle checksum differs')
     env = json.loads((bundle / 'environment.json').read_text())
+    if env.get('WORKSPACE_HOME_ROOT') and not {'runtime/homes.py', 'runtime/quota-compose.yaml'}.issubset(actual):
+        raise ValueError('quota recovery runtime is incomplete')
     if env.get('WORKSPACE_AUTH_MODE') != 'local-test' or env.get('WORKSPACE_INSTANCE') != meta['instance']:
         raise ValueError('this recovery version supports the synthetic trial only')
     if validate_manifest(json.loads((bundle / 'volumes/manifest.json').read_text()), bundle / 'volumes') != meta['instance']:
@@ -217,7 +220,8 @@ def restore_repository(cfg, snapshot, destination, port, home_root=None):
         home_options = {}
         if home_root:
             from homes import provision, registry, expected_volume
-            provision(home_root, instance, ['alice', 'bob'], int(env['WORKSPACE_HOME_QUOTA_MB']))
+            provision(home_root, instance, ['alice', 'bob'], int(env['WORKSPACE_HOME_QUOTA_MB']),
+                      int(env.get('WORKSPACE_HOME_INODE_LIMIT', '100000')))
             records = registry(home_root)['homes']
             volume_manifest = json.loads((bundle / 'volumes/manifest.json').read_text())
             for item in volume_manifest['volumes']:

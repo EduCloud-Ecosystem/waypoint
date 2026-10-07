@@ -10,6 +10,8 @@ It runs locally without a cloud account and can also use a private SSH tunnel to
 a small dedicated worker. It retains files between sessions.
 Continue with [encrypted recovery and dedicated worker setup](RECOVERY.md) for
 preserved images, Restic transfer, replacement-worker restore and maintenance timers.
+[Hosted pilot preparation](HOSTED-PILOT.md) covers hard home quotas, monitoring and
+reviewable nginx/Keycloak configuration.
 
 ## Reproduce the acceptance test
 
@@ -62,11 +64,14 @@ acceptance gates below before changing a class's Cairn workspace link.
    four active learners, two concurrent starts, 1 CPU/2 GiB/128 processes each,
    30-minute idle expiry and eight-hour maximum session age. At capacity the Hub
    rejects additional starts; this is bounded admission, not a queue/autoscaler.
-6. Build and start:
+6. Provision the hard quota homes and enable their health timer as described in
+   [hosted pilot preparation](HOSTED-PILOT.md). Match the byte/inode limits in
+   `.env`. Institutional mode refuses startup without quota configuration.
+   Build and start:
 
    ```sh
-   docker compose --profile build build
-   docker compose up -d hub
+   docker compose -f compose.yaml -f quota-compose.yaml --profile build build
+   docker compose -f compose.yaml -f quota-compose.yaml up -d hub
    ```
 
 7. Test institutional login, unauthorized/removed roster members, per-user
@@ -137,7 +142,7 @@ this design does not implement automatic failover or active/active writes.
 
 - Institution-approved host, data destination, support owner and recurring budget.
 - Live OIDC allowlist/revocation, wildcard HTTPS/subdomains and browser tests.
-- Per-home filesystem quotas, host disk/inode monitoring and retention/deletion.
+- Target-worker quota/mount verification, host disk/inode monitoring and retention/deletion.
 - Target-host concurrency/resource exhaustion and shared-kernel threat review.
 - Encrypted off-host backups, second-host restore and recorded recovery objectives.
 - Course-image vulnerability review, update cadence and immutable-image retention.
