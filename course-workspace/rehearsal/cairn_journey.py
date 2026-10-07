@@ -90,8 +90,8 @@ class Course:
         self.api('POST', '/orgs', {'username': 'course-test', 'visibility': 'private'})
         self.api('POST', '/orgs/course-test/repos', {'name': 'template', 'private': True, 'template': True,
                                                   'auto_init': True, 'default_branch': 'main'})
-        spec = {'version': 1, 'image': self.image, 'tests': [
-            {'name': 'instructor-answer', 'run': 'python /policy/check.py', 'points': 10}],
+        spec = {'version': '1', 'image': self.image, 'tests': [
+            {'name': 'instructor-answer', 'run': 'python /cairn-policy/check.py', 'points': 10}],
             'limits': {'memory_mb': 256, 'cpus': 1, 'network': 'none'}}
         self.put('course-test/template', 'grading.json', json.dumps(spec))
         self.put('course-test/template', 'check.py', "import sys\nsys.path.insert(0, '/work')\nfrom solution import answer\nassert answer() == 5\n")
@@ -233,6 +233,8 @@ def journey(root, binary, workspace, image, solution, browser, notebook=None, af
         page.goto(course.url + '/me')
         page.screenshot(path=str(root / 'student-grade.png'))
         report = {'cairn_revision': run('git', '-C', str(binary.parent), 'rev-parse', 'HEAD') if (binary.parent / '.git').exists() else None,
+                  'cairn_binary_sha256': hashlib.sha256(binary.read_bytes()).hexdigest(),
+                  'handoff_source': 'notebook' if notebook else 'synthetic-file-fixture',
                   'policy_revision': revision, 'solution_sha256': hashlib.sha256(solution.encode()).hexdigest(),
                   'passed_score': 10, 'failed_score': 0, 'max_score': 10,
                   'checks': ['operator-auth', 'roster-denial', 'student-admin-denial', 'own-grade-only',
@@ -242,7 +244,7 @@ def journey(root, binary, workspace, image, solution, browser, notebook=None, af
             after_grading(browser)
         for ctx in (teacher, alice, bob, denied):
             ctx.close()
-        print('PASS: real Forgejo OAuth, roster/role/grade isolation, notebook handoff, pinned 10/10 and 0/10 grading.', flush=True)
+        print('PASS: real Forgejo OAuth, roster/role/grade isolation, file transfer, pinned 10/10 and 0/10 grading.', flush=True)
         return report
     finally:
         course.close()
