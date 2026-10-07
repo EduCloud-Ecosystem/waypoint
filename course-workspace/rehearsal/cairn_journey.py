@@ -231,6 +231,8 @@ def journey(root, binary, workspace, image, solution, browser, notebook=None, af
         assert len(detail['history']) == 2 and detail['latest_grade']['score'] == 0
         assert detail['latest_grade']['max_score'] == 10
         page.goto(course.url + '/me')
+        page.get_by_text('Per-test results & history', exact=True).click()
+        page.get_by_text('instructor-answer', exact=False).wait_for(state='visible')
         page.screenshot(path=str(root / 'student-grade.png'))
         report = {'cairn_revision': run('git', '-C', str(binary.parent), 'rev-parse', 'HEAD') if (binary.parent / '.git').exists() else None,
                   'cairn_binary_sha256': hashlib.sha256(binary.read_bytes()).hexdigest(),

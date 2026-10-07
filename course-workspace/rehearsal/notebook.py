@@ -205,9 +205,17 @@ proxy_set_header X-Forwarded-Port {self.port}; proxy_set_header X-Forwarded-For 
         response.raise_for_status()
         solution=response.json()['content']
         assert solution==SOLUTION
+        # The protocol checks above do not prove that the browser finished
+        # loading its file list. Open the saved file visibly before acceptance.
+        notebook.reload()
+        notebook.get_by_text('solution.py',exact=True).first.wait_for(state='visible',timeout=60000)
+        if notebook.get_by_role('button',name='No',exact=True).is_visible():
+            notebook.get_by_role('button',name='No',exact=True).click()
+        notebook.get_by_text('solution.py',exact=True).first.dblclick()
+        notebook.locator('.cm-content').filter(has_text='def answer').wait_for(state='visible',timeout=30000)
         notebook.screenshot(path=str(self.root/'notebook.png'))
         self.revoked=(context,notebook,session,url)
-        self.report += ['keycloak-pkce-login','per-user-https','python-r-wss','saved-file-handoff']
+        self.report += ['keycloak-pkce-login','per-user-https','python-r-wss','saved-file-handoff','saved-file-visible-in-browser']
         return solution
 
     def revocation(self, browser):
