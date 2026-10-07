@@ -243,7 +243,7 @@ proxy_set_header X-Forwarded-Port {self.port}; proxy_set_header X-Forwarded-For 
         # Spawn uses an asynchronous progress page; wait for the roster denial,
         # not just the initial successful HTTP response for that progress page.
         for _ in range(30):
-            message=page.text_content('body').lower()
+            message=' '.join(page.locator('body').inner_text().lower().split())
             if any(reason in message for reason in ('403', 'not allowed', 'not in this course roster')):
                 break
             time.sleep(1)
