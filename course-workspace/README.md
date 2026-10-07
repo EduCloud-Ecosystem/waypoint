@@ -5,6 +5,10 @@ DockerSpawner. Cairn remains the classroom/assignment application. Learner files
 live in persistent home volumes; replacing the notebook container does not
 remove them. Use Python notebooks or R notebooks in JupyterLab (not RStudio).
 
+For the smallest manual test, start with the [one-learner trial](MINIMAL-PILOT.md).
+It runs locally without a cloud account and can also use a private SSH tunnel to
+a small dedicated worker. It retains files between sessions.
+
 ## Reproduce the acceptance test
 
 Requires Python 3.12+, Docker Engine with Compose v2, and enough disk/RAM to build

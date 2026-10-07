@@ -28,3 +28,4 @@ jobs:
           python-version: '3.12'
       - run: pip install -r course-workspace/requirements-test.txt
       - run: python course-workspace/verify.py
+      - run: python course-workspace/verify_pilot.py
