@@ -164,14 +164,43 @@ def inspect(root, instance):
         raise
 
 
+def timer_files(root, instance):
+    identifier(instance)
+    if not re.fullmatch(r'/[a-zA-Z0-9_/-]+', str(root)):
+        raise ValueError('quota timer requires an absolute path without spaces')
+    name = 'educloud-home-quota-' + instance
+    return {name + '.service': f'''[Unit]
+Description=Verify EduCloud home quota enforcement ({instance})
+After=docker.service
+ConditionPathIsMountPoint={root}
+
+[Service]
+Type=oneshot
+UMask=0077
+ExecStart=/usr/bin/python3 /opt/educloud/waypoint/course-workspace/homes.py inspect --root {root} --instance {instance}
+''', name + '.timer': f'''[Unit]
+Description=Refresh EduCloud home quota status ({instance})
+
+[Timer]
+OnBootSec=10s
+OnUnitActiveSec=60s
+AccuracySec=1s
+Unit={name}.service
+
+[Install]
+WantedBy=timers.target
+'''}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('operation', choices=['provision', 'inspect'])
+    parser.add_argument('operation', choices=['provision', 'inspect', 'render-timer'])
     parser.add_argument('--root', type=Path, required=True)
     parser.add_argument('--instance', required=True)
     parser.add_argument('--subjects-file', type=Path)
     parser.add_argument('--quota-mb', type=int, default=5120)
     parser.add_argument('--inode-limit', type=int, default=100000)
+    parser.add_argument('--output', type=Path)
     args = parser.parse_args()
     try:
         if args.operation == 'provision':
@@ -179,8 +208,16 @@ def main():
                 raise ValueError('--subjects-file is required')
             subjects = [line.strip() for line in args.subjects_file.read_text().splitlines() if line.strip()]
             provision(args.root, args.instance, subjects, args.quota_mb, args.inode_limit)
-        else:
+        elif args.operation == 'inspect':
             inspect(args.root, args.instance)
+        else:
+            if not args.output:
+                raise ValueError('--output is required')
+            files = timer_files(args.root, args.instance)
+            args.output.mkdir(parents=True, exist_ok=False)
+            for name, content in files.items():
+                (args.output / name).write_text(content)
+            print('Quota health timer rendered; install and enable on the prepared worker.')
     except (ValueError, KeyError, OSError, subprocess.CalledProcessError) as exc:
         parser.exit(1, f'Home quota operation refused or failed: {exc}\n')
 

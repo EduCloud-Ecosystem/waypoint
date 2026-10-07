@@ -46,6 +46,8 @@ def load(env):
     elif result['home_quota_mb']:
         raise ValueError('WORKSPACE_HOME_ROOT is required with a home quota')
     if mode == 'oidc':
+        if not result['home_root']:
+            raise ValueError('institutional workspaces require provisioned hard home quotas')
         issuer = urlsplit(required('WORKSPACE_OIDC_ISSUER'))
         if issuer.scheme != 'https' or not issuer.hostname or issuer.username or issuer.password or issuer.query or issuer.fragment:
             raise ValueError('WORKSPACE_OIDC_ISSUER must be a trusted HTTPS Keycloak realm URL')

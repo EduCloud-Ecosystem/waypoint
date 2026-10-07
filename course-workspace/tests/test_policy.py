@@ -22,7 +22,8 @@ class PolicyTests(unittest.TestCase):
                 'WORKSPACE_PUBLIC_URL':'https://work.example.edu',
                 'WORKSPACE_OIDC_ISSUER':'https://auth.example.edu/realms/educloud',
                 'WORKSPACE_OIDC_CLIENT_ID':'course', 'WORKSPACE_OIDC_CLIENT_SECRET':'synthetic',
-                'WORKSPACE_ALLOWED_SUBJECTS':'opaque-a,opaque-b'}
+                'WORKSPACE_ALLOWED_SUBJECTS':'opaque-a,opaque-b',
+                'WORKSPACE_HOME_ROOT':'/srv/educloud/homes', 'WORKSPACE_HOME_QUOTA_MB':'5120'}
 
     def test_production_requires_roster_and_credentials(self):
         for missing in ['WORKSPACE_ALLOWED_SUBJECTS', 'WORKSPACE_OIDC_CLIENT_SECRET', 'WORKSPACE_OIDC_ISSUER']:
@@ -50,6 +51,13 @@ class PolicyTests(unittest.TestCase):
                            ('WORKSPACE_IDLE_SECONDS','0'), ('WORKSPACE_INSTANCE','../other')]:
             env = self.config(); env[key] = value
             with self.subTest(key=key, value=value), self.assertRaises(ValueError): load(env)
+
+    def test_production_requires_hard_home_configuration(self):
+        env = self.config()
+        del env['WORKSPACE_HOME_ROOT']
+        del env['WORKSPACE_HOME_QUOTA_MB']
+        with self.assertRaisesRegex(ValueError, 'hard home quotas'):
+            load(env)
 
     def test_archive_integrity_and_path_validation(self):
         with tempfile.TemporaryDirectory() as d:
