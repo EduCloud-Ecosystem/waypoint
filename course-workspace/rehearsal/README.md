@@ -77,6 +77,13 @@ course-workspace/.venv/bin/python course-workspace/rehearsal/cairn_journey.py \
   --output course-workspace/output/course-rehearsal-local
 ```
 
+## Institutional recovery rehearsal
+
+See [encrypted recovery](../RECOVERY.md#recover-an-institutional-course) for the
+current-roster restore command and `verify_institutional_recovery.py` acceptance
+harness. It destroys the synthetic source workspace and restores saved homes
+onto a new XFS filesystem while the independent fixture IdP remains available.
+
 ## Remaining production gates
 
 Passing this harness does not establish institutional identity acceptance,

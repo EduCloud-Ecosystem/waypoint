@@ -1,9 +1,9 @@
-"""Offline trial checkpoint, called under the pilot operation lock."""
+"""Offline workspace checkpoint, called under the pilot operation lock."""
 from datetime import datetime, timezone
 import json
 
 from backup import backup, docker, LABEL
-from pilot import compose, wait_ready
+from deployment import compose, wait_ready
 
 
 def checkpoint(directory, env, destination):
@@ -24,7 +24,7 @@ def checkpoint(directory, env, destination):
         metadata = {'created_at': datetime.now(timezone.utc).isoformat(),
                     'hub_image_id': hub['Image'], 'course_image_id': image['Id'],
                     'course_architecture': image['Architecture'],
-                    'instance': instance, 'synthetic_only': True}
+                    'instance': instance, 'synthetic_only': env['WORKSPACE_AUTH_MODE'] == 'local-test'}
         record = destination / 'runtime.json'
         record.write_text(json.dumps(metadata, indent=2) + '\n')
         record.chmod(0o600)
@@ -36,4 +36,4 @@ def checkpoint(directory, env, destination):
             wait_ready(env)
     print(f'Checkpoint saved at {destination}. ' +
           ('Hub resumed; reopen your notebook to restart its kernel.' if was_running else 'Hub remains stopped.'))
-    print('This is a local, unencrypted synthetic archive. Copy securely off host and preserve both images for recovery.')
+    print('This is a local, unencrypted archive containing credentials and saved work. Copy securely off host and preserve both images for recovery.')

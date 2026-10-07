@@ -95,10 +95,11 @@ def backup(instance, output, image):
     print(f'Archived {len(names)} volumes. Protect this directory as learner data and credentials.')
 
 
-def restore(instance, source, image, home_options=None):
+def restore(instance, source, image, home_options=None, fresh_hub=False):
     manifest = json.loads((source / 'manifest.json').read_text())
     validate_manifest(manifest, source)
-    targets = [instance + '-' + item['suffix'] for item in manifest['volumes']]
+    items = [item for item in manifest['volumes'] if not (fresh_hub and item['kind'] == 'hub')]
+    targets = [instance + '-' + item['suffix'] for item in items]
     existing = set(docker('volume', 'ls', '--format', '{{.Name}}').splitlines())
     home_options = home_options or {}
     if set(home_options) - set(targets):
@@ -113,7 +114,7 @@ def restore(instance, source, image, home_options=None):
             raise ValueError('pre-provisioned home is not empty/offline with the expected quota mount')
     created = []
     try:
-        for item, name in zip(manifest['volumes'], targets):
+        for item, name in zip(items, targets):
             if name not in home_options:
                 docker('volume', 'create', '--label', f'{LABEL}={instance}', '--label', f'{KIND}={item["kind"]}', name)
                 created.append(name)
@@ -127,7 +128,7 @@ def restore(instance, source, image, home_options=None):
         for name in reversed(created):
             docker('volume', 'rm', name)
         raise
-    print(f'Restored {len(created)} volumes to {instance}. Start with the matching course image and identity provider.')
+    print(f'Restored {len(targets)} volumes to {instance}. Start with the matching course image and identity provider.')
 
 
 def main():

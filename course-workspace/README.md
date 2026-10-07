@@ -105,6 +105,11 @@ Retain or delete their home only under the institution's retention policy.
 
 ## Back up and move to another host
 
+Use [encrypted institutional recovery](RECOVERY.md#recover-an-institutional-course)
+for an OIDC course. It requires a current roster/credential and deliberately
+creates fresh Hub sessions while preserving saved homes. The low-level archive
+commands below remain useful for operator-controlled offline maintenance.
+
 Volumes survive restarts but are not backups. Schedule a maintenance window and
 stop the Hub gracefully; its shutdown stops learner containers. If a crash left
 an orphan, identify it with `docker ps --filter label=educloud.workspace.instance=COURSE`

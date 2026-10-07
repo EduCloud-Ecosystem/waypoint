@@ -63,12 +63,22 @@ def expected_volume(root, name, entry):
 
 
 def provision(root, instance, subjects, quota_mb, inode_limit=100000):
-    storage(root)
-    identifier(instance)
     if type(quota_mb) is not int or quota_mb < 16 or inode_limit < 128:
         raise ValueError('home quota must be at least 16 MiB and 128 inodes')
     if not subjects or any(not re.fullmatch(r'[a-z0-9][a-z0-9-]{0,127}', s) for s in subjects):
         raise ValueError('supply stable lowercase subject IDs, one per line')
+    suffixes = ['home-' + hashlib.sha256(subject.encode()).hexdigest()[:24] for subject in subjects]
+    provision_suffixes(root, instance, suffixes, quota_mb, inode_limit)
+
+
+def provision_suffixes(root, instance, suffixes, quota_mb, inode_limit=100000):
+    # Recovery retains homes even when their subjects are no longer on the roster.
+    storage(root)
+    identifier(instance)
+    if type(quota_mb) is not int or quota_mb < 16 or type(inode_limit) is not int or inode_limit < 128:
+        raise ValueError('home quota must be at least 16 MiB and 128 inodes')
+    if not suffixes or any(not re.fullmatch(r'home-[a-f0-9]{24}', s) for s in suffixes):
+        raise ValueError('invalid recovery home suffix')
     # Validate initial emptiness before creating the registry lock.
     data = registry(root)
     if not (root / '.educloud-projects.json').exists():
@@ -78,8 +88,8 @@ def provision(root, instance, subjects, quota_mb, inode_limit=100000):
         data = registry(root)
         existing = set(docker('volume', 'ls', '--format', '{{.Name}}').splitlines())
         current_ids = set(limits(root, 'b'))
-        for subject in sorted(set(subjects)):
-            name = instance + '-home-' + hashlib.sha256(subject.encode()).hexdigest()[:24]
+        for suffix in sorted(set(suffixes)):
+            name = instance + '-' + suffix
             path = root / name
             entry = data['homes'].get(name)
             if entry and (entry['quota_mb'] != quota_mb or entry['inode_limit'] != inode_limit):

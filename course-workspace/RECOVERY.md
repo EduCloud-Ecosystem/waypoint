@@ -1,11 +1,11 @@
 # Encrypted recovery and a replacement worker
 
-The one-learner trial saves encrypted recovery packages to an operator-owned
+Private trials and institutional OIDC courses save encrypted recovery packages to an operator-owned
 Restic repository over SFTP or HTTPS S3. Packages contain quiesced Hub/home
 archives, configuration, deployment scripts and the actual Hub/course images.
 Recovery does not rebuild against changing upstream packages. Use the same CPU
-architecture on the replacement. This version supports the private synthetic
-trial; institution-authenticated course migration is a separate acceptance gate.
+architecture on the replacement. Institutional recovery requires a current
+operator configuration and creates fresh Hub sessions, as described below.
 
 ## Configure storage
 
@@ -85,6 +85,78 @@ The copied `runtime/` contains deployment/backup scripts, so the original source
 checkout is unnecessary after recovery. Repository write/key access grants
 authority over these executable images/scripts; protect it accordingly.
 
+## Recover an institutional course
+
+Use the supported base `compose.yaml` plus `quota-compose.yaml` deployment. Put
+its configuration in an owner-only `.env` inside a private deployment directory;
+set `WORKSPACE_ENV_FILE` to that file's absolute path. The recovery format accepts
+literal `WORKSPACE_*` values only (no shell/Compose interpolation, quotes, inline
+comments or whitespace). Existing trial `pilot.env` files retain their stricter
+one-learner rules. Do not place both files in the same directory.
+
+Back up with the same `recovery.py backup --directory /srv/educloud/course`
+command. The checkpoint stops/resumes the existing Hub, verifies quota-backed
+homes, archives all saved homes (including retained homes of removed learners),
+and encrypts configuration, runtime images and scripts. Keep direct Docker,
+roster and quota changes out of the maintenance window.
+
+Before restoring, obtain a **current** operator-approved `.env` independently of
+the snapshot. Its `WORKSPACE_ALLOWED_SUBJECTS` and client secret must reflect
+current authorization and credential rotation. The tool cannot determine the
+freshness of a file supplied by the operator. It deliberately refuses an omitted
+current configuration. The issuer, client ID, public origin and home limits must
+match the archived course: changing identity realms could associate a retained
+home with a different person who has the same subject ID. Realm/domain migration
+and quota resizing need a separate reviewed operation.
+
+```sh
+sudo python3 recovery.py restore --config /etc/educloud/recovery.json \
+  --snapshot FULL_SNAPSHOT_ID --destination /srv/educloud/recovered-course \
+  --home-root /srv/educloud/replacement-homes --port 18000 \
+  --current-env /etc/educloud/current-course.env
+sudo python3 /srv/educloud/recovered-course/runtime/deployment.py start \
+  --directory /srv/educloud/recovered-course
+```
+
+Prepare the replacement XFS mount first; the restore command never formats a
+caller-supplied device. Restoration creates a new instance, remaps every archived
+home into that namespace, preserves hard byte/inode limits and provisions any
+newly approved subjects. Removed learners' files remain private for the retention
+owner; possessing a retained home does not grant login. The course image is the
+archived immutable image ID. Start uses the bundled scripts/images without a
+build or image pull. Restore itself starts no service.
+
+The replacement **does not restore the archived Hub database or cookie secret**.
+All prior Hub sessions, API tokens, service tokens and remembered running servers
+are discarded. Learners authenticate again through the existing IdP, which may
+still have an institutional SSO session. Saved files survive; kernel memory,
+unsaved edits and Hub session history do not. The archived Hub volume remains in
+the encrypted snapshot for operator investigation. New Hub state is included in
+subsequent backups.
+
+The identity provider database, realm configuration, account recovery, reverse
+proxy, DNS, TLS private keys/certificates, custom Compose overlays and local CA
+trust are **external dependencies**, not restored by this package. Keep their
+separate recovery procedures. Do not treat a restored workspace as a restored
+institutional identity service. The rehearsal retains its independent synthetic
+Keycloak instance while replacing the workspace.
+
+Keep the old worker stopped during cutover. Prepare verified TLS/CA trust,
+origin/wildcard routing and the replacement quota health timer before admitting
+learners. The lifecycle command checks local Hub readiness only. Validate login,
+old-session denial, removed-user denial, saved files, Python/R and WebSockets
+through the real course origin before switching traffic. The default rendered
+backup/health services point to `/srv/educloud/pilot`; update **both** service
+`ExecStart` paths to the institutional deployment directory before enabling them.
+Use `runtime/deployment.py stop --directory ...` before roster changes, then
+`start` to recreate with the updated `.env`; verify active access is denied and
+saved files remain.
+
+If restore fails after creating its new namespace, leave the original course
+untouched. Inspect the private destination and its generated instance before
+cleaning up that attempt; retry with a new destination. No automatic deletion of
+partially restored learner data is performed.
+
 ## Schedule and retention
 
 `worker.py render` supplies daily **02:00 UTC maintenance** and hourly health
@@ -151,6 +223,16 @@ The independent-worker workflow runs these phases in separate Linux runner jobs,
 transferring only the test repository and snapshot metadata. Its public fixture
 password is solely test data and must never be used for real records. This
 rehearsal does not validate the eventual SFTP/S3 account or promise uptime.
+
+`rehearsal/verify_institutional_recovery.py --output /tmp/NEW_PRIVATE_DIRECTORY`
+adds the real-Keycloak recovery acceptance on disposable Linux as root. It saves
+synthetic Alice/Bob coursework, creates an encrypted snapshot, removes the source
+Hub/volumes and loop filesystem, and restores onto a fresh XFS image with Alice
+removed from the current roster. It checks fresh Hub sessions, retained files,
+Python/R, peer denial, quota state, and revocation of an active learner after
+recovery. This is a **same-worker** rehearsal with an independent surviving IdP;
+it does not prove institution-wide disaster recovery or the real backup backend.
+CI exports only a bounded successful report and screenshot for seven days.
 
 References: [repository setup](https://restic.readthedocs.io/en/stable/030_preparing_a_new_repo.html),
 [restore](https://restic.readthedocs.io/en/stable/050_restore.html), and

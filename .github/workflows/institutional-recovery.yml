@@ -1,0 +1,42 @@
+name: Institutional workspace recovery
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'course-workspace/recovery.py'
+      - 'course-workspace/deployment.py'
+      - 'course-workspace/backup.py'
+      - 'course-workspace/checkpoint.py'
+      - 'course-workspace/homes.py'
+      - 'course-workspace/hub/**'
+      - 'course-workspace/rehearsal/**'
+      - '.github/workflows/institutional-recovery.yml'
+permissions:
+  contents: read
+jobs:
+  institutional-recovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: /tmp/educloud-recovery-browsers
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y xfsprogs restic openssl
+      - run: pip install -r course-workspace/rehearsal/requirements.txt
+      - run: python -m playwright install --with-deps chromium
+      - run: sudo --preserve-env=PLAYWRIGHT_BROWSERS_PATH "$(command -v python)" course-workspace/rehearsal/verify_institutional_recovery.py --output /tmp/educloud-institutional-recovery
+      - name: Publish bounded synthetic acceptance evidence
+        if: success()
+        run: |
+          mkdir -p output/institutional-evidence
+          sudo cp /tmp/educloud-institutional-recovery/PASS.json /tmp/educloud-institutional-recovery/recovered-notebook.png output/institutional-evidence/
+          sudo chmod 644 output/institutional-evidence/*
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: synthetic-institutional-recovery-evidence
+          path: output/institutional-evidence
+          retention-days: 7
