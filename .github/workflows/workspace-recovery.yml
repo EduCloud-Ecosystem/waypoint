@@ -3,6 +3,7 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
+      - 'course-workspace/deployment.py'
       - 'course-workspace/recovery.py'
       - 'course-workspace/backup.py'
       - 'course-workspace/checkpoint.py'

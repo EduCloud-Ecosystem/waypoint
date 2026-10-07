@@ -45,13 +45,13 @@ class Notebook:
 
     def compose(self, *args):
         env = {k:v for k,v in os.environ.items() if not k.startswith(('WORKSPACE_', 'COMPOSE_'))}
-        return run('docker', 'compose', '--env-file', str(self.root / 'hub.env'), '-f', str(ROOT / 'compose.yaml'),
+        return run('docker', 'compose', '--env-file', str(self.root / '.env'), '-f', str(ROOT / 'compose.yaml'),
                    '-f', str(ROOT / 'quota-compose.yaml'), '-f', str(self.root / 'override.json'), *args,
                    cwd=ROOT, env=env)
 
     def write_env(self):
-        (self.root / 'hub.env').write_text(''.join(f'{k}={v}\n' for k,v in self.env.items()))
-        (self.root / 'hub.env').chmod(0o600)
+        (self.root / '.env').write_text(''.join(f'{k}={v}\n' for k,v in self.env.items()))
+        (self.root / '.env').chmod(0o600)
 
     def start(self):
         if sys.platform != 'linux' or os.geteuid() != 0:
@@ -69,7 +69,7 @@ class Notebook:
                                         [SUBJECTS['alice'], SUBJECTS['bob']], str(self.homes), port())
         self.env.update(WORKSPACE_PUBLIC_URL=self.origin, WORKSPACE_OIDC_CLIENT_SECRET=secrets.token_urlsafe(32),
                         WORKSPACE_HOME_QUOTA_MB='256', WORKSPACE_MEMORY_MB='1024', WORKSPACE_ACTIVE_LIMIT='2',
-                        WORKSPACE_ENV_FILE=str(self.root / 'hub.env'))
+                        WORKSPACE_ENV_FILE=str(self.root / '.env'))
         self.write_env()
         provision(self.homes, self.instance, [SUBJECTS['alice'], SUBJECTS['bob']], 256)
         # A private fixture CA is trusted explicitly by Hub and HTTP clients.
@@ -272,7 +272,7 @@ proxy_set_header X-Forwarded-Port {self.port}; proxy_set_header X-Forwarded-For 
         for suffix in ('-proxy','-identity'):
             subprocess.run(['docker','rm','-f',self.instance+suffix],capture_output=True)
         if hasattr(self,'env'):
-            cleanup(self.instance,self.root/'hub.env')
+            cleanup(self.instance,self.root/'.env')
         subprocess.run(['docker','network','rm',self.network],capture_output=True)
         if self.mounted:
             xfs_run('umount',str(self.homes))
