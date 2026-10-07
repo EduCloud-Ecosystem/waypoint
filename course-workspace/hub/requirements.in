@@ -1,0 +1,4 @@
+jupyterhub==6.0.1
+dockerspawner==14.0.0
+oauthenticator==17.4.0
+jupyterhub-idle-culler==2.0.0

@@ -8,7 +8,17 @@ Waypoint is EduCloud's publishing and federation layer: the hosting engine
 and, as a separate workstream, the registry (catalog, register CLI, and the
 federation metadata standard).
 
-## Status (July 2026)
+## Computing-continuity priority (October 2026)
+
+The first compute workload is browser Python/R coursework. The new
+[course workspace](course-workspace/README.md) supplies a one-course JupyterHub
+deployment, persistent learner homes, bounded containers and offline recovery.
+The [validation record](course-workspace/VALIDATION.md) documents the local
+synthetic rehearsal and the remaining institutional deployment gates. This
+workload can run on a maintained Docker host independently of the broader
+Coolify/federation rollout; no cloud purchase has been made.
+
+## Earlier platform status (July 2026)
 
 Phase 0 and Phase 1.5 are done: requirements, the tenant intake and
 onboarding contract, templates, and a full local pre-build (Coolify stack,
