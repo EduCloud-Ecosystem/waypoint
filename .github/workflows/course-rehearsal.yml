@@ -20,7 +20,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: EduCloud-Ecosystem/cairn
-          ref: 260984572cd2946ce8685c4d4b74d117c32fffea
+          ref: 55940c218554f97fe1349c22415061b54000ad5f
           path: output/cairn-source
       - uses: actions/setup-python@v5
         with:

@@ -14,6 +14,7 @@ import uuid
 
 import requests
 from playwright.sync_api import sync_playwright
+from webhook_relay import WebhookRelay
 
 FORGEJO_IMAGE = 'codeberg.org/forgejo/forgejo:16.0.5@sha256:cf5f5ae6acf2ababca0ee3d255705b83a47f35b25e07fc931d694d60664053fe'
 SOLUTION = 'def answer():\n    return 5\n'
@@ -50,6 +51,8 @@ class Course:
         self.forge = 'http://127.0.0.1:' + str(port())
         self.url = 'http://127.0.0.1:' + str(port())
         self.password = secrets.token_urlsafe(32)
+        self.relay = None
+        self.network = self.name + "-webhook"
         self.process = None
         self.log = None
         self.env = None
@@ -65,14 +68,18 @@ class Course:
         return response.json() if response.content else None
 
     def start(self):
+        run('docker','network','create','--label','educloud.rehearsal='+self.name,self.network)
+        gateway=json.loads(run('docker','network','inspect',self.network))[0]['IPAM']['Config'][0]['Gateway']
+        self.relay=WebhookRelay(self.url,gateway)
         run('docker', 'volume', 'create', '--label', 'educloud.rehearsal=' + self.name, self.name)
         args = ['docker', 'run', '-d', '--name', self.name, '--label', 'educloud.rehearsal=' + self.name,
-                '--memory', '512m', '--cpus', '1', '-p', self.forge.removeprefix('http://') + ':3000',
+                '--network', self.network, '--memory', '512m', '--cpus', '1', '-p', self.forge.removeprefix('http://') + ':3000',
                 '-v', self.name + ':/data']
         config = {'FORGEJO__security__INSTALL_LOCK': 'true', 'FORGEJO__database__DB_TYPE': 'sqlite3',
                   'FORGEJO__server__ROOT_URL': self.forge + '/', 'FORGEJO__server__DISABLE_SSH': 'true',
                   'FORGEJO__service__DISABLE_REGISTRATION': 'true', 'FORGEJO__service__REQUIRE_SIGNIN_VIEW': 'true',
-                  'FORGEJO__oauth2__JWT_SIGNING_ALGORITHM': 'RS256'}
+                  'FORGEJO__oauth2__JWT_SIGNING_ALGORITHM': 'RS256',
+                  'FORGEJO__webhook__ALLOWED_HOST_LIST': gateway+',host.docker.internal'}
         for key, value in config.items():
             args += ['-e', key + '=' + value]
         run(*args, FORGEJO_IMAGE)
@@ -105,7 +112,8 @@ class Course:
             CAIRN_FORGEJO_OAUTH_CLIENT_ID=client['client_id'], CAIRN_FORGEJO_OAUTH_CLIENT_SECRET=client['client_secret'],
             CAIRN_OAUTH_REDIRECT_URL=self.url + '/auth/callback', CAIRN_GRADER='container',
             CAIRN_GRADER_IMAGE=self.image, CAIRN_GRADER_MAX_TIMEOUT='20s', CAIRN_GRADER_MAX_MEMORY_MB='256',
-            CAIRN_GRADER_MAX_CPUS='1', TMPDIR=str(temp))
+            CAIRN_GRADER_MAX_CPUS='1', TMPDIR=str(temp),
+            CAIRN_WEBHOOK_BASE_URL=self.relay.origin, CAIRN_FORGEJO_WEBHOOK_SECRET=secrets.token_urlsafe(32))
         self.restart()
         return revision
 
@@ -156,8 +164,14 @@ class Course:
             self.process.terminate()
             self.process.wait(timeout=15)
             self.log.close()
+        logs=subprocess.run(['docker','logs',self.name],capture_output=True,text=True)
+        (self.root/'forgejo.log').write_text(logs.stdout+logs.stderr)
+        if self.relay:
+            (self.root/'delivery-summary.json').write_text(json.dumps([{'revision':json.loads(d[0]).get('after'),'status':d[2]} for d in self.relay.deliveries]))
         subprocess.run(['docker', 'rm', '-f', self.name], capture_output=True)
         subprocess.run(['docker', 'volume', 'rm', self.name], capture_output=True)
+        if self.relay: self.relay.close()
+        subprocess.run(['docker','network','rm',self.network],capture_output=True)
 
 
 def journey(root, binary, workspace, image, solution, browser, notebook=None, after_grading=None):
@@ -206,45 +220,86 @@ def journey(root, binary, workspace, image, solution, browser, notebook=None, af
         assert 'not on roster' in denied_page.text_content('body')
         sub = course.request(teacher, 'GET', f'/assignments/{aid}/submissions')[0]
         repo = sub['repo']['namespace'] + '/' + sub['repo']['name']
-        course.put(repo, 'solution.py', solution, 'alice')
-        # A learner-controlled rubric must never replace the pinned instructor policy.
-        course.put(repo, 'grading.json', json.dumps({'tests': [{'name': 'forged', 'run': 'true', 'points': 999}]}), 'alice')
-        course.request(alice, 'PATCH', f'/assignments/{aid}/grading-policy', {'template_commit': revision}, status=401)
-        course.request(teacher, 'POST', f'/assignments/{aid}/grade')
-        for _ in range(60):
-            detail = course.request(alice, 'GET', '/me/work/' + item['submission_id'])
-            if detail.get('latest_grade'):
-                break
+        # Clone and push as the learner; Forgejo must deliver the registered hook.
+        checkout=root/'student-repo'
+        git_env={k:v for k,v in os.environ.items() if not k.startswith('GIT_')}
+        basic=base64.b64encode(('alice:'+course.password).encode()).decode()
+        git_env.update(GIT_TERMINAL_PROMPT='0',GIT_CONFIG_COUNT='1',
+                       GIT_CONFIG_KEY_0='http.extraHeader',GIT_CONFIG_VALUE_0='Authorization: Basic '+basic)
+        run('git','clone',course.forge+'/'+repo+'.git',str(checkout),env=git_env)
+        def git(*args): return run('git','-C',str(checkout),*args,env=git_env)
+        git('config','user.name','Synthetic Alice'); git('config','user.email','alice@synthetic.invalid')
+        def push(content, message):
+            (checkout/'solution.py').write_text(content)
+            (checkout/'grading.json').write_text(json.dumps({'tests':[{'name':'forged','run':'true','points':999}]}))
+            git('add','solution.py','grading.json'); git('commit','-m',message)
+            revision=git('rev-parse','HEAD'); git('push','origin','HEAD')
+            return revision
+        course.request(alice,'PATCH',f'/assignments/{aid}/grading-policy',{'template_commit':revision},status=401)
+        expected={}; started=time.monotonic()
+        first=push(solution,'Correct notebook answer'); expected[first]=10
+        # A rapid sequence creates a bounded queue; each score must match its own commit.
+        for n in range(5):
+            answer=999 if n%2==0 else 5
+            commit=push(f'def answer():\n    return {answer}\n# attempt {n}\n',f'Synthetic attempt {n}')
+            expected[commit]=10 if answer==5 else 0
+        for _ in range(120):
+            detail=course.request(alice,'GET','/me/work/'+item['submission_id'])
+            if len(detail['history'] or [])==len(expected): break
             time.sleep(1)
-        else:
-            raise AssertionError('grade did not arrive; inspect private cairn.log')
-        assert detail['latest_grade']['score'] == 10 and detail['latest_grade']['max_score'] == 10
-        assert detail['tests'][0]['name'] == 'instructor-answer' and detail['tests'][0]['passed']
-        # Change the actual answer; a forged rubric must not turn it into a pass.
-        course.put(repo, 'solution.py', 'def answer():\n    return 999\n', 'alice')
-        course.request(teacher, 'POST', f'/assignments/{aid}/grade')
-        for _ in range(60):
-            detail = course.request(alice, 'GET', '/me/work/' + item['submission_id'])
-            if len(detail['history']) == 2:
-                break
+        else: raise AssertionError('automatic push grading did not drain the bounded queue')
+        history={grade['submission_revision']:grade['score'] for grade in detail['history']}
+        assert history==expected, 'a push was graded against the wrong submission revision'
+        assert all(grade['max_score']==10 for grade in detail['history'])
+        elapsed=time.monotonic()-started
+        deliveries=course.relay.for_revision(commit)
+        assert deliveries and deliveries[-1][2]==202, 'no actual Forgejo push delivery was accepted'
+        body,headers,_=deliveries[-1]
+        # Repeat a real signed delivery concurrently, including after Cairn restarts.
+        from concurrent.futures import ThreadPoolExecutor
+        def replay(_):
+            return requests.post(course.url+'/webhooks/forgejo',data=body,headers=headers,timeout=15).status_code
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            assert list(pool.map(replay,range(12)))==[202]*12
+        bad=dict(headers)
+        for key in list(bad):
+            if 'signature' in key.lower(): bad[key]='invalid'
+        assert requests.post(course.url+'/webhooks/forgejo',data=body,headers=bad,timeout=15).status_code==401
+        # A non-default branch is real Git activity but must not publish a course grade.
+        git('checkout','-b','draft')
+        (checkout/'solution.py').write_text('def answer():\n    return -1\n')
+        git('add','solution.py'); git('commit','-m','Draft branch')
+        draft=git('rev-parse','HEAD'); git('push','origin','draft')
+        for _ in range(30):
+            if course.relay.for_revision(draft): break
             time.sleep(1)
-        assert len(detail['history']) == 2 and detail['latest_grade']['score'] == 0
-        assert detail['latest_grade']['max_score'] == 10
+        assert course.relay.for_revision(draft)[-1][2]==204
+        old_alice=alice
+        course.restart()
+        alice,page=course.login(browser,'alice','/student/login?host=forgejo')
+        assert replay(0)==202
+        time.sleep(3)
+        detail=course.request(alice,'GET','/me/work/'+item['submission_id'])
+        assert len(detail['history'])==len(expected), 'duplicate delivery produced an extra grade'
+        assert detail['latest_grade']['score']==0 and detail['latest_grade']['submission_revision']==commit
+        assert detail['tests'][0]['name']=='instructor-answer' and not detail['tests'][0]['passed']
         page.goto(course.url + '/me')
         page.get_by_text('Per-test results & history', exact=True).click()
         page.get_by_text('instructor-answer', exact=False).wait_for(state='visible')
-        page.screenshot(path=str(root / 'student-grade.png'))
+        page.screenshot(path=str(root / 'student-grade.png'),full_page=True)
         report = {'cairn_revision': run('git', '-C', str(binary.parent), 'rev-parse', 'HEAD') if (binary.parent / '.git').exists() else None,
                   'cairn_binary_sha256': hashlib.sha256(binary.read_bytes()).hexdigest(),
                   'handoff_source': 'notebook' if notebook else 'synthetic-file-fixture',
                   'policy_revision': revision, 'solution_sha256': hashlib.sha256(solution.encode()).hexdigest(),
+                  'push_count':len(expected),'queue_drain_seconds':round(elapsed,3),'duplicate_deliveries':13,
                   'passed_score': 10, 'failed_score': 0, 'max_score': 10,
                   'checks': ['operator-auth', 'roster-denial', 'student-admin-denial', 'own-grade-only',
-                             'workspace-link', 'real-repository-upload', 'pinned-policy', 'pass-and-fail-grading']}
+                             'workspace-link', 'real-git-push-webhook', 'pinned-policy', 'pinned-submission-revisions', 'pass-and-fail-grading',
+                             'six-push-burst', 'duplicate-replay-after-restart', 'bad-signature-denied', 'draft-branch-ignored']}
         (root / 'course-PASS.json').write_text(json.dumps(report, indent=2) + '\n')
         if after_grading:
             after_grading(browser)
-        for ctx in (teacher, alice, bob, denied):
+        for ctx in (teacher, alice, old_alice, bob, denied):
             ctx.close()
         print('PASS: real Forgejo OAuth, roster/role/grade isolation, file transfer, pinned 10/10 and 0/10 grading.', flush=True)
         return report
