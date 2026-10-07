@@ -7,6 +7,9 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import time
+
+import requests
 
 from playwright.sync_api import sync_playwright
 from notebook import Notebook, SUBJECTS, ROOT
@@ -16,6 +19,17 @@ from homes import inspect, run as xfs_run
 from recovery import backup_repository, restore_repository, restic
 from verify import cleanup, port
 from cairn_journey import run
+
+
+def wait_proxy(fixture):
+    for _ in range(60):
+        try:
+            if fixture.session.get(fixture.origin+'/hub/login',timeout=2).status_code==200:
+                return
+        except requests.RequestException:
+            pass
+        time.sleep(1)
+    raise AssertionError('replacement TLS proxy did not become ready')
 
 
 def main():
@@ -106,6 +120,7 @@ def main():
                 nginx=source/'nginx.conf'
                 nginx.write_text(nginx.read_text().replace(source_instance+'-hub',hub))
                 docker('restart',source_instance+'-proxy')
+                wait_proxy(fixture)
                 fixture.env=recovered; fixture.instance=recovered['WORKSPACE_INSTANCE']; fixture.homes=homes
                 # Old Hub auth must not survive restoration even for still-allowed Bob.
                 old=sessions['bob'][2].get(fixture.origin+'/hub/api/users/'+SUBJECTS['bob'],timeout=15,allow_redirects=False)
@@ -141,6 +156,7 @@ def main():
                 docker('exec',hub,'update-ca-certificates')
                 compose(destination,'stop','hub'); bundled_start()
                 docker('restart',source_instance+'-proxy')
+                wait_proxy(fixture)
                 denied=session.get(url+'/api/contents/recovered.txt',timeout=15,allow_redirects=False)
                 assert denied.status_code in (302,303,403,404,503)
                 page.goto(fixture.origin+'/hub/spawn/'+SUBJECTS['bob'])

@@ -128,7 +128,7 @@ def restore(instance, source, image, home_options=None, fresh_hub=False):
         for name in reversed(created):
             docker('volume', 'rm', name)
         raise
-    print(f'Restored {len(created)} volumes to {instance}. Start with the matching course image and identity provider.')
+    print(f'Restored {len(targets)} volumes to {instance}. Start with the matching course image and identity provider.')
 
 
 def main():
