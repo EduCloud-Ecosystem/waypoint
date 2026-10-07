@@ -9,6 +9,7 @@ import subprocess
 import sys
 import time
 import uuid
+from urllib.parse import urlsplit
 
 import requests
 import websocket
@@ -139,7 +140,7 @@ proxy_set_header X-Forwarded-Port {self.port}; proxy_set_header X-Forwarded-For 
         page.locator('input[name="username"]').fill(user)
         page.locator('input[name="password"]').fill(self.password)
         page.locator('input[type="submit"],button[type="submit"]').click()
-        page.wait_for_url(lambda u: 'auth.rehearsal.test' not in u)
+        page.wait_for_url(lambda u: urlsplit(u).hostname != 'auth.rehearsal.test')
 
     def http_session(self, context):
         session = requests.Session()
@@ -176,14 +177,16 @@ proxy_set_header X-Forwarded-Port {self.port}; proxy_set_header X-Forwarded-For 
         msgid=uuid.uuid4().hex
         conn.send(json.dumps({'header':{'msg_id':msgid,'username':'synthetic','session':uuid.uuid4().hex,'msg_type':'execute_request','version':'5.3'},
             'parent_header':{},'metadata':{},'channel':'shell','content':{'code':code,'silent':False,'store_history':False,'user_expressions':{},'allow_stdin':False}}))
-        output=''; passed=False
+        output=''; passed=False; replied=False; idle=False
         try:
-            while True:
+            while not (replied and idle):
                 msg=json.loads(conn.recv())
                 if msg.get('parent_header',{}).get('msg_id')!=msgid: continue
                 if msg['msg_type']=='stream': output+=msg['content']['text']
-                if msg['msg_type']=='execute_reply': passed=msg['content']['status']=='ok'
-                if msg['msg_type']=='status' and msg['content']['execution_state']=='idle': break
+                if msg['msg_type']=='execute_reply':
+                    replied=True
+                    passed=msg['content']['status']=='ok'
+                if msg['msg_type']=='status' and msg['content']['execution_state']=='idle': idle=True
         finally:
             conn.close()
             change(session,'DELETE',url+'/api/kernels/'+kid).raise_for_status()
