@@ -8,6 +8,8 @@ remove them. Use Python notebooks or R notebooks in JupyterLab (not RStudio).
 For the smallest manual test, start with the [one-learner trial](MINIMAL-PILOT.md).
 It runs locally without a cloud account and can also use a private SSH tunnel to
 a small dedicated worker. It retains files between sessions.
+Continue with [encrypted recovery and dedicated worker setup](RECOVERY.md) for
+preserved images, Restic transfer, replacement-worker restore and maintenance timers.
 
 ## Reproduce the acceptance test
 

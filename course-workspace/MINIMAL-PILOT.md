@@ -59,10 +59,13 @@ stopped. Concurrent pilot commands are refused. Direct Docker commands are not
 covered by this lock: do not run them during maintenance. An orphaned live writer
 causes backup refusal rather than an inconsistent copy.
 
-Archives remain local and unencrypted, appropriate only for this synthetic
-trial. Copy them securely to another machine and preserve the tested images
+This checkpoint command's archives remain local and unencrypted. Use the
+[encrypted recovery workflow](RECOVERY.md) to package images, configuration and
+checkpoints into Restic. Alternatively, copy synthetic archives securely to
+another machine and preserve the tested images
 using `docker image save` or an immutable registry digest. See README.md for
-restore commands. There is no automatic retention/deletion or cloud upload.
+restore commands. The checkpoint command itself has no retention or cloud upload;
+the separate encrypted workflow provides scoped retention and scheduled transfer.
 
 To exercise the small trial, including checkpoint, automatic resume, and recovery
 into fresh volumes (uses unique disposable instances):
