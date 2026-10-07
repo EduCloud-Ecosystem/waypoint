@@ -98,6 +98,9 @@ def main():
         compose(envfiles[0], 'stop', 'hub')
         archive = output/'archive'
         backup(prefix, archive, args.course_image)
+        for item in archive.glob('*.tar.gz'):
+            if item.stat().st_mode & 0o777 != 0o600:
+                raise AssertionError('archive permissions must be owner-only')
         restore(instances[1], archive, args.course_image)
         try:
             restore(instances[1], archive, args.course_image)
