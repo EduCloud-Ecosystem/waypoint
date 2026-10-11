@@ -31,6 +31,8 @@ jobs:
       PLAYWRIGHT_BROWSERS_PATH: /tmp/educloud-rehearsal-browsers
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/checkout@v4
         with:
           repository: EduCloud-Ecosystem/cairn
@@ -104,6 +106,21 @@ jobs:
         with:
           name: synthetic-upgrade-evidence
           path: output/upgrade-evidence
+          if-no-files-found: error
+          retention-days: 7
+      - name: Exercise retired-course export and protected recovery
+        run: sudo --preserve-env=PLAYWRIGHT_BROWSERS_PATH "$(command -v python)" course-workspace/rehearsal/verify_retirement.py --output /tmp/educloud-retirement-rehearsal
+      - name: Publish bounded retirement evidence
+        if: success()
+        run: |
+          mkdir -p output/retirement-evidence
+          sudo cp /tmp/educloud-retirement-rehearsal/RETIREMENT-PASS.json output/retirement-evidence/
+          sudo chmod 644 output/retirement-evidence/RETIREMENT-PASS.json
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: synthetic-retirement-evidence
+          path: output/retirement-evidence
           if-no-files-found: error
           retention-days: 7
       - name: Preserve bounded synthetic browser diagnostic on failure

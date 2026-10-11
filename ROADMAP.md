@@ -44,7 +44,11 @@ rehearsals consume the generated configuration through actual services.
 The [image upgrade workflow](course-workspace/COURSE-UPGRADES.md) requires a full
 candidate canary and fresh encrypted backup, applies only frozen stopped-course
 pins with resumable journals, and verifies explicit prior-snapshot restoration.
-Follow with course retirement/export and institution-approved retention/deletion. Expand
+The [retirement/export workflow](course-workspace/COURSE-RETIREMENT.md) seals stopped
+courses, preserves protected snapshots through retention and restoration, and
+verifies portable exports of every retained work folder. Institution-approved
+retention/deletion remains a separate decision; no deletion/reactivation API exists.
+Expand
 from one course only after resource attribution, port/origin separation and
 failure isolation are tested. Do not expose an unrestricted self-service Docker
 control plane or presume that a pseudonym is an authenticated identity.

@@ -159,6 +159,19 @@ partially restored learner data is performed.
 
 ## Schedule and retention
 
+[Retired courses](COURSE-RETIREMENT.md) and retirement-preview snapshots carry
+`educloud-retired-v1`. Per-instance retention keeps this tag explicitly in addition
+to normal count/age rules. Protected snapshots have no automatic deletion date;
+retain repository keys and runtime images until an institution-approved decision.
+Restoring a tagged snapshot or a bundle with a retirement record seals the fresh
+institutional destination before usable environment or home allocation. It stays
+closed, starts no service and cannot be restored as a trial. Use the current
+checkout's retirement exporter to verify portable saved coursework. The recorded
+retention owner/review date is private historical context, not deletion approval.
+Protected bundles use version 3 so older restorers refuse them; current restore
+also treats version 3 as closed independently of tags. Ordinary bundles remain
+version 2 and historical version-1/2 packages remain supported.
+
 `worker.py render` supplies daily **02:00 UTC maintenance** and hourly health
 systemd units. It does not enable timers. First configure the remote repository,
 escrow its key and pass a separate-worker restore, then enable the units:

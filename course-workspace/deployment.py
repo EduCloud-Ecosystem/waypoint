@@ -24,6 +24,15 @@ def require_no_maintenance(directory):
     pending = directory / '.upgrade-pending.json'
     if pending.exists() or pending.is_symlink():
         raise ValueError('image upgrade is incomplete; resume the recorded upgrade before starting or backing up')
+    pending = directory / '.retirement-pending.json'
+    if pending.exists() or pending.is_symlink():
+        raise ValueError('course retirement is incomplete; resume the recorded retirement before starting or backing up')
+
+
+def require_active_course(directory):
+    marker = directory / '.course-retired.json'
+    if marker.exists() or marker.is_symlink():
+        raise ValueError('course is retired; startup and policy changes are blocked while work is retained')
 
 
 def read_environment(path):
@@ -78,6 +87,8 @@ def settings(directory, allow_pending=False):
 def compose(directory, *args):
     # Operators must still be able to stop/inspect a worker after an interrupted
     # operation. Starting, exporting or backing up partial policy stays blocked.
+    if any(arg in ('up', 'start', 'restart', 'run', 'create') for arg in args):
+        require_active_course(directory)
     env = settings(directory, allow_pending=args in (('stop', 'hub'), ('ps', '-a')))
     if env.get('WORKSPACE_AUTH_MODE') == 'oidc':
         require_native_worker()
@@ -146,10 +157,14 @@ def preflight(directory, *, allow_pending=False):
     """Inspect the configured course without pulling images or starting services."""
     # Only the stopped-course upgrade transaction uses this internal override
     # to verify its newly written pins before removing the interruption marker.
+    require_active_course(directory)
     if allow_pending:
         pending = directory / '.maintenance-pending.json'
         if pending.exists() or pending.is_symlink():
             raise ValueError('maintenance is incomplete; resume the recorded maintenance before starting or backing up')
+        pending = directory / '.retirement-pending.json'
+        if pending.exists() or pending.is_symlink():
+            raise ValueError('course retirement is incomplete; resume the recorded retirement before starting or backing up')
     env = settings(directory, allow_pending=allow_pending)
     cfg = validate_institutional(env)
     require_native_worker()

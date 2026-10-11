@@ -13,7 +13,7 @@ import subprocess
 
 import homes
 from backup import docker
-from deployment import read_environment, validate_institutional, require_native_worker
+from deployment import read_environment, validate_institutional, require_native_worker, require_active_course
 from pilot import locked
 
 PENDING = '.maintenance-pending.json'
@@ -73,6 +73,10 @@ def safe_directory(directory):
 
 def environment(directory):
     safe_directory(directory)
+    require_active_course(directory)
+    pending = directory / '.retirement-pending.json'
+    if pending.exists() or pending.is_symlink():
+        raise ValueError('course retirement is incomplete; resume it before roster or quota maintenance')
     pending = directory / '.upgrade-pending.json'
     if pending.exists() or pending.is_symlink():
         raise ValueError('image upgrade is incomplete; resume it before roster or quota maintenance')
