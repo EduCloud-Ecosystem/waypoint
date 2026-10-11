@@ -105,6 +105,19 @@ class MaintenanceTests(unittest.TestCase):
         self.assertFalse((self.root/m.ROOT_PENDING).exists())
         self.assertTrue(m.read(self.directory/'.maintenance-receipt.json')['plan_digest'])
 
+    def test_pending_upgrade_blocks_roster_quota_changes_before_inspection(self):
+        (self.directory / '.upgrade-pending.json').symlink_to(self.directory / 'absent-journal')
+        with patch('maintenance.snapshot') as snapshot:
+            with self.assertRaisesRegex(ValueError, 'upgrade is incomplete'):
+                self.preview()
+            snapshot.assert_not_called()
+
+    def test_special_operation_lock_refused_before_blocking_open(self):
+        import os
+        os.mkfifo(self.directory / 'operation.lock', 0o600)
+        with self.assertRaisesRegex(ValueError, 'regular file'):
+            self.preview()
+
     def test_failure_blocks_health_and_exact_plan_resume(self):
         self.preview()
         self.fail_create = True

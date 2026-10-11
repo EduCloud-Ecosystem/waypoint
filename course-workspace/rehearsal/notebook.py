@@ -3,6 +3,7 @@ import copy
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 import secrets
 import socket
@@ -31,7 +32,14 @@ SUBJECTS = {user: str(uuid.uuid5(uuid.NAMESPACE_DNS, 'educloud-synthetic-' + use
 
 
 class Notebook:
-    def __init__(self, root, extra_users=()):
+    def __init__(self, root, extra_users=(), *, hub_image=None, course_image=None, synthetic_candidate_images=False):
+        if bool(hub_image) != bool(course_image) or (synthetic_candidate_images and hub_image):
+            raise ValueError('supply paired immutable image references or synthetic candidate images')
+        for reference in (hub_image, course_image):
+            if reference is not None and not re.fullmatch(r'(?:sha256:[0-9a-f]{64}|[a-z0-9][a-z0-9._:/-]{0,254}@sha256:[0-9a-f]{64})', reference):
+                raise ValueError('preloaded candidate images require immutable references')
+        self.requested_hub_image = hub_image
+        self.synthetic_candidate_images = synthetic_candidate_images
         self.users = ("alice", "bob", *extra_users)
         self.load_report = {}
         self.root = root
@@ -40,7 +48,7 @@ class Notebook:
         self.origin = f'https://work.rehearsal.test:{self.port}'
         self.auth = f'https://auth.rehearsal.test:{self.port}'
         self.password = secrets.token_urlsafe(32)
-        self.image = 'educloud-python-r:2026-10-06'
+        self.image = course_image or 'educloud-python-r:2026-10-06'
         self.mounted = False
         self.network = self.instance + '-fixture'
         self.original_dns = socket.getaddrinfo
@@ -80,6 +88,9 @@ class Notebook:
         self.env.update(WORKSPACE_PUBLIC_URL=self.origin, WORKSPACE_OIDC_CLIENT_SECRET=secrets.token_urlsafe(32),
                         WORKSPACE_HOME_QUOTA_MB='256', WORKSPACE_MEMORY_MB='1024', WORKSPACE_ACTIVE_LIMIT='2',
                         WORKSPACE_ENV_FILE=str(self.env_file))
+        self.env['WORKSPACE_IMAGE'] = self.image
+        if self.requested_hub_image:
+            self.env['WORKSPACE_HUB_IMAGE'] = self.requested_hub_image
         self.write_env()
         provision(self.homes, self.instance, [SUBJECTS[user] for user in self.users], 256)
         # A private fixture CA is trusted explicitly by Hub and HTTP clients.
@@ -98,8 +109,7 @@ class Notebook:
             'environment':{'SSL_CERT_FILE':'/fixture-ca.pem','REQUESTS_CA_BUNDLE':'/fixture-ca.pem'},
             'volumes':[str(self.root/'ca.pem')+':/fixture-ca.pem:ro']}}}
         (self.root/'override.json').write_text(json.dumps(override))
-        print('Building the current notebook images.',flush=True)
-        self.compose('--profile','build','build')
+        self.prepare_images()
         self.render_setup()
         self.verify_startup_preflight(self.deployment)
         self.configure_fixture_edges()
@@ -127,6 +137,13 @@ class Notebook:
             raise AssertionError('OIDC fixture did not become ready')
         inspect(self.homes,self.instance)
         print('Keycloak discovery, TLS and Hub are ready.',flush=True)
+
+    def prepare_images(self):
+        if not self.requested_hub_image:
+            print('Building the current notebook images.', flush=True)
+            self.compose('--profile', 'build', 'build')
+        else:
+            print('Using the preloaded immutable notebook images.', flush=True)
 
     def configure_fixture_edges(self):
         # The operator-rendered client drives the real fixture realm. The sole
@@ -158,8 +175,11 @@ proxy_set_header X-Forwarded-Port {self.port}; proxy_set_header X-Forwarded-For 
 
     def render_setup(self):
         """Consume the same strict manifest/rendering path used by operators."""
-        self.hub_image = run('docker', 'image', 'inspect', self.instance + '-hub:pilot', '--format', '{{.Id}}')
+        self.hub_image = run('docker', 'image', 'inspect', self.requested_hub_image or self.instance + '-hub:pilot', '--format', '{{.Id}}')
         self.image = run('docker', 'image', 'inspect', self.image, '--format', '{{.Id}}')
+        if self.synthetic_candidate_images:
+            self.hub_image = self.build_synthetic_candidate('hub', self.hub_image)
+            self.image = self.build_synthetic_candidate('course', self.image)
         secret_file = self.root / 'oidc-secret'
         secret_file.write_text(self.env['WORKSPACE_OIDC_CLIENT_SECRET'])
         secret_file.chmod(0o600)
@@ -187,6 +207,23 @@ proxy_set_header X-Forwarded-Port {self.port}; proxy_set_header X-Forwarded-For 
         self.env = read_environment(self.env_file)
         self.freeze_manifest()
         self.report.append('course-manifest-rendered')
+
+    def build_synthetic_candidate(self, role, base_image):
+        """Derive distinct local canary pins without changing executable bytes."""
+        if role not in ('hub', 'course') or not re.fullmatch(r'sha256:[0-9a-f]{64}', base_image):
+            raise ValueError('synthetic candidates require verified local image identities')
+        directory = self.root / ('candidate-' + role)
+        directory.mkdir(mode=0o700)
+        (directory / 'Dockerfile').write_text('FROM ' + base_image + '\nLABEL educloud.upgrade.candidate=synthetic-v1\n')
+        reference = self.instance + '-' + role + ':synthetic-canary'
+        # Classic Docker accepts a local immutable image ID in FROM without
+        # resolving it as a registry name. This fixture has no RUN/network step.
+        env = dict(os.environ, DOCKER_BUILDKIT='0')
+        run('docker', 'build', '--pull=false', '--network=none', '--tag', reference, str(directory), env=env)
+        identity = run('docker', 'image', 'inspect', reference, '--format', '{{.Id}}')
+        if not re.fullmatch(r'sha256:[0-9a-f]{64}', identity) or identity == base_image:
+            raise AssertionError('synthetic candidate must have a distinct immutable image ID')
+        return identity
 
     def verify_startup_preflight(self, directory):
         result = preflight(directory)

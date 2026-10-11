@@ -11,6 +11,56 @@ from recovery import load_config, private_json, restic, retention, restore_repos
 
 
 class RecoveryTests(unittest.TestCase):
+    def test_stopped_old_hub_cannot_back_up_new_image_configuration(self):
+        from recovery import package
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            env = {'WORKSPACE_INSTANCE':'course-one', 'WORKSPACE_IMAGE':'sha256:'+'b'*64,
+                   'WORKSPACE_HUB_IMAGE':'sha256:'+'c'*64}
+            with patch('recovery.docker', return_value=json.dumps([{'Image':'sha256:'+'a'*64}])), \
+                    patch('recovery.image_info', return_value={'Id':'sha256:'+'c'*64}), \
+                    patch('recovery.subprocess.run') as export, patch('recovery.checkpoint') as checkpoint:
+                with self.assertRaisesRegex(ValueError, 'Hub image differs'):
+                    package(root, env, root/'bundle')
+                export.assert_not_called()
+                checkpoint.assert_not_called()
+
+    def test_backup_lock_and_upgrade_marker_refuse_before_backend(self):
+        from pilot import locked
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with locked(root), patch('recovery.settings') as settings, patch('recovery.restic') as backend:
+                with self.assertRaisesRegex(ValueError, 'operation is in progress'):
+                    backup_repository(root, {})
+                settings.assert_not_called()
+                backend.assert_not_called()
+            (root / '.upgrade-pending.json').symlink_to(root / 'missing-journal')
+            with patch('recovery.restic') as backend:
+                with self.assertRaisesRegex(ValueError, 'upgrade is incomplete'):
+                    backup_repository(root, {})
+                backend.assert_not_called()
+
+    def test_private_backend_scope_suppresses_child_diagnostics_and_restores_fds(self):
+        import subprocess
+        code = '''
+import os, subprocess, sys
+from recovery import private_backend_output
+try:
+    with private_backend_output():
+        print('private-python-diagnostic')
+        os.write(2, b'private-native-diagnostic\\n')
+        subprocess.run([sys.executable, '-c', "print('private-child-diagnostic')"], check=True)
+        raise ValueError('control')
+except ValueError:
+    pass
+print('public-after-scope')
+os.write(2, b'public-stderr-after-scope\\n')
+'''
+        result = subprocess.run([sys.executable, '-c', code], cwd=Path(__file__).resolve().parents[1],
+                                capture_output=True, text=True, check=True)
+        self.assertEqual(result.stdout, 'public-after-scope\n')
+        self.assertEqual(result.stderr, 'public-stderr-after-scope\n')
+
     def test_source_manifest_is_private_historical_context_and_never_overwritten(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

@@ -60,6 +60,11 @@ course, install the reviewed release, run preflight, start and verify the course
 A failed data migration is recovered from the backup in a fresh destination;
 do not assume that reinstalling an older binary reverses a schema change.
 
+Use the [reviewed image upgrade workflow](COURSE-UPGRADES.md) for a Hub/course
+image change. It requires a full candidate canary, takes a fresh stopped-course
+encrypted backup, validates a frozen plan and journals the pin update. Startup
+is explicit; an interrupted upgrade blocks start/backup/roster maintenance.
+
 ## Worker health and local alerts
 
 `health.py` collects bounded read-only checks for worker storage/inodes, Hub

@@ -21,6 +21,9 @@ def require_no_maintenance(directory):
     pending = directory / '.maintenance-pending.json'
     if pending.exists() or pending.is_symlink():
         raise ValueError('maintenance is incomplete; resume the recorded maintenance before starting or backing up')
+    pending = directory / '.upgrade-pending.json'
+    if pending.exists() or pending.is_symlink():
+        raise ValueError('image upgrade is incomplete; resume the recorded upgrade before starting or backing up')
 
 
 def read_environment(path):
@@ -139,9 +142,15 @@ def require_native_worker():
         raise ValueError('native Docker filesystem identity could not be verified') from None
 
 
-def preflight(directory):
+def preflight(directory, *, allow_pending=False):
     """Inspect the configured course without pulling images or starting services."""
-    env = settings(directory)
+    # Only the stopped-course upgrade transaction uses this internal override
+    # to verify its newly written pins before removing the interruption marker.
+    if allow_pending:
+        pending = directory / '.maintenance-pending.json'
+        if pending.exists() or pending.is_symlink():
+            raise ValueError('maintenance is incomplete; resume the recorded maintenance before starting or backing up')
+    env = settings(directory, allow_pending=allow_pending)
     cfg = validate_institutional(env)
     require_native_worker()
     info = docker_json('info', '--format', '{{json .}}')
