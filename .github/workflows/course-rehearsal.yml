@@ -48,7 +48,7 @@ jobs:
           node-version: '22'
           cache: npm
           cache-dependency-path: output/cairn-source/web/package-lock.json
-      - run: sudo apt-get update && sudo apt-get install -y xfsprogs openssl
+      - run: sudo apt-get update && sudo apt-get install -y xfsprogs openssl restic
       - run: pip install -r course-workspace/rehearsal/requirements.txt
       - name: Rehearsal evidence, load and assessment tests
         run: |
@@ -68,7 +68,7 @@ jobs:
       - name: Preload bounded checkout image
         working-directory: output/cairn-source
         run: docker build --pull -f Dockerfile.checkout -t cairn-checkout:local .
-      - run: sudo --preserve-env=PLAYWRIGHT_BROWSERS_PATH "$(command -v python)" course-workspace/rehearsal/verify_course.py --cairn-binary "$RUNNER_TEMP/cairn" --lti-binary "$RUNNER_TEMP/lti-simulator" --cairn-source output/cairn-source --output /tmp/educloud-course-rehearsal
+      - run: sudo --preserve-env=PLAYWRIGHT_BROWSERS_PATH "$(command -v python)" course-workspace/rehearsal/verify_course.py --cairn-binary "$RUNNER_TEMP/cairn" --lti-binary "$RUNNER_TEMP/lti-simulator" --cairn-source output/cairn-source --output /tmp/educloud-course-rehearsal --synthetic-candidate-images
       - name: Publish synthetic evidence only
         if: success()
         run: |
@@ -89,6 +89,21 @@ jobs:
         with:
           name: synthetic-course-evidence
           path: output/rehearsal-evidence
+          if-no-files-found: error
+          retention-days: 7
+      - name: Exercise reviewed upgrade and fresh-destination recovery
+        run: sudo --preserve-env=PLAYWRIGHT_BROWSERS_PATH "$(command -v python)" course-workspace/rehearsal/verify_upgrade.py --canary /tmp/educloud-course-rehearsal/PASS.json --output /tmp/educloud-upgrade-rehearsal
+      - name: Publish bounded upgrade evidence
+        if: success()
+        run: |
+          mkdir -p output/upgrade-evidence
+          sudo cp /tmp/educloud-upgrade-rehearsal/UPGRADE-PASS.json /tmp/educloud-upgrade-rehearsal/upgraded-notebook.png /tmp/educloud-upgrade-rehearsal/recovered-notebook.png output/upgrade-evidence/
+          sudo chmod 644 output/upgrade-evidence/*
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: synthetic-upgrade-evidence
+          path: output/upgrade-evidence
           if-no-files-found: error
           retention-days: 7
       - name: Preserve bounded synthetic browser diagnostic on failure

@@ -20,6 +20,38 @@ class ManifestSetupTests(unittest.TestCase):
             book.render_setup()
         return book
 
+    def test_preloaded_image_pair_skips_build_and_mutually_exclusive_modes_refuse(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            for options in ({'hub_image':'sha256:'+'a'*64}, {'hub_image':'hub:latest', 'course_image':'course:latest'},
+                            {'hub_image':'sha256:'+'a'*64, 'course_image':'sha256:'+'b'*64, 'synthetic_candidate_images':True}):
+                with self.subTest(options=options), self.assertRaises(ValueError): Notebook(root, **options)
+            book = Notebook(root, hub_image='sha256:'+'a'*64, course_image='sha256:'+'b'*64)
+            book.compose = Mock()
+            book.prepare_images()
+            book.compose.assert_not_called()
+            self.assertEqual(book.image, 'sha256:'+'b'*64)
+            self.assertEqual(list(root.iterdir()), [])
+            default = Notebook(root)
+            default.compose = Mock()
+            default.prepare_images()
+            default.compose.assert_called_once_with('--profile', 'build', 'build')
+
+    def test_synthetic_candidate_uses_exact_parent_and_is_distinct(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            book = Notebook(root, synthetic_candidate_images=True)
+            base = 'sha256:'+'a'*64
+            with patch('notebook.run', side_effect=['', 'sha256:'+'b'*64]) as run:
+                self.assertEqual(book.build_synthetic_candidate('hub', base), 'sha256:'+'b'*64)
+            self.assertEqual((root/'candidate-hub/Dockerfile').read_text(),
+                             'FROM '+base+'\nLABEL educloud.upgrade.candidate=synthetic-v1\n')
+            self.assertIn('--pull=false', run.call_args_list[0].args)
+            self.assertIn('--network=none', run.call_args_list[0].args)
+            self.assertEqual(run.call_args_list[0].kwargs['env']['DOCKER_BUILDKIT'], '0')
+            with patch('notebook.run', side_effect=['', base]), self.assertRaisesRegex(AssertionError, 'distinct'):
+                book.build_synthetic_candidate('course', base)
+
     def test_render_consumes_immutable_images_and_keeps_secrets_out_of_manifest(self):
         with tempfile.TemporaryDirectory() as directory:
             book = self.fixture(Path(directory).resolve())

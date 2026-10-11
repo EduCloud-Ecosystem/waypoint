@@ -33,11 +33,19 @@ def notebook_phases(checks):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    if not __debug__:
+        parser.error('optimized Python cannot enforce the synthetic acceptance assertions; run without -O')
     parser.add_argument('--cairn-binary', required=True, type=Path)
     parser.add_argument('--cairn-source', required=True, type=Path)
     parser.add_argument('--lti-binary', required=True, type=Path)
     parser.add_argument('--output', required=True, type=Path)
+    parser.add_argument('--synthetic-candidate-images', action='store_true',
+                        help='build label-only local images for the disposable upgrade canary')
+    parser.add_argument('--hub-image', help='preloaded immutable Hub image reference')
+    parser.add_argument('--course-image', help='preloaded immutable Python/R image reference')
     args = parser.parse_args()
+    if bool(args.hub_image) != bool(args.course_image) or (args.synthetic_candidate_images and args.hub_image):
+        parser.error('supply paired --hub-image/--course-image, or --synthetic-candidate-images')
     if sys.platform != 'linux' or os.geteuid() != 0:
         parser.error('use a disposable Linux runner as root; physical devices are never formatted')
     args.output.mkdir(parents=True, mode=0o700, exist_ok=False)
@@ -46,7 +54,8 @@ def main():
     notebook_root.mkdir(mode=0o700)
     course_root.mkdir(mode=0o700)
     started, timer = datetime.now(timezone.utc).isoformat(), time.monotonic()
-    notebook = Notebook(notebook_root, extra_users=('carol',))
+    notebook = Notebook(notebook_root, extra_users=('carol',), hub_image=args.hub_image,
+                        course_image=args.course_image, synthetic_candidate_images=args.synthetic_candidate_images)
     notebook.cairn_origin = 'http://127.0.0.1:' + str(port())
     try:
         notebook.start()

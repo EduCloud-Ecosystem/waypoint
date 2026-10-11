@@ -67,10 +67,15 @@ def safe_directory(directory):
         raise ValueError('use an existing canonical owner-only deployment directory')
     if (directory / 'operation.lock').is_symlink():
         raise ValueError('operation lock cannot be a symlink')
+    if (directory / 'operation.lock').exists() and not (directory / 'operation.lock').is_file():
+        raise ValueError('operation lock must be a regular file')
 
 
 def environment(directory):
     safe_directory(directory)
+    pending = directory / '.upgrade-pending.json'
+    if pending.exists() or pending.is_symlink():
+        raise ValueError('image upgrade is incomplete; resume it before roster or quota maintenance')
     if not directory.is_absolute() or directory.resolve() != directory or not directory.is_dir():
         raise ValueError('use an existing canonical absolute deployment directory')
     if (directory / 'pilot.env').exists():

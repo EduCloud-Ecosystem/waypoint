@@ -191,6 +191,34 @@ class DeploymentTests(unittest.TestCase):
 
 class InterruptedOperationTests(unittest.TestCase):
     fixture = DeploymentTests.fixture
+    def test_pending_upgrade_blocks_start_but_permits_emergency_stop(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.fixture(root)
+            (root / '.upgrade-pending.json').symlink_to(root / 'absent-journal')
+            with patch('deployment.require_native_worker'), patch('deployment.subprocess.run') as run:
+                compose(root, 'stop', 'hub')
+                run.assert_called_once()
+                run.reset_mock()
+                with self.assertRaisesRegex(ValueError, 'upgrade is incomplete'):
+                    compose(root, 'up', '-d', 'hub')
+                run.assert_not_called()
+            with patch('deployment.docker_json') as docker, patch('homes.inspect') as homes:
+                with self.assertRaisesRegex(ValueError, 'upgrade is incomplete'):
+                    preflight(root)
+                docker.assert_not_called()
+                homes.assert_not_called()
+
+    def test_upgrade_internal_preflight_cannot_bypass_quota_maintenance(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.fixture(root)
+            (root / '.maintenance-pending.json').write_text('{}')
+            with patch('deployment.docker_json') as docker:
+                with self.assertRaisesRegex(ValueError, 'maintenance is incomplete'):
+                    preflight(root, allow_pending=True)
+                docker.assert_not_called()
+
     def test_pending_maintenance_allows_stop_but_never_start(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

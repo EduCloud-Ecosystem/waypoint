@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Encrypted workspace recovery using an operator-owned Restic repository."""
 import argparse
+from contextlib import contextmanager, redirect_stdout, redirect_stderr
 from datetime import datetime, timezone
 import json
 import os
@@ -141,6 +142,8 @@ def package(directory, env, bundle):
                     entry['inode_limit'] != int(env.get('WORKSPACE_HOME_INODE_LIMIT', '100000'))):
                 raise ValueError('home limits differ from deployment; reconcile before backup')
     hub = json.loads(docker('inspect', env['WORKSPACE_INSTANCE'] + '-hub'))[0]
+    if env.get('WORKSPACE_HUB_IMAGE') and image_info(env['WORKSPACE_HUB_IMAGE'])['Id'] != hub['Image']:
+        raise ValueError('configured Hub image differs from its container; recreate the reviewed Hub before taking a new backup')
     images = {'hub': image_info(hub['Image']), 'course': image_info(env['WORKSPACE_IMAGE'])}
     needed = sum(i['Size'] for i in images.values()) + 512 * 1024**2
     if shutil.disk_usage(bundle).free < needed:
@@ -217,28 +220,58 @@ def validate_bundle(bundle):
 
 
 def backup_repository(directory, cfg, apply_retention=False):
-    env = settings(directory)
     with locked(directory):
-        try:
-            restic(cfg, 'cat', 'config')  # Credentials/repository must work before downtime.
-            with tempfile.TemporaryDirectory(prefix='.recovery-', dir=directory) as scratch:
-                package(directory, env, Path(scratch) / 'bundle')
-                output = restic(cfg, 'backup', '--json', '--host', env['WORKSPACE_INSTANCE'],
-                                '--tag', TAG, '--tag', 'instance=' + env['WORKSPACE_INSTANCE'],
-                                'bundle', cwd=scratch)
-                summaries = [json.loads(line) for line in output.splitlines() if line.strip()]
-                snapshot = next(row['snapshot_id'] for row in summaries if row.get('message_type') == 'summary')
-                if not re.fullmatch(r'[0-9a-f]{64}', snapshot):
-                    raise ValueError('Restic did not return a complete snapshot ID')
-                restic(cfg, 'check')
-                write_status(directory, 'backup', True, snapshot)
-            print(f'Encrypted snapshot: {snapshot}. Plaintext staging removed.')
-            if apply_retention:
-                retention(cfg, env['WORKSPACE_INSTANCE'], apply=True)
-            return snapshot
-        except BaseException:
-            write_status(directory, 'backup', False)
-            raise
+        return backup_repository_locked(directory, cfg, apply_retention)
+
+
+@contextmanager
+def private_backend_output():
+    """Discard subprocess diagnostics as well as Python output in private flows."""
+    saved = [os.dup(1), os.dup(2)]
+    try:
+        with open(os.devnull, 'w') as sink, redirect_stdout(sink), redirect_stderr(sink):
+            os.dup2(sink.fileno(), 1)
+            os.dup2(sink.fileno(), 2)
+            yield
+    finally:
+        for destination, source in zip((1, 2), saved):
+            try:
+                os.dup2(source, destination)
+            finally:
+                os.close(source)
+
+
+def backup_repository_locked(directory, cfg, apply_retention=False, *, quiet=False):
+    """Internal backup under a caller-held deployment operation lock.
+
+    Image-upgrade preview shares one lock across stopped-state inspection,
+    checkpoint/upload verification and frozen-plan publication. Public callers
+    use backup_repository, which acquires the lock before reading settings.
+    """
+    if quiet:
+        with private_backend_output():
+            return backup_repository_locked(directory, cfg, apply_retention)
+    env = settings(directory)
+    try:
+        restic(cfg, 'cat', 'config')  # Credentials/repository must work before downtime.
+        with tempfile.TemporaryDirectory(prefix='.recovery-', dir=directory) as scratch:
+            package(directory, env, Path(scratch) / 'bundle')
+            output = restic(cfg, 'backup', '--json', '--host', env['WORKSPACE_INSTANCE'],
+                            '--tag', TAG, '--tag', 'instance=' + env['WORKSPACE_INSTANCE'],
+                            'bundle', cwd=scratch)
+            summaries = [json.loads(line) for line in output.splitlines() if line.strip()]
+            snapshot = next(row['snapshot_id'] for row in summaries if row.get('message_type') == 'summary')
+            if not re.fullmatch(r'[0-9a-f]{64}', snapshot):
+                raise ValueError('Restic did not return a complete snapshot ID')
+            restic(cfg, 'check')
+            write_status(directory, 'backup', True, snapshot)
+        print(f'Encrypted snapshot: {snapshot}. Plaintext staging removed.')
+        if apply_retention:
+            retention(cfg, env['WORKSPACE_INSTANCE'], apply=True)
+        return snapshot
+    except BaseException:
+        write_status(directory, 'backup', False)
+        raise
 
 
 def current_institutional_environment(saved, current_env):

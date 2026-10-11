@@ -41,8 +41,10 @@ pins, identity issuer/client, roster, storage, capacity, backup references,
 Cairn binding and support/restore ownership. It renders fresh private configuration
 and preserves original setup context in encrypted recovery. Disposable Linux
 rehearsals consume the generated configuration through actual services.
-Follow with deliberate image-upgrade/canary workflows,
-course retirement/export and institution-approved retention/deletion. Expand
+The [image upgrade workflow](course-workspace/COURSE-UPGRADES.md) requires a full
+candidate canary and fresh encrypted backup, applies only frozen stopped-course
+pins with resumable journals, and verifies explicit prior-snapshot restoration.
+Follow with course retirement/export and institution-approved retention/deletion. Expand
 from one course only after resource attribution, port/origin separation and
 failure isolation are tested. Do not expose an unrestricted self-service Docker
 control plane or presume that a pseudonym is an authenticated identity.

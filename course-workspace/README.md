@@ -5,6 +5,8 @@ stopped-course roster/quota maintenance and the repeatable operator workflow.
 Use the [course setup manifest](COURSE-MANIFEST.md) to validate one course and
 generate consistent private deployment, identity, proxy, recovery and Cairn
 binding configuration with immutable Hub and course images.
+The [image upgrade guide](COURSE-UPGRADES.md) covers candidate canaries, frozen
+upgrade plans, interruption recovery and fresh-destination restoration.
 
 This is a tested local continuity pilot for one course, built on JupyterHub and
 DockerSpawner. Cairn remains the classroom/assignment application. Learner files
