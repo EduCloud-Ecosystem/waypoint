@@ -1,5 +1,8 @@
 # Prepare a hosted course without opening it to learners
 
+See [course worker operations](OPERATIONS.md) for startup preflight, health reports,
+stopped-course roster/quota maintenance and the repeatable operator workflow.
+
 These tools prepare a dedicated Linux worker. The current release is tested with
 synthetic accounts and disposable storage. It does not provision a paid host,
 install institutional credentials or enable a public service.
@@ -42,11 +45,14 @@ requires immediate operator intervention for existing sessions.
 The status JSON reports used bytes and inodes for each home. Reservations leave
 512 MiB of filesystem overhead. This is not a complete worker disk monitor:
 Docker images, Hub database, logs and recovery staging need separate capacity
-monitoring and an operator response. No paging destination is configured.
+monitoring and an operator response. `health.py` now monitors these configured
+filesystems and backup/TLS status; see [OPERATIONS.md](OPERATIONS.md). No external
+paging destination is configured.
 
 When a home fills, the learner must remove files or contact the operator. Changes
-to an existing limit are intentionally refused by provisioning. Retention,
-account departure and quota increases need a separate maintenance procedure.
+to an existing limit are intentionally refused by provisioning. Retention and identity erasure remain separate procedures. The stopped-course
+[maintenance workflow](OPERATIONS.md#roster-and-quota-maintenance) now supports
+roster changes and course-wide quota changes while retaining removed homes.
 
 ## Render HTTPS and institutional identity configuration
 

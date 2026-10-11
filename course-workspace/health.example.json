@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "instance": "python-r-pilot",
+  "deployment_dir": "/srv/educloud/pilot",
+  "staging_dir": "/srv/educloud/pilot",
+  "home_root": "/srv/educloud/homes",
+  "docker_socket": "/var/run/docker.sock",
+  "docker_root": "/var/lib/docker",
+  "hub_url": "http://127.0.0.1:18000/hub/health",
+  "backup_status": "/srv/educloud/pilot/recovery-status.json",
+  "quota_status": "/srv/educloud/homes/.educloud-status/python-r-pilot.json",
+  "tls_url": "https://work.example.edu",
+  "timeout_seconds": 5,
+  "thresholds": {
+    "disk_min_free_bytes": 6442450944,
+    "disk_min_free_percent": 15,
+    "inode_min_free": 10000,
+    "inode_min_free_percent": 10,
+    "backup_max_age_seconds": 129600,
+    "quota_max_age_seconds": 120,
+    "quota_max_used_percent": 90,
+    "tls_min_days": 14
+  }
+}

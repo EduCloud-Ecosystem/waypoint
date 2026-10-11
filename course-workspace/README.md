@@ -1,5 +1,8 @@
 # Portable browser Python/R coursework
 
+See [course worker operations](OPERATIONS.md) for startup preflight, health reports,
+stopped-course roster/quota maintenance and the repeatable operator workflow.
+
 This is a tested local continuity pilot for one course, built on JupyterHub and
 DockerSpawner. Cairn remains the classroom/assignment application. Learner files
 live in persistent home volumes; replacing the notebook container does not

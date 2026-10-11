@@ -85,6 +85,8 @@ def provision_suffixes(root, instance, suffixes, quota_mb, inode_limit=100000):
         private_json(root / '.educloud-projects.json', data)
     with (root / '.educloud.lock').open('a') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
+        if (root / '.educloud-maintenance.json').exists() or (root / '.educloud-maintenance.json').is_symlink():
+            raise ValueError('unfinished maintenance must be resumed before provisioning')
         data = registry(root)
         existing = set(docker('volume', 'ls', '--format', '{{.Name}}').splitlines())
         current_ids = set(limits(root, 'b'))
@@ -132,10 +134,12 @@ def provision_suffixes(root, instance, suffixes, quota_mb, inode_limit=100000):
     inspect(root, instance)
 
 
-def inspect(root, instance):
+def inspect(root, instance, _maintenance=False):
     identifier(instance)
     status_dir = root / '.educloud-status'
     try:
+        if not _maintenance and ((root / '.educloud-maintenance.json').exists() or (root / '.educloud-maintenance.json').is_symlink()):
+            raise ValueError('unfinished maintenance must be resumed before quota health can pass')
         storage(root)
         data = registry(root)
         block = limits(root, 'b')

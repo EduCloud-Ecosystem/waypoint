@@ -29,6 +29,17 @@ class WorkerTests(unittest.TestCase):
         self.assertIn('--apply-retention', config['educloud-backup.service'])
         self.assertIn('recovery.py status', config['educloud-backup-health.service'])
 
+    def test_institutional_setup_never_seeds_synthetic_auth_or_enables_health(self):
+        config = cloud_config('ssh-ed25519 c3ludGhldGlj', '192.0.2.5/32', 'a' * 40, 'institutional')
+        commands = config['runcmd']
+        self.assertFalse(any('pilot.py' in str(command) for command in commands))
+        self.assertIn(['install', '-d', '-m', '700', '/srv/educloud/pilot'], commands)
+        self.assertFalse(any('educloud-worker-health.timer' in command for command in commands))
+        health = units()['educloud-worker-health.service']
+        self.assertIn('UMask=0077', health)
+        self.assertIn('TimeoutStartSec=2min', health)
+        self.assertNotIn('ConditionPathExists', health)
+
 
 if __name__ == '__main__':
     unittest.main()

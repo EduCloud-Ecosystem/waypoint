@@ -18,7 +18,7 @@ from playwright.sync_api import sync_playwright
 from notebook import Notebook, SUBJECTS, ROOT
 from backup import docker, digest
 from deployment import compose, wait_ready, read_environment
-from homes import inspect, run as xfs_run
+from homes import inspect, provision, run as xfs_run
 from recovery import backup_repository, restore_repository, restic
 from verify import cleanup, port
 from cairn_journey import run
@@ -231,6 +231,15 @@ def main():
                 compose(destination,'stop','hub')
                 updated=dict(recovered,WORKSPACE_ALLOWED_SUBJECTS='future-approved-id')
                 (destination/'.env').write_text(''.join(f'{k}={v}\n' for k,v in updated.items()))
+                # New approved subjects must have a provisioned home before startup.
+                # Keep the missing-home refusal as a negative control, then perform
+                # the operator prerequisite rather than bypassing startup preflight.
+                denied_start=subprocess.run([sys.executable,str(destination/'runtime/deployment.py'),
+                    'start','--directory',str(destination)],capture_output=True,text=True)
+                assert denied_start.returncode != 0 and 'unprovisioned homes' in denied_start.stderr
+                assert not docker('ps','-q','--filter','label=educloud.workspace.instance='+fixture.instance)
+                provision(homes,fixture.instance,['future-approved-id'],
+                          int(updated['WORKSPACE_HOME_QUOTA_MB']),int(updated['WORKSPACE_HOME_INODE_LIMIT']))
                 # Recreate reads the changed env; fixture CA/routing must be reattached.
                 bundled_start()
                 docker('network','connect',fixture.network,hub)
@@ -260,7 +269,7 @@ def main():
                         'checks':['encrypted-backup','source-resumed','wrong-key-denied','current-roster-required',
                                   'fresh-hub-sessions','removed-and-unrostered-login-denied','retained-removed-home',
                                   'preserved-images','bundled-runtime-start','restored-python-r','saved-file-visible',
-                                  'peer-file-denied','replacement-active-revocation','revocation-retains-files','restored-hard-quotas','existing-destination-denied']}
+                                  'peer-file-denied','unprovisioned-roster-start-refused','replacement-active-revocation','revocation-retains-files','restored-hard-quotas','existing-destination-denied']}
             finally: browser.close()
     finally:
         cleanup_verified=cleanup_rehearsal(fixture,root,source_instance,recovered)

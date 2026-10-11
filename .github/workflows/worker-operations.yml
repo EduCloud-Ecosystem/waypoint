@@ -1,0 +1,31 @@
+name: Worker operations
+on:
+  pull_request:
+    paths: ['course-workspace/**', '.github/workflows/worker-operations.yml']
+  push:
+    branches: [main]
+    paths: ['course-workspace/**', '.github/workflows/worker-operations.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  maintenance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y xfsprogs
+      - run: sudo "$(command -v python)" course-workspace/verify_maintenance.py --output /tmp/educloud-maintenance
+      - name: Export bounded synthetic maintenance evidence
+        run: |
+          mkdir -p output/maintenance-evidence
+          sudo cp /tmp/educloud-maintenance/PASS.json output/maintenance-evidence/
+          sudo chmod 644 output/maintenance-evidence/PASS.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: synthetic-maintenance-evidence
+          path: output/maintenance-evidence/PASS.json
+          retention-days: 7
