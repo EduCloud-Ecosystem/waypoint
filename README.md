@@ -1,7 +1,4 @@
-# HOST
-
-> Settled name: **Waypoint** (see `../educloud/SYSTEM.md`). The repo keeps the
-> working name until the org-level rename.
+# Waypoint
 
 Waypoint is EduCloud's publishing and federation layer: the hosting engine
 (Coolify), the identity provider (Keycloak), the tenant onboarding contract,
@@ -17,6 +14,9 @@ The [validation record](course-workspace/VALIDATION.md) documents the local
 synthetic rehearsal and the remaining institutional deployment gates. This
 workload can run on a maintained Docker host independently of the broader
 Coolify/federation rollout; no cloud purchase has been made.
+
+See the current [build roadmap](ROADMAP.md) and [course worker operations](course-workspace/OPERATIONS.md)
+for the operational release and the next integration steps.
 
 ## Earlier platform status (July 2026)
 

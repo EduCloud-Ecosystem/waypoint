@@ -60,10 +60,34 @@ Persistent=true
 [Install]
 WantedBy=timers.target
 ''',
+        'educloud-worker-health.service': f'''[Unit]
+Description=EduCloud worker capacity, backup, quota and TLS health
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+UMask=0077
+ExecStart=/usr/bin/python3 {SOURCE}/health.py --config /etc/educloud/health.json --output /srv/educloud/health.json
+TimeoutStartSec=2min
+''',
+        'educloud-worker-health.timer': '''[Unit]
+Description=Check EduCloud worker health every five minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+Unit=educloud-worker-health.service
+
+[Install]
+WantedBy=timers.target
+''',
     }
 
 
-def cloud_config(public_key, cidr, release):
+def cloud_config(public_key, cidr, release, mode='local-test'):
+    if mode not in ('local-test', 'institutional'):
+        raise ValueError('worker mode must be local-test or institutional')
     if not re.fullmatch(r'[0-9a-f]{40}', release):
         raise ValueError('release must be a full immutable Git commit SHA')
     network = str(ipaddress.ip_network(cidr, strict=False))
@@ -71,7 +95,7 @@ def cloud_config(public_key, cidr, release):
         raise ValueError('provide one SSH public key, never a private key')
     files = [{'path': '/etc/systemd/system/' + name, 'permissions': '0644', 'content': content}
              for name, content in units().items()]
-    return {'package_update': True,
+    config = {'package_update': True,
             'packages': ['docker.io', 'docker-compose-v2', 'python3', 'restic', 'git', 'ufw', 'xfsprogs'],
             'ssh_pwauth': False, 'disable_root': True,
             'users': ['default', {'name': 'educloud', 'groups': 'sudo', 'shell': '/bin/bash',
@@ -89,9 +113,15 @@ def cloud_config(public_key, cidr, release):
                         'https://github.com/EduCloud-Ecosystem/waypoint.git'],
                        ['git', '-C', '/opt/educloud/waypoint', 'fetch', '--depth', '1', 'origin', release],
                        ['git', '-C', '/opt/educloud/waypoint', 'checkout', '--detach', release],
-                       ['python3', SOURCE + '/pilot.py', 'init', '--directory', PILOT],
                        ['systemctl', 'daemon-reload']],
             'final_message': 'EduCloud worker prepared. Build or restore images, configure backup credentials, then run acceptance before enabling timers.'}
+    if mode == 'local-test':
+        config['runcmd'].insert(-1, ['python3', SOURCE + '/pilot.py', 'init', '--directory', PILOT])
+    else:
+        # A synthetic pilot.env here would make the institutional .env ambiguous.
+        # Real identity, roster, storage and TLS are configured by the operator.
+        config['runcmd'].insert(-1, ['install', '-d', '-m', '700', PILOT])
+    return config
 
 
 def doctor(directory):
@@ -112,6 +142,7 @@ def main():
     parser.add_argument('--public-key', type=Path)
     parser.add_argument('--ssh-cidr')
     parser.add_argument('--release')
+    parser.add_argument('--mode', choices=['local-test', 'institutional'], default='local-test')
     parser.add_argument('--directory', type=Path, required=True)
     args = parser.parse_args()
     try:
@@ -121,7 +152,7 @@ def main():
             if not all([args.public_key, args.ssh_cidr, args.release]):
                 raise ValueError('--public-key, --ssh-cidr and --release are required')
             key = args.public_key.read_text().strip()
-            config = cloud_config(key, args.ssh_cidr, args.release)
+            config = cloud_config(key, args.ssh_cidr, args.release, args.mode)
             subprocess.run(['ssh-keygen', '-l', '-f', str(args.public_key)], check=True, stdout=subprocess.DEVNULL)
             args.directory.mkdir(parents=True, exist_ok=False, mode=0o700)
             (args.directory / 'cloud-init.yaml').write_text('#cloud-config\n' + json.dumps(config, indent=2) + '\n')
