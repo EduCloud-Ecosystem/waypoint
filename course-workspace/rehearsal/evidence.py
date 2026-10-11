@@ -10,8 +10,8 @@ import re
 import subprocess
 import tempfile
 
-VERSION = 1
-FIXTURE_VERSION = 'course-pilot-v1'
+VERSION = 2
+FIXTURE_VERSION = 'course-pilot-v2'
 MAX_BYTES = 64 * 1024
 FIXTURE_FILES = frozenset({'evidence.py', 'cairn_journey.py', 'verify_course.py',
                            'notebook.py', 'requirements.txt', 'assessment_passback.py',
