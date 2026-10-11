@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 """Recover synthetic OIDC coursework after destroying source Hub/volumes/mount."""
 import argparse
+import copy
 import hashlib
 import json
 import os
 from pathlib import Path
 import subprocess
+import re
+import tempfile
 import sys
 import time
 
@@ -14,7 +17,7 @@ import requests
 from playwright.sync_api import sync_playwright
 from notebook import Notebook, SUBJECTS, ROOT
 from backup import docker, digest
-from deployment import compose, wait_ready
+from deployment import compose, wait_ready, read_environment
 from homes import inspect, run as xfs_run
 from recovery import backup_repository, restore_repository, restic
 from verify import cleanup, port
@@ -32,6 +35,84 @@ def wait_proxy(fixture):
     raise AssertionError('replacement TLS proxy did not become ready')
 
 
+
+def cleanup_rehearsal(fixture, root, source_instance, recovered):
+    """Keep original and replacement resource/mount ownership separate."""
+    failures=[]
+    root=Path(root)
+    source_homes=root/'source/homes'
+    replacement_homes=root/'replacement-homes'
+
+    def attempt(action):
+        try:
+            return action()
+        except Exception as exc:
+            failures.append(type(exc).__name__)
+            return None
+
+    # restore_repository writes its private env before creating volumes. Recover
+    # that invocation-owned identity even if restore raised before returning it.
+    if recovered is None and (root/'restored/.env').exists():
+        recovered=attempt(lambda: read_environment(root/'restored/.env'))
+    if recovered:
+        instance=recovered.get('WORKSPACE_INSTANCE','')
+        if not re.fullmatch(r'recovered-[0-9a-f]{12}',instance) or instance==source_instance:
+            failures.append('invalid-replacement-ownership')
+        else:
+            replacement=copy.copy(fixture)
+            replacement.instance=instance
+            replacement.root=root/'restored'
+            replacement.homes=replacement_homes
+            replacement.mounted=os.path.ismount(replacement_homes)
+            # The shared IdP/client belongs to the original fixture, not the
+            # restored workspace. Only the original view closes that session.
+            if hasattr(replacement,'session'):
+                del replacement.session
+            result=attempt(replacement.close)
+            if result is not True or not replacement.cleanup_verified:
+                failures.append('replacement-cleanup-unverified')
+    fixture.instance=source_instance
+    fixture.homes=source_homes
+    fixture.mounted=os.path.ismount(source_homes)
+    result=attempt(fixture.close)
+    if result is not True or not fixture.cleanup_verified:
+        failures.append('source-cleanup-unverified')
+    # A close failure may have happened before unmount. Attempt both remaining
+    # mounts, but never unmount twice using a stale Boolean from earlier phases.
+    for homes in (replacement_homes,source_homes):
+        if os.path.ismount(homes):
+            attempt(lambda homes=homes: subprocess.run(['umount',str(homes)],
+                    capture_output=True,text=True,timeout=30,check=True))
+        if os.path.ismount(homes):
+            failures.append('owned-filesystem-still-mounted')
+    if failures:
+        raise RuntimeError('institutional recovery cleanup unverified: '+', '.join(sorted(set(failures))))
+    return True
+
+
+def publish_pass(root, report, cleanup_verified):
+    """Publish private bounded evidence only after verified cleanup."""
+    if cleanup_verified is not True:
+        raise ValueError('cleanup must be verified before institutional PASS')
+    data=(json.dumps(dict(report,status='PASS',scope='same-worker-institutional-recovery',
+                          cleanup_verified=True),indent=2,allow_nan=False)+'\n').encode()
+    if len(data)>64*1024:
+        raise ValueError('institutional evidence exceeds output bound')
+    root=Path(root)
+    if root.is_symlink() or not root.is_dir() or root.stat().st_mode & 0o077:
+        raise ValueError('evidence directory must be private')
+    fd,temporary=tempfile.mkstemp(prefix='.institutional-evidence-',dir=root)
+    try:
+        with os.fdopen(fd,'wb') as output:
+            os.fchmod(output.fileno(),0o600)
+            output.write(data)
+            output.flush()
+            os.fsync(output.fileno())
+        os.link(temporary,root/'PASS.json')
+    finally:
+        os.unlink(temporary)
+
+
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output',type=Path,required=True)
@@ -42,7 +123,8 @@ def main():
     root=args.output.resolve()
     source=root/'source'; source.mkdir(mode=0o700)
     fixture=Notebook(source)
-    recovered=None; mounted=False
+    recovered=None
+    source_instance=fixture.instance
     try:
         fixture.start()
         with sync_playwright() as p:
@@ -83,7 +165,7 @@ def main():
                 with disk.open('xb') as out: out.truncate(2*1024**3)
                 homes=root/'replacement-homes'; homes.mkdir()
                 xfs_run('mkfs.xfs','-f',str(disk))
-                xfs_run('mount','-o','loop,prjquota',str(disk),str(homes)); mounted=True
+                xfs_run('mount','-o','loop,prjquota',str(disk),str(homes))
                 destination=root/'restored'
                 wrong=root/'wrong-key'; wrong.write_text('incorrect-synthetic-recovery-password'); wrong.chmod(0o600)
                 for options,expected in [({'password_file':str(wrong)},RuntimeError)]:
@@ -179,17 +261,11 @@ def main():
                                   'fresh-hub-sessions','removed-and-unrostered-login-denied','retained-removed-home',
                                   'preserved-images','bundled-runtime-start','restored-python-r','saved-file-visible',
                                   'peer-file-denied','replacement-active-revocation','revocation-retains-files','restored-hard-quotas','existing-destination-denied']}
-                (root/'PASS.json').write_text(json.dumps(report,indent=2)+'\n')
-                print('PASS: encrypted OIDC recovery with current roster, fresh sessions, retained files, Python/R and quotas.',flush=True)
             finally: browser.close()
     finally:
-        if recovered:
-            cleanup(recovered['WORKSPACE_INSTANCE'],root/'restored/.env')
-        # Notebook.close owns only the original fixture; source homes already unmounted.
-        # Remove fixture-owned proxy/IdP using their original generated prefix.
-        fixture.instance=fixture.network.removesuffix('-fixture')
-        fixture.close()
-        if mounted: xfs_run('umount',str(root/'replacement-homes'))
+        cleanup_verified=cleanup_rehearsal(fixture,root,source_instance,recovered)
+    publish_pass(root,report,cleanup_verified)
+    print('PASS: encrypted OIDC recovery with current roster, fresh sessions, retained files, Python/R, quotas and verified cleanup.',flush=True)
 
 
 if __name__=='__main__': main()

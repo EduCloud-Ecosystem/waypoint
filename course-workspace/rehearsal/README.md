@@ -48,43 +48,28 @@ clients explicitly trust the generated CA and retain TLS certificate validation.
 No trust certificate or hosts entry is installed on the user's computer. Chromium
 and the HTTP client resolve only the fixture `.rehearsal.test` names locally.
 
-## Run the full rehearsal
+## Run the repeatable pilot
 
-Use a disposable Linux worker with root access, Docker/Compose, `xfsprogs`,
-OpenSSL, Git, Go 1.25+, Python 3.12+ and enough disk/RAM for the course images,
-Keycloak, two bounded learners and the browser. The CI runner is the reference
-execution environment. Do not run filesystem tests against a live class worker.
+Use the [operator runbook](RUNBOOK.md) for build prerequisites, exact local and
+full-Linux commands, evidence interpretation and failure cleanup. The workflow
+pins the accepted Cairn source and builds its dashboard, server, LMS simulator
+and bounded checkout image before running the full pilot.
 
-```sh
-python3 -m venv .venv
-.venv/bin/pip install -r course-workspace/rehearsal/requirements.txt
-.venv/bin/python -m playwright install --with-deps chromium
-# Use the reviewed Cairn commit pinned by the workflow, in a separate checkout.
-(cd /path/to/cairn && go build -o /tmp/cairn-rehearsal ./cmd/cairn)
-sudo /absolute/path/to/.venv/bin/python course-workspace/rehearsal/verify_course.py \
-  --cairn-binary /tmp/cairn-rehearsal --cairn-source /path/to/cairn \
-  --output /tmp/educloud-course-rehearsal
-```
+The current pilot extends the course flow above with:
 
-If browser binaries were installed in a user-specific cache, set
-`PLAYWRIGHT_BROWSERS_PATH` explicitly when installing and preserve it through
-sudo, as the workflow does. The output directory must be new. Logs, disposable
-keys and fixture database files stay in that mode-0700 directory. Never publish
-the whole directory: CI publishes only the successful bounded report and the
-three synthetic screenshots, retained for seven days.
-
-## Run the Forgejo/Cairn phase locally on macOS or Linux
-
-This subset needs Docker, the existing `educloud-python-r:2026-10-06` image,
-a built Cairn binary and the Python/browser dependencies above. It uses a
-synthetic source-file fixture instead of a live notebook, and reports that limit.
-It does not exercise notebook identity, TLS or XFS quotas.
-
-```sh
-course-workspace/.venv/bin/python course-workspace/rehearsal/cairn_journey.py \
-  --cairn-binary /tmp/cairn-rehearsal \
-  --output course-workspace/output/course-rehearsal-local
-```
+- Stop/resume of a real notebook server, with retained source bytes and Python
+  execution in a replacement container.
+- Two real Forgejo learner identities, deterministic assessment proposals,
+  browser instructor score adjustments, and learner-visible reviewed feedback.
+  Unassessable, stale and unauthorized publication attempts must fail.
+- Signed simulated LTI instructor/learner connections, score readback, a lost
+  response recovered without duplicate writes, and preservation of an external
+  grade conflict across restart.
+- Five then fifteen distinct authenticated learners issuing 100 and 300 HTTP
+  requests, ownership checks, latency observations and restart persistence.
+  This read workload does not measure fifteen concurrent notebooks or grading.
+- Exact source, binary, dashboard, fixture and image identities; an overall
+  `PASS.json` only after all required phases and verified cleanup complete.
 
 ## Institutional recovery rehearsal
 
@@ -114,9 +99,10 @@ This is not a public relay service. Fixture setup follows the official
 [webhook allowlist](https://forgejo.org/docs/v16.0/admin/config-cheat-sheet/#webhook-webhook)
 documentation.
 
-Cairn's `docs/llm-assessment.md` records the next assessment direction: flexible
-submission formats, LLM feedback and proposed rubric scores for instructor
-review. No LLM endpoint or score-publication workflow is implemented here.
+Assessment proposals here are deterministic imports, with no LLM calls. Instructor
+review and score publication are exercised through Cairn's current dashboard.
+This verifies integration and permissions; it does not establish feedback quality
+or instructor calibration. Simulated LTI delivery is not Brightspace acceptance.
 
 Fixture configuration follows the primary [Keycloak container](https://www.keycloak.org/server/containers)
 and [reverse-proxy](https://www.keycloak.org/server/reverseproxy) guidance and
