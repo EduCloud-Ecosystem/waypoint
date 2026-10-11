@@ -10,6 +10,53 @@ from notebook import Notebook
 import verify_institutional_recovery as recovery
 
 
+class BrowserCutoverTests(unittest.TestCase):
+    def test_old_cookie_auth_is_checked_before_fresh_process_with_no_cookie_transfer(self):
+        for status in (401, 403):
+            events = []
+            session = Mock()
+            session.get.side_effect = lambda *args, **kwargs: (events.append('old-auth-denied') or SimpleNamespace(status_code=status))
+            original = Mock()
+            original.close.side_effect = lambda: events.append('source-browser-closed')
+            original.new_context.side_effect = AssertionError('source browser reused after bridge replacement')
+            replacement = Mock()
+            playwright = Mock()
+            playwright.chromium.launch.side_effect = lambda **kwargs: (events.append('replacement-browser-launched') or replacement)
+            self.assertIs(recovery.browser_after_cutover(playwright, original, session, 'https://work.example.test'), replacement)
+            self.assertEqual(events, ['old-auth-denied', 'source-browser-closed', 'replacement-browser-launched'])
+            session.get.assert_called_once_with('https://work.example.test/hub/api/users/'+recovery.SUBJECTS['bob'], timeout=15, allow_redirects=False)
+            playwright.chromium.launch.assert_called_once_with(args=['--host-resolver-rules=MAP *.rehearsal.test 127.0.0.1'])
+            original.new_context.assert_not_called()
+            replacement.new_context.assert_not_called()
+            # Launch accepts only DNS routing: no old browser storage/cookies.
+            self.assertNotIn('storage_state', playwright.chromium.launch.call_args.kwargs)
+
+    def test_accepted_old_auth_prevents_cutover_from_hiding_the_regression(self):
+        for status in (200, 302, 500):
+            session = Mock()
+            session.get.return_value.status_code = status
+            original, playwright = Mock(), Mock()
+            with self.subTest(status=status), self.assertRaisesRegex(AssertionError, 'old session accepted'):
+                recovery.browser_after_cutover(playwright, original, session, 'https://work.example.test')
+            original.close.assert_not_called()
+            playwright.chromium.launch.assert_not_called()
+
+    def test_failed_http_or_browser_launch_propagates_without_retry(self):
+        session, original, playwright = Mock(), Mock(), Mock()
+        session.get.side_effect = RuntimeError('old-auth probe failed')
+        with self.assertRaisesRegex(RuntimeError, 'old-auth probe failed'):
+            recovery.browser_after_cutover(playwright, original, session, 'https://work.example.test')
+        original.close.assert_not_called()
+        playwright.chromium.launch.assert_not_called()
+        session.get.side_effect = None
+        session.get.return_value.status_code = 401
+        playwright.chromium.launch.side_effect = RuntimeError('replacement browser failed')
+        with self.assertRaisesRegex(RuntimeError, 'replacement browser failed'):
+            recovery.browser_after_cutover(playwright, original, session, 'https://work.example.test')
+        original.close.assert_called_once()
+        playwright.chromium.launch.assert_called_once()
+
+
 class RecoveryCleanupTests(unittest.TestCase):
     def exercise(self, root, *, fail_volume=False, partial=False):
         source = root / 'source'

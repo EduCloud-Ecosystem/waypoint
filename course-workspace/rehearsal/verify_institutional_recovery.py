@@ -36,6 +36,22 @@ def wait_proxy(fixture):
 
 
 
+def browser_after_cutover(playwright, browser, old_session, origin):
+    """Keep old auth refusal, then launch after disposable host bridges changed.
+
+    Docker creates the replacement bridge and attaches the restored Hub while
+    the first Chromium process is alive. Chromium's network-change notification can abort
+    its first subsequent navigation even after the proxy is ready. A fresh
+    process starts with the settled network; it receives no source cookies.
+    The independent old-cookie HTTP session remains the authorization control.
+    """
+    old = old_session.get(origin+'/hub/api/users/'+SUBJECTS['bob'],
+                          timeout=15, allow_redirects=False)
+    assert old.status_code in (401,403), f'old session accepted: {old.status_code}'
+    browser.close()
+    return playwright.chromium.launch(args=['--host-resolver-rules=MAP *.rehearsal.test 127.0.0.1'])
+
+
 def cleanup_rehearsal(fixture, root, source_instance, recovered):
     """Keep original and replacement resource/mount ownership separate."""
     failures=[]
@@ -211,8 +227,7 @@ def main():
                 wait_proxy(fixture)
                 fixture.env=recovered; fixture.instance=recovered['WORKSPACE_INSTANCE']; fixture.homes=homes; fixture.deployment=destination; fixture.env_file=destination/'.env'
                 # Old Hub auth must not survive restoration even for still-allowed Bob.
-                old=sessions['bob'][2].get(fixture.origin+'/hub/api/users/'+SUBJECTS['bob'],timeout=15,allow_redirects=False)
-                assert old.status_code in (401,403), f'old session accepted: {old.status_code}'
+                browser=browser_after_cutover(p,browser,sessions['bob'][2],fixture.origin)
                 for user in ('alice','mallory'):
                     ctx=browser.new_context(ignore_https_errors=True); page=ctx.new_page()
                     fixture.login(page,user)
@@ -268,12 +283,11 @@ def main():
                     restore_repository(cfg,snapshot,destination,port(),homes,current)
                 except ValueError: pass
                 else: raise AssertionError('restore overwrote existing destination')
-                for ctx,*_ in sessions.values(): ctx.close()
                 context.close()
                 report={'snapshot_id':snapshot,'source_destroyed':True,'same_worker_rehearsal':True,
                         'images':source_images,'course_manifest_sha256':fixture.manifest_digest,'waypoint_revision':run('git','-c','safe.directory='+str(ROOT.parent),'-C',str(ROOT.parent),'rev-parse','HEAD'),
                         'checks':fixture.report+['manifest-backup-config-consumed','historical-manifest-preserved','encrypted-backup','source-resumed','wrong-key-denied','current-roster-required',
-                                  'fresh-hub-sessions','removed-and-unrostered-login-denied','retained-removed-home',
+                                  'fresh-hub-sessions','browser-relaunched-after-network-cutover','removed-and-unrostered-login-denied','retained-removed-home',
                                   'preserved-images','bundled-runtime-start','restored-python-r','saved-file-visible',
                                   'peer-file-denied','unprovisioned-roster-start-refused','replacement-active-revocation','revocation-retains-files','restored-hard-quotas','existing-destination-denied']}
             finally: browser.close()
