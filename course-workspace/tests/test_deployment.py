@@ -191,6 +191,36 @@ class DeploymentTests(unittest.TestCase):
 
 class InterruptedOperationTests(unittest.TestCase):
     fixture = DeploymentTests.fixture
+    def test_retirement_seal_blocks_all_admission_but_allows_stop_and_status(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.fixture(root)
+            # Malformed/dangling markers still fail closed before Docker calls.
+            (root / '.course-retired.json').symlink_to(root / 'missing-ledger')
+            with patch('deployment.require_native_worker'), patch('deployment.subprocess.run') as run:
+                for args in (('up','-d','hub'), ('start','hub'), ('restart','hub'), ('run','hub'), ('create','hub'),
+                             ('--profile','build','up','-d','hub')):
+                    with self.assertRaisesRegex(ValueError, 'course is retired'):
+                        compose(root, *args)
+                run.assert_not_called()
+                compose(root, 'stop', 'hub')
+                compose(root, 'ps', '-a')
+                self.assertEqual(run.call_count, 2)
+            with patch('deployment.docker_json') as docker:
+                with self.assertRaisesRegex(ValueError, 'course is retired'):
+                    preflight(root)
+                docker.assert_not_called()
+
+    def test_upgrade_preflight_cannot_bypass_retirement_pending(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.fixture(root)
+            (root / '.retirement-pending.json').write_text('{}')
+            with patch('deployment.docker_json') as docker:
+                with self.assertRaisesRegex(ValueError, 'retirement is incomplete'):
+                    preflight(root, allow_pending=True)
+                docker.assert_not_called()
+
     def test_pending_upgrade_blocks_start_but_permits_emergency_stop(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

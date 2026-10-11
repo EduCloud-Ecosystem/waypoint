@@ -65,6 +65,14 @@ image change. It requires a full candidate canary, takes a fresh stopped-course
 encrypted backup, validates a frozen plan and journals the pin update. Startup
 is explicit; an interrupted upgrade blocks start/backup/roster maintenance.
 
+For course closure, use [reviewed retirement and export](COURSE-RETIREMENT.md).
+Stop writers, prepare a protected encrypted snapshot, review the frozen plan and
+seal the worker. Startup and policy changes remain blocked after retirement and
+protected restoration. Verified exports include every retained home's `work`
+folder; other files remain retained. The recorded owner/date requires a retention
+decision, never automatic deletion. Review backup/monitoring schedules and hide
+the Cairn workspace binding as part of the institution's closure procedure.
+
 ## Worker health and local alerts
 
 `health.py` collects bounded read-only checks for worker storage/inodes, Hub

@@ -10,6 +10,16 @@ from pilot import initialize, settings, locked, compose
 
 
 class PilotTests(unittest.TestCase):
+    def test_retirement_marker_cannot_start_through_legacy_trial_entrypoint(self):
+        from pilot import start
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / '.course-retired.json').symlink_to(root / 'missing-record')
+            with patch('pilot.docker') as docker, patch('pilot.compose') as compose:
+                with self.assertRaisesRegex(ValueError, 'cannot start'):
+                    start(root, {}, build=True)
+                docker.assert_not_called()
+                compose.assert_not_called()
     def test_private_initialization_is_not_destructive(self):
         with tempfile.TemporaryDirectory() as root:
             path = Path(root) / 'trial'

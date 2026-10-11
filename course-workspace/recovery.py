@@ -21,6 +21,7 @@ from pilot import ROOT, initialize, locked
 from deployment import settings, read_environment, validate_institutional
 
 TAG = 'educloud-workspace-v1'
+RETIRED_TAG = 'educloud-retired-v1'
 BASE_CODE = ('pilot.py', 'checkpoint.py', 'backup.py', 'volume_archive.py',
         'recovery.py', 'compose.yaml')
 CODE = BASE_CODE + ('quota-compose.yaml', 'homes.py', 'deployment.py', 'hub/settings.py')
@@ -130,7 +131,7 @@ def copy_source_manifest(directory, destination):
         os.close(fd)
 
 
-def package(directory, env, bundle):
+def package(directory, env, bundle, *, protected=False):
     bundle.mkdir(mode=0o700)
     if env.get('WORKSPACE_HOME_ROOT'):
         from homes import inspect, registry
@@ -164,13 +165,36 @@ def package(directory, env, bundle):
         raise ValueError('runtime images changed during checkpoint; retry with deployments paused')
     private_json(bundle / 'environment.json', env)
     copy_source_manifest(directory, bundle)
+    retirement = directory / '.course-retired.json'
+    if retirement.exists() or retirement.is_symlink():
+        # Preserve this private record inside encryption; never publish it as
+        # portable coursework or reactivate a retired source on restoration.
+        fd = os.open(retirement, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+        try:
+            info = os.fstat(fd)
+            if (not stat.S_ISREG(info.st_mode) or info.st_mode & 0o077
+                    or info.st_uid not in (0, os.geteuid()) or info.st_size > 64 * 1024):
+                raise ValueError('retirement record must be a bounded owner-only regular file')
+            with os.fdopen(fd, 'rb', closefd=False) as source:
+                raw = source.read(64 * 1024 + 1)
+            record = json.loads(raw)
+            if (len(raw) > 64 * 1024 or not isinstance(record, dict)
+                    or record.get('version') != 'educloud-retirement-v1' or record.get('status') != 'RETIRED'):
+                raise ValueError('retirement record is invalid; keep the course stopped')
+        finally:
+            os.close(fd)
+        with open(bundle / 'retirement.json', 'xb', opener=lambda p, f: os.open(p, f, 0o600)) as out:
+            out.write(raw)
     (bundle / 'runtime').mkdir(mode=0o700)
     for name in CODE:
         (bundle / 'runtime' / name).parent.mkdir(parents=True, exist_ok=True, mode=0o700)
         shutil.copyfile(ROOT / name, bundle / 'runtime' / name)
         (bundle / 'runtime' / name).chmod(0o600)
     files = {str(p.relative_to(bundle)): digest(p) for p in bundle.rglob('*') if p.is_file()}
-    metadata = {'version': 2, 'instance': env['WORKSPACE_INSTANCE'], 'files': files,
+    # Legacy restorers accept only versions 1/2 and would ignore a retirement
+    # record/tag. Version 3 is intrinsically closed and makes them fail closed.
+    metadata = {'version': 3 if protected or retirement.exists() or retirement.is_symlink() else 2,
+                'instance': env['WORKSPACE_INSTANCE'], 'files': files,
                 'images': {k: {'id': v['Id'], 'architecture': v['Architecture'], 'os': v['Os']}
                            for k, v in images.items()}}
     private_json(bundle / 'bundle.json', metadata)
@@ -184,14 +208,14 @@ def validate_bundle(bundle):
     if any(p.is_symlink() or (not p.is_file() and not p.is_dir()) for p in paths):
         raise ValueError('recovery bundle contains links or special files')
     meta = json.loads((bundle / 'bundle.json').read_text())
-    if meta.get('version') not in (1, 2):
+    if meta.get('version') not in (1, 2, 3):
         raise ValueError('unsupported recovery bundle')
     actual = {str(p.relative_to(bundle)) for p in paths if p.is_file()} - {'bundle.json'}
     if actual != set(meta['files']):
         raise ValueError('bundle file inventory differs')
     required = {'images.tar', 'environment.json', 'volumes/manifest.json', 'volumes/runtime.json'}
     required.update('runtime/' + name for name in BASE_CODE)
-    if meta['version'] == 2:
+    if meta['version'] in (2, 3):
         required.update('runtime/' + name for name in CODE)
     if not required.issubset(actual):
         raise ValueError('incomplete recovery bundle')
@@ -205,10 +229,12 @@ def validate_bundle(bundle):
         raise ValueError('environment source differs from bundle')
     if env.get('WORKSPACE_AUTH_MODE') == 'oidc':
         validate_institutional(env)
-        if meta['version'] != 2 or not {'runtime/deployment.py','runtime/hub/settings.py','runtime/homes.py','runtime/quota-compose.yaml'}.issubset(actual):
+        if meta['version'] not in (2, 3) or not {'runtime/deployment.py','runtime/hub/settings.py','runtime/homes.py','runtime/quota-compose.yaml'}.issubset(actual):
             raise ValueError('institutional recovery runtime is incomplete')
     elif env.get('WORKSPACE_AUTH_MODE') != 'local-test':
         raise ValueError('unsupported recovered authentication mode')
+    if meta['version'] == 3 and env.get('WORKSPACE_AUTH_MODE') != 'oidc':
+        raise ValueError('protected recovery requires an institutional course')
     if validate_manifest(json.loads((bundle / 'volumes/manifest.json').read_text()), bundle / 'volumes') != meta['instance']:
         raise ValueError('volume source differs from bundle')
     info = json.loads(docker('info', '--format', '{{json .}}'))
@@ -241,7 +267,7 @@ def private_backend_output():
                 os.close(source)
 
 
-def backup_repository_locked(directory, cfg, apply_retention=False, *, quiet=False):
+def backup_repository_locked(directory, cfg, apply_retention=False, *, quiet=False, extra_tags=()):
     """Internal backup under a caller-held deployment operation lock.
 
     Image-upgrade preview shares one lock across stopped-state inspection,
@@ -250,15 +276,19 @@ def backup_repository_locked(directory, cfg, apply_retention=False, *, quiet=Fal
     """
     if quiet:
         with private_backend_output():
-            return backup_repository_locked(directory, cfg, apply_retention)
+            return backup_repository_locked(directory, cfg, apply_retention, extra_tags=extra_tags)
+    if extra_tags not in ((), (RETIRED_TAG,)):
+        raise ValueError('unsupported recovery protection tags')
     env = settings(directory)
+    protected = bool(extra_tags) or (directory / '.course-retired.json').exists() or (directory / '.course-retired.json').is_symlink()
     try:
         restic(cfg, 'cat', 'config')  # Credentials/repository must work before downtime.
         with tempfile.TemporaryDirectory(prefix='.recovery-', dir=directory) as scratch:
-            package(directory, env, Path(scratch) / 'bundle')
+            package(directory, env, Path(scratch) / 'bundle', protected=protected)
+            tags = ['--tag', RETIRED_TAG] if protected else []
             output = restic(cfg, 'backup', '--json', '--host', env['WORKSPACE_INSTANCE'],
                             '--tag', TAG, '--tag', 'instance=' + env['WORKSPACE_INSTANCE'],
-                            'bundle', cwd=scratch)
+                            *tags, 'bundle', cwd=scratch)
             summaries = [json.loads(line) for line in output.splitlines() if line.strip()]
             snapshot = next(row['snapshot_id'] for row in summaries if row.get('message_type') == 'summary')
             if not re.fullmatch(r'[0-9a-f]{64}', snapshot):
@@ -292,15 +322,21 @@ def restore_repository(cfg, snapshot, destination, port, home_root=None, current
     if destination.exists() or destination.is_symlink() or not destination.parent.is_dir():
         raise ValueError('restore requires a new destination under an existing parent')
     snapshots = json.loads(restic(cfg, 'snapshots', '--json', snapshot))
-    if len(snapshots) != 1 or snapshots[0]['id'] != snapshot or TAG not in snapshots[0].get('tags', []):
+    if (not isinstance(snapshots, list) or len(snapshots) != 1 or not isinstance(snapshots[0], dict)
+            or snapshots[0].get('id') != snapshot or not isinstance(snapshots[0].get('tags'), list)
+            or any(not isinstance(tag, str) for tag in snapshots[0]['tags']) or TAG not in snapshots[0]['tags']):
         raise ValueError('snapshot is not an EduCloud recovery package')
+    retired_snapshot = RETIRED_TAG in snapshots[0]['tags']
     with tempfile.TemporaryDirectory(prefix='.restore-', dir=destination.parent) as scratch:
         restic(cfg, 'restore', snapshot, '--target', scratch, '--verify')
         bundle = Path(scratch) / 'bundle'
         meta, saved = validate_bundle(bundle)
+        retired_snapshot = retired_snapshot or meta.get('version') == 3 or (bundle / 'retirement.json').exists()
         if bool(saved.get('WORKSPACE_HOME_ROOT')) != bool(home_root):
             raise ValueError('quota-backed recovery requires an explicit replacement --home-root; ordinary trials omit it')
         institutional = saved['WORKSPACE_AUTH_MODE'] == 'oidc'
+        if retired_snapshot and not institutional:
+            raise ValueError('protected retirement recovery requires an institutional course; no trial environment created')
         if institutional:
             current = current_institutional_environment(saved, current_env)
             if not 1024 <= port <= 65535:
@@ -316,6 +352,12 @@ def restore_repository(cfg, snapshot, destination, port, home_root=None, current
             instance = env['WORKSPACE_INSTANCE']
             env.update(saved)
             envfile = destination / 'pilot.env'
+        if retired_snapshot:
+            # Seal before writing a usable environment or allocating any homes;
+            # a failed partial restore must not leave an active retired course.
+            private_json(destination / '.course-retired.json', {
+                'version': 'educloud-retirement-v1', 'status': 'RETIRED',
+                'source': 'snapshot_restore', 'snapshot_id': snapshot, 'retention': 'pending'})
         # Restore into a new namespace; never overwrite an existing home/config.
         existing = set(docker('volume', 'ls', '--format', '{{.Name}}').splitlines())
         if any(name.startswith(instance + '-') for name in existing):
@@ -363,8 +405,11 @@ def restore_repository(cfg, snapshot, destination, port, home_root=None, current
         copy_source_manifest(bundle, destination)
         private_json(destination / 'recovery-source.json', {'snapshot_id': snapshot, 'source_instance': meta['instance'],
                       'fresh_hub_sessions': institutional, 'current_roster_required': institutional})
-    entry = 'deployment.py start' if institutional else 'pilot.py start --no-build'
-    print(f'Restored to {destination}; no server started. Use its runtime/{entry} --directory {destination}')
+    if retired_snapshot:
+        print(f'Restored to {destination}; course remains retired, no server started. Retain storage and use the current retirement export tool for coursework.')
+    else:
+        entry = 'deployment.py start' if institutional else 'pilot.py start --no-build'
+        print(f'Restored to {destination}; no server started. Use its runtime/{entry} --directory {destination}')
     return env
 
 
@@ -373,7 +418,8 @@ def retention(cfg, instance, apply=False):
     identifier(instance)
     args = ['forget', '--json', '--host', instance, '--tag', TAG + ',instance=' + instance,
             '--group-by', 'host,tags', '--keep-last', str(cfg['keep_last']),
-            '--keep-daily', str(cfg['keep_daily']), '--keep-weekly', str(cfg['keep_weekly'])]
+            '--keep-daily', str(cfg['keep_daily']), '--keep-weekly', str(cfg['keep_weekly']),
+            '--keep-tag', RETIRED_TAG]
     if apply:
         restic(cfg, 'check')
         args += ['--prune']

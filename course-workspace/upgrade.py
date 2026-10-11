@@ -20,7 +20,7 @@ import sys
 from functools import wraps
 
 from course_manifest import _read_regular, _unique_object, _image
-from deployment import preflight, docker_json, validate_institutional
+from deployment import preflight, docker_json, validate_institutional, require_active_course
 from maintenance import (safe_directory, environment as maintenance_environment, home_lock, snapshot, stopped,
                          write, sync_directory, ROOT_PENDING, PENDING as MAINTENANCE_PENDING, digest)
 from pilot import locked
@@ -92,6 +92,10 @@ def tool_hash():
 def environment(directory):
     """Resume-only reader: upgrade journal blocks public lifecycle, not this path."""
     safe_directory(directory)
+    require_active_course(directory)
+    pending = directory / '.retirement-pending.json'
+    if pending.exists() or pending.is_symlink():
+        raise UpgradeError('unfinished_retirement')
     if (directory / 'pilot.env').exists() or (directory / 'pilot.env').is_symlink():
         raise UpgradeError('institutional_deployment_required')
     raw = _read_regular(directory / '.env', MAX_ENV_BYTES, private=True).decode('utf-8')

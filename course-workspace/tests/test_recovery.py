@@ -11,6 +11,88 @@ from recovery import load_config, private_json, restic, retention, restore_repos
 
 
 class RecoveryTests(unittest.TestCase):
+    def test_retirement_snapshot_seals_destination_before_partial_restore_can_start(self):
+        from recovery import RETIRED_TAG
+        from deployment import require_active_course
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            destination = root / 'restored'
+            snapshot_id = 'a' * 64
+            saved = {'WORKSPACE_AUTH_MODE':'oidc', 'WORKSPACE_HOME_ROOT':'/source/homes'}
+            rows = json.dumps([{'id':snapshot_id,'tags':['educloud-workspace-v1',RETIRED_TAG]}])
+            env = {'WORKSPACE_ALLOWED_SUBJECTS':'bob', 'WORKSPACE_ENV_FILE':'placeholder'}
+            with patch('recovery.restic', side_effect=[rows,'']), \
+                    patch('recovery.validate_bundle', return_value=({'images':{}},saved)), \
+                    patch('recovery.current_institutional_environment', return_value=env), \
+                    patch('recovery.docker', side_effect=RuntimeError('failure before volume allocation')):
+                with self.assertRaisesRegex(RuntimeError, 'failure before volume'):
+                    restore_repository({},snapshot_id,destination,18000,root/'homes',root/'current.env')
+            self.assertTrue((destination/'.course-retired.json').is_file())
+            self.assertFalse((destination/'.env').exists())
+            with self.assertRaisesRegex(ValueError, 'course is retired'):
+                require_active_course(destination)
+
+    def test_protected_bundle_version_seals_even_without_retirement_tag(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp); destination=root/'restored'; snapshot_id='a'*64
+            saved={'WORKSPACE_AUTH_MODE':'oidc','WORKSPACE_HOME_ROOT':'/source/homes'}
+            rows=json.dumps([{'id':snapshot_id,'tags':['educloud-workspace-v1']}])
+            with patch('recovery.restic',side_effect=[rows,'']), \
+                    patch('recovery.validate_bundle',return_value=({'version':3,'images':{}},saved)), \
+                    patch('recovery.current_institutional_environment',return_value={'WORKSPACE_ALLOWED_SUBJECTS':'bob'}), \
+                    patch('recovery.docker',side_effect=RuntimeError('before home allocation')):
+                with self.assertRaisesRegex(RuntimeError,'before home allocation'):
+                    restore_repository({},snapshot_id,destination,18000,root/'homes',root/'current.env')
+            self.assertEqual(json.loads((destination/'.course-retired.json').read_text())['status'],'RETIRED')
+            self.assertFalse((destination/'.env').exists())
+
+    def test_retired_trial_snapshot_refused_before_usable_trial_environment(self):
+        from recovery import RETIRED_TAG
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); destination = root/'restored'
+            snapshot_id = 'a'*64
+            rows = json.dumps([{'id':snapshot_id,'tags':['educloud-workspace-v1',RETIRED_TAG]}])
+            with patch('recovery.restic', side_effect=[rows,'']), \
+                    patch('recovery.validate_bundle', return_value=({'images':{}},{'WORKSPACE_AUTH_MODE':'local-test'})), \
+                    patch('recovery.initialize') as initialize:
+                with self.assertRaisesRegex(ValueError, 'institutional course'):
+                    restore_repository({},snapshot_id,destination,18000)
+                initialize.assert_not_called()
+            self.assertFalse(destination.exists())
+
+    def test_prepared_retirement_backup_keeps_protection_tag_without_starting(self):
+        from recovery import backup_repository_locked, RETIRED_TAG
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            env = {'WORKSPACE_INSTANCE':'course-one'}
+            with patch('recovery.settings', return_value=env), patch('recovery.package') as package, \
+                    patch('recovery.restic', side_effect=['',json.dumps({'message_type':'summary','snapshot_id':'a'*64}), '']) as backend:
+                self.assertEqual(backup_repository_locked(root,{},extra_tags=(RETIRED_TAG,)), 'a'*64)
+            args = backend.call_args_list[1].args
+            self.assertIn(RETIRED_TAG, args)
+            self.assertTrue(package.call_args.kwargs['protected'])
+            self.assertFalse((root / '.course-retired.json').exists())
+
+    def test_completed_retired_backup_automatically_keeps_protection_tag(self):
+        from recovery import backup_repository_locked, RETIRED_TAG
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            private_json(root/'.course-retired.json', {'version':'educloud-retirement-v1','status':'RETIRED'})
+            with patch('recovery.settings', return_value={'WORKSPACE_INSTANCE':'course-one'}), \
+                    patch('recovery.package'), patch('recovery.restic', side_effect=['',
+                    json.dumps({'message_type':'summary','snapshot_id':'a'*64}), '']) as backend:
+                self.assertEqual(backup_repository_locked(root, {}), 'a'*64)
+            self.assertIn(RETIRED_TAG, backend.call_args_list[1].args)
+
+    def test_pending_retirement_blocks_backup_before_backend(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root/'.retirement-pending.json').symlink_to(root/'missing')
+            with patch('recovery.restic') as backend:
+                with self.assertRaisesRegex(ValueError, 'retirement is incomplete'):
+                    backup_repository(root, {})
+                backend.assert_not_called()
+
     def test_stopped_old_hub_cannot_back_up_new_image_configuration(self):
         from recovery import package
         with tempfile.TemporaryDirectory() as tmp:
@@ -211,6 +293,8 @@ os.write(2, b'public-stderr-after-scope\\n')
         self.assertNotIn('--prune', args)
         self.assertIn('educloud-workspace-v1,instance=trial-example', args)
         self.assertIn('--host', args)
+        self.assertIn('--keep-tag', args)
+        self.assertIn('educloud-retired-v1', args)
 
 
 if __name__ == '__main__':

@@ -101,6 +101,10 @@ def wait_ready(env):
 
 
 def start(directory, env, build=True):
+    for name in ('.course-retired.json', '.retirement-pending.json'):
+        path = directory / name
+        if path.exists() or path.is_symlink():
+            raise ValueError('retired or retiring course cannot start; retain its saved work')
     info = json.loads(docker('info', '--format', '{{json .}}'))
     if info['MemTotal'] < 3 * 1024**3 or info['NCPU'] < 2:
         raise ValueError('trial requires at least 3 GiB Docker RAM and 2 CPUs; use a 4 GiB host')

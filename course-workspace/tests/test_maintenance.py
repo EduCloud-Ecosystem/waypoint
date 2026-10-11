@@ -118,6 +118,16 @@ class MaintenanceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'regular file'):
             self.preview()
 
+    def test_retirement_blocks_roster_quota_mutation_before_home_inspection(self):
+        for name in ('.course-retired.json', '.retirement-pending.json'):
+            path = self.directory / name
+            path.symlink_to(self.directory / 'absent-record')
+            with patch('maintenance.snapshot') as snapshot:
+                with self.assertRaisesRegex(ValueError, 'retire'):
+                    self.preview()
+                snapshot.assert_not_called()
+            path.unlink()
+
     def test_failure_blocks_health_and_exact_plan_resume(self):
         self.preview()
         self.fail_create = True

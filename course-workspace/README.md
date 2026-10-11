@@ -7,6 +7,8 @@ generate consistent private deployment, identity, proxy, recovery and Cairn
 binding configuration with immutable Hub and course images.
 The [image upgrade guide](COURSE-UPGRADES.md) covers candidate canaries, frozen
 upgrade plans, interruption recovery and fresh-destination restoration.
+The [retirement guide](COURSE-RETIREMENT.md) covers persistent closure, protected
+encrypted retention and verified portable exports of retained coursework.
 
 This is a tested local continuity pilot for one course, built on JupyterHub and
 DockerSpawner. Cairn remains the classroom/assignment application. Learner files

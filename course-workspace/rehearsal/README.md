@@ -81,6 +81,17 @@ current-roster restore command and `verify_institutional_recovery.py` acceptance
 harness. It destroys the synthetic source workspace and restores saved homes
 onto a new XFS filesystem while the independent fixture IdP remains available.
 
+## Course retirement rehearsal
+
+The [retirement/export guide](../COURSE-RETIREMENT.md) describes the public CLI
+and `verify_retirement.py --output /tmp/NEW_PRIVATE_DIRECTORY` acceptance path.
+It closes a fresh synthetic course, exports retained work (including a removed
+learner), verifies corruption controls and interruption recovery, restores its
+protected snapshot into a closed namespace and applies actual Restic retention.
+Only bounded `RETIREMENT-PASS.json` is uploaded; private exports, plans, identities,
+environment and keys remain excluded. It proves component closure and saved-work
+integrity on disposable Linux, not institutional retention or off-host acceptance.
+
 ## Remaining production gates
 
 Passing this harness does not establish institutional identity acceptance,
