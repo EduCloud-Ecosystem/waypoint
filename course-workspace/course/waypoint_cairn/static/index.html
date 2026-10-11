@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Submit saved files to Cairn</title><link rel="stylesheet" href="bridge.css"><script defer src="bridge.js"></script></head>
+<body><main><a id="lab" href="../lab">Back to JupyterLab</a><h1>Submit saved files to Cairn</h1>
+<p>Save your work in JupyterLab first. This sends the <strong>saved versions only</strong>, including notebook outputs. Unsaved edits are not included. Review your files for personal information before continuing.</p>
+<p>Select up to 32 files, at most 1 MiB each and 4 MiB total. Hidden files, shortcuts, and unsupported filenames cannot be selected.</p>
+<p>Use names beginning with a letter or digit, followed by ASCII letters, digits, underscores, hyphens, or single dots. Spaces and consecutive dots are unsupported.</p>
+<div id="status" role="status" aria-live="polite">Loading saved files…</div><div id="error" role="alert"></div>
+<section aria-labelledby="files-title"><h2 id="files-title">Saved files</h2><button id="up" type="button">Parent folder</button> <span id="folder">Workspace root</span><div id="files"></div></section>
+<section aria-labelledby="selection-title"><h2 id="selection-title">Selected files</h2><ul id="selected"></ul><button id="prepare" type="button" disabled>Prepare saved files</button><button id="cancel" type="button">Clear selection</button></section>
+<section id="review" hidden aria-labelledby="review-title"><h2 id="review-title">Saved snapshot ready</h2><p>The bytes below were read when you clicked Prepare. If you edit or save again, prepare a new snapshot.</p><ul id="snapshot"></ul><button id="send" type="button">Continue in Cairn</button><p>Choose the assignment in Cairn, click Receive saved files, then review and submit there. Opening Cairn does not submit your work.</p></section>
+</main></body></html>

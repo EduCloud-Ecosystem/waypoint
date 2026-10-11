@@ -32,6 +32,24 @@ def load(env):
     if not math.isfinite(cpu) or cpu <= 0:
         raise ValueError('WORKSPACE_CPU_LIMIT must be positive and finite')
     result = dict(instance=instance, mode=mode, public_url=public.geturl().rstrip('/'), cpu=cpu)
+    local_cairn = env.get('WORKSPACE_CAIRN_LOCAL_TEST', '1' if mode == 'local-test' else '0')
+    if local_cairn not in ('0', '1'):
+        raise ValueError('WORKSPACE_CAIRN_LOCAL_TEST must be 0 or 1')
+    result['cairn_local_test'] = local_cairn == '1'
+    result['cairn_origin'] = env.get('WORKSPACE_CAIRN_ORIGIN', '').strip()
+    if result['cairn_origin']:
+        raw = result['cairn_origin']
+        cairn = urlsplit(raw)
+        if (len(raw) > 512 or any(ord(char) < 33 or ord(char) > 126 for char in raw)
+                or '\\' in raw or not cairn.hostname or not re.fullmatch(r'[a-zA-Z0-9.-]+|::1', cairn.hostname)
+                or cairn.username or cairn.password or cairn.query or cairn.fragment or cairn.path not in ('', '/')
+                or (cairn.scheme != 'https' and not (result['cairn_local_test'] and cairn.scheme == 'http' and cairn.hostname in ('localhost', '127.0.0.1', '::1')))):
+            raise ValueError('WORKSPACE_CAIRN_ORIGIN requires a credential-free HTTPS origin (HTTP loopback only in local-test)')
+        if cairn.port is not None and not 1 <= cairn.port <= 65535:
+            raise ValueError('invalid Cairn origin port')
+        host = '[' + cairn.hostname + ']' if ':' in cairn.hostname else cairn.hostname
+        port = '' if cairn.port is None or cairn.port == (443 if cairn.scheme == 'https' else 80) else ':' + str(cairn.port)
+        result['cairn_origin'] = cairn.scheme + '://' + host + port
     for key, default in [('MEMORY_MB', 2048), ('ACTIVE_LIMIT', 4), ('IDLE_SECONDS', 1800), ('MAX_AGE_SECONDS', 28800)]:
         value = int(env.get('WORKSPACE_' + key, default))
         if value <= 0:

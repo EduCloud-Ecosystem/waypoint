@@ -58,6 +58,10 @@ c.DockerSpawner.pull_policy = 'never'
 c.DockerSpawner.notebook_dir = '/home/learner/work'
 c.Spawner.default_url = '/lab'
 c.Spawner.disable_user_config = True
+c.Spawner.environment = {
+    'WORKSPACE_CAIRN_ORIGIN': s['cairn_origin'],
+    'WORKSPACE_CAIRN_LOCAL_TEST': '1' if s['cairn_local_test'] else '0',
+}
 c.Spawner.mem_limit = s['memory_mb'] * 1024 * 1024
 c.Spawner.cpu_limit = s['cpu']
 c.DockerSpawner.extra_host_config = {

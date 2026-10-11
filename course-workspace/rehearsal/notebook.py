@@ -44,6 +44,7 @@ class Notebook:
         self.report = []
         self.revoked = None
         self.cleanup_verified = False
+        self.cairn_origin = None
 
     def compose(self, *args):
         env = {k:v for k,v in os.environ.items() if not k.startswith(('WORKSPACE_', 'COMPOSE_'))}
@@ -72,6 +73,9 @@ class Notebook:
         self.env.update(WORKSPACE_PUBLIC_URL=self.origin, WORKSPACE_OIDC_CLIENT_SECRET=secrets.token_urlsafe(32),
                         WORKSPACE_HOME_QUOTA_MB='256', WORKSPACE_MEMORY_MB='1024', WORKSPACE_ACTIVE_LIMIT='2',
                         WORKSPACE_ENV_FILE=str(self.root / '.env'))
+        if self.cairn_origin:
+            self.env['WORKSPACE_CAIRN_ORIGIN'] = self.cairn_origin
+            self.env['WORKSPACE_CAIRN_LOCAL_TEST'] = '1'
         self.write_env()
         provision(self.homes, self.instance, [SUBJECTS[user] for user in self.users], 256)
         # A private fixture CA is trusted explicitly by Hub and HTTP clients.
@@ -253,6 +257,26 @@ proxy_set_header X-Forwarded-Port {self.port}; proxy_set_header X-Forwarded-For 
                     'from pathlib import Path\nassert Path("solution.py").read_text() == '+repr(SOLUTION)+'\nprint("COURSE_OK")')
         self.report += ['server-stop-resume','saved-file-after-server-restart']
         return resumed,resumed_url
+
+    def submission_page(self, context, item):
+        """Use the actual saved-file bridge in the authenticated notebook."""
+        from playwright.sync_api import expect
+        _, page, session, url = self.revoked
+        # The application provides a discoverable link independent of home files.
+        with page.expect_popup() as bridge:
+            page.get_by_role('link', name='Submit saved files to Cairn', exact=True).click()
+        page = bridge.value
+        page.wait_for_url(url + '/cairn/')
+        page.get_by_role('checkbox', name='solution.py', exact=False).check()
+        page.get_by_role('button', name='Prepare saved files', exact=True).click()
+        with context.expect_page() as opened:
+            page.get_by_role('button', name='Continue in Cairn', exact=True).click()
+        receiver = opened.value
+        receiver.get_by_label('Assignment', exact=True).select_option(item['submission_id'])
+        receiver.get_by_role('button', name='Receive saved files from Waypoint', exact=True).click()
+        expect(receiver.locator('#bridge-status')).to_contain_text('Nothing has been submitted yet.')
+        self.report += ['waypoint-selected-file-bridge', 'separate-cairn-confirmation']
+        return receiver
 
     def bounded_load(self, browser, alice, alice_url, bob, bob_url):
         from concurrent.futures import ThreadPoolExecutor

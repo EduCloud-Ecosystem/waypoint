@@ -14,7 +14,9 @@ def audit(page, source):
     lock = json.loads((source / 'web/package-lock.json').read_text())
     assert package['version'] == lock['packages']['node_modules/axe-core']['version']
     page.evaluate('async () => { await document.fonts.ready; await Promise.all(document.getAnimations().map(a => a.finished.catch(() => {}))); }')
-    page.add_script_tag(path=str(asset))
+    # Test instrumentation executes the pinned local axe source directly. This
+    # leaves the page's real script-src CSP intact for application behavior.
+    page.evaluate(asset.read_text())
     result = page.evaluate('''async () => {
       const result = await axe.run(document, {
         runOnly: {type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']}

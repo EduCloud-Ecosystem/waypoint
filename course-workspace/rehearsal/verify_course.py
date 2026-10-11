@@ -8,7 +8,7 @@ import sys
 import time
 
 from playwright.sync_api import sync_playwright
-from cairn_journey import journey, FORGEJO_IMAGE, public_metrics, run
+from cairn_journey import journey, FORGEJO_IMAGE, public_metrics, run, port
 from evidence import collect_provenance, write_pass, REQUIRED_PHASES
 from notebook import Notebook, KEYCLOAK_IMAGE, NGINX_IMAGE
 
@@ -44,6 +44,7 @@ def main():
     course_root.mkdir(mode=0o700)
     started, timer = datetime.now(timezone.utc).isoformat(), time.monotonic()
     notebook = Notebook(notebook_root, extra_users=('carol',))
+    notebook.cairn_origin = 'http://127.0.0.1:' + str(port())
     try:
         notebook.start()
         # A fresh CI worker has never run Course.start yet. Resolve the pinned
@@ -57,7 +58,8 @@ def main():
             try:
                 report = journey(course_root, args.cairn_binary.resolve(), notebook.origin,
                                  notebook.image, None, browser, args.cairn_source.resolve(),
-                                 args.lti_binary.resolve(), notebook.handoff, notebook.revocation)
+                                 args.lti_binary.resolve(), notebook.handoff, notebook.revocation,
+                                 notebook.submission_page, notebook.cairn_origin)
             finally:
                 browser.close()
         assert provenance == collect_provenance(args.cairn_source, args.cairn_binary, args.lti_binary, images=images), 'inputs changed during pilot'

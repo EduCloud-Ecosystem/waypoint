@@ -1,0 +1,7 @@
+{
+  "name": "@educloud/waypoint-cairn",
+  "version": "1.0.0",
+  "description": "Saved-file Cairn handoff launcher for the pinned course JupyterLab 4 image",
+  "license": "MIT",
+  "jupyterlab": {"extension": true, "_build": {"load": "static/remoteEntry.js", "extension": "./extension"}}
+}

@@ -5,7 +5,7 @@ portable browser Python/R course. The older Coolify publishing/federation plan
 in PLAN.1.md is a separate track; completing this course worker does not imply
 that multi-tenant hosting or federation is implemented.
 
-## 1. Operable course worker - current build
+## 1. Operable course worker - implemented
 
 - Institutional worker setup without synthetic credentials.
 - Startup checks for the actual native Docker worker, compatible images,
@@ -22,14 +22,17 @@ Exit: passing current-release automated checks and an operator runbook. Live
 hosting, notification delivery, institutional identity and second-host recovery
 remain acceptance tasks against the chosen infrastructure.
 
-## 2. Easier coursework submission
+## 2. Easier coursework submission - current build
 
-Design the Cairn-Waypoint boundary before implementation: explicit file selection,
-assignment/identity confirmation, immutable artifact digest, submission receipt,
-retry/deduplication and visible failure recovery. Saving a notebook must never
-silently publish it or overwrite a previously accepted submission. Preserve the
-current manual transfer path until the new flow passes isolated and combined
-rehearsals. This requires coordinated Cairn changes; shared login is not implied.
+The [saved-file handoff](course-workspace/course/CAIRN-SUBMISSION.md) implements
+explicit file selection, assignment/account confirmation, exact file digests,
+durable receipts, retry/deduplication and visible failure recovery. Cairn creates
+a bounded, conditional Git commit and grades that immutable revision. Saving a
+notebook never publishes it. The manual Git path remains available. The coordinated
+Cairn/Waypoint release must pass isolated and combined synthetic rehearsals;
+shared login and live institutional acceptance are not implied. Ambiguous remote
+outcomes remain instructor/operator review cases; automatic ancestry adjudication
+and an operator reconciliation UI remain follow-up work.
 
 ## 3. Course onboarding and lifecycle
 

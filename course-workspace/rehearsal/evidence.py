@@ -10,15 +10,15 @@ import re
 import subprocess
 import tempfile
 
-VERSION = 2
-FIXTURE_VERSION = 'course-pilot-v2'
+VERSION = 3
+FIXTURE_VERSION = 'course-pilot-v3'
 MAX_BYTES = 64 * 1024
 FIXTURE_FILES = frozenset({'evidence.py', 'cairn_journey.py', 'verify_course.py',
                            'notebook.py', 'requirements.txt', 'assessment_passback.py',
-                           'course_load.py', 'webhook_relay.py', 'accessibility.py'})
+                           'course_load.py', 'webhook_relay.py', 'accessibility.py', 'submission_handoff.py'})
 LOCAL_PHASES = frozenset({'forgejo_oauth', 'roster_isolation', 'submission_grading',
                           'webhook_replay', 'reviewed_assessment', 'lti_simulation',
-                          'course_load', 'restart_persistence'})
+                          'course_load', 'restart_persistence', 'submission_handoff'})
 REQUIRED_PHASES = {
     'local-subset': LOCAL_PHASES,
     'full-linux': LOCAL_PHASES | {'notebook_python_r', 'notebook_persistence',

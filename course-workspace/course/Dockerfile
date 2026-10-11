@@ -4,6 +4,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends r-base r-cran-i
 COPY requirements.txt /tmp/requirements.txt
 RUN pip install --no-cache-dir --require-hashes -r /tmp/requirements.txt && R -e 'IRkernel::installspec(user=FALSE)'
 RUN useradd --create-home --uid 1000 --shell /bin/bash learner && mkdir -p /home/learner/work && chown -R 1000:1000 /home/learner
+COPY waypoint_cairn /usr/local/lib/python3.12/site-packages/waypoint_cairn
+COPY jupyter_server_config.d /usr/local/etc/jupyter/jupyter_server_config.d
+COPY labextension /usr/local/share/jupyter/labextensions/@educloud/waypoint-cairn
 COPY --chown=1000:1000 Welcome.ipynb /home/learner/work/Welcome.ipynb
 ENV HOME=/home/learner MPLCONFIGDIR=/home/learner/.cache/matplotlib
 USER 1000:1000

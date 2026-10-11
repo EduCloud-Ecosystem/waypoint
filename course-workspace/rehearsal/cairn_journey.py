@@ -50,12 +50,12 @@ def wait_http(url):
 
 
 class Course:
-    def __init__(self, root, binary, workspace, image, cairn_source):
+    def __init__(self, root, binary, workspace, image, cairn_source, cairn_origin=None):
         self.root, self.binary, self.workspace, self.image = root, binary, workspace, image
         self.cairn_source = cairn_source
         self.name = 'rehearsal-' + uuid.uuid4().hex[:10]
         self.forge = 'http://127.0.0.1:' + str(port())
-        self.url = 'http://127.0.0.1:' + str(port())
+        self.url = cairn_origin or 'http://127.0.0.1:' + str(port())
         self.password = secrets.token_urlsafe(32)
         self.relay = None
         self.network = self.name + "-webhook"
@@ -233,10 +233,11 @@ class Course:
         return True
 
 
-def journey(root, binary, workspace, image, solution, browser, cairn_source, lti_binary, notebook=None, after_grading=None):
+def journey(root, binary, workspace, image, solution, browser, cairn_source, lti_binary, notebook=None, after_grading=None,
+            submission_page=None, cairn_origin=None):
     from assessment_passback import AssessmentPassback
     from course_load import run_load, verify_restart
-    course = Course(root, binary, workspace, image, cairn_source)
+    course = Course(root, binary, workspace, image, cairn_source, cairn_origin)
     assessment = None
     try:
         revision = course.start()
@@ -253,6 +254,8 @@ def journey(root, binary, workspace, image, solution, browser, cairn_source, lti
             'template': {'namespace': 'course-test', 'name': 'template', 'ref': revision}}, 201)
         aid = assignment['id']
         course.env['CAIRN_WORKSPACE_URLS'] = json.dumps({cid: workspace})
+        course.env['CAIRN_SUBMISSIONS'] = 'true'
+        course.env['CAIRN_SUBMISSION_CLASSROOMS'] = cid
         course.restart()
         teacher.close()
         teacher, _ = course.login(browser, 'teacher', '/auth/login')
@@ -283,6 +286,9 @@ def journey(root, binary, workspace, image, solution, browser, cairn_source, lti
         assert 'not on roster' in denied_page.text_content('body')
         sub = course.request(teacher, 'GET', f'/assignments/{aid}/submissions')[0]
         repo = sub['repo']['namespace'] + '/' + sub['repo']['name']
+        from submission_handoff import first_submission, verify_receipt_after_restart
+        handoff = first_submission(course, alice, bob, item, solution, submission_page)
+        first = handoff['commit']
         # Clone and push as the learner; Forgejo must deliver the registered hook.
         checkout=root/'student-repo'
         git_env={k:v for k,v in os.environ.items() if not k.startswith('GIT_')}
@@ -300,7 +306,7 @@ def journey(root, binary, workspace, image, solution, browser, cairn_source, lti
             return revision
         course.request(alice,'PATCH',f'/assignments/{aid}/grading-policy',{'template_commit':revision},status=401)
         expected={}; started=time.monotonic()
-        first=push(solution,'Correct notebook answer'); expected[first]=10
+        expected[first]=10
         # A rapid sequence creates a bounded queue; each score must match its own commit.
         for n in range(5):
             answer=999 if n%2==0 else 5
@@ -340,6 +346,7 @@ def journey(root, binary, workspace, image, solution, browser, cairn_source, lti
         old_alice=alice
         course.restart()
         alice,page=course.login(browser,'alice','/student/login?host=forgejo')
+        verify_receipt_after_restart(course, alice, item['submission_id'], handoff)
         assert replay(0)==202
         time.sleep(3)
         detail=course.request(alice,'GET','/me/work/'+item['submission_id'])
@@ -358,7 +365,7 @@ def journey(root, binary, workspace, image, solution, browser, cairn_source, lti
                   'passed_score': 10, 'failed_score': 0, 'max_score': 10,
                   'checks': ['operator-auth', 'roster-denial', 'student-admin-denial', 'own-grade-only',
                              'workspace-link', 'real-git-push-webhook', 'pinned-policy', 'pinned-submission-revisions', 'pass-and-fail-grading',
-                             'six-push-burst', 'duplicate-replay-after-restart', 'bad-signature-denied', 'draft-branch-ignored']}
+                             'six-revision-grading', 'duplicate-replay-after-restart', 'bad-signature-denied', 'draft-branch-ignored'] + handoff['checks']}
         if after_grading:
             after_grading(browser)
         report['assessment'] = assessment.run(browser, aid, item['submission_id'])

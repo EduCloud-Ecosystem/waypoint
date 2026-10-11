@@ -8,6 +8,22 @@ on:
 permissions:
   contents: read
 jobs:
+  bridge:
+    name: Saved-file bridge browser boundaries
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install --require-hashes -r course-workspace/course/requirements.txt
+      - run: pip install -r course-workspace/rehearsal/requirements.txt
+      - run: python -m playwright install --with-deps chromium
+      - name: Real JupyterLab authentication, XSRF and popup boundary tests
+        run: |
+          python -c 'import jupyterlab, playwright'
+          python -m unittest discover -s course-workspace/tests -p 'test_submission_bridge*.py' -v
   course:
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -18,7 +34,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: EduCloud-Ecosystem/cairn
-          ref: b808b1fad63962e85876a94fe923e7d525024c54
+          ref: b7476ef5b54417589ae9818574effc064ee62b75
           path: output/cairn-source
       - uses: actions/setup-python@v5
         with:
@@ -64,6 +80,8 @@ jobs:
           sudo cp /tmp/educloud-course-rehearsal/course/bob-reviewed-feedback.png output/rehearsal-evidence/
           sudo cp /tmp/educloud-course-rehearsal/course/student-workspace-link.png output/rehearsal-evidence/
           sudo cp /tmp/educloud-course-rehearsal/course/student-grade.png output/rehearsal-evidence/
+          sudo cp /tmp/educloud-course-rehearsal/course/submission-preview.png output/rehearsal-evidence/
+          sudo cp /tmp/educloud-course-rehearsal/course/submission-receipt.png output/rehearsal-evidence/
           sudo cp /tmp/educloud-course-rehearsal/notebook/notebook.png output/rehearsal-evidence/
           sudo chmod 644 output/rehearsal-evidence/*
       - uses: actions/upload-artifact@v4

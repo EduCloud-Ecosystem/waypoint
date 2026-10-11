@@ -19,12 +19,15 @@ The workflow in `.github/workflows/course-rehearsal.yml` runs the complete path:
    actual Cairn workspace link. Authenticate separately through Keycloak into
    the notebook. These two identities are deliberately separate; there is no
    claim of unified sign-on or automatic roster synchronization.
-5. Execute Python and R over HTTPS notebook WebSockets. Save `solution.py`,
-   download its actual contents, commit those bytes and push Git as the learner.
-   This represents the explicit file transfer required today; saving a notebook
-   alone does not submit coursework. Forgejo delivers its registered signed hook
-   through a private fixture relay to Cairn; no instructor Grade request is sent.
-6. Push six commits rapidly with alternating correct/incorrect answers. Assert
+5. Execute Python and R over HTTPS notebook WebSockets. Save `solution.py`, use
+   JupyterLab's visible Cairn link to select its saved bytes, receive them in Cairn,
+   preview the exact file digest and confirm. Lose the first confirmation response
+   and retry the same receipt; there must be one accepted Git commit. Reject an
+   incorrect Origin, peer learner, changed idempotency payload and unsafe path.
+   Forgejo delivers its registered signed hook through a private fixture relay;
+   no instructor Grade request is sent. Local-subset testing uses the same Cairn
+   page with an explicit device upload instead of the full Jupyter bridge.
+6. Follow the submitted commit with five rapid Git pushes, alternating correct/incorrect answers. Assert
    each grade records its own immutable commit and scores 10/10 or 0/10 despite
    the forged learner `grading.json`. Replay an actual signed delivery 12 times
    concurrently and once after restarting Cairn; the history must still contain
@@ -85,7 +88,8 @@ class-size capacity, uptime or provider disaster recovery. Select the actual
 worker and off-host backup account, rehearse real roster changes, certificate
 renewal/reboot, quota monitoring and incident response, then repeat the course
 path with institution-approved synthetic accounts before enrolling learners.
-Cairn/Hub roster synchronization and automatic file transfer are not implemented.
+Cairn/Hub roster synchronization and automatic submission on save are not implemented.
+Selected-file handoff is explicit and separately authenticated; it is tested here.
 Actual Forgejo Git push/webhook delivery is now exercised synthetically, including
 six queued revisions and replay after restart. Other hosts' live webhook paths,
 interrupted-worker recovery and real class-size capacity remain separate gates.
