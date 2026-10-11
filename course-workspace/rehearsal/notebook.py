@@ -1,4 +1,5 @@
 """Real Keycloak/Hub TLS rehearsal on a disposable Linux XFS mount."""
+import copy
 import hashlib
 import json
 import os
@@ -19,6 +20,8 @@ sys.path.insert(0, str(ROOT))
 from backup import docker
 from homes import provision, inspect, run as xfs_run
 from public_course import render
+from deployment import read_environment, preflight
+from course_manifest import render_manifest, validate_manifest
 from smoke import change
 from cairn_journey import run, port, SOLUTION
 
@@ -45,16 +48,20 @@ class Notebook:
         self.revoked = None
         self.cleanup_verified = False
         self.cairn_origin = None
+        self.deployment = self.root / 'deployment'
+        self.env_file = self.root / 'bootstrap.env'
+        self.manifest_path = None
+        self.manifest_digest = None
 
     def compose(self, *args):
         env = {k:v for k,v in os.environ.items() if not k.startswith(('WORKSPACE_', 'COMPOSE_'))}
-        return run('docker', 'compose', '--env-file', str(self.root / '.env'), '-f', str(ROOT / 'compose.yaml'),
+        return run('docker', 'compose', '--env-file', str(self.env_file), '-f', str(ROOT / 'compose.yaml'),
                    '-f', str(ROOT / 'quota-compose.yaml'), '-f', str(self.root / 'override.json'), *args,
                    cwd=ROOT, env=env)
 
     def write_env(self):
-        (self.root / '.env').write_text(''.join(f'{k}={v}\n' for k,v in self.env.items()))
-        (self.root / '.env').chmod(0o600)
+        self.env_file.write_text(''.join(f'{k}={v}\n' for k,v in self.env.items()))
+        self.env_file.chmod(0o600)
 
     def start(self):
         if sys.platform != 'linux' or os.geteuid() != 0:
@@ -68,14 +75,11 @@ class Notebook:
         xfs_run('mkfs.xfs', '-f', str(disk))
         xfs_run('mount', '-o', 'loop,prjquota', str(disk), str(self.homes))
         self.mounted = True
-        nginx, client, self.env = render('work.rehearsal.test', self.auth + '/realms/course', 'course', self.instance,
+        _, _, self.env = render('work.rehearsal.test', self.auth + '/realms/course', 'course', self.instance,
                                         [SUBJECTS[user] for user in self.users], str(self.homes), port())
         self.env.update(WORKSPACE_PUBLIC_URL=self.origin, WORKSPACE_OIDC_CLIENT_SECRET=secrets.token_urlsafe(32),
                         WORKSPACE_HOME_QUOTA_MB='256', WORKSPACE_MEMORY_MB='1024', WORKSPACE_ACTIVE_LIMIT='2',
-                        WORKSPACE_ENV_FILE=str(self.root / '.env'))
-        if self.cairn_origin:
-            self.env['WORKSPACE_CAIRN_ORIGIN'] = self.cairn_origin
-            self.env['WORKSPACE_CAIRN_LOCAL_TEST'] = '1'
+                        WORKSPACE_ENV_FILE=str(self.env_file))
         self.write_env()
         provision(self.homes, self.instance, [SUBJECTS[user] for user in self.users], 256)
         # A private fixture CA is trusted explicitly by Hub and HTTP clients.
@@ -89,33 +93,17 @@ class Notebook:
             '-out', str(self.root/'fullchain.pem'))
         for name in ('ca.key','privkey.pem'):
             (self.root/name).chmod(0o600)
-        client.update(secret=self.env['WORKSPACE_OIDC_CLIENT_SECRET'], redirectUris=[self.origin+'/hub/oauth_callback'], webOrigins=[self.origin])
-        realm = {'realm':'course', 'enabled':True, 'sslRequired':'all', 'registrationAllowed':False,
-                 'clients':[client], 'users':[{'id': subject, 'username': user, 'enabled':True,
-                 'email':user+'@synthetic.invalid', 'emailVerified':True, 'firstName':'Synthetic', 'lastName':user,
-                 'credentials':[{'type':'password','value':self.password,'temporary':False}]} for user,subject in SUBJECTS.items()]}
-        (self.root/'realm.json').write_text(json.dumps(realm))
-        # Keycloak runs as UID 1000 and must read its disposable import file.
-        (self.root/'realm.json').chmod(0o644)
         run('docker','network','create','--label','educloud.rehearsal='+self.instance,self.network)
-        run('docker','run','-d','--name',self.instance+'-identity','--label','educloud.rehearsal='+self.instance,'--network',self.network,'--network-alias','identity',
-            '--memory','1g','--cpus','1','-v',str(self.root/'realm.json')+':/opt/keycloak/data/import/course.json:ro',
-            '-e','KC_HOSTNAME='+self.auth,'-e','KC_PROXY_HEADERS=xforwarded',KEYCLOAK_IMAGE,'start-dev','--import-realm')
-        # Production generator routes are reused; only fixture ports/upstream change.
-        nginx = nginx.replace('listen 443',f'listen {self.port}').replace('http://127.0.0.1:'+self.env['WORKSPACE_PORT'], f'http://{self.instance}-hub:8000')
-        nginx += f'''\nserver {{ listen {self.port} ssl; server_name auth.rehearsal.test;
-ssl_certificate /etc/educloud/tls/fullchain.pem; ssl_certificate_key /etc/educloud/tls/privkey.pem;
-location / {{ proxy_pass http://identity:8080; proxy_set_header Host $http_host;
-proxy_set_header X-Forwarded-Proto https; proxy_set_header X-Forwarded-Host $http_host;
-proxy_set_header X-Forwarded-Port {self.port}; proxy_set_header X-Forwarded-For $remote_addr; }} }}\n'''
-        (self.root/'nginx.conf').write_text('events {}\nhttp { access_log off;\n'+nginx+'\n}\n')
         override = {'networks': {'default':{'external':True,'name':self.network}},'services':{'hub':{
             'environment':{'SSL_CERT_FILE':'/fixture-ca.pem','REQUESTS_CA_BUNDLE':'/fixture-ca.pem'},
             'volumes':[str(self.root/'ca.pem')+':/fixture-ca.pem:ro']}}}
         (self.root/'override.json').write_text(json.dumps(override))
         print('Building the current notebook images.',flush=True)
         self.compose('--profile','build','build')
-        self.compose('up','-d','hub')
+        self.render_setup()
+        self.verify_startup_preflight(self.deployment)
+        self.configure_fixture_edges()
+        self.compose('up','-d','--no-build','--pull','never','hub')
         run('docker','run','-d','--name',self.instance+'-proxy','--label','educloud.rehearsal='+self.instance,'--network',self.network,
             '--network-alias','auth.rehearsal.test','--memory','128m','-p',f'127.0.0.1:{self.port}:{self.port}',
             '-v',str(self.root/'nginx.conf')+':/etc/nginx/nginx.conf:ro',
@@ -139,6 +127,141 @@ proxy_set_header X-Forwarded-Port {self.port}; proxy_set_header X-Forwarded-For 
             raise AssertionError('OIDC fixture did not become ready')
         inspect(self.homes,self.instance)
         print('Keycloak discovery, TLS and Hub are ready.',flush=True)
+
+    def configure_fixture_edges(self):
+        # The operator-rendered client drives the real fixture realm. The sole
+        # secret is inserted privately into the disposable Keycloak import.
+        client = json.loads((self.deployment / 'keycloak-client.json').read_text())
+        client['secret'] = self.env['WORKSPACE_OIDC_CLIENT_SECRET']
+        realm = {'realm':'course', 'enabled':True, 'sslRequired':'all', 'registrationAllowed':False,
+                 'clients':[client], 'users':[{'id': subject, 'username': user, 'enabled':True,
+                 'email':user+'@synthetic.invalid', 'emailVerified':True, 'firstName':'Synthetic', 'lastName':user,
+                 'credentials':[{'type':'password','value':self.password,'temporary':False}]} for user,subject in SUBJECTS.items()]}
+        (self.root/'realm.json').write_text(json.dumps(realm))
+        # Keycloak runs as UID 1000 and must read its disposable import file.
+        # Its parent fixture directory remains private and is never published.
+        (self.root/'realm.json').chmod(0o644)
+        run('docker','run','-d','--name',self.instance+'-identity','--label','educloud.rehearsal='+self.instance,'--network',self.network,'--network-alias','identity',
+            '--memory','1g','--cpus','1','-v',str(self.root/'realm.json')+':/opt/keycloak/data/import/course.json:ro',
+            '-e','KC_HOSTNAME='+self.auth,'-e','KC_PROXY_HEADERS=xforwarded',KEYCLOAK_IMAGE,'start-dev','--import-realm')
+        # Keep the generated TLS/DNS policy. Only the private Compose-network
+        # upstream and separate synthetic IdP virtual host are fixture adapters.
+        nginx = (self.deployment / 'nginx.conf').read_text()
+        nginx = nginx.replace('http://127.0.0.1:'+self.env['WORKSPACE_PORT'], f'http://{self.instance}-hub:8000')
+        nginx += f'''\nserver {{ listen {self.port} ssl; server_name auth.rehearsal.test;
+ssl_certificate /etc/educloud/tls/fullchain.pem; ssl_certificate_key /etc/educloud/tls/privkey.pem;
+location / {{ proxy_pass http://identity:8080; proxy_set_header Host $http_host;
+proxy_set_header X-Forwarded-Proto https; proxy_set_header X-Forwarded-Host $http_host;
+proxy_set_header X-Forwarded-Port {self.port}; proxy_set_header X-Forwarded-For $remote_addr; }} }}\n'''
+        (self.root/'nginx.conf').write_text('events {}\nhttp { access_log off;\n'+nginx+'\n}\n')
+        self.report += ['course-manifest-identity-consumed', 'course-manifest-proxy-consumed']
+
+    def render_setup(self):
+        """Consume the same strict manifest/rendering path used by operators."""
+        self.hub_image = run('docker', 'image', 'inspect', self.instance + '-hub:pilot', '--format', '{{.Id}}')
+        self.image = run('docker', 'image', 'inspect', self.image, '--format', '{{.Id}}')
+        secret_file = self.root / 'oidc-secret'
+        secret_file.write_text(self.env['WORKSPACE_OIDC_CLIENT_SECRET'])
+        secret_file.chmod(0o600)
+        backup_file = self.root / 'backup-secret'
+        backup_file.write_text(secrets.token_urlsafe(32))
+        backup_file.chmod(0o600)
+        self.manifest = {
+            'version': 1, 'scope': 'synthetic', 'instance': self.instance,
+            'images': {'hub': self.hub_image, 'course': self.image},
+            'identity': {'issuer': self.auth + '/realms/course', 'client_id': 'course',
+                         'client_secret_file': str(secret_file),
+                         'subjects': [SUBJECTS[user] for user in self.users]},
+            'workspace': {'origin': self.origin, 'port': int(self.env['WORKSPACE_PORT'])},
+            'storage': {'home_root': str(self.homes), 'quota_mb': 256, 'inode_limit': 100000},
+            'capacity': {'memory_mb': 1024, 'cpu': 1, 'active_limit': 2,
+                         'idle_seconds': 1800, 'max_age_seconds': 28800},
+            'backup': {'repository': str(self.root / 'encrypted-repository'),
+                       'password_file': str(backup_file), 'staging_dir': str(self.deployment),
+                       'keep_last': 7, 'keep_daily': 7, 'keep_weekly': 4},
+            'cairn': {'enabled': False},
+            'owners': {'support': 'Synthetic rehearsal operator', 'restore': 'Synthetic rehearsal operator'},
+        }
+        render_manifest(self.manifest, self.deployment)
+        self.env_file = self.deployment / '.env'
+        self.env = read_environment(self.env_file)
+        self.freeze_manifest()
+        self.report.append('course-manifest-rendered')
+
+    def verify_startup_preflight(self, directory):
+        result = preflight(directory)
+        if result.get('status') != 'ready' or result.get('images') != {'hub': self.hub_image, 'course': self.image}:
+            raise AssertionError('manifest startup preflight did not verify configured images')
+        if 'course-manifest-startup-preflight' not in self.report:
+            self.report.append('course-manifest-startup-preflight')
+
+    def freeze_manifest(self):
+        self.manifest_path = self.deployment / 'manifest.json'
+        self.manifest_digest = hashlib.sha256(self.manifest_path.read_bytes()).hexdigest()
+
+    def verify_manifest_frozen(self):
+        if (not self.manifest_path or self.manifest_path.is_symlink()
+                or hashlib.sha256(self.manifest_path.read_bytes()).hexdigest() != self.manifest_digest):
+            raise AssertionError('consumed course manifest changed during rehearsal')
+
+    def bind_classroom(self, classroom_id, workspace_url):
+        """Render actual classroom binding before the first learner starts."""
+        self.verify_manifest_frozen()
+        if not self.cairn_origin or workspace_url != self.origin:
+            raise AssertionError('Cairn binding does not identify this workspace')
+        manifest = copy.deepcopy(self.manifest)
+        manifest['cairn'] = {'enabled': True, 'origin': self.cairn_origin,
+                             'classroom_id': classroom_id, 'workspace_url': workspace_url,
+                             'max_files': 32, 'max_file_bytes': 1048576, 'max_total_bytes': 4194304}
+        if validate_manifest(manifest):
+            raise AssertionError('actual Cairn binding failed course manifest validation')
+        destination = self.root / 'bound-deployment'
+        manifest['backup']['staging_dir'] = str(destination)
+        render_manifest(manifest, destination)
+        for name in ('nginx.conf', 'keycloak-client.json'):
+            if (destination / name).read_bytes() != (self.deployment / name).read_bytes():
+                raise AssertionError('classroom binding changed already-consumed identity or proxy policy')
+        binding = json.loads((destination / 'cairn-binding.json').read_text())
+        if binding.get('classroom_id') != classroom_id or binding.get('workspace_url') != workspace_url:
+            raise AssertionError('rendered Cairn binding differs from the actual classroom')
+        operator_env = binding.get('operator_environment')
+        if operator_env != {'CAIRN_SUBMISSIONS': 'true', 'CAIRN_SUBMISSION_CLASSROOMS': classroom_id}:
+            raise AssertionError('rendered Cairn approval differs from the actual classroom')
+        self.verify_startup_preflight(destination)
+        self.compose('stop', 'hub')
+        self.manifest = manifest
+        self.deployment = destination
+        self.env_file = destination / '.env'
+        self.env = read_environment(self.env_file)
+        self.freeze_manifest()
+        self.compose('up', '-d', '--force-recreate', '--no-build', '--pull', 'never', 'hub')
+        for _ in range(60):
+            try:
+                if self.session.get(self.origin + '/hub/login', timeout=2).status_code == 200:
+                    break
+            except requests.RequestException:
+                pass
+            time.sleep(1)
+        else:
+            raise AssertionError('manifest-bound Hub did not become ready')
+        self.report.append('course-manifest-cairn-bound')
+        return operator_env
+
+    def verify_runtime_images(self):
+        # Unit navigation controls do not construct a deployment. Every actual
+        # rehearsal does, and must inspect both started Hub and learner bytes.
+        if self.manifest_digest is None:
+            return
+        hub = json.loads(docker('inspect', self.instance + '-hub'))[0]
+        if hub.get('Image') != self.hub_image:
+            raise AssertionError('Hub did not consume the pinned manifest image')
+        identities = docker('ps', '-q', '--filter', 'label=educloud.workspace.instance=' + self.instance,
+                            '--filter', 'label=educloud.workspace.kind=learner').split()
+        if not identities or any(json.loads(docker('inspect', identity))[0].get('Image') != self.image
+                                 for identity in identities):
+            raise AssertionError('learner did not consume the pinned manifest image')
+        if 'course-manifest-images-consumed' not in self.report:
+            self.report.append('course-manifest-images-consumed')
 
     def login(self, page, user):
         page.goto(self.origin+'/hub/login')
@@ -178,6 +301,7 @@ proxy_set_header X-Forwarded-Port {self.port}; proxy_set_header X-Forwarded-For 
                 contents = session.get(url+'/api/contents', timeout=10, allow_redirects=False)
                 if (contents.status_code == 200 and 'application/json' in contents.headers.get('Content-Type', '')
                         and contents.json().get('type') == 'directory'):
+                    self.verify_runtime_images()
                     return session, url
             time.sleep(1)
         raise AssertionError('notebook did not become ready')
@@ -356,7 +480,7 @@ proxy_set_header X-Forwarded-Port {self.port}; proxy_set_header X-Forwarded-For 
         self.env['WORKSPACE_ALLOWED_SUBJECTS']=SUBJECTS['bob']
         self.write_env()
         self.compose('stop','hub')  # Graceful stop terminates active learners.
-        self.compose('up','-d','--force-recreate','hub')
+        self.compose('up','-d','--force-recreate','--no-build','--pull','never','hub')
         inspect(self.homes,self.instance)
         for _ in range(60):
             try:

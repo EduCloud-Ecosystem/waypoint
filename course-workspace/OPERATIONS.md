@@ -30,6 +30,11 @@ credential/configuration files owner-only (0600).
    inspector timer, and build or restore the tested Hub and course images.
    Preserve the image IDs; rebuilding a tag later is not a reproducible release.
 
+   The [course manifest](COURSE-MANIFEST.md) combines these settings and owners
+   into one reviewable input and generates a fresh private deployment directory.
+   It validates consistency offline; actual host/identity/backup acceptance
+   remains required. If using a different directory, update service paths.
+
 3. Run startup preflight before admitting anyone:
 
    ```sh

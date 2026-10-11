@@ -10,8 +10,8 @@ import re
 import subprocess
 import tempfile
 
-VERSION = 3
-FIXTURE_VERSION = 'course-pilot-v3'
+VERSION = 4
+FIXTURE_VERSION = 'course-pilot-v4'
 MAX_BYTES = 64 * 1024
 FIXTURE_FILES = frozenset({'evidence.py', 'cairn_journey.py', 'verify_course.py',
                            'notebook.py', 'requirements.txt', 'assessment_passback.py',
@@ -22,7 +22,7 @@ LOCAL_PHASES = frozenset({'forgejo_oauth', 'roster_isolation', 'submission_gradi
 REQUIRED_PHASES = {
     'local-subset': LOCAL_PHASES,
     'full-linux': LOCAL_PHASES | {'notebook_python_r', 'notebook_persistence',
-                                 'notebook_isolation', 'notebook_revocation', 'bounded_load'},
+                                 'notebook_isolation', 'notebook_revocation', 'bounded_load', 'course_manifest'},
 }
 IMAGE_ROLES = frozenset({'course', 'checkout', 'forgejo', 'keycloak', 'nginx', 'hub'})
 HASH = re.compile(r'[0-9a-f]{64}\Z')
@@ -189,12 +189,18 @@ def write_pass(root, report, scope, cleanup_verified):
     if scope not in REQUIRED_PHASES or cleanup_verified is not True:
         raise ValueError('unknown scope or cleanup not verified')
     required = {'provenance', 'phases', 'started_at', 'finished_at', 'duration_seconds'}
-    if not isinstance(report, dict) or not required <= set(report) or set(report) - required - {'checks', 'metrics'}:
+    if not isinstance(report, dict) or not required <= set(report) or set(report) - required - {'checks', 'metrics', 'course_manifest_sha256'}:
         raise ValueError('invalid or unfiltered evidence report')
     _validate_provenance(report['provenance'])
     phases = report['phases']
     if not isinstance(phases, dict) or set(phases) != REQUIRED_PHASES[scope] or any(v is not True for v in phases.values()):
         raise ValueError('required rehearsal phase missing or unsuccessful')
+    manifest_hash = report.get('course_manifest_sha256')
+    if scope == 'full-linux':
+        if not isinstance(manifest_hash, str) or not HASH.fullmatch(manifest_hash):
+            raise ValueError('full rehearsal requires the consumed course manifest digest')
+    elif manifest_hash is not None:
+        raise ValueError('local subset does not execute a course manifest')
     needed_images = {'course', 'checkout', 'forgejo'}
     if scope == 'full-linux':
         needed_images |= {'keycloak', 'nginx', 'hub'}

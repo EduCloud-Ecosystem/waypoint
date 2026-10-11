@@ -56,6 +56,10 @@ def load(env):
             raise ValueError('WORKSPACE_' + key + ' must be positive')
         result[key.lower()] = value
     result['image'] = required('WORKSPACE_IMAGE')
+    result['hub_image'] = env.get('WORKSPACE_HUB_IMAGE', '').strip() or instance + '-hub:pilot'
+    if env.get('WORKSPACE_HUB_IMAGE', '').strip() and not re.fullmatch(
+            r'(?:sha256:[0-9a-f]{64}|[a-z0-9][a-z0-9._:/-]*@sha256:[0-9a-f]{64})', result['hub_image']):
+        raise ValueError('WORKSPACE_HUB_IMAGE must identify an immutable image')
     result['home_root'] = env.get('WORKSPACE_HOME_ROOT', '').rstrip('/')
     result['home_quota_mb'] = int(env.get('WORKSPACE_HOME_QUOTA_MB', '0'))
     result['home_inode_limit'] = int(env.get('WORKSPACE_HOME_INODE_LIMIT', '100000'))

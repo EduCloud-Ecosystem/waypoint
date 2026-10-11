@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "scope": "institutional",
+  "instance": "python-r-course",
+  "images": {
+    "hub": "registry.example.edu/waypoint-hub@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "course": "registry.example.edu/python-r@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "identity": {
+    "issuer": "https://identity.example.edu/realms/educloud",
+    "client_id": "python-r-course",
+    "client_secret_file": "/srv/educloud/secrets/python-r-oidc",
+    "subjects": ["replace-with-stable-subject-id"]
+  },
+  "workspace": {
+    "origin": "https://work.example.edu",
+    "port": 18000
+  },
+  "storage": {
+    "home_root": "/srv/educloud/python-r-homes",
+    "quota_mb": 5120,
+    "inode_limit": 100000
+  },
+  "capacity": {
+    "memory_mb": 2048,
+    "cpu": 1,
+    "active_limit": 4,
+    "idle_seconds": 1800,
+    "max_age_seconds": 28800
+  },
+  "backup": {
+    "repository": "sftp:educloud-backup:/srv/educloud/python-r",
+    "password_file": "/srv/educloud/secrets/python-r-restic",
+    "staging_dir": "/srv/educloud/python-r-deployment",
+    "keep_last": 7,
+    "keep_daily": 7,
+    "keep_weekly": 4
+  },
+  "cairn": {
+    "enabled": true,
+    "origin": "https://cairn.example.edu",
+    "classroom_id": "replace-with-approved-classroom-id",
+    "workspace_url": "https://work.example.edu",
+    "max_files": 32,
+    "max_file_bytes": 1048576,
+    "max_total_bytes": 4194304
+  },
+  "owners": {
+    "support": "Course support team",
+    "restore": "Platform recovery team"
+  }
+}

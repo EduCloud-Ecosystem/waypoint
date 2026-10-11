@@ -2,6 +2,9 @@
 
 See [course worker operations](OPERATIONS.md) for startup preflight, health reports,
 stopped-course roster/quota maintenance and the repeatable operator workflow.
+Use the [course setup manifest](COURSE-MANIFEST.md) to validate one course and
+generate consistent private deployment, identity, proxy, recovery and Cairn
+binding configuration with immutable Hub and course images.
 
 This is a tested local continuity pilot for one course, built on JupyterHub and
 DockerSpawner. Cairn remains the classroom/assignment application. Learner files

@@ -32,6 +32,16 @@ class PolicyTests(unittest.TestCase):
             with self.subTest(missing=missing), self.assertRaises(ValueError): load(env)
         self.assertEqual(load(self.config())['subjects'], {'opaque-a', 'opaque-b'})
 
+    def test_hub_image_pin_is_optional_but_explicit_mutable_references_are_refused(self):
+        env = self.config()
+        self.assertEqual(load(env)['hub_image'], 'test-course-hub:pilot')
+        env['WORKSPACE_HUB_IMAGE'] = 'sha256:' + 'a' * 64
+        self.assertEqual(load(env)['hub_image'], env['WORKSPACE_HUB_IMAGE'])
+        for reference in ('hub:latest', '-other', 'https://name:secret@example.invalid/image'):
+            env['WORKSPACE_HUB_IMAGE'] = reference
+            with self.subTest(reference=reference), self.assertRaisesRegex(ValueError, 'immutable image'):
+                load(env)
+
     def test_local_auth_cannot_use_public_origin(self):
         env = self.config(); env.update(WORKSPACE_AUTH_MODE='local-test', WORKSPACE_TEST_PASSWORD='x'*32)
         with self.assertRaises(ValueError): load(env)

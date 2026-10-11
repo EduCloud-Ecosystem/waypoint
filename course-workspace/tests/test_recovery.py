@@ -7,10 +7,45 @@ import unittest
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from recovery import load_config, private_json, restic, retention, restore_repository, write_status, backup_repository, validate_bundle, BASE_CODE, digest
+from recovery import load_config, private_json, restic, retention, restore_repository, write_status, backup_repository, validate_bundle, BASE_CODE, digest, copy_source_manifest
 
 
 class RecoveryTests(unittest.TestCase):
+    def test_source_manifest_is_private_historical_context_and_never_overwritten(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            original, bundle, replacement = [root / name for name in ('original', 'bundle', 'replacement')]
+            for directory in (original, bundle, replacement):
+                directory.mkdir()
+            raw = '{"version":1,"owners":{"restore":"course-ops"}}\n'
+            private_json(original / 'manifest.json', json.loads(raw))
+            copy_source_manifest(original, bundle)
+            copy_source_manifest(bundle, replacement)
+            self.assertEqual((bundle / 'source-manifest.json').read_bytes(), (replacement / 'source-manifest.json').read_bytes())
+            self.assertEqual((replacement / 'source-manifest.json').stat().st_mode & 0o777, 0o600)
+            self.assertFalse((replacement / 'manifest.json').exists())
+            with self.assertRaises(FileExistsError):
+                copy_source_manifest(bundle, replacement)
+
+    def test_source_manifest_rejects_links_special_files_and_oversized_input(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source, target = root / 'source', root / 'target'
+            source.mkdir(); target.mkdir()
+            path = source / 'manifest.json'
+            path.symlink_to(root / 'absent')
+            with self.assertRaises(OSError):
+                copy_source_manifest(source, target)
+            path.unlink()
+            os.mkfifo(path, 0o600)
+            with self.assertRaises(ValueError):
+                copy_source_manifest(source, target)
+            path.unlink()
+            path.write_bytes(b' ' * (256 * 1024 + 1)); path.chmod(0o600)
+            with self.assertRaises(ValueError):
+                copy_source_manifest(source, target)
+            self.assertFalse((target / 'source-manifest.json').exists())
+
     def fixture(self, root):
         key = root / 'password'
         key.write_text('synthetic-unit-test-password-do-not-use')
