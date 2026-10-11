@@ -8,6 +8,7 @@ import unittest
 from unittest.mock import Mock, patch
 
 from cairn_journey import Course, public_metrics
+from course_load import MemorySampler
 from notebook import Notebook, SOLUTION
 import verify_course
 
@@ -154,8 +155,12 @@ class PublicMetricsTests(unittest.TestCase):
     def report(self):
         resource = {'cairn_rss_kib_point_sample': 1234, 'sqlite_bytes': 4096,
                     'queue_status_counts': {'provisioning_jobs': {'succeeded': 15},
-                                            'grading_runs': {'completed': 9}}}
-        phase = {'concurrent_learners': 5, 'requests': 100, 'errors': 0, 'elapsed_seconds': .2,
+                                            'grading_runs': {'completed': 9}},
+                    'queue_observations': {'pending_jobs': 0, 'due_jobs': 0, 'future_scheduled_jobs': 0,
+                        'pending_job_timestamps_unavailable': 0, 'oldest_due_job_lateness_seconds': None,
+                        'running_grading_runs': 0, 'running_grade_timestamps_unavailable': 0,
+                        'oldest_running_grade_age_seconds': None}}
+        phase = {'memory_observations': MemorySampler(123).result(), 'concurrent_learners': 5, 'requests': 100, 'errors': 0, 'elapsed_seconds': .2,
                  'p50_ms': 2, 'p95_ms': 5, 'max_ms': 9,
                  'routes': {r: {'requests': 25, 'errors': 0, 'p50_ms': 2, 'p95_ms': 5, 'max_ms': 9}
                             for r in ('list', 'own', 'other', 'operator')},

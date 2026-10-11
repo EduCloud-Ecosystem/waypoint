@@ -1,5 +1,10 @@
 # Repeatable component pilot
 
+Testing package `educloud-testing-v1` (2026-10-11). Use the fillable
+[acceptance worksheet](TESTING-CHECKLIST.md) to record candidate versions, owners,
+stage decisions, hosted prerequisites and rollback. Historical successful runs
+are recorded separately in [VALIDATION.md](../VALIDATION.md).
+
 Run this against synthetic fixtures on a development machine or a disposable
 Linux runner. It is an acceptance rehearsal, not a deployment, real student
 pilot, institutional SSO certification or a measured class-size capacity claim.
@@ -135,10 +140,29 @@ student-feedback calibration remain separate gates.
 ## Verify the evidence gate itself
 
 ```sh
-python3 -m unittest discover -s course-workspace/rehearsal -p test_evidence.py -v
+python3 -m unittest discover -s course-workspace/rehearsal -p 'test_*.py' -v
 ```
 
 These unit tests exercise phase/cleanup refusal, scope separation, provenance
 completeness, sensitive-field exclusion, bounded output, atomic publication and
 no-overwrite behavior. Passing them proves the report gate's tested behavior; it
 does not mean either end-to-end rehearsal has run successfully.
+
+## Separate institutional recovery rehearsal
+
+On the same disposable Linux runner, after the full course run has finished:
+
+```sh
+sudo /absolute/path/to/course-workspace/.venv/bin/python \
+  course-workspace/rehearsal/verify_institutional_recovery.py \
+  --output /tmp/educloud-institutional-recovery-unique-run
+```
+
+This tests an encrypted synthetic institutional workspace restore into a fresh
+namespace and filesystem using current policy, including removed-user denial
+and invalidation of old Hub sessions. It keeps the synthetic identity provider
+running on the same worker. Its final artifact requires verified cleanup of both
+workspace instances and mounts; it is separate from the full-course PASS schema.
+Neither this run nor the local subset proves recovery from the institution's
+actual off-host repository onto a replacement worker. Complete Stage C of the
+worksheet for that acceptance.
