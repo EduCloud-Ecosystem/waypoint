@@ -158,16 +158,26 @@ proxy_set_header X-Forwarded-Port {self.port}; proxy_set_header X-Forwarded-For 
 
     def ready(self, page, user):
         subject = SUBJECTS[user]
+        # Synthetic subjects are UUIDs, which the pinned Hub preserves as DNS
+        # labels. Require this learner's exact HTTPS origin and server path.
+        origin = urlsplit(self.origin)
+        expected = origin._replace(netloc=subject + '.' + origin.netloc,
+                                   path='/user/' + subject + '/', query='', fragment='').geturl()
         page.goto(self.origin+'/hub/spawn/'+subject)
         for _ in range(60):
             session = self.http_session(page.context)
             response = session.get(self.origin+'/hub/api/users/'+subject, timeout=10)
             if response.ok and response.json().get('server'):
-                page.goto(self.origin+'/user/'+subject+'/lab')
-                page.wait_for_url(lambda u: '.work.rehearsal.test' in u)
-                url = page.url.split('/lab')[0]
+                if response.json()['server'] != expected:
+                    raise AssertionError('Hub returned an unexpected learner server URL')
+                # /hub/spawn already redirects when readiness completes. A
+                # second goto races that navigation and can interrupt OAuth.
+                page.wait_for_url(expected + 'lab', wait_until='domcontentloaded', timeout=60000)
+                url = expected.rstrip('/')
                 session = self.http_session(page.context)
-                if session.get(url+'/api/contents',timeout=10).status_code==200:
+                contents = session.get(url+'/api/contents', timeout=10, allow_redirects=False)
+                if (contents.status_code == 200 and 'application/json' in contents.headers.get('Content-Type', '')
+                        and contents.json().get('type') == 'directory'):
                     return session, url
             time.sleep(1)
         raise AssertionError('notebook did not become ready')
