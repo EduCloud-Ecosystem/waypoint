@@ -44,6 +44,7 @@ class Notebook:
         self.report = []
         self.revoked = None
         self.cleanup_verified = False
+        self.cairn_origin = None
 
     def compose(self, *args):
         env = {k:v for k,v in os.environ.items() if not k.startswith(('WORKSPACE_', 'COMPOSE_'))}
@@ -72,6 +73,9 @@ class Notebook:
         self.env.update(WORKSPACE_PUBLIC_URL=self.origin, WORKSPACE_OIDC_CLIENT_SECRET=secrets.token_urlsafe(32),
                         WORKSPACE_HOME_QUOTA_MB='256', WORKSPACE_MEMORY_MB='1024', WORKSPACE_ACTIVE_LIMIT='2',
                         WORKSPACE_ENV_FILE=str(self.root / '.env'))
+        if self.cairn_origin:
+            self.env['WORKSPACE_CAIRN_ORIGIN'] = self.cairn_origin
+            self.env['WORKSPACE_CAIRN_LOCAL_TEST'] = '1'
         self.write_env()
         provision(self.homes, self.instance, [SUBJECTS[user] for user in self.users], 256)
         # A private fixture CA is trusted explicitly by Hub and HTTP clients.
@@ -154,16 +158,26 @@ proxy_set_header X-Forwarded-Port {self.port}; proxy_set_header X-Forwarded-For 
 
     def ready(self, page, user):
         subject = SUBJECTS[user]
+        # Synthetic subjects are UUIDs, which the pinned Hub preserves as DNS
+        # labels. Require this learner's exact HTTPS origin and server path.
+        origin = urlsplit(self.origin)
+        expected = origin._replace(netloc=subject + '.' + origin.netloc,
+                                   path='/user/' + subject + '/', query='', fragment='').geturl()
         page.goto(self.origin+'/hub/spawn/'+subject)
         for _ in range(60):
             session = self.http_session(page.context)
             response = session.get(self.origin+'/hub/api/users/'+subject, timeout=10)
             if response.ok and response.json().get('server'):
-                page.goto(self.origin+'/user/'+subject+'/lab')
-                page.wait_for_url(lambda u: '.work.rehearsal.test' in u)
-                url = page.url.split('/lab')[0]
+                if response.json()['server'] != expected:
+                    raise AssertionError('Hub returned an unexpected learner server URL')
+                # /hub/spawn already redirects when readiness completes. A
+                # second goto races that navigation and can interrupt OAuth.
+                page.wait_for_url(expected + 'lab', wait_until='domcontentloaded', timeout=60000)
+                url = expected.rstrip('/')
                 session = self.http_session(page.context)
-                if session.get(url+'/api/contents',timeout=10).status_code==200:
+                contents = session.get(url+'/api/contents', timeout=10, allow_redirects=False)
+                if (contents.status_code == 200 and 'application/json' in contents.headers.get('Content-Type', '')
+                        and contents.json().get('type') == 'directory'):
                     return session, url
             time.sleep(1)
         raise AssertionError('notebook did not become ready')
@@ -253,6 +267,29 @@ proxy_set_header X-Forwarded-Port {self.port}; proxy_set_header X-Forwarded-For 
                     'from pathlib import Path\nassert Path("solution.py").read_text() == '+repr(SOLUTION)+'\nprint("COURSE_OK")')
         self.report += ['server-stop-resume','saved-file-after-server-restart']
         return resumed,resumed_url
+
+    def submission_page(self, context, item):
+        """Use the actual saved-file bridge in the authenticated notebook."""
+        from playwright.sync_api import expect
+        _, page, session, url = self.revoked
+        configuration = session.get(url + '/cairn/config', timeout=15)
+        assert configuration.status_code == 200, f'authenticated notebook handoff route returned {configuration.status_code}'
+        assert configuration.json()['origin'] == self.cairn_origin
+        # The application provides a discoverable link independent of home files.
+        with page.expect_popup() as bridge:
+            page.get_by_role('link', name='Submit saved files to Cairn', exact=True).click()
+        page = bridge.value
+        page.wait_for_url(url + '/cairn/')
+        page.get_by_role('checkbox', name='solution.py', exact=False).check()
+        page.get_by_role('button', name='Prepare saved files', exact=True).click()
+        with context.expect_page() as opened:
+            page.get_by_role('button', name='Continue in Cairn', exact=True).click()
+        receiver = opened.value
+        receiver.get_by_label('Assignment', exact=True).select_option(item['submission_id'])
+        receiver.get_by_role('button', name='Receive saved files from Waypoint', exact=True).click()
+        expect(receiver.locator('#bridge-status')).to_contain_text('Nothing has been submitted yet.')
+        self.report += ['waypoint-selected-file-bridge', 'separate-cairn-confirmation']
+        return receiver
 
     def bounded_load(self, browser, alice, alice_url, bob, bob_url):
         from concurrent.futures import ThreadPoolExecutor
