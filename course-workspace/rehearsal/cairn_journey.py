@@ -10,6 +10,8 @@ import socket
 import subprocess
 import tempfile
 import time
+import sys
+from datetime import datetime, timezone
 import uuid
 
 import requests
@@ -18,6 +20,9 @@ from webhook_relay import WebhookRelay
 
 FORGEJO_IMAGE = 'codeberg.org/forgejo/forgejo:16.0.5@sha256:cf5f5ae6acf2ababca0ee3d255705b83a47f35b25e07fc931d694d60664053fe'
 SOLUTION = 'def answer():\n    return 5\n'
+
+if not __debug__:
+    raise RuntimeError('pilot requires Python assertions; do not use optimization flags')
 
 
 def run(*args, **kwargs):
@@ -45,8 +50,9 @@ def wait_http(url):
 
 
 class Course:
-    def __init__(self, root, binary, workspace, image):
+    def __init__(self, root, binary, workspace, image, cairn_source):
         self.root, self.binary, self.workspace, self.image = root, binary, workspace, image
+        self.cairn_source = cairn_source
         self.name = 'rehearsal-' + uuid.uuid4().hex[:10]
         self.forge = 'http://127.0.0.1:' + str(port())
         self.url = 'http://127.0.0.1:' + str(port())
@@ -73,10 +79,10 @@ class Course:
         self.relay=WebhookRelay(self.url,gateway)
         run('docker', 'volume', 'create', '--label', 'educloud.rehearsal=' + self.name, self.name)
         args = ['docker', 'run', '-d', '--name', self.name, '--label', 'educloud.rehearsal=' + self.name,
-                '--network', self.network, '--memory', '512m', '--cpus', '1', '-p', self.forge.removeprefix('http://') + ':3000',
+                '--network', self.network, '--memory', '512m', '--cpus', '1', '-p', self.forge.removeprefix('http://') + ':' + self.forge.rsplit(':', 1)[1],
                 '-v', self.name + ':/data']
         config = {'FORGEJO__security__INSTALL_LOCK': 'true', 'FORGEJO__database__DB_TYPE': 'sqlite3',
-                  'FORGEJO__server__ROOT_URL': self.forge + '/', 'FORGEJO__server__DISABLE_SSH': 'true',
+                  'FORGEJO__server__ROOT_URL': self.forge + '/', 'FORGEJO__server__HTTP_PORT': self.forge.rsplit(':', 1)[1], 'FORGEJO__server__DISABLE_SSH': 'true',
                   'FORGEJO__service__DISABLE_REGISTRATION': 'true', 'FORGEJO__service__REQUIRE_SIGNIN_VIEW': 'true',
                   'FORGEJO__oauth2__JWT_SIGNING_ALGORITHM': 'RS256',
                   'FORGEJO__webhook__ALLOWED_HOST_LIST': gateway+',host.docker.internal'}
@@ -103,7 +109,16 @@ class Course:
         self.put('course-test/template', 'grading.json', json.dumps(spec))
         self.put('course-test/template', 'check.py', "import sys\nsys.path.insert(0, '/work')\nfrom solution import answer\nassert answer() == 5\n")
         revision = self.api('GET', '/repos/course-test/template/commits?limit=1')[0]['sha']
-        clean = {k: v for k, v in os.environ.items() if not k.startswith(('CAIRN_', 'GIT_'))}
+        clean = {k: os.environ[k] for k in ('PATH', 'HOME', 'LANG', 'LC_ALL', 'DOCKER_HOST', 'DOCKER_CONTEXT') if k in os.environ}
+        # Fixture-only routing: bounded checkout shares the disposable Forgejo
+        # network namespace, so the same loopback clone URL works on macOS/Linux.
+        # All production acquisition limits and filesystem isolation remain in force.
+        runtime = self.root / 'fixture-docker'
+        runtime.write_text('#!' + sys.executable + '\nimport os, sys\na = sys.argv[1:]\n'
+            + 'if a and a[0] == \"run\" and any(a[i:i+2] == [\"--label\", \"io.educloud.cairn.kind=acquisition\"] for i in range(len(a)-1)):\n'
+            + '    a[1:1] = [\"--network\", ' + repr('container:' + self.name) + ']\n'
+            + 'os.execvp(\"docker\", [\"docker\"] + a)\n')
+        runtime.chmod(0o700)
         temp = self.root / 'grading'
         temp.mkdir(mode=0o755)
         self.env = dict(clean, CAIRN_LISTEN_ADDR=self.url.removeprefix('http://'), CAIRN_STORE='sqlite',
@@ -111,17 +126,26 @@ class Course:
             CAIRN_FORGEJO_BASE_URL=self.forge, CAIRN_FORGEJO_TOKEN=token, CAIRN_FORGEJO_GIT_USERNAME='teacher',
             CAIRN_FORGEJO_OAUTH_CLIENT_ID=client['client_id'], CAIRN_FORGEJO_OAUTH_CLIENT_SECRET=client['client_secret'],
             CAIRN_OAUTH_REDIRECT_URL=self.url + '/auth/callback', CAIRN_GRADER='container',
-            CAIRN_GRADER_IMAGE=self.image, CAIRN_GRADER_MAX_TIMEOUT='20s', CAIRN_GRADER_MAX_MEMORY_MB='256',
+            CAIRN_WEB_DIR=str(self.cairn_source / 'web' / 'dist'), CAIRN_GRADER_RUNTIME=str(runtime),
+            CAIRN_CHECKOUT_IMAGE='cairn-checkout:local', CAIRN_GRADER_IMAGE=self.image, CAIRN_GRADER_MAX_TIMEOUT='20s', CAIRN_GRADER_MAX_MEMORY_MB='256',
             CAIRN_GRADER_MAX_CPUS='1', TMPDIR=str(temp),
             CAIRN_WEBHOOK_BASE_URL=self.relay.origin, CAIRN_FORGEJO_WEBHOOK_SECRET=secrets.token_urlsafe(32))
         self.restart()
         return revision
 
-    def restart(self):
-        if self.process:
+    def stop(self):
+        if self.process and self.process.poll() is None:
             self.process.terminate()
-            self.process.wait(timeout=15)
+            try:
+                self.process.wait(timeout=15)
+            except subprocess.TimeoutExpired:
+                self.process.kill()
+                self.process.wait(timeout=10)
+        if self.log:
             self.log.close()
+
+    def restart(self):
+        self.stop()
         self.log = (self.root / 'cairn.log').open('a')
         self.process = subprocess.Popen([str(self.binary)], env=self.env, cwd=self.root,
                                         stdout=self.log, stderr=subprocess.STDOUT)
@@ -160,22 +184,60 @@ class Course:
         return response.json() if response.body() else None
 
     def close(self):
-        if self.process:
-            self.process.terminate()
-            self.process.wait(timeout=15)
-            self.log.close()
-        logs=subprocess.run(['docker','logs',self.name],capture_output=True,text=True)
-        (self.root/'forgejo.log').write_text(logs.stdout+logs.stderr)
+        errors = []
+        def attempt(action):
+            try:
+                return action()
+            except Exception as exc:
+                errors.append(type(exc).__name__)
+                return None
+        def command(*args):
+            return run(*args, timeout=45)
+        attempt(self.stop)
+        def logs():
+            result = subprocess.run(['docker', 'logs', self.name], capture_output=True, text=True, timeout=15)
+            (self.root / 'forgejo.log').write_text(result.stdout + result.stderr)
+        attempt(logs)
         if self.relay:
-            (self.root/'delivery-summary.json').write_text(json.dumps([{'revision':json.loads(d[0]).get('after'),'status':d[2]} for d in self.relay.deliveries]))
-        subprocess.run(['docker', 'rm', '-f', self.name], capture_output=True)
-        subprocess.run(['docker', 'volume', 'rm', self.name], capture_output=True)
-        if self.relay: self.relay.close()
-        subprocess.run(['docker','network','rm',self.network],capture_output=True)
+            attempt(self.relay.close)
+            if self.relay.thread.is_alive():
+                errors.append('remaining-relay')
+        # Recover only Cairn resources scoped to this private work directory.
+        if self.env:
+            plan = self.root / 'runtime-recovery.json'
+            attempt(lambda: command(str(self.binary), 'recover-runtime', '--work-dir', str(self.root / 'grading'), '--plan', str(plan)))
+            if plan.exists():
+                attempt(lambda: command(str(self.binary), 'recover-runtime', '--work-dir', str(self.root / 'grading'), '--apply', str(plan)))
+            def verify_runtime_empty():
+                observed = json.loads(command(str(self.binary), 'recover-runtime', '--work-dir', str(self.root / 'grading')))
+                if not isinstance(observed, dict) or type(observed.get('resources')) is not list:
+                    raise ValueError('runtime absence inventory is missing or invalid')
+                if observed['resources']:
+                    raise RuntimeError('Cairn runtime resources remain after recovery')
+            attempt(verify_runtime_empty)
+        def inventory(kind):
+            listing = ('ps', '-aq') if kind == 'container' else (kind, 'ls', '-q')
+            value = attempt(lambda: command('docker', *listing, '--filter', 'label=educloud.rehearsal=' + self.name))
+            return value.splitlines() if value is not None else []
+        for kind in ('container', 'volume', 'network'):
+            for identity in inventory(kind):
+                remove = ('rm', '-f') if kind == 'container' else (kind, 'rm')
+                attempt(lambda remove=remove, identity=identity: command('docker', *remove, identity))
+        for kind in ('container', 'volume', 'network'):
+            if inventory(kind):
+                errors.append('remaining-' + kind)
+        if self.process and self.process.poll() is None:
+            errors.append('remaining-process')
+        if errors:
+            raise RuntimeError('fixture cleanup failed: ' + ', '.join(errors))
+        return True
 
 
-def journey(root, binary, workspace, image, solution, browser, notebook=None, after_grading=None):
-    course = Course(root, binary, workspace, image)
+def journey(root, binary, workspace, image, solution, browser, cairn_source, lti_binary, notebook=None, after_grading=None):
+    from assessment_passback import AssessmentPassback
+    from course_load import run_load, verify_restart
+    course = Course(root, binary, workspace, image, cairn_source)
+    assessment = None
     try:
         revision = course.start()
         assert requests.get(course.url + '/classrooms', timeout=5).status_code == 401
@@ -183,6 +245,7 @@ def journey(root, binary, workspace, image, solution, browser, notebook=None, af
         classroom = course.request(teacher, 'POST', '/classrooms', {'name': 'Synthetic Python/R course',
             'host': 'forgejo', 'host_namespace': 'course-test', 'join_policy': 'roster'}, 201)
         cid = classroom['id']
+        assessment = AssessmentPassback(course, cid, lti_binary)
         for user in ('alice', 'bob'):
             course.request(teacher, 'POST', f'/classrooms/{cid}/roster', {'username': user}, 201)
         assignment = course.request(teacher, 'POST', f'/classrooms/{cid}/assignments', {
@@ -296,31 +359,89 @@ def journey(root, binary, workspace, image, solution, browser, notebook=None, af
                   'checks': ['operator-auth', 'roster-denial', 'student-admin-denial', 'own-grade-only',
                              'workspace-link', 'real-git-push-webhook', 'pinned-policy', 'pinned-submission-revisions', 'pass-and-fail-grading',
                              'six-push-burst', 'duplicate-replay-after-restart', 'bad-signature-denied', 'draft-branch-ignored']}
-        (root / 'course-PASS.json').write_text(json.dumps(report, indent=2) + '\n')
         if after_grading:
             after_grading(browser)
+        report['assessment'] = assessment.run(browser, aid, item['submission_id'])
+        load_teacher, _ = course.login(browser, 'teacher', '/auth/login')
+        try:
+            report['load'] = run_load(course, load_teacher, browser, cid, aid)
+        finally:
+            load_teacher.close()
+        course.restart()
+        verify_restart(course, browser, report['load'])
         for ctx in (teacher, alice, old_alice, bob, denied):
             ctx.close()
-        print('PASS: real Forgejo OAuth, roster/role/grade isolation, file transfer, pinned 10/10 and 0/10 grading.', flush=True)
         return report
     finally:
-        course.close()
+        try:
+            if assessment:
+                assessment.close()
+        finally:
+            course.close()
+
+
+def public_metrics(report):
+    metrics = {'push_count': report['push_count'], 'duplicate_deliveries': 13,
+               'course_learners': 15, 'model_calls': 0,
+               'queue_drain_seconds': report['queue_drain_seconds']}
+    for phase in report['load']['phases']:
+        prefix = 'load_' + str(phase['concurrent_learners']) + '_'
+        for key in ('requests', 'errors', 'elapsed_seconds', 'p50_ms', 'p95_ms', 'max_ms'):
+            metrics[prefix + key] = phase[key]
+        for route, result in phase['routes'].items():
+            for key in ('requests', 'errors', 'p50_ms', 'p95_ms', 'max_ms'):
+                metrics[prefix + route + '_' + key] = result[key]
+        for point in ('before', 'after'):
+            resources = phase['resources_' + point]
+            for key in ('cairn_rss_kib_point_sample', 'sqlite_bytes'):
+                if type(resources[key]) is int:
+                    metrics[prefix + point + '_' + key] = resources[key]
+            queue = resources['queue_status_counts']
+            allowed = {'provisioning_jobs': ('pending', 'in_progress', 'succeeded', 'failed'),
+                       'grading_runs': ('pending', 'running', 'completed', 'failed')}
+            if not isinstance(queue, dict) or set(queue) != set(allowed):
+                raise ValueError('queue snapshot is missing expected tables')
+            for table, statuses in allowed.items():
+                counts = queue[table]
+                if not isinstance(counts, dict) or not set(counts) <= set(statuses):
+                    raise ValueError('queue snapshot contains an unknown status')
+                for status in statuses:
+                    count = counts.get(status, 0)
+                    if type(count) is not int or count < 0:
+                        raise ValueError('queue counts must be nonnegative integers')
+                    metrics[prefix + point + '_' + table + '_' + status] = count
+    return metrics
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--cairn-binary', type=Path, required=True)
+    parser.add_argument('--cairn-source', type=Path, required=True)
+    parser.add_argument('--lti-binary', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--image', default='educloud-python-r:2026-10-06')
     args = parser.parse_args()
     args.output.mkdir(parents=True, mode=0o700, exist_ok=False)
+    from evidence import collect_provenance, write_pass, LOCAL_PHASES
+    started = datetime.now(timezone.utc).isoformat()
+    timer = time.monotonic()
+    images = {'course': args.image, 'checkout': 'cairn-checkout:local', 'forgejo': FORGEJO_IMAGE}
+    run('docker', 'pull', FORGEJO_IMAGE)
+    provenance = collect_provenance(args.cairn_source, args.cairn_binary, args.lti_binary, images=images)
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch()
         try:
-            journey(args.output.resolve(), args.cairn_binary.resolve(), 'http://127.0.0.1:18000',
-                    args.image, SOLUTION, browser)
+            report = journey(args.output.resolve(), args.cairn_binary.resolve(), 'http://127.0.0.1:18000',
+                    args.image, SOLUTION, browser, args.cairn_source.resolve(), args.lti_binary.resolve())
         finally:
             browser.close()
+    assert provenance == collect_provenance(args.cairn_source, args.cairn_binary, args.lti_binary, images=images), 'inputs changed during pilot'
+    write_pass(args.output, {'provenance': provenance, 'phases': {p: True for p in LOCAL_PHASES},
+        'started_at': started, 'finished_at': datetime.now(timezone.utc).isoformat(),
+        'duration_seconds': time.monotonic() - timer, 'checks': report['checks'] + report['assessment']['checks'] + report['load']['checks'],
+        'metrics': public_metrics(report)},
+        scope='local-subset', cleanup_verified=True)
+    print('PASS: local synthetic course pilot; all phases and cleanup verified.', flush=True)
 
 
 if __name__ == '__main__':

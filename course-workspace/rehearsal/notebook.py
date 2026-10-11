@@ -20,7 +20,6 @@ from backup import docker
 from homes import provision, inspect, run as xfs_run
 from public_course import render
 from smoke import change
-from verify import cleanup
 from cairn_journey import run, port, SOLUTION
 
 KEYCLOAK_IMAGE = 'quay.io/keycloak/keycloak:26.8.0@sha256:b0f60d489d51c5d113390bdf5461d4c06e6051be026c05549f2e1e10ec352bcc'
@@ -44,6 +43,7 @@ class Notebook:
         self.original_dns = socket.getaddrinfo
         self.report = []
         self.revoked = None
+        self.cleanup_verified = False
 
     def compose(self, *args):
         env = {k:v for k,v in os.environ.items() if not k.startswith(('WORKSPACE_', 'COMPOSE_'))}
@@ -94,7 +94,7 @@ class Notebook:
         # Keycloak runs as UID 1000 and must read its disposable import file.
         (self.root/'realm.json').chmod(0o644)
         run('docker','network','create','--label','educloud.rehearsal='+self.instance,self.network)
-        run('docker','run','-d','--name',self.instance+'-identity','--network',self.network,'--network-alias','identity',
+        run('docker','run','-d','--name',self.instance+'-identity','--label','educloud.rehearsal='+self.instance,'--network',self.network,'--network-alias','identity',
             '--memory','1g','--cpus','1','-v',str(self.root/'realm.json')+':/opt/keycloak/data/import/course.json:ro',
             '-e','KC_HOSTNAME='+self.auth,'-e','KC_PROXY_HEADERS=xforwarded',KEYCLOAK_IMAGE,'start-dev','--import-realm')
         # Production generator routes are reused; only fixture ports/upstream change.
@@ -112,7 +112,7 @@ proxy_set_header X-Forwarded-Port {self.port}; proxy_set_header X-Forwarded-For 
         print('Building the current notebook images.',flush=True)
         self.compose('--profile','build','build')
         self.compose('up','-d','hub')
-        run('docker','run','-d','--name',self.instance+'-proxy','--network',self.network,
+        run('docker','run','-d','--name',self.instance+'-proxy','--label','educloud.rehearsal='+self.instance,'--network',self.network,
             '--network-alias','auth.rehearsal.test','--memory','128m','-p',f'127.0.0.1:{self.port}:{self.port}',
             '-v',str(self.root/'nginx.conf')+':/etc/nginx/nginx.conf:ro',
             '-v',str(self.root)+':/etc/educloud/tls:ro',NGINX_IMAGE)
@@ -207,6 +207,7 @@ proxy_set_header X-Forwarded-Port {self.port}; proxy_set_header X-Forwarded-For 
         response.raise_for_status()
         solution=response.json()['content']
         assert solution==SOLUTION
+        session,url=self.restart_saved_file(notebook,session,url)
         # The protocol checks above do not prove that the browser finished
         # loading its file list. Open the saved file visibly before acceptance.
         notebook.reload()
@@ -219,6 +220,39 @@ proxy_set_header X-Forwarded-Port {self.port}; proxy_set_header X-Forwarded-For 
         self.revoked=(context,notebook,session,url)
         self.report += ['keycloak-pkce-login','per-user-https','python-r-wss','saved-file-handoff','saved-file-visible-in-browser']
         return solution
+
+    def restart_saved_file(self, page, session, url):
+        """Replace Alice's only server and verify saved bytes through the new server."""
+        def active():
+            return set(run('docker','ps','-q','--no-trunc','--filter',
+                           'label=educloud.workspace.instance='+self.instance,'--filter',
+                           'label=educloud.workspace.kind=learner').split())
+        before=active()
+        if len(before)!=1:
+            raise AssertionError('persistence fixture requires exactly one active learner')
+        response=change(session,'DELETE',self.origin+'/hub/api/users/'+SUBJECTS['alice']+'/server')
+        if response.status_code not in (202,204):
+            raise AssertionError('notebook server stop was rejected')
+        for _ in range(60):
+            state=session.get(self.origin+'/hub/api/users/'+SUBJECTS['alice'],timeout=10)
+            if state.status_code==200 and not state.json().get('server') and not active():
+                break
+            time.sleep(1)
+        else:
+            raise AssertionError('old notebook server did not stop')
+        inspect(self.homes,self.instance)
+        resumed,resumed_url=self.ready(page,'alice')
+        after=active()
+        if len(after)!=1 or before & after:
+            raise AssertionError('resume did not create a new notebook container')
+        saved=resumed.get(resumed_url+'/api/contents/solution.py',timeout=20)
+        saved.raise_for_status()
+        if saved.json().get('content')!=SOLUTION:
+            raise AssertionError('saved submission changed across notebook stop/resume')
+        self.kernel(resumed,resumed_url,'python3',
+                    'from pathlib import Path\nassert Path("solution.py").read_text() == '+repr(SOLUTION)+'\nprint("COURSE_OK")')
+        self.report += ['server-stop-resume','saved-file-after-server-restart']
+        return resumed,resumed_url
 
     def bounded_load(self, browser, alice, alice_url, bob, bob_url):
         from concurrent.futures import ThreadPoolExecutor
@@ -312,15 +346,59 @@ proxy_set_header X-Forwarded-Port {self.port}; proxy_set_header X-Forwarded-For 
         assert (self.homes/home/'work/solution.py').read_text() == SOLUTION, 'revocation must retain saved work'
         denied.close()
         self.report += ['unrostered-login-denied','active-server-stopped','old-session-denied','removed-roster-respawn-denied','revocation-retains-files']
-        (self.root/'identity-PASS.json').write_text(json.dumps({'checks':self.report},indent=2)+'\n')
-        print('PASS: OIDC allowed/denied identities, TLS notebook handoff, active-session roster revocation.',flush=True)
+        (self.root/'identity-phase-evidence.json').write_text(json.dumps({'checks':self.report},indent=2)+'\n')
+        print('Phase verified: OIDC allowed/denied identities, TLS notebook handoff, active-session roster revocation.',flush=True)
 
     def close(self):
+        """Attempt every owned cleanup, then verify absence before reporting success."""
+        self.cleanup_verified=False
         socket.getaddrinfo=self.original_dns
-        for suffix in ('-proxy','-identity'):
-            subprocess.run(['docker','rm','-f',self.instance+suffix],capture_output=True)
-        if hasattr(self,'env'):
-            cleanup(self.instance,self.root/'.env')
-        subprocess.run(['docker','network','rm',self.network],capture_output=True)
-        if self.mounted:
-            xfs_run('umount',str(self.homes))
+        failures=[]
+        labels=('educloud.workspace.instance='+self.instance,
+                'educloud.rehearsal='+self.instance,
+                'com.docker.compose.project='+self.instance)
+
+        def command(*args):
+            try:
+                result=subprocess.run(args,capture_output=True,text=True,timeout=30)
+            except (OSError,subprocess.TimeoutExpired):
+                failures.append('cleanup command unavailable or timed out')
+                return None
+            if result.returncode:
+                failures.append('cleanup command failed')
+                return None
+            return result.stdout.strip()
+
+        def inventory(kind):
+            identities=set()
+            for label in labels:
+                args=('ps','-aq','--no-trunc') if kind=='container' else (kind,'ls','-q')
+                output=command('docker',*args,'--filter','label='+label)
+                if output is not None:
+                    identities.update(output.split())
+            return identities
+
+        # Hub, learners and fixture proxy/IdP all carry invocation ownership.
+        # Stop/remove containers first; never force-remove mounted volumes.
+        for kind in ('container','volume','network'):
+            for identity in sorted(inventory(kind)):
+                args=('rm','--force',identity) if kind=='container' else (kind,'rm',identity)
+                command('docker',*args)
+        if hasattr(self,'homes') and (self.mounted or os.path.ismount(self.homes)):
+            command('umount',str(self.homes))
+        for kind in ('container','volume','network'):
+            if inventory(kind):
+                failures.append('owned '+kind+' remains')
+        if hasattr(self,'homes') and os.path.ismount(self.homes):
+            failures.append('synthetic filesystem remains mounted')
+        else:
+            self.mounted=False
+        if hasattr(self,'session'):
+            try:
+                self.session.close()
+            except Exception:
+                failures.append('notebook HTTP session cleanup failed')
+        if failures:
+            raise RuntimeError('notebook cleanup unverified: '+'; '.join(sorted(set(failures))))
+        self.cleanup_verified=True
+        return True
