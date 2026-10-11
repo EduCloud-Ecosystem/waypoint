@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: EduCloud-Ecosystem/cairn
-          ref: 52ad665d61b3ead9c7adb1ec0daf91982b9c29f2
+          ref: b808b1fad63962e85876a94fe923e7d525024c54
           path: output/cairn-source
       - uses: actions/setup-python@v5
         with:
@@ -58,6 +58,8 @@ jobs:
         run: |
           mkdir -p output/rehearsal-evidence
           sudo cp /tmp/educloud-course-rehearsal/PASS.json output/rehearsal-evidence/
+          sudo cp /tmp/educloud-course-rehearsal/course/instructor-modal-error.png output/rehearsal-evidence/
+          sudo cp /tmp/educloud-course-rehearsal/course/instructor-dashboard.png output/rehearsal-evidence/
           sudo cp /tmp/educloud-course-rehearsal/course/alice-reviewed-feedback.png output/rehearsal-evidence/
           sudo cp /tmp/educloud-course-rehearsal/course/bob-reviewed-feedback.png output/rehearsal-evidence/
           sudo cp /tmp/educloud-course-rehearsal/course/student-workspace-link.png output/rehearsal-evidence/

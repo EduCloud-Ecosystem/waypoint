@@ -381,11 +381,13 @@ def journey(root, binary, workspace, image, solution, browser, cairn_source, lti
 
 
 def public_metrics(report):
+    from course_load import public_observability_metrics
     metrics = {'push_count': report['push_count'], 'duplicate_deliveries': 13,
                'course_learners': 15, 'model_calls': 0,
                'queue_drain_seconds': report['queue_drain_seconds']}
     for phase in report['load']['phases']:
         prefix = 'load_' + str(phase['concurrent_learners']) + '_'
+        metrics.update({prefix + key: value for key, value in public_observability_metrics(phase).items()})
         for key in ('requests', 'errors', 'elapsed_seconds', 'p50_ms', 'p95_ms', 'max_ms'):
             metrics[prefix + key] = phase[key]
         for route, result in phase['routes'].items():

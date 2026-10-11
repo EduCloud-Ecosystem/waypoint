@@ -101,6 +101,8 @@ Neither test uses an institutional identity provider or real learner records.
 Before real use, rehearse allowed/denied identity login, active-session revocation,
 root and per-user browser origins, real kernel WebSockets through TLS, certificate
 renewal, reboot/mount recovery, target-host load and the actual off-host backup
-account. Then run a complete Cairn assignment/submission/grading journey. The
-synthetic encrypted recovery tool currently refuses institutional-mode packages;
-institutional migration and identity preservation require their own rehearsal.
+account. Then run a complete Cairn assignment/submission/grading journey. Institutional packages now support current-policy restore with an independently
+supplied current environment; see [RECOVERY.md](RECOVERY.md). The synthetic
+institutional recovery rehearsal uses the same worker and does not accept your
+actual off-host repository or replacement host. Record these remaining checks in
+the versioned [testing worksheet](rehearsal/TESTING-CHECKLIST.md).

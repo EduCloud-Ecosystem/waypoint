@@ -128,7 +128,11 @@ class AssessmentPassback:
         pending.get_by_label('Reviewed points', exact=True).fill(str(points))
         pending.get_by_label('Instructor review note', exact=True).fill(
             'Synthetic instructor reviewed source and adjusted the proposed score; this is not calibration evidence.')
-        pending.get_by_role('button', name='Approve and publish grade', exact=True).click()
+        from accessibility import audit, tab_to
+        audit(page, self.course.cairn_source)
+        publish = pending.get_by_role('button', name='Approve and publish grade', exact=True)
+        tab_to(page, publish)
+        page.keyboard.press('Enter')
         expect(pending).to_have_count(0)
         rows = self.req(teacher, 'GET', f'/submissions/{sid}/assessments')
         approved = next(r for r in rows if r['id'] == record['id'])
@@ -165,6 +169,8 @@ class AssessmentPassback:
 
         course, aid = self.course, assignment_id
         teacher, page = self.login(browser, 'teacher')
+        from accessibility import audit, dashboard_keyboard, tab_to
+        dashboard_keyboard(page, course.cairn_source, course.root)
         alice, alice_page = self.login(browser, 'alice')
         bob, bob_page = self.login(browser, 'bob', f'/assignments/{aid}/accept')
         self.learners = {'alice': alice, 'bob': bob}
@@ -240,7 +246,9 @@ class AssessmentPassback:
                 response = requests.post(self.url + '/simulate', data={'action': 'drop'}, timeout=5)
                 assert response.status_code == 200
             panel = self.delivery_panel(page, sid)
-            panel.get_by_role('button', name='Send to Brightspace', exact=True).click()
+            audit(page, course.cairn_source)
+            tab_to(page, panel.get_by_role('button', name='Send to Brightspace', exact=True))
+            page.keyboard.press('Enter')
             expect(panel.get_by_text('Delivery: verified (1 attempt).', exact=True)).to_be_visible(timeout=45000)
             status = self.req(teacher, 'GET', f'/submissions/{sid}/lti')['delivery']
             assert status['grade_id'] == grades[user] and status['attempts'] == 1 and status['verified_at']
@@ -272,6 +280,12 @@ class AssessmentPassback:
             student_page.goto(course.url + '/me')
             student_page.get_by_text('Per-test results & history', exact=True).click()
             expect(student_page.get_by_text(FEEDBACK, exact=True).first).to_be_visible()
+            try:
+                for color_scheme in ('light', 'dark'):
+                    student_page.emulate_media(color_scheme=color_scheme)
+                    audit(student_page, course.cairn_source)
+            finally:
+                student_page.emulate_media(color_scheme='light')
             student_page.screenshot(path=str(course.root / f'{user}-reviewed-feedback.png'), full_page=True)
         duplicate = self.req(teacher2, 'POST', f'/submissions/{sid_b}/lti', {'grade_id': grades['bob']})
         assert duplicate['attempts'] == 1 and duplicate['status'] == 'verified'
@@ -292,7 +306,10 @@ class AssessmentPassback:
             'model_calls': 0, 'learners': 2, 'reviewed_initial_score': 8, 'maximum': 10,
             'normal_delivery_attempts': 1, 'lost_response_delivery_attempts': 1,
             'conflicting_remote_score_preserved': 63,
-            'checks': ['captured-current-repository-bytes', 'source-hash-bound-import',
+            'checks': ['automated-wcag-screen-checks', 'learner-light-dark-automated-wcag',
+                'modal-error-alerts-inside-dialog', 'modal-padding-and-backdrop-behavior',
+                'keyboard-modal-focus-and-escape',
+                'keyboard-reviewed-grade-publication', 'keyboard-passback-delivery', 'captured-current-repository-bytes', 'source-hash-bound-import',
                 'unassessable-publication-refused', 'stale-input-digest-refused', 'stale-source-approval-refused',
                 'learner-assessment-mutation-denied', 'browser-instructor-score-adjustment',
                 'reviewed-feedback-visible-to-owner-only', 'signed-instructor-assignment-mapping',

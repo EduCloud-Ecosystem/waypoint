@@ -1,5 +1,49 @@
 # Observed continuity validation
 
+## October 11 repeatable component pilot
+
+Accepted Waypoint revision: `f05a504f640ef2f3574b7e2f9b7b032c2f17f84b`
+(PR #9). The two successful acceptance runs below executed PR revision
+`d6797980b701c162a58ce38bf11b7d76122fed4a`; its Git tree is identical to
+the merge revision. GitHub conclusions and tree equivalence were checked on
+2026-10-11. These results precede subsequent testing-readiness changes; rerun
+the candidate to accept those changes.
+
+- [Synthetic course rehearsal](https://github.com/EduCloud-Ecosystem/waypoint/actions/runs/38160152257)
+  succeeded on Linux, exercising the full browser notebook-to-private-repository
+  submission, grading, instructor review and simulated LMS-delivery journey.
+  Required evidence covers Python/R, saved-file stop/resume persistence, learner
+  isolation, roster revocation, restart persistence and bounded admission.
+- [Institutional workspace recovery](https://github.com/EduCloud-Ecosystem/waypoint/actions/runs/38160152262)
+  succeeded with current-policy restore, removed-user denial, old Hub session
+  rejection, retained files/Python/R and quotas. This uses a fresh filesystem
+  and namespace on the **same** runner with the synthetic IdP still available.
+  It does not prove loss of that worker/IdP or access to a real backup account.
+- The earlier recovery run
+  [38159562190](https://github.com/EduCloud-Ecosystem/waypoint/actions/runs/38159562190)
+  failed during teardown despite functional checks succeeding. It is not an
+  accepted run. The subsequent fix verifies both original/replacement cleanup
+  and publishes final success only afterwards.
+
+The course workload includes 5/15 distinct authenticated Cairn HTTP users, not
+15 concurrently executing notebooks or grading jobs. Notebook admission exercises
+two active servers, rejects a third, then admits it after a slot is released.
+Assessment proposals are deterministic fixtures with zero model calls; this
+validates instructor review and delivery plumbing, not LLM quality or instructor
+calibration. Fixture Git routing also does not prove hosted forge DNS/TLS.
+
+No real worker, off-host repository, institution IdP or Brightspace tenant is
+accepted by these runs. Human assistive-technology, zoom and mobile review also
+remain distinct from automated browser checks. Use
+[RUNBOOK.md](rehearsal/RUNBOOK.md) and the versioned
+[testing worksheet](rehearsal/TESTING-CHECKLIST.md) for the next candidate.
+
+The sections below are retained historical observations. Statements that OIDC,
+full course rehearsal or institutional package restoration were unimplemented
+describe their original dates and are superseded by the October 11 entry;
+real deployment and class-size acceptance remain outstanding.
+
+
 ## October 7 recovery and hosted-preparation follow-up
 
 Implementation head `7649109` adds hard quota-backed storage and recovery plus

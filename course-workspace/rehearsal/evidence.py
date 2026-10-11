@@ -10,12 +10,12 @@ import re
 import subprocess
 import tempfile
 
-VERSION = 1
-FIXTURE_VERSION = 'course-pilot-v1'
+VERSION = 2
+FIXTURE_VERSION = 'course-pilot-v2'
 MAX_BYTES = 64 * 1024
 FIXTURE_FILES = frozenset({'evidence.py', 'cairn_journey.py', 'verify_course.py',
                            'notebook.py', 'requirements.txt', 'assessment_passback.py',
-                           'course_load.py', 'webhook_relay.py'})
+                           'course_load.py', 'webhook_relay.py', 'accessibility.py'})
 LOCAL_PHASES = frozenset({'forgejo_oauth', 'roster_isolation', 'submission_grading',
                           'webhook_replay', 'reviewed_assessment', 'lti_simulation',
                           'course_load', 'restart_persistence'})
@@ -115,6 +115,7 @@ def collect_provenance(cairn_source, cairn_binary, lti_binary, *, waypoint_sourc
         'cairn': _source(cairn_source), 'waypoint': _source(waypoint_source),
         'cairn_binary_sha256': sha256_file(cairn_binary),
         'lti_binary_sha256': sha256_file(lti_binary),
+        'axe_core_sha256': sha256_file(Path(cairn_source) / 'web' / 'node_modules' / 'axe-core' / 'axe.min.js'),
         'dashboard_bundle_sha256': dashboard_hash, 'dashboard_file_count': dashboard_count,
         'fixture_version': fixture_version, 'fixture_files_sha256': fixtures,
         'image_ids': image_ids,
@@ -139,12 +140,12 @@ def _positive_int(value):
 def _validate_provenance(p):
     _exact(p, {'cairn', 'waypoint', 'cairn_binary_sha256', 'lti_binary_sha256',
                'fixture_version', 'fixture_files_sha256', 'image_ids', 'hardware', 'runtime',
-               'dashboard_bundle_sha256', 'dashboard_file_count'})
+               'dashboard_bundle_sha256', 'dashboard_file_count', 'axe_core_sha256'})
     for component in ('cairn', 'waypoint'):
         _exact(p[component], {'revision', 'dirty'})
         if not REVISION.fullmatch(str(p[component]['revision'])) or type(p[component]['dirty']) is not bool:
             raise ValueError('invalid source identity')
-    for field in ('cairn_binary_sha256', 'lti_binary_sha256', 'dashboard_bundle_sha256'):
+    for field in ('cairn_binary_sha256', 'lti_binary_sha256', 'dashboard_bundle_sha256', 'axe_core_sha256'):
         if not isinstance(p[field], str) or not HASH.fullmatch(p[field]):
             raise ValueError('invalid binary digest')
     if type(p['dashboard_file_count']) is not int or not 1 <= p['dashboard_file_count'] <= 1000:
@@ -209,7 +210,7 @@ def write_pass(root, report, scope, cleanup_verified):
     if not isinstance(checks, list) or len(checks) > 200 or any(not isinstance(v, str) or not SLUG.fullmatch(v) for v in checks):
         raise ValueError('checks must be bounded public identifiers')
     metrics = report.get('metrics', {})
-    if not isinstance(metrics, dict) or len(metrics) > 150 or any(
+    if not isinstance(metrics, dict) or len(metrics) > 200 or any(
             not isinstance(k, str) or not SLUG.fullmatch(k) or type(v) not in (int, float)
             or not 0 <= v <= 10**18 or not math.isfinite(v) for k, v in metrics.items()):
         raise ValueError('metrics must be bounded nonnegative numbers')

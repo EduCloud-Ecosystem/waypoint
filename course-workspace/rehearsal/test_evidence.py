@@ -1,4 +1,5 @@
 """The success artifact is a gate, not an unconditional report formatter."""
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -16,6 +17,7 @@ def report(scope='local-subset'):
             'waypoint': {'revision': 'b' * 40, 'dirty': False},
             'cairn_binary_sha256': 'c' * 64, 'lti_binary_sha256': 'd' * 64,
             'dashboard_bundle_sha256': 'f' * 64, 'dashboard_file_count': 3,
+            'axe_core_sha256': 'a' * 64,
             'fixture_version': FIXTURE_VERSION,
             'fixture_files_sha256': {k: 'e' * 64 for k in FIXTURE_FILES},
             'image_ids': {k: 'sha256:' + 'f' * 64 for k in
@@ -103,7 +105,7 @@ class EvidenceTests(unittest.TestCase):
         self.rejected(value)
 
     def test_every_executed_fixture_module_is_required(self):
-        for module in ('assessment_passback.py', 'course_load.py', 'webhook_relay.py'):
+        for module in ('assessment_passback.py', 'course_load.py', 'webhook_relay.py', 'accessibility.py'):
             value = report()
             del value['provenance']['fixture_files_sha256'][module]
             self.rejected(value)
@@ -147,7 +149,7 @@ class EvidenceTests(unittest.TestCase):
         value['metrics'] = {'huge': 10**1000}
         self.rejected(value)
         value = report()
-        value['metrics'] = {f'measure_{i}': i for i in range(151)}
+        value['metrics'] = {f'measure_{i}': i for i in range(201)}
         self.rejected(value)
 
     def test_failed_atomic_publish_leaves_no_partial_artifact(self):
@@ -172,6 +174,9 @@ class EvidenceTests(unittest.TestCase):
         dashboard = self.root / 'web' / 'dist'
         dashboard.mkdir(parents=True)
         (dashboard / 'index.html').write_text('synthetic dashboard')
+        axe = self.root / 'web' / 'node_modules' / 'axe-core' / 'axe.min.js'
+        axe.parent.mkdir(parents=True)
+        axe.write_bytes(b'synthetic axe execution asset')
         calls = []
 
         def command(*args):
@@ -193,6 +198,14 @@ class EvidenceTests(unittest.TestCase):
         self.assertEqual(set(value['image_ids']), {'course'})
         self.assertEqual(set(value['fixture_files_sha256']), FIXTURE_FILES)
         self.assertEqual(value['dashboard_file_count'], 1)
+        self.assertEqual(value['axe_core_sha256'], hashlib.sha256(axe.read_bytes()).hexdigest())
+        with patch('evidence._command', side_effect=command):
+            axe.write_bytes(b'changed executed asset')
+            changed = collect_provenance(self.root, binary, binary, waypoint_source=self.root)
+            self.assertNotEqual(value['axe_core_sha256'], changed['axe_core_sha256'])
+            axe.unlink()
+            with self.assertRaises(FileNotFoundError):
+                collect_provenance(self.root, binary, binary, waypoint_source=self.root)
         self.assertTrue(all(args[0] in ('git', 'docker', 'sysctl') for args in calls))
 
 

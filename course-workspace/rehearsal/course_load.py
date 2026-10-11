@@ -1,9 +1,12 @@
 """Bounded synthetic Cairn HTTP baseline; this does not measure notebook capacity."""
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import closing
+from datetime import datetime, timezone
 import math
 from pathlib import Path
 import sqlite3
 import subprocess
+import sys
 import threading
 import time
 from urllib.parse import urlparse
@@ -13,6 +16,8 @@ import requests
 LEARNERS = 15
 ROUNDS = 5
 REQUEST_TIMEOUT = 10
+MEMORY_INTERVAL_SECONDS = .05
+MEMORY_MAX_SAMPLES = 6000
 
 
 def summarize(samples):
@@ -107,22 +112,198 @@ def phase(url, learners, rounds=ROUNDS):
             'error_examples': errors[:10]}
 
 
+def read_memory_sample(pid, proc_root=Path('/proc')):
+    """Only this Cairn process: Linux kernel fields or portable ps RSS, in KiB."""
+    if type(pid) is not int or pid <= 0:
+        raise ValueError('invalid Cairn process identifier')
+    if sys.platform.startswith('linux'):
+        with (proc_root / str(pid) / 'status').open() as status:
+            raw = status.read(65537)
+        if len(raw) > 65536:
+            raise ValueError('process status exceeds input bound')
+        fields = {}
+        for line in raw.splitlines():
+            key, separator, value = line.partition(':')
+            if separator and key in ('VmRSS', 'VmHWM'):
+                amount, unit = value.split()
+                if unit != 'kB' or not amount.isdigit():
+                    raise ValueError('invalid kernel memory observation')
+                fields[key] = int(amount)
+        if 'VmRSS' not in fields:
+            raise ValueError('process RSS is unavailable')
+        return {'rss_kib': fields['VmRSS'], 'lifetime_hwm_kib': fields.get('VmHWM'),
+                'source': 'linux-proc-status'}
+    result = subprocess.run(['ps', '-o', 'rss=', '-p', str(pid)],
+                            text=True, capture_output=True, timeout=2)
+    if result.returncode or not result.stdout.strip().isdigit():
+        raise ValueError('process RSS is unavailable')
+    return {'rss_kib': int(result.stdout.strip()), 'lifetime_hwm_kib': None,
+            'source': 'ps-rss'}
+
+
+class MemorySampler:
+    """Bounded scalar aggregation; sampled maxima may miss between-sample spikes."""
+    def __init__(self, pid, *, reader=read_memory_sample, clock=time.monotonic,
+                 interval=MEMORY_INTERVAL_SECONDS, max_samples=MEMORY_MAX_SAMPLES):
+        if not .01 <= interval <= 1 or type(max_samples) is not int or not 2 <= max_samples <= MEMORY_MAX_SAMPLES:
+            raise ValueError('invalid memory sampling budget')
+        self.pid, self.reader, self.clock = pid, reader, clock
+        self.interval, self.limit = interval, max_samples
+        self.stop_event = threading.Event()
+        self.thread = None
+        self.attempts = self.successes = self.failures = 0
+        self.observed_max = self.lifetime_hwm = None
+        self.max_gap = 0.0
+        self.previous = self.first = self.last = None
+        self.sources = set()
+        self.budget_exhausted = False
+
+    def take(self):
+        if self.attempts >= self.limit:
+            self.budget_exhausted = True
+            return
+        self.attempts += 1
+        now = self.clock()
+        if self.previous is not None:
+            self.max_gap = max(self.max_gap, now - self.previous)
+        self.previous = now
+        try:
+            value = self.reader(self.pid)
+            rss = value['rss_kib']
+            hwm = value['lifetime_hwm_kib']
+            if type(rss) is not int or rss < 0 or (hwm is not None and (type(hwm) is not int or hwm < 0)):
+                raise ValueError('invalid process memory sample')
+            if value['source'] not in ('linux-proc-status', 'ps-rss'):
+                raise ValueError('unknown memory observation source')
+            self.successes += 1
+            self.sources.add(value['source'])
+            self.observed_max = rss if self.observed_max is None else max(self.observed_max, rss)
+            if hwm is not None:
+                self.lifetime_hwm = hwm if self.lifetime_hwm is None else max(self.lifetime_hwm, hwm)
+            if self.first is None:
+                self.first = now
+            self.last = now
+        except (OSError, ValueError, KeyError, subprocess.TimeoutExpired):
+            self.failures += 1
+
+    def loop(self):
+        while not self.stop_event.wait(self.interval):
+            if self.attempts >= self.limit - 1:
+                self.budget_exhausted = True
+                return
+            self.take()
+
+    def __enter__(self):
+        self.take()
+        self.thread = threading.Thread(target=self.loop, daemon=True)
+        self.thread.start()
+        return self
+
+    def __exit__(self, *_):
+        self.stop_event.set()
+        self.thread.join(timeout=3)
+        if self.thread.is_alive():
+            raise RuntimeError('memory sampling thread did not finish')
+        self.take()
+
+    def result(self):
+        return {'scope': 'cairn-process-only-excludes-containers-and-children',
+                'sources': sorted(self.sources), 'target_interval_ms': self.interval * 1000,
+                'sample_attempts': self.attempts, 'sample_count': self.successes,
+                'sample_errors': self.failures, 'sample_budget_exhausted': self.budget_exhausted,
+                'max_attempt_gap_ms': round(self.max_gap * 1000, 3),
+                'sampled_window_seconds': round(self.last - self.first, 6) if self.first is not None else 0,
+                'rss_observed_max_kib': self.observed_max,
+                'kernel_process_lifetime_hwm_kib': self.lifetime_hwm,
+                'peak_is_exact': False,
+                'bounds': 'Observed RSS maximum is a sampled lower bound; Linux VmHWM is a kernel-reported process-lifetime high-water mark, not a phase peak.'}
+
+
+def timestamp_age(raw, now):
+    """Unknown timestamps stay unknown; future schedules are not overdue jobs."""
+    if not isinstance(raw, str) or not raw or len(raw) > 64:
+        return None
+    try:
+        value = datetime.fromisoformat(raw.replace('Z', '+00:00'))
+        if value.tzinfo is None:
+            return None
+        return (now - value).total_seconds()
+    except (ValueError, TypeError, OverflowError):
+        return None
+
+
+def queue_observations(conn, now):
+    # These fixture queues are small. Explicit row bounds prevent accidental
+    # unbounded ingestion, and no IDs, messages, or SQL text enter the report.
+    jobs = list(conn.execute("SELECT scheduled_at FROM provisioning_jobs WHERE status='pending' LIMIT 1001"))
+    runs = list(conn.execute("SELECT started_at FROM grading_runs WHERE status='running' LIMIT 1001"))
+    if len(jobs) > 1000 or len(runs) > 1000:
+        raise ValueError('synthetic queue observation exceeds row budget')
+    pending = [timestamp_age(row[0], now) for row in jobs]
+    running = [timestamp_age(row[0], now) for row in runs]
+    due = [age for age in pending if age is not None and age >= 0]
+    active = [age for age in running if age is not None and age >= 0]
+    return {'pending_jobs': len(jobs), 'due_jobs': len(due),
+            'future_scheduled_jobs': sum(age is not None and age < 0 for age in pending),
+            'pending_job_timestamps_unavailable': sum(age is None for age in pending),
+            'oldest_due_job_lateness_seconds': max(due) if due else None,
+            'running_grading_runs': len(runs),
+            'running_grade_timestamps_unavailable': sum(age is None or age < 0 for age in running),
+            'oldest_running_grade_age_seconds': max(active) if active else None}
+
+
 def snapshot(course):
-    """Read-only queue snapshot and point-in-time RSS, not a resource peak."""
+    """Read-only consistent queue snapshot; scheduled lateness is not enqueue age."""
     database = Path(course.root) / 'cairn.db'
-    with sqlite3.connect(database.as_uri() + '?mode=ro', uri=True, timeout=5) as conn:
+    with closing(sqlite3.connect(database.as_uri() + '?mode=ro', uri=True, timeout=5)) as conn:
+        conn.execute('BEGIN')
+        now = datetime.now(timezone.utc)
         queue = {table: dict(conn.execute(f'SELECT status, count(*) FROM {table} GROUP BY status'))
                  for table in ('provisioning_jobs', 'grading_runs')}
-    result = subprocess.run(['ps', '-o', 'rss=', '-p', str(course.process.pid)],
-                            text=True, capture_output=True, timeout=5)
-    rss = int(result.stdout.strip()) if result.returncode == 0 and result.stdout.strip().isdigit() else None
+        ages = queue_observations(conn, now)
+    try:
+        rss = read_memory_sample(course.process.pid)['rss_kib']
+    except (OSError, ValueError, subprocess.TimeoutExpired):
+        rss = None
     return {'cairn_rss_kib_point_sample': rss, 'sqlite_bytes': database.stat().st_size,
-            'queue_status_counts': queue}
+            'queue_status_counts': queue, 'queue_observations': ages}
+
+
+def public_observability_metrics(phase):
+    """Explicit numeric availability flags; unavailable observations are never zeroed."""
+    metrics = {'database_query_counts_available': 0}
+    memory = phase['memory_observations']
+    for key in ('target_interval_ms', 'sample_attempts', 'sample_count', 'sample_errors',
+                'max_attempt_gap_ms', 'sampled_window_seconds'):
+        metrics['memory_' + key] = memory[key]
+    metrics['memory_sample_budget_exhausted'] = int(memory['sample_budget_exhausted'])
+    for key in ('rss_observed_max_kib', 'kernel_process_lifetime_hwm_kib'):
+        metrics['memory_' + key + '_available'] = int(memory[key] is not None)
+        if memory[key] is not None:
+            metrics['memory_' + key] = memory[key]
+    for point in ('before', 'after'):
+        observed = phase['resources_' + point]['queue_observations']
+        allowed = ('pending_jobs', 'due_jobs', 'future_scheduled_jobs',
+                   'pending_job_timestamps_unavailable', 'oldest_due_job_lateness_seconds',
+                   'running_grading_runs', 'running_grade_timestamps_unavailable',
+                   'oldest_running_grade_age_seconds')
+        if not isinstance(observed, dict) or set(observed) != set(allowed):
+            raise ValueError('queue age observations require exact public fields')
+        for key in allowed:
+            value = observed[key]
+            if value is not None and (type(value) not in (int, float) or not math.isfinite(value) or value < 0):
+                raise ValueError('queue age observations must be nonnegative numbers or unavailable')
+            name = point + '_' + key
+            if key.endswith('_seconds'):
+                metrics[name + '_available'] = int(value is not None)
+            if value is not None:
+                metrics[name] = value
+    return metrics
 
 
 def verify_bindings(course, cid, learners):
     database = Path(course.root) / 'cairn.db'
-    with sqlite3.connect(database.as_uri() + '?mode=ro', uri=True, timeout=5) as conn:
+    with closing(sqlite3.connect(database.as_uri() + '?mode=ro', uri=True, timeout=5)) as conn:
         for learner in learners:
             row = conn.execute('SELECT host_user_id FROM roster_entries WHERE classroom_id=? '
                                'AND host=? AND host_username=?',
@@ -166,7 +347,9 @@ def run_load(course, teacher, browser, cid, aid):
         verify_bindings(course, cid, learners)
         for count in (5, 15):
             before = snapshot(course)
-            result = phase(course.url, learners[:count])
+            with MemorySampler(course.process.pid) as memory:
+                result = phase(course.url, learners[:count])
+            result['memory_observations'] = memory.result()
             result['resources_before'] = before
             result['resources_after'] = snapshot(course)
             measurements.append(result)
@@ -178,6 +361,8 @@ def run_load(course, teacher, browser, cid, aid):
         return {'kind': 'local-sqlite-authenticated-http-read-baseline',
                 'notebook_capacity_tested': False, 'grading_concurrency_tested': False,
                 'latency_gate': 'measurement only; no established historical regression threshold',
+                'database_query_counts': {'available': False, 'reason': 'Cairn has no statement counter; a separate SQLite observer cannot count application queries.'},
+                'queue_age_bounds': 'Pending-job scheduled lateness and running-grade age only; schema has no enqueue timestamp, so true queue residence age is unavailable.',
                 'learners': [{k: v for k, v in learner.items() if k != 'cookies'} for learner in learners],
                 'phases': measurements, 'immutable_roster_bindings_verified': LEARNERS,
                 'checks': ['distinct-provider-identities', 'owned-submission-only',
