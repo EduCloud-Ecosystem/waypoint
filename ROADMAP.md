@@ -22,7 +22,7 @@ Exit: passing current-release automated checks and an operator runbook. Live
 hosting, notification delivery, institutional identity and second-host recovery
 remain acceptance tasks against the chosen infrastructure.
 
-## 2. Easier coursework submission - current build
+## 2. Easier coursework submission - implemented
 
 The [saved-file handoff](course-workspace/course/CAIRN-SUBMISSION.md) implements
 explicit file selection, assignment/account confirmation, exact file digests,
@@ -34,11 +34,14 @@ shared login and live institutional acceptance are not implied. Ambiguous remote
 outcomes remain instructor/operator review cases; automatic ancestry adjudication
 and an operator reconciliation UI remain follow-up work.
 
-## 3. Course onboarding and lifecycle
+## 3. Course onboarding - implemented; lifecycle follows
 
-Build a reviewable course setup manifest and validation flow that brings together
-image versions, identity issuer/client, roster, storage, capacity, backup ownership
-and support ownership. Follow with deliberate image-upgrade/canary workflows,
+The [course setup manifest](course-workspace/COURSE-MANIFEST.md) validates image
+pins, identity issuer/client, roster, storage, capacity, backup references,
+Cairn binding and support/restore ownership. It renders fresh private configuration
+and preserves original setup context in encrypted recovery. Disposable Linux
+rehearsals consume the generated configuration through actual services.
+Follow with deliberate image-upgrade/canary workflows,
 course retirement/export and institution-approved retention/deletion. Expand
 from one course only after resource attribution, port/origin separation and
 failure isolation are tested. Do not expose an unrestricted self-service Docker

@@ -19,7 +19,7 @@ from notebook import Notebook, SUBJECTS, ROOT
 from backup import docker, digest
 from deployment import compose, wait_ready, read_environment
 from homes import inspect, provision, run as xfs_run
-from recovery import backup_repository, restore_repository, restic
+from recovery import backup_repository, restore_repository, restic, load_config
 from verify import cleanup, port
 from cairn_journey import run
 
@@ -61,7 +61,8 @@ def cleanup_rehearsal(fixture, root, source_instance, recovered):
         else:
             replacement=copy.copy(fixture)
             replacement.instance=instance
-            replacement.root=root/'restored'
+            replacement.deployment=root/'restored'
+            replacement.env_file=replacement.deployment/'.env'
             replacement.homes=replacement_homes
             replacement.mounted=os.path.ismount(replacement_homes)
             # The shared IdP/client belongs to the original fixture, not the
@@ -127,6 +128,7 @@ def main():
     source_instance=fixture.instance
     try:
         fixture.start()
+        deployment=fixture.deployment
         with sync_playwright() as p:
             browser=p.chromium.launch(args=['--host-resolver-rules=MAP *.rehearsal.test 127.0.0.1'])
             try:
@@ -140,18 +142,20 @@ def main():
                     content=f'{user} saved coursework before backup\n'
                     fixture.kernel(session,url,'python3','from pathlib import Path\nPath("recovered.txt").write_text('+repr(content)+')\nprint("COURSE_OK")')
                     sessions[user]=(context,page,session,url,content)
-                key=root/'password'; key.write_text('synthetic-institutional-recovery-key-never-use-for-real-data'); key.chmod(0o600)
-                cfg={'repository':str(root/'encrypted-repository'),'password_file':str(key)}
+                cfg=load_config(deployment/'recovery.json')
+                assert cfg['repository']==fixture.manifest['backup']['repository']
+                assert cfg['password_file']==fixture.manifest['backup']['password_file']
                 restic(cfg,'init')
                 # Exercise the actual deployment checkpoint, not a mocked fixture hook.
-                snapshot=backup_repository(source,cfg)
-                assert not list(source.glob('.recovery-*'))
+                fixture.verify_manifest_frozen()
+                snapshot=backup_repository(deployment,cfg)
+                assert not list(deployment.glob('.recovery-*'))
                 restic(cfg,'check','--read-data')
                 source_instance=fixture.instance
                 source_images={name:json.loads(docker('image','inspect',ref))[0]['Id'] for name,ref in
-                               [('hub',fixture.instance+'-hub:pilot'),('course',fixture.image)]}
-                compose(source,'stop','hub')
-                cleanup(source_instance,source/'.env')
+                               [('hub',fixture.hub_image),('course',fixture.image)]}
+                compose(deployment,'stop','hub')
+                cleanup(source_instance,deployment/'.env')
                 xfs_run('umount',str(fixture.homes)); fixture.mounted=False
                 # The source filesystem no longer exists; recovery must use Restic.
                 (source/'synthetic.img').unlink()
@@ -184,6 +188,8 @@ def main():
                 assert not docker('volume','ls','-q','--filter','name=^'+recovered['WORKSPACE_INSTANCE']+'-hub-data$')
                 assert recovered['WORKSPACE_ALLOWED_SUBJECTS']==SUBJECTS['bob']
                 assert digest(destination/'runtime/deployment.py')==digest(ROOT/'deployment.py')
+                assert digest(destination/'source-manifest.json')==fixture.manifest_digest
+                assert not (destination/'manifest.json').exists()
                 for user in ('alice','bob'):
                     home=recovered['WORKSPACE_INSTANCE']+'-home-'+hashlib.sha256(SUBJECTS[user].encode()).hexdigest()[:24]
                     assert (homes/home/'work/recovered.txt').read_text()==sessions[user][4]
@@ -203,7 +209,7 @@ def main():
                 nginx.write_text(nginx.read_text().replace(source_instance+'-hub',hub))
                 docker('restart',source_instance+'-proxy')
                 wait_proxy(fixture)
-                fixture.env=recovered; fixture.instance=recovered['WORKSPACE_INSTANCE']; fixture.homes=homes
+                fixture.env=recovered; fixture.instance=recovered['WORKSPACE_INSTANCE']; fixture.homes=homes; fixture.deployment=destination; fixture.env_file=destination/'.env'
                 # Old Hub auth must not survive restoration even for still-allowed Bob.
                 old=sessions['bob'][2].get(fixture.origin+'/hub/api/users/'+SUBJECTS['bob'],timeout=15,allow_redirects=False)
                 assert old.status_code in (401,403), f'old session accepted: {old.status_code}'
@@ -265,8 +271,8 @@ def main():
                 for ctx,*_ in sessions.values(): ctx.close()
                 context.close()
                 report={'snapshot_id':snapshot,'source_destroyed':True,'same_worker_rehearsal':True,
-                        'images':source_images,'waypoint_revision':run('git','-c','safe.directory='+str(ROOT.parent),'-C',str(ROOT.parent),'rev-parse','HEAD'),
-                        'checks':['encrypted-backup','source-resumed','wrong-key-denied','current-roster-required',
+                        'images':source_images,'course_manifest_sha256':fixture.manifest_digest,'waypoint_revision':run('git','-c','safe.directory='+str(ROOT.parent),'-C',str(ROOT.parent),'rev-parse','HEAD'),
+                        'checks':fixture.report+['manifest-backup-config-consumed','historical-manifest-preserved','encrypted-backup','source-resumed','wrong-key-denied','current-roster-required',
                                   'fresh-hub-sessions','removed-and-unrostered-login-denied','retained-removed-home',
                                   'preserved-images','bundled-runtime-start','restored-python-r','saved-file-visible',
                                   'peer-file-denied','unprovisioned-roster-start-refused','replacement-active-revocation','revocation-retains-files','restored-hard-quotas','existing-destination-denied']}

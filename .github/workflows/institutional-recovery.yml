@@ -3,6 +3,9 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
+      - 'course-workspace/course_manifest.py'
+      - 'course-workspace/course-manifest.example.json'
+      - 'course-workspace/compose.yaml'
       - 'course-workspace/recovery.py'
       - 'course-workspace/deployment.py'
       - 'course-workspace/backup.py'

@@ -2,7 +2,7 @@ name: ${WORKSPACE_INSTANCE:?set WORKSPACE_INSTANCE}
 services:
   hub:
     build: ./hub
-    image: ${WORKSPACE_INSTANCE}-hub:pilot
+    image: ${WORKSPACE_HUB_IMAGE:-${WORKSPACE_INSTANCE}-hub:pilot}
     container_name: ${WORKSPACE_INSTANCE}-hub
     restart: unless-stopped
     init: true

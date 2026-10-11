@@ -234,7 +234,7 @@ class Course:
 
 
 def journey(root, binary, workspace, image, solution, browser, cairn_source, lti_binary, notebook=None, after_grading=None,
-            submission_page=None, cairn_origin=None):
+            submission_page=None, cairn_origin=None, classroom_ready=None):
     from assessment_passback import AssessmentPassback
     from course_load import run_load, verify_restart
     course = Course(root, binary, workspace, image, cairn_source, cairn_origin)
@@ -256,6 +256,12 @@ def journey(root, binary, workspace, image, solution, browser, cairn_source, lti
         course.env['CAIRN_WORKSPACE_URLS'] = json.dumps({cid: workspace})
         course.env['CAIRN_SUBMISSIONS'] = 'true'
         course.env['CAIRN_SUBMISSION_CLASSROOMS'] = cid
+        if classroom_ready:
+            operator_environment = classroom_ready(cid, workspace)
+            assert operator_environment == {
+                'CAIRN_SUBMISSIONS': 'true', 'CAIRN_SUBMISSION_CLASSROOMS': cid}
+            assert json.loads(course.env['CAIRN_WORKSPACE_URLS']) == {cid: workspace}
+            course.env.update(operator_environment)
         course.restart()
         teacher.close()
         teacher, _ = course.login(browser, 'teacher', '/auth/login')

@@ -11,7 +11,7 @@ from evidence import collect_provenance, write_pass, REQUIRED_PHASES, FIXTURE_VE
 
 
 def report(scope='local-subset'):
-    return {
+    result = {
         'provenance': {
             'cairn': {'revision': 'a' * 40, 'dirty': False},
             'waypoint': {'revision': 'b' * 40, 'dirty': False},
@@ -30,6 +30,9 @@ def report(scope='local-subset'):
         'duration_seconds': 300.0, 'checks': ['synthetic-fixture'],
         'metrics': {'distinct_users': 15, 'p95_seconds': 0.15},
     }
+    if scope == 'full-linux':
+        result['course_manifest_sha256'] = 'a' * 64
+    return result
 
 
 class EvidenceTests(unittest.TestCase):
@@ -76,6 +79,18 @@ class EvidenceTests(unittest.TestCase):
         value = report('full-linux')
         value['provenance']['hardware']['os'] = 'Darwin'
         self.rejected(value, 'full-linux')
+
+    def test_full_manifest_digest_required_and_local_may_not_claim_it(self):
+        value = report('full-linux')
+        del value['course_manifest_sha256']
+        self.rejected(value, 'full-linux')
+        for invalid in ('unknown', 'a' * 63, '/private/manifest.json', None):
+            value = report('full-linux')
+            value['course_manifest_sha256'] = invalid
+            self.rejected(value, 'full-linux')
+        value = report()
+        value['course_manifest_sha256'] = 'a' * 64
+        self.rejected(value)
 
     def test_no_env_raw_logs_or_credentials(self):
         for key in ('environment', 'logs', 'api_key', 'raw_report'):

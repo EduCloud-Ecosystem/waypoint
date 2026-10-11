@@ -31,7 +31,24 @@ class DeploymentTests(unittest.TestCase):
     def inspect(self, *args):
         if args[0] == 'info':
             return {'OSType': 'linux', 'NCPU': 4, 'MemTotal': 12 * 1024**3, 'Architecture': 'x86_64'}
-        return [{'Os': 'linux', 'Architecture': 'amd64', 'Id': 'sha256:' + 'a' * 64}]
+        image_id = args[2] if len(args) > 2 and args[2].startswith('sha256:') else 'sha256:' + 'a' * 64
+        return [{'Os': 'linux', 'Architecture': 'amd64', 'Id': image_id}]
+
+    def test_explicit_hub_pin_is_inspected_and_wrong_image_id_refused(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            homes = self.fixture(root)
+            hub_id = 'sha256:' + 'b' * 64
+            with (root / '.env').open('a') as out:
+                out.write('WORKSPACE_HUB_IMAGE=' + hub_id + '\n')
+            with patch('deployment.docker_json', side_effect=self.inspect) as docker, patch('homes.inspect', return_value=homes):
+                actual = preflight(root)
+            self.assertEqual(actual['images']['hub'], hub_id)
+            self.assertIn(('image', 'inspect', hub_id), [call.args for call in docker.call_args_list])
+            with patch('deployment.docker_json', side_effect=[self.inspect('info'), self.inspect('image', 'inspect', 'legacy-tag')]), patch('homes.inspect') as inspector:
+                with self.assertRaisesRegex(ValueError, 'differs from the configured immutable'):
+                    preflight(root)
+                inspector.assert_not_called()
 
     def test_preflight_records_images_but_never_identity_or_secrets(self):
         with tempfile.TemporaryDirectory() as tmp:

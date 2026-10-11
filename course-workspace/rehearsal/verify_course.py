@@ -14,6 +14,9 @@ from notebook import Notebook, KEYCLOAK_IMAGE, NGINX_IMAGE
 
 
 NOTEBOOK_CHECKS = {
+    'course_manifest': {'course-manifest-rendered', 'course-manifest-images-consumed', 'course-manifest-cairn-bound',
+                        'course-manifest-identity-consumed', 'course-manifest-proxy-consumed',
+                        'course-manifest-startup-preflight'},
     'notebook_python_r': {'python-r-wss', 'saved-file-handoff'},
     'notebook_persistence': {'server-stop-resume', 'saved-file-after-server-restart'},
     'notebook_isolation': {'authenticated-peer-file-denied', 'unrostered-login-denied'},
@@ -51,7 +54,7 @@ def main():
         # Forgejo image before collecting its immutable local identity.
         run('docker', 'pull', FORGEJO_IMAGE, timeout=180)
         images = {'course': notebook.image, 'checkout': 'cairn-checkout:local', 'forgejo': FORGEJO_IMAGE,
-                  'keycloak': KEYCLOAK_IMAGE, 'nginx': NGINX_IMAGE, 'hub': notebook.instance + '-hub:pilot'}
+                  'keycloak': KEYCLOAK_IMAGE, 'nginx': NGINX_IMAGE, 'hub': notebook.hub_image}
         provenance = collect_provenance(args.cairn_source, args.cairn_binary, args.lti_binary, images=images)
         with sync_playwright() as playwright:
             browser = playwright.chromium.launch(args=['--host-resolver-rules=MAP *.rehearsal.test 127.0.0.1'])
@@ -59,9 +62,10 @@ def main():
                 report = journey(course_root, args.cairn_binary.resolve(), notebook.origin,
                                  notebook.image, None, browser, args.cairn_source.resolve(),
                                  args.lti_binary.resolve(), notebook.handoff, notebook.revocation,
-                                 notebook.submission_page, notebook.cairn_origin)
+                                 notebook.submission_page, notebook.cairn_origin, notebook.bind_classroom)
             finally:
                 browser.close()
+        notebook.verify_manifest_frozen()
         assert provenance == collect_provenance(args.cairn_source, args.cairn_binary, args.lti_binary, images=images), 'inputs changed during pilot'
     finally:
         notebook.close()
@@ -73,6 +77,7 @@ def main():
     write_pass(root, {'provenance': provenance, 'phases': phases,
         'started_at': started, 'finished_at': datetime.now(timezone.utc).isoformat(),
         'duration_seconds': time.monotonic() - timer,
+        'course_manifest_sha256': notebook.manifest_digest,
         'checks': report['checks'] + report['assessment']['checks'] + report['load']['checks'] + notebook.report,
         'metrics': metrics}, scope='full-linux', cleanup_verified=notebook.cleanup_verified)
     print('PASS: full synthetic course pilot; all phases and cleanup verified.', flush=True)

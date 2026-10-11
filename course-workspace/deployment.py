@@ -158,7 +158,7 @@ def preflight(directory):
         raise ValueError('configured active learner limit exceeds the worker memory budget')
     architecture = {'x86_64': 'amd64', 'aarch64': 'arm64'}.get(info['Architecture'], info['Architecture'])
     images = {}
-    for role, reference in [('hub', cfg['instance'] + '-hub:pilot'), ('course', cfg['image'])]:
+    for role, reference in [('hub', cfg['hub_image']), ('course', cfg['image'])]:
         rows = docker_json('image', 'inspect', reference)
         if not isinstance(rows, list) or len(rows) != 1:
             raise ValueError('required image is missing or ambiguous')
@@ -169,6 +169,8 @@ def preflight(directory):
             raise ValueError('required image is incompatible with the worker')
         if not isinstance(image.get('Id'), str) or not re.fullmatch(r'sha256:[0-9a-f]{64}', image['Id']):
             raise ValueError('required image has no immutable image ID')
+        if reference.startswith('sha256:') and image['Id'] != reference:
+            raise ValueError('required image differs from the configured immutable image ID')
         images[role] = image['Id']
     from homes import inspect
     with redirect_stdout(io.StringIO()):

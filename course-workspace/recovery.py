@@ -8,6 +8,7 @@ from pathlib import Path
 import re
 import secrets
 import shutil
+import stat
 import subprocess
 import tempfile
 import uuid
@@ -96,6 +97,38 @@ def write_status(directory, operation, success, snapshot=None):
     private_json(path, record)
 
 
+def copy_source_manifest(directory, destination):
+    """Keep the original onboarding contract as encrypted historical context.
+
+    Maintenance and restore use the current private environment, so this record
+    is deliberately not installed as the replacement worker's active manifest.
+    Historical bundles without a manifest remain supported.
+    """
+    path = directory / 'manifest.json'
+    if not path.exists() and not path.is_symlink():
+        path = directory / 'source-manifest.json'
+    if not path.exists() and not path.is_symlink():
+        return
+    fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+    try:
+        info = os.fstat(fd)
+        if (not stat.S_ISREG(info.st_mode) or info.st_mode & 0o077
+                or info.st_uid not in (0, os.geteuid()) or info.st_size > 256 * 1024):
+            raise ValueError('source manifest must be a bounded owner-only regular file')
+        with os.fdopen(fd, 'rb', closefd=False) as stream:
+            raw = stream.read(256 * 1024 + 1)
+        try:
+            value = json.loads(raw)
+            if len(raw) > 256 * 1024 or not isinstance(value, dict) or type(value.get('version')) is not int or value['version'] != 1:
+                raise ValueError
+        except (ValueError, UnicodeError, RecursionError):
+            raise ValueError('source manifest format is unsupported') from None
+        with open(destination / 'source-manifest.json', 'xb', opener=lambda p, f: os.open(p, f, 0o600)) as out:
+            out.write(raw)
+    finally:
+        os.close(fd)
+
+
 def package(directory, env, bundle):
     bundle.mkdir(mode=0o700)
     if env.get('WORKSPACE_HOME_ROOT'):
@@ -127,6 +160,7 @@ def package(directory, env, bundle):
     if runtime['hub_image_id'] != images['hub']['Id'] or runtime['course_image_id'] != images['course']['Id']:
         raise ValueError('runtime images changed during checkpoint; retry with deployments paused')
     private_json(bundle / 'environment.json', env)
+    copy_source_manifest(directory, bundle)
     (bundle / 'runtime').mkdir(mode=0o700)
     for name in CODE:
         (bundle / 'runtime' / name).parent.mkdir(parents=True, exist_ok=True, mode=0o700)
@@ -259,6 +293,7 @@ def restore_repository(cfg, snapshot, destination, port, home_root=None, current
             if image_info(value['id'])['Id'] != value['id']:
                 raise ValueError('restored image ID differs')
         env.update(WORKSPACE_INSTANCE=instance, WORKSPACE_IMAGE=meta['images']['course']['id'],
+                   WORKSPACE_HUB_IMAGE=meta['images']['hub']['id'],
                    WORKSPACE_PORT=str(port), WORKSPACE_ENV_FILE=str(envfile))
         if not institutional:
             env['WORKSPACE_PUBLIC_URL'] = f'http://127.0.0.1:{port}'
@@ -292,6 +327,7 @@ def restore_repository(cfg, snapshot, destination, port, home_root=None, current
             inspect(home_root, instance)
         runtime = destination / 'runtime'
         shutil.copytree(bundle / 'runtime', runtime)
+        copy_source_manifest(bundle, destination)
         private_json(destination / 'recovery-source.json', {'snapshot_id': snapshot, 'source_instance': meta['instance'],
                       'fresh_hub_sessions': institutional, 'current_roster_required': institutional})
     entry = 'deployment.py start' if institutional else 'pilot.py start --no-build'
