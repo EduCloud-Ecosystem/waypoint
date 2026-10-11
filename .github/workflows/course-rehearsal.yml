@@ -34,7 +34,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: EduCloud-Ecosystem/cairn
-          ref: b7476ef5b54417589ae9818574effc064ee62b75
+          ref: b2513e252da1989e0b644ae57735825535b48dfd
           path: output/cairn-source
       - uses: actions/setup-python@v5
         with:
@@ -90,4 +90,19 @@ jobs:
           name: synthetic-course-evidence
           path: output/rehearsal-evidence
           if-no-files-found: error
+          retention-days: 7
+      - name: Preserve bounded synthetic browser diagnostic on failure
+        if: failure()
+        run: |
+          mkdir -p output/rehearsal-diagnostic
+          if sudo test -f /tmp/educloud-course-rehearsal/notebook/notebook.png; then
+            sudo cp /tmp/educloud-course-rehearsal/notebook/notebook.png output/rehearsal-diagnostic/
+            sudo chmod 644 output/rehearsal-diagnostic/notebook.png
+          fi
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: synthetic-course-diagnostic-not-acceptance
+          path: output/rehearsal-diagnostic
+          if-no-files-found: ignore
           retention-days: 7

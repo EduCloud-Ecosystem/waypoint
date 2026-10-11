@@ -62,6 +62,9 @@ by Cairn; remove them in Cairn if needed.
 The authenticated server routes are relative to the user's server base URL:
 `cairn/` (page), `cairn/config`, `cairn/list?directory=...`, and `cairn/files`
 (POST `{"paths":[...]}`). Jupyter's existing authentication and XSRF checks apply.
+All same-origin fetches carry the existing XSRF header, including read-only GETs:
+JupyterHub 6 requires it when authenticating fetch requests with its cookie.
+That header is never sent to Cairn.
 No cross-origin API access is enabled. Files are opened relative to a held root
 directory descriptor using `O_NOFOLLOW` for every component; special files are
 rejected. Folder browsing is bounded to 500 entries.
@@ -101,7 +104,8 @@ python -m unittest discover -s course-workspace/tests -p 'test_submission_bridge
 The first suite checks raw bytes, hashes, size/count/path rules, symlink and FIFO
 rejection, bounded browsing, changed files, and environment validation. The
 optional integration starts only local synthetic Jupyter and receiver services,
-checks login, visible Lab navigation, XSRF rejection, wrong-nonce/origin/window
+checks login, visible Lab navigation, GET/POST XSRF rejection using the pinned
+JupyterHub cookie-fetch predicate, wrong-nonce/origin/window
 rejection, popup retry, and exact saved-snapshot transfer. It writes synthetic screenshots under
 `output/playwright/`. The full course rehearsal separately tests the Docker
 image and actual Cairn receiver. Local synthetic passes are not institutional

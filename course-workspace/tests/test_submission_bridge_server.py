@@ -18,10 +18,10 @@ import time
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
-AVAILABLE = all(importlib.util.find_spec(name) is not None for name in ('jupyterlab', 'playwright'))
+AVAILABLE = all(importlib.util.find_spec(name) is not None for name in ('jupyterlab', 'jupyterhub', 'playwright'))
 
 
-@unittest.skipUnless(AVAILABLE, 'requires course JupyterLab and Playwright integration dependencies')
+@unittest.skipUnless(AVAILABLE, 'requires course JupyterLab/JupyterHub and Playwright integration dependencies')
 class JupyterBridgeTests(unittest.TestCase):
     def test_authenticated_lab_navigation_xsrf_and_origin_bound_saved_file_handoff(self):
         from playwright.sync_api import sync_playwright
@@ -54,6 +54,18 @@ window.addEventListener('message',event=>{if(event.origin===setup.origin && even
             origin = f'http://127.0.0.1:{port}'
             cfg = root / 'jupyter_config.py'
             cfg.write_text("\n".join([
+                # Reproduce the pinned Hub's cookie-fetch XSRF predicate while
+                # retaining a standalone local login fixture. Hub's full OAuth
+                # lifecycle remains covered by the Docker course rehearsal.
+                'from jupyterhub._xsrf_utils import _needs_check_xsrf',
+                'from jupyter_server.base.handlers import APIHandler',
+                'from tornado.web import RequestHandler',
+                '_original_prepare = APIHandler.prepare',
+                'async def _hub_fetch_prepare(self):',
+                '    await _original_prepare(self)',
+                '    if self.request.path.startswith("/cairn/") and _needs_check_xsrf(self):',
+                '        RequestHandler.check_xsrf_cookie(self)',
+                'APIHandler.prepare = _hub_fetch_prepare',
                 'c = get_config()', "c.ServerApp.ip = '127.0.0.1'", f'c.ServerApp.port = {port}',
                 'c.ServerApp.port_retries = 0', 'c.ServerApp.open_browser = False',
                 f'c.ServerApp.root_dir = {str(work)!r}', f'c.IdentityProvider.token = {token!r}',
@@ -97,6 +109,11 @@ window.addEventListener('message',event=>{if(event.origin===setup.origin && even
                             # Existing Jupyter cookie auth must not bypass XSRF on POST.
                             missing = bridge.evaluate("""async () => (await fetch('files',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({paths:['solution.py']})})).status""")
                             self.assertEqual(missing, 403)
+                            # This is the real Hub predicate absent from vanilla
+                            # Jupyter: GET fetches also require an XSRF header.
+                            for route in ('config', 'list'):
+                                missing_get = bridge.evaluate('async path => (await fetch(path)).status', route)
+                                self.assertEqual(missing_get, 403)
                             # Cancel while preparation is in flight: the late response must
                             # not restore a snapshot or re-enable sending cancelled files.
                             pending = []

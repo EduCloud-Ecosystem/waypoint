@@ -262,6 +262,9 @@ proxy_set_header X-Forwarded-Port {self.port}; proxy_set_header X-Forwarded-For 
         """Use the actual saved-file bridge in the authenticated notebook."""
         from playwright.sync_api import expect
         _, page, session, url = self.revoked
+        configuration = session.get(url + '/cairn/config', timeout=15)
+        assert configuration.status_code == 200, f'authenticated notebook handoff route returned {configuration.status_code}'
+        assert configuration.json()['origin'] == self.cairn_origin
         # The application provides a discoverable link independent of home files.
         with page.expect_popup() as bridge:
             page.get_by_role('link', name='Submit saved files to Cairn', exact=True).click()

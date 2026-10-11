@@ -24,8 +24,12 @@
         async activate(app, launcher) {
           const settings = JSON.parse(document.getElementById('jupyter-config-data').textContent);
           const base = settings.baseUrl.replace(/\/$/, '') + '/cairn/';
+          // Hub 6 checks XSRF even for GET fetches authenticated by its cookie.
+          const xsrfCookie = document.cookie.split(';').map(value => value.trim()).find(value => value.startsWith('_xsrf='));
+          if (!xsrfCookie) return;
           let response;
-          try { response = await fetch(base + 'config', {credentials: 'same-origin', cache: 'no-store', redirect: 'error'}); } catch (_) { return; }
+          try { response = await fetch(base + 'config', {credentials: 'same-origin', cache: 'no-store', redirect: 'error',
+            headers: {'X-XSRFToken': decodeURIComponent(xsrfCookie.slice(6))}}); } catch (_) { return; }
           if (!response.ok) return;
           const command = 'waypoint-cairn:submit';
           app.commands.addCommand(command, {label: 'Submit saved files to Cairn', caption: 'Select saved coursework to review and submit in Cairn', execute: () => window.open(base, '_blank', 'noopener')});

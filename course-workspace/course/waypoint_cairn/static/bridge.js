@@ -13,7 +13,10 @@
     return decodeURIComponent(item.slice(6));
   };
   async function request(path, options = {}) {
-    const response = await fetch(path, {credentials: 'same-origin', cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(15000), ...options});
+    // JupyterHub 6 requires XSRF for cookie-authenticated fetches, including GET.
+    // This header is sent only to this same-origin server, never to Cairn.
+    const response = await fetch(path, {credentials: 'same-origin', cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(15000), ...options,
+      headers: {...options.headers, 'X-XSRFToken': csrf()}});
     if (!response.ok) throw new Error('Saved files unavailable. Check your session, supported filenames, and size limits, then retry.');
     return response.json();
   }
