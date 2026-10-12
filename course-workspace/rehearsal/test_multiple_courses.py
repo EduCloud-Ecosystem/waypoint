@@ -6,12 +6,14 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import time
 import types
 import unittest
 from unittest.mock import Mock, patch
 
 import verify_multiple_courses as r
 from notebook import Notebook
+from hub.home_policy import quota_home
 
 
 def report():
@@ -224,6 +226,44 @@ class MultipleCourseAcceptanceTests(unittest.TestCase):
 
 
 class MultipleCourseFixtureTests(unittest.TestCase):
+    def test_delayed_course_refreshes_real_quota_gate_before_login_and_explicit_spawn(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory).resolve(); status=root/'status'; status.mkdir()
+            instance='rehearsal-'+'a'*10; key='b'*24; name=instance+'-home-'+key
+            settings={'home_root':str(root/'homes'),'instance':instance,'home_quota_mb':256,'home_inode_limit':100000}
+            path=status/(instance+'.json')
+            record={'instance':instance,'healthy':True,'checked_at':time.time()-146,
+                    'volumes':{name:{'quota_bytes':256*1024**2,'project_id':1,'inode_limit':100000}}}
+            path.write_text(json.dumps(record)); path.chmod(0o600)
+            with self.assertRaisesRegex(ValueError,'unhealthy or stale'): quota_home(settings,key,status)
+            events=[]; fixture=types.SimpleNamespace(homes=root/'homes',instance=instance)
+            def inspect(homes,current_instance):
+                self.assertEqual((homes,current_instance),(fixture.homes,instance)); events.append('inspect')
+                record['checked_at']=time.time(); path.write_text(json.dumps(record))
+            def login(page,user):
+                events.append('login'); self.assertEqual(quota_home(settings,key,status)['name'],name)
+            def ready(page,user):
+                events.append('spawn'); return quota_home(settings,key,status)
+            fixture.login=Mock(side_effect=login); fixture.ready=Mock(side_effect=ready)
+            page=Mock()
+            with patch.object(r,'inspect',side_effect=inspect):
+                result=r.login_and_ready_with_current_quotas(fixture,page,'alice')
+            self.assertEqual(events,['inspect','login','inspect','spawn'])
+            self.assertEqual(result['name'],name)
+
+    def test_quota_inspection_failure_never_proceeds_to_login_or_later_spawn(self):
+        for stage in ('before-login','before-spawn'):
+            with self.subTest(stage=stage):
+                fixture=Mock(homes=Path('/owned/homes'),instance='rehearsal-'+'a'*10)
+                error=ValueError('real quota inspection failed')
+                outcomes=[error] if stage=='before-login' else [None,error]
+                with patch.object(r,'inspect',side_effect=outcomes):
+                    with self.assertRaisesRegex(ValueError,'real quota inspection failed'):
+                        r.login_and_ready_with_current_quotas(fixture,Mock(),'alice')
+                if stage=='before-login': fixture.login.assert_not_called()
+                else: fixture.login.assert_called_once()
+                fixture.ready.assert_not_called()
+
     def test_custom_identity_capacity_consumed_and_defaults_unchanged(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory).resolve()

@@ -14,6 +14,55 @@ def response(status, issuer=None):
 
 
 class NotebookReadinessTests(unittest.TestCase):
+    def test_missing_learner_server_reports_api_status_without_weakening_timeout(self):
+        with tempfile.TemporaryDirectory() as directory:
+            book=Notebook(Path(directory)); session=Mock(); book.http_session=Mock(return_value=session)
+            session.get.return_value=SimpleNamespace(ok=True,status_code=200,json=lambda:{'server':None})
+            with patch('notebook.time.sleep') as sleep,patch.object(book,'learner_readiness_diagnostics') as diagnostics:
+                with self.assertRaisesRegex(AssertionError,'notebook did not become ready'):
+                    book.ready(Mock(),'alice')
+            self.assertEqual(session.get.call_count,60); self.assertEqual(sleep.call_count,60)
+            diagnostics.assert_called_once_with({'hub_api':200,'contents':None,'server_present':False})
+
+    def test_learner_diagnostics_bound_states_and_validate_quota_age_without_private_data(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory).resolve(); book=Notebook(root); book.homes=root/'homes'
+            status=book.homes/'.educloud-status'; status.mkdir(parents=True)
+            secret='PRIVATE_NEVER_PRINT'
+            quota={'instance':book.instance,'healthy':True,'checked_at':1000,
+                   'volumes':{secret:{'identity':secret}},'owner':secret}
+            path=status/(book.instance+'.json'); path.write_text(json.dumps(quota)); path.chmod(0o600)
+            identities=[format(index,'064x') for index in range(1,7)]
+            state={'Status':'exited','Running':False,'OOMKilled':True,'ExitCode':137,'Error':secret}
+            results=[SimpleNamespace(returncode=0,stdout='\n'.join(identities),stderr=secret)]
+            results += [SimpleNamespace(returncode=0,stdout=json.dumps(state),stderr=secret) for _ in range(4)]
+            with patch('notebook.subprocess.run',side_effect=results) as command, \
+                    patch('notebook.time.time',return_value=1146),patch('builtins.print') as log:
+                result=book.learner_readiness_diagnostics({'hub_api':200,'contents':None,'server_present':False,'private':secret})
+            self.assertEqual(result['learner_count'],6); self.assertTrue(result['states_truncated'])
+            self.assertEqual(len(result['container_states']),4); self.assertEqual(command.call_count,5)
+            self.assertEqual(result['quota_verification'],{'healthy':True,'age_seconds':146,'fresh':False})
+            self.assertFalse(result['server_present']); self.assertEqual(result['last_http_status'],{'hub_api':200,'contents':None})
+            for private in (secret,book.instance,str(root),*identities):
+                self.assertNotIn(private,json.dumps(result)); self.assertNotIn(private,str(log.call_args))
+            self.assertIn('label=educloud.workspace.instance='+book.instance,command.call_args_list[0].args[0])
+
+    def test_malformed_quota_or_container_metadata_only_returns_unknown_diagnostics(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory).resolve(); book=Notebook(root); book.homes=root/'homes'
+            status=book.homes/'.educloud-status'; status.mkdir(parents=True)
+            path=status/(book.instance+'.json')
+            cases=[json.dumps({'instance':book.instance,'healthy':True,'checked_at':10**1000}).encode(),
+                   b'['*2000+b'0'+b']'*2000,
+                   json.dumps({'instance':book.instance,'healthy':True,'checked_at':float('nan')}).encode(),
+                   json.dumps({'instance':'another','healthy':True,'checked_at':1000}).encode()]
+            for raw in cases:
+                with self.subTest(raw=raw[:40]):
+                    path.write_bytes(raw); path.chmod(0o600)
+                    self.assertEqual(book.quota_status_diagnostic(),{'healthy':None,'age_seconds':None,'fresh':None})
+            with patch('notebook.subprocess.run',return_value=SimpleNamespace(returncode=0,stdout='['*2000+'0'+']'*2000,stderr='')):
+                self.assertEqual(book.container_state_diagnostic('owned'),{'status':'unavailable'})
+
     def test_ready_still_requires_discovery_hub_and_exact_issuer(self):
         with tempfile.TemporaryDirectory() as directory:
             book=Notebook(Path(directory)); book.session=Mock()

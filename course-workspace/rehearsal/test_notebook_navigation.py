@@ -101,7 +101,7 @@ class NotebookNavigationTests(unittest.TestCase):
                 page.url = url
             page.wait_for_url.side_effect = redirected
             session.get.side_effect = [
-                SimpleNamespace(ok=True, json=lambda: {'server': expected}),
+                SimpleNamespace(ok=True, status_code=200, json=lambda: {'server': expected}),
                 SimpleNamespace(status_code=200, headers={'Content-Type':'application/json'}, json=lambda: {'type':'directory'}),
             ]
             self.assertEqual(book.ready(page, 'alice'), (session, expected.rstrip('/')))
@@ -119,7 +119,7 @@ class NotebookNavigationTests(unittest.TestCase):
             for server in invalid:
                 with self.subTest(server=server):
                     session.reset_mock(); page.reset_mock()
-                    session.get.return_value = SimpleNamespace(ok=True, json=lambda: {'server':server})
+                    session.get.return_value = SimpleNamespace(ok=True, status_code=200, json=lambda: {'server':server})
                     with self.assertRaisesRegex(AssertionError, 'unexpected learner server URL'):
                         book.ready(page, 'alice')
                     page.wait_for_url.assert_not_called()
@@ -128,16 +128,17 @@ class NotebookNavigationTests(unittest.TestCase):
     def test_redirect_failure_propagates_and_html_login_is_not_ready(self):
         with tempfile.TemporaryDirectory() as directory:
             book, _, expected, page, session = self.fixture(directory)
-            session.get.return_value = SimpleNamespace(ok=True, json=lambda: {'server':expected})
+            session.get.return_value = SimpleNamespace(ok=True, status_code=200, json=lambda: {'server':expected})
             page.wait_for_url.side_effect = RuntimeError('navigation failed')
             with self.assertRaisesRegex(RuntimeError, 'navigation failed'):
                 book.ready(page, 'alice')
             page.wait_for_url.side_effect = None
             session.get.side_effect = lambda url, **kwargs: (
-                SimpleNamespace(ok=True, json=lambda: {'server':expected}) if '/hub/api/' in url
+                SimpleNamespace(ok=True, status_code=200, json=lambda: {'server':expected}) if '/hub/api/' in url
                 else SimpleNamespace(status_code=200, headers={'Content-Type':'text/html'}, json=Mock(side_effect=AssertionError('must not parse login HTML'))))
-            with patch('notebook.time.sleep'), self.assertRaisesRegex(AssertionError, 'notebook did not become ready'):
+            with patch('notebook.time.sleep'), patch.object(book,'learner_readiness_diagnostics') as diagnostics, self.assertRaisesRegex(AssertionError, 'notebook did not become ready'):
                 book.ready(page, 'alice')
+            diagnostics.assert_called_once_with({'hub_api':200,'contents':200,'server_present':True})
 
 
 if __name__ == '__main__': unittest.main()

@@ -270,6 +270,18 @@ def wait_hub(fixture):
     raise AssertionError('managed course did not become ready')
 
 
+def login_with_current_quotas(fixture, page, user):
+    """Verify real quotas before OAuth can automatically begin a learner spawn."""
+    inspect(fixture.homes,fixture.instance)
+    fixture.login(page,user)
+
+
+def login_and_ready_with_current_quotas(fixture, page, user):
+    login_with_current_quotas(fixture,page,user)
+    inspect(fixture.homes,fixture.instance)
+    return fixture.ready(page,user)
+
+
 def assert_live(fixture, session, url, content, container_ids):
     response = session.get(url + '/api/contents/course.py', timeout=20)
     assert response.status_code == 200 and response.json()['content'] == content
@@ -371,7 +383,7 @@ def main():
                 pages = [context.new_page() for context in contexts]
                 sessions = []
                 for fixture, page in zip((first, second), pages):
-                    fixture.login(page, 'alice'); sessions.append(fixture.ready(page, 'alice'))
+                    sessions.append(login_and_ready_with_current_quotas(fixture,page,'alice'))
                 (one, one_url), (two, two_url) = sessions
                 assert SUBJECTS['alice'] in one_url and SUBJECTS['alice'] in two_url and one_url != two_url
                 suffix = 'home-' + hashlib.sha256(SUBJECTS['alice'].encode()).hexdigest()[:24]
@@ -402,7 +414,8 @@ def main():
                     assert response.status_code in (302, 303, 401, 403, 404), 'another course accepted transplanted learner cookies'
                 checks.append('cross-course-learner-cookie-denied')
                 bob_context = browser.new_context(ignore_https_errors=True); bob_page = bob_context.new_page()
-                first.login(bob_page, 'bob'); bob = first.http_session(bob_context)
+                login_with_current_quotas(first,bob_page,'bob'); bob = first.http_session(bob_context)
+                inspect(first.homes,first.instance)
                 response = change(bob, 'POST', first.origin + '/hub/api/users/' + SUBJECTS['bob'] + '/server')
                 assert response.status_code == 429 and len(active_learners(first)) == 1
                 checks.append('per-course-capacity-429')
@@ -410,9 +423,11 @@ def main():
                 checks.append('other-course-unaffected-by-capacity')
                 first.compose('stop', 'hub')
                 first.env['WORKSPACE_ALLOWED_SUBJECTS'] = SUBJECTS['bob']; first.write_env()
+                inspect(first.homes,first.instance)
                 first.compose('up', '-d', '--force-recreate', '--no-build', '--pull', 'never', 'hub'); wait_hub(first)
                 old = one.get(one_url + '/api/contents/course.py', timeout=15, allow_redirects=False)
                 assert old.status_code in (302, 303, 401, 403, 404, 503)
+                inspect(first.homes,first.instance)
                 pages[0].goto(first.origin + '/hub/spawn/' + SUBJECTS['alice'])
                 for _ in range(30):
                     message = ' '.join(pages[0].locator('body').inner_text().lower().split())
@@ -429,8 +444,8 @@ def main():
                 checks.append('other-course-unaffected-by-revocation')
                 # A fresh login uses the current roster and creates Bob's retained work.
                 bob_context.close(); bob_context = browser.new_context(ignore_https_errors=True)
-                bob_page = bob_context.new_page(); first.login(bob_page, 'bob')
-                bob, bob_url = first.ready(bob_page, 'bob')
+                bob_page = bob_context.new_page()
+                bob, bob_url = login_and_ready_with_current_quotas(first,bob_page,'bob')
                 expected['bob'] = save_coursework(first, bob, bob_url, 'course one bob')
                 first.compose('stop', 'hub'); inspect(first.homes, first.instance)
                 recovery_path = first.deployment / 'recovery.json'; cfg = load_config(recovery_path)

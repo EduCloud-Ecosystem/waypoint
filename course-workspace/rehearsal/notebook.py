@@ -3,11 +3,13 @@ from contextlib import nullcontext
 import copy
 import hashlib
 import json
+import math
 import os
 import re
 from pathlib import Path
 import secrets
 import socket
+import stat
 import subprocess
 import sys
 import time
@@ -153,26 +155,28 @@ class Notebook:
         inspect(self.homes,self.instance)
         print('Keycloak discovery, TLS and Hub are ready.',flush=True)
 
+    def container_state_diagnostic(self, identity):
+        """Read only state scalars; never print Docker error text or environment."""
+        try:
+            result = subprocess.run(['docker', 'inspect', '--format', '{{json .State}}', identity],
+                                    capture_output=True, text=True, timeout=5)
+            if result.returncode != 0 or len(result.stdout) > 64 * 1024:
+                return {'status':'unavailable'}
+            state = json.loads(result.stdout)
+            if (not isinstance(state,dict) or state.get('Status') not in
+                    ('created','running','paused','restarting','removing','exited','dead')
+                    or type(state.get('Running')) is not bool or type(state.get('OOMKilled')) is not bool
+                    or type(state.get('ExitCode')) is not int or not 0 <= state['ExitCode'] <= 255):
+                return {'status':'unavailable'}
+            return {'status':state['Status'], 'running':state['Running'],
+                    'oom_killed':state['OOMKilled'], 'exit_code':state['ExitCode']}
+        except (OSError, subprocess.SubprocessError, ValueError, TypeError, OverflowError, RecursionError):
+            return {'status':'unavailable'}
+
     def readiness_diagnostics(self, last_status):
         """Emit fixed state fields only, without container logs or environment."""
-        states = {}
-        for role in ('identity', 'proxy', 'hub'):
-            states[role] = {'status':'unavailable'}
-            try:
-                result = subprocess.run(['docker', 'inspect', '--format', '{{json .State}}', self.instance + '-' + role],
-                                        capture_output=True, text=True, timeout=5)
-                if result.returncode != 0 or len(result.stdout) > 64 * 1024:
-                    continue
-                state = json.loads(result.stdout)
-                if (not isinstance(state,dict) or state.get('Status') not in
-                        ('created','running','paused','restarting','removing','exited','dead')
-                        or type(state.get('Running')) is not bool or type(state.get('OOMKilled')) is not bool
-                        or type(state.get('ExitCode')) is not int or not 0 <= state['ExitCode'] <= 255):
-                    continue
-                states[role] = {'status':state['Status'], 'running':state['Running'],
-                                'oom_killed':state['OOMKilled'], 'exit_code':state['ExitCode']}
-            except (OSError, subprocess.SubprocessError, ValueError, TypeError):
-                pass
+        states = {role:self.container_state_diagnostic(self.instance + '-' + role)
+                  for role in ('identity','proxy','hub')}
         report = {'scope':'synthetic-notebook-readiness', 'status':'NOT_READY',
                   'managed_worker':self.allocation_policy is not None,
                   'last_http_status':{key: (last_status.get(key) if type(last_status.get(key)) is int
@@ -180,6 +184,56 @@ class Notebook:
                                       for key in ('discovery','hub')},
                   'containers':states}
         print('Synthetic notebook readiness diagnostics: ' + json.dumps(report,sort_keys=True,allow_nan=False), flush=True)
+        return report
+
+    def quota_status_diagnostic(self):
+        """Report only validated health/age; do not alter quota verification."""
+        unknown = {'healthy':None,'age_seconds':None,'fresh':None}
+        if not hasattr(self,'homes'): return unknown
+        path = self.homes / '.educloud-status' / (self.instance + '.json')
+        try:
+            fd = os.open(path,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK)
+            with os.fdopen(fd,'rb') as source:
+                metadata = os.fstat(source.fileno())
+                if (not stat.S_ISREG(metadata.st_mode) or metadata.st_size > 64*1024
+                        or metadata.st_uid not in (0,os.geteuid()) or metadata.st_mode & 0o077
+                        or metadata.st_nlink != 1): return unknown
+                raw = source.read(64*1024+1)
+            if len(raw) > 64*1024: return unknown
+            value = json.loads(raw)
+            if (not isinstance(value,dict) or value.get('instance') != self.instance
+                    or type(value.get('healthy')) is not bool or type(value.get('checked_at')) not in (int,float)
+                    or not math.isfinite(value['checked_at'])): return unknown
+            age = time.time()-value['checked_at']
+            if not math.isfinite(age) or not -86400 <= age <= 86400: return unknown
+            return {'healthy':value['healthy'],'age_seconds':math.floor(age),
+                    'fresh':value['healthy'] and 0 <= age <= 120}
+        except (OSError,ValueError,TypeError,OverflowError,RecursionError):
+            return unknown
+
+    def learner_readiness_diagnostics(self, last_status):
+        """Emit bounded learner state and API scalars without IDs or credentials."""
+        states = []; count = None
+        try:
+            result = subprocess.run(['docker','ps','-aq','--no-trunc','--filter',
+                                     'label=educloud.workspace.instance='+self.instance,'--filter',
+                                     'label=educloud.workspace.kind=learner'],capture_output=True,text=True,timeout=5)
+            identities = result.stdout.split()
+            if (result.returncode == 0 and len(result.stdout) <= 64*1024 and len(identities) <= 1024
+                    and len(identities) == len(set(identities))
+                    and all(re.fullmatch(r'[0-9a-f]{64}',identity) for identity in identities)):
+                count = len(identities)
+                states = [self.container_state_diagnostic(identity) for identity in sorted(identities)[:4]]
+        except (OSError,subprocess.SubprocessError):
+            pass
+        report = {'scope':'synthetic-learner-readiness','status':'NOT_READY',
+                  'last_http_status':{key:(last_status.get(key) if type(last_status.get(key)) is int
+                                          and 100 <= last_status[key] <= 599 else None)
+                                      for key in ('hub_api','contents')},
+                  'server_present':last_status.get('server_present') if type(last_status.get('server_present')) is bool else None,
+                  'quota_verification':self.quota_status_diagnostic(),
+                  'learner_count':count,'container_states':states,'states_truncated':count is not None and count > 4}
+        print('Synthetic learner readiness diagnostics: '+json.dumps(report,sort_keys=True,allow_nan=False),flush=True)
         return report
 
     def wait_for_fixture(self):
@@ -423,11 +477,16 @@ proxy_set_header X-Forwarded-Port {self.port}; proxy_set_header X-Forwarded-For 
         expected = origin._replace(netloc=subject + '.' + origin.netloc,
                                    path='/user/' + subject + '/', query='', fragment='').geturl()
         page.goto(self.origin+'/hub/spawn/'+subject)
+        last_status = {'hub_api':None,'contents':None,'server_present':None}
         for _ in range(60):
             session = self.http_session(page.context)
             response = session.get(self.origin+'/hub/api/users/'+subject, timeout=10)
-            if response.ok and response.json().get('server'):
-                if response.json()['server'] != expected:
+            last_status['hub_api'] = response.status_code
+            last_status['server_present'] = None
+            state = response.json() if response.ok else {}
+            if response.ok: last_status['server_present'] = bool(state.get('server'))
+            if response.ok and state.get('server'):
+                if state['server'] != expected:
                     raise AssertionError('Hub returned an unexpected learner server URL')
                 # /hub/spawn already redirects when readiness completes. A
                 # second goto races that navigation and can interrupt OAuth.
@@ -435,11 +494,13 @@ proxy_set_header X-Forwarded-Port {self.port}; proxy_set_header X-Forwarded-For 
                 url = expected.rstrip('/')
                 session = self.http_session(page.context)
                 contents = session.get(url+'/api/contents', timeout=10, allow_redirects=False)
+                last_status['contents'] = contents.status_code
                 if (contents.status_code == 200 and 'application/json' in contents.headers.get('Content-Type', '')
                         and contents.json().get('type') == 'directory'):
                     self.verify_runtime_images()
                     return session, url
             time.sleep(1)
+        self.learner_readiness_diagnostics(last_status)
         raise AssertionError('notebook did not become ready')
 
     def kernel(self, session, url, name, code):
