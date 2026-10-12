@@ -1,4 +1,5 @@
 """Real Keycloak/Hub TLS rehearsal on a disposable Linux XFS mount."""
+from contextlib import nullcontext
 import copy
 import hashlib
 import json
@@ -32,12 +33,25 @@ SUBJECTS = {user: str(uuid.uuid5(uuid.NAMESPACE_DNS, 'educloud-synthetic-' + use
 
 
 class Notebook:
-    def __init__(self, root, extra_users=(), *, hub_image=None, course_image=None, synthetic_candidate_images=False):
+    def __init__(self, root, extra_users=(), *, hub_image=None, course_image=None, synthetic_candidate_images=False,
+                 domain='work.rehearsal.test', auth_domain='auth.rehearsal.test', client_id='course',
+                 capacity=None, allocation_policy=None):
         if bool(hub_image) != bool(course_image) or (synthetic_candidate_images and hub_image):
             raise ValueError('supply paired immutable image references or synthetic candidate images')
         for reference in (hub_image, course_image):
             if reference is not None and not re.fullmatch(r'(?:sha256:[0-9a-f]{64}|[a-z0-9][a-z0-9._:/-]{0,254}@sha256:[0-9a-f]{64})', reference):
                 raise ValueError('preloaded candidate images require immutable references')
+        for hostname in (domain, auth_domain):
+            if not re.fullmatch(r'[a-z][a-z0-9-]*\.rehearsal\.test', hostname):
+                raise ValueError('synthetic notebook hosts must be distinct rehearsal DNS names')
+        if domain == auth_domain or not re.fullmatch(r'[a-zA-Z0-9_-]{1,128}', client_id):
+            raise ValueError('synthetic notebook identity hosts and client ID invalid')
+        default_capacity = {'memory_mb':1024, 'cpu':1, 'active_limit':2, 'idle_seconds':1800, 'max_age_seconds':28800}
+        if capacity is not None and (not isinstance(capacity, dict) or set(capacity)-set(default_capacity)):
+            raise ValueError('synthetic capacity overrides must use manifest capacity fields')
+        self.capacity = dict(default_capacity, **(capacity or {}))
+        self.domain, self.auth_domain, self.client_id = domain, auth_domain, client_id
+        self.allocation_policy = allocation_policy
         self.requested_hub_image = hub_image
         self.synthetic_candidate_images = synthetic_candidate_images
         self.users = ("alice", "bob", *extra_users)
@@ -45,8 +59,8 @@ class Notebook:
         self.root = root
         self.instance = 'rehearsal-' + uuid.uuid4().hex[:10]
         self.port = port()
-        self.origin = f'https://work.rehearsal.test:{self.port}'
-        self.auth = f'https://auth.rehearsal.test:{self.port}'
+        self.origin = f'https://{self.domain}:{self.port}'
+        self.auth = f'https://{self.auth_domain}:{self.port}'
         self.password = secrets.token_urlsafe(32)
         self.image = course_image or 'educloud-python-r:2026-10-06'
         self.mounted = False
@@ -63,9 +77,14 @@ class Notebook:
 
     def compose(self, *args):
         env = {k:v for k,v in os.environ.items() if not k.startswith(('WORKSPACE_', 'COMPOSE_'))}
-        return run('docker', 'compose', '--env-file', str(self.env_file), '-f', str(ROOT / 'compose.yaml'),
-                   '-f', str(ROOT / 'quota-compose.yaml'), '-f', str(self.root / 'override.json'), *args,
-                   cwd=ROOT, env=env)
+        context = nullcontext()
+        if self.allocation_policy is not None and args and args[0] in ('up','start','restart','run','create'):
+            import allocation
+            context = allocation.admission(self.deployment, read_environment(self.env_file))
+        with context:
+            return run('docker', 'compose', '--env-file', str(self.env_file), '-f', str(ROOT / 'compose.yaml'),
+                       '-f', str(ROOT / 'quota-compose.yaml'), '-f', str(self.root / 'override.json'), *args,
+                       cwd=ROOT, env=env)
 
     def write_env(self):
         self.env_file.write_text(''.join(f'{k}={v}\n' for k,v in self.env.items()))
@@ -83,10 +102,11 @@ class Notebook:
         xfs_run('mkfs.xfs', '-f', str(disk))
         xfs_run('mount', '-o', 'loop,prjquota', str(disk), str(self.homes))
         self.mounted = True
-        _, _, self.env = render('work.rehearsal.test', self.auth + '/realms/course', 'course', self.instance,
+        _, _, self.env = render(self.domain, self.auth + '/realms/course', self.client_id, self.instance,
                                         [SUBJECTS[user] for user in self.users], str(self.homes), port())
         self.env.update(WORKSPACE_PUBLIC_URL=self.origin, WORKSPACE_OIDC_CLIENT_SECRET=secrets.token_urlsafe(32),
-                        WORKSPACE_HOME_QUOTA_MB='256', WORKSPACE_MEMORY_MB='1024', WORKSPACE_ACTIVE_LIMIT='2',
+                        WORKSPACE_HOME_QUOTA_MB='256', WORKSPACE_MEMORY_MB=str(self.capacity['memory_mb']),
+                        WORKSPACE_CPU_LIMIT=str(self.capacity['cpu']), WORKSPACE_ACTIVE_LIMIT=str(self.capacity['active_limit']),
                         WORKSPACE_ENV_FILE=str(self.env_file))
         self.env['WORKSPACE_IMAGE'] = self.image
         if self.requested_hub_image:
@@ -96,9 +116,9 @@ class Notebook:
         # A private fixture CA is trusted explicitly by Hub and HTTP clients.
         run('openssl', 'req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '1', '-subj', '/CN=EduCloud synthetic CA',
             '-keyout', str(self.root/'ca.key'), '-out', str(self.root/'ca.pem'))
-        run('openssl', 'req', '-newkey', 'rsa:2048', '-nodes', '-subj', '/CN=work.rehearsal.test',
+        run('openssl', 'req', '-newkey', 'rsa:2048', '-nodes', '-subj', '/CN='+self.domain,
             '-keyout', str(self.root/'privkey.pem'), '-out', str(self.root/'server.csr'))
-        (self.root/'extensions').write_text('subjectAltName=DNS:work.rehearsal.test,DNS:*.work.rehearsal.test,DNS:auth.rehearsal.test\nextendedKeyUsage=serverAuth\n')
+        (self.root/'extensions').write_text('subjectAltName=DNS:'+self.domain+',DNS:*.'+self.domain+',DNS:'+self.auth_domain+'\nextendedKeyUsage=serverAuth\n')
         run('openssl', 'x509', '-req', '-in', str(self.root/'server.csr'), '-CA', str(self.root/'ca.pem'),
             '-CAkey', str(self.root/'ca.key'), '-CAcreateserial', '-days', '1', '-extfile', str(self.root/'extensions'),
             '-out', str(self.root/'fullchain.pem'))
@@ -111,13 +131,18 @@ class Notebook:
         (self.root/'override.json').write_text(json.dumps(override))
         self.prepare_images()
         self.render_setup()
+        if self.allocation_policy is not None:
+            import allocation
+            allocation.enroll(self.deployment, self.allocation_policy)
         self.verify_startup_preflight(self.deployment)
         self.configure_fixture_edges()
         self.compose('up','-d','--no-build','--pull','never','hub')
         run('docker','run','-d','--name',self.instance+'-proxy','--label','educloud.rehearsal='+self.instance,'--network',self.network,
-            '--network-alias','auth.rehearsal.test','--memory','128m','-p',f'127.0.0.1:{self.port}:{self.port}',
+            '--network-alias',self.auth_domain,'--memory','128m','-p',f'127.0.0.1:{self.port}:{self.port}',
+            *(['--cpus','0.1'] if self.allocation_policy is not None else []),
             '-v',str(self.root/'nginx.conf')+':/etc/nginx/nginx.conf:ro',
-            '-v',str(self.root)+':/etc/educloud/tls:ro',NGINX_IMAGE)
+            '-v',str(self.root/'fullchain.pem')+':/etc/educloud/tls/fullchain.pem:ro',
+            '-v',str(self.root/'privkey.pem')+':/etc/educloud/tls/privkey.pem:ro',NGINX_IMAGE)
         def resolve(host, *args, **kwargs):
             return self.original_dns('127.0.0.1' if host.endswith('.rehearsal.test') else host, *args, **kwargs)
         socket.getaddrinfo = resolve
@@ -159,13 +184,13 @@ class Notebook:
         # Its parent fixture directory remains private and is never published.
         (self.root/'realm.json').chmod(0o644)
         run('docker','run','-d','--name',self.instance+'-identity','--label','educloud.rehearsal='+self.instance,'--network',self.network,'--network-alias','identity',
-            '--memory','1g','--cpus','1','-v',str(self.root/'realm.json')+':/opt/keycloak/data/import/course.json:ro',
+            '--memory','1g','--cpus','0.25' if self.allocation_policy is not None else '1','-v',str(self.root/'realm.json')+':/opt/keycloak/data/import/course.json:ro',
             '-e','KC_HOSTNAME='+self.auth,'-e','KC_PROXY_HEADERS=xforwarded',KEYCLOAK_IMAGE,'start-dev','--import-realm')
         # Keep the generated TLS/DNS policy. Only the private Compose-network
         # upstream and separate synthetic IdP virtual host are fixture adapters.
         nginx = (self.deployment / 'nginx.conf').read_text()
         nginx = nginx.replace('http://127.0.0.1:'+self.env['WORKSPACE_PORT'], f'http://{self.instance}-hub:8000')
-        nginx += f'''\nserver {{ listen {self.port} ssl; server_name auth.rehearsal.test;
+        nginx += f'''\nserver {{ listen {self.port} ssl; server_name {self.auth_domain};
 ssl_certificate /etc/educloud/tls/fullchain.pem; ssl_certificate_key /etc/educloud/tls/privkey.pem;
 location / {{ proxy_pass http://identity:8080; proxy_set_header Host $http_host;
 proxy_set_header X-Forwarded-Proto https; proxy_set_header X-Forwarded-Host $http_host;
@@ -189,13 +214,12 @@ proxy_set_header X-Forwarded-Port {self.port}; proxy_set_header X-Forwarded-For 
         self.manifest = {
             'version': 1, 'scope': 'synthetic', 'instance': self.instance,
             'images': {'hub': self.hub_image, 'course': self.image},
-            'identity': {'issuer': self.auth + '/realms/course', 'client_id': 'course',
+            'identity': {'issuer': self.auth + '/realms/course', 'client_id': self.client_id,
                          'client_secret_file': str(secret_file),
                          'subjects': [SUBJECTS[user] for user in self.users]},
             'workspace': {'origin': self.origin, 'port': int(self.env['WORKSPACE_PORT'])},
             'storage': {'home_root': str(self.homes), 'quota_mb': 256, 'inode_limit': 100000},
-            'capacity': {'memory_mb': 1024, 'cpu': 1, 'active_limit': 2,
-                         'idle_seconds': 1800, 'max_age_seconds': 28800},
+            'capacity': dict(self.capacity),
             'backup': {'repository': str(self.root / 'encrypted-repository'),
                        'password_file': str(backup_file), 'staging_dir': str(self.deployment),
                        'keep_last': 7, 'keep_daily': 7, 'keep_weekly': 4},
@@ -306,7 +330,7 @@ proxy_set_header X-Forwarded-Port {self.port}; proxy_set_header X-Forwarded-For 
         page.locator('input[name="username"]').fill(user)
         page.locator('input[name="password"]').fill(self.password)
         page.locator('input[type="submit"],button[type="submit"]').click()
-        page.wait_for_url(lambda u: urlsplit(u).hostname != 'auth.rehearsal.test')
+        page.wait_for_url(lambda u: urlsplit(u).hostname != self.auth_domain)
 
     def http_session(self, context):
         session = requests.Session()

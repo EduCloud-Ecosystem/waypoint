@@ -84,14 +84,39 @@ def settings(directory, allow_pending=False):
     return env
 
 
+def require_current_allocation(directory):
+    pending = directory / '.worker-allocation-required.json'
+    if pending.exists() or pending.is_symlink():
+        raise ValueError('current worker allocation enrollment is required before startup')
+
+
 def compose(directory, *args):
+    if any(arg in ('up', 'start', 'restart', 'run', 'create') for arg in args):
+        with locked(directory):
+            return _compose_locked(directory, *args)
+    return _compose_locked(directory, *args)
+
+
+def _compose_locked(directory, *args):
+    """Admission transport for callers already holding the course operation lock."""
     # Operators must still be able to stop/inspect a worker after an interrupted
     # operation. Starting, exporting or backing up partial policy stays blocked.
-    if any(arg in ('up', 'start', 'restart', 'run', 'create') for arg in args):
+    activating = any(arg in ('up', 'start', 'restart', 'run', 'create') for arg in args)
+    if activating:
         require_active_course(directory)
+        require_current_allocation(directory)
     env = settings(directory, allow_pending=args in (('stop', 'hub'), ('ps', '-a')))
     if env.get('WORKSPACE_AUTH_MODE') == 'oidc':
         require_native_worker()
+    if activating:
+        import allocation
+        with allocation.admission(directory, env):
+            return _compose(env, *args)
+    return _compose(env, *args)
+
+
+def _compose(env, *args):
+    """Internal transport; callers hold the applicable admission context."""
     clean = {k: v for k, v in os.environ.items() if not k.startswith(('WORKSPACE_', 'COMPOSE_'))}
     files = ['-f', str(ROOT / 'compose.yaml')]
     if env.get('WORKSPACE_HOME_ROOT'):
@@ -154,6 +179,16 @@ def require_native_worker():
 
 
 def preflight(directory, *, allow_pending=False):
+    """Read-only course and current worker allocation acceptance."""
+    require_active_course(directory)
+    require_current_allocation(directory)
+    result = _inspect_course(directory, allow_pending=allow_pending)
+    import allocation
+    allocation.check(directory, settings(directory, allow_pending=allow_pending))
+    return result
+
+
+def _inspect_course(directory, *, allow_pending=False):
     """Inspect the configured course without pulling images or starting services."""
     # Only the stopped-course upgrade transaction uses this internal override
     # to verify its newly written pins before removing the interruption marker.
@@ -222,14 +257,16 @@ def main():
     args = parser.parse_args()
     directory = args.directory.resolve()
     try:
-        env = settings(directory, allow_pending=args.operation in ('stop', 'status'))
         with locked(directory):
+            env = settings(directory, allow_pending=args.operation in ('stop', 'status'))
             if args.operation == 'preflight':
                 print(json.dumps(preflight(directory), indent=2))
             elif args.operation == 'start':
                 preflight(directory)
-                compose(directory, 'up','-d','--no-build','--pull','never','hub')
-                wait_ready(env)
+                import allocation
+                with allocation.admission(directory, env):
+                    _compose(env, 'up','-d','--no-build','--pull','never','hub')
+                    wait_ready(env)
                 print('Hub ready on loopback. Verify identity/TLS before routing learners to this worker.')
             elif args.operation == 'stop':
                 compose(directory, 'stop','hub')

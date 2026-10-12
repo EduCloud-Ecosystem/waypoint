@@ -86,7 +86,7 @@ def tool_hash():
     here = Path(__file__).resolve().parent
     return digest({name: sha((here / name).read_bytes()) for name in
                    ('upgrade.py', 'maintenance.py', 'deployment.py', 'recovery.py', 'course_manifest.py', 'rehearsal/evidence.py',
-                    'hub/settings.py', 'homes.py', 'backup.py', 'checkpoint.py', 'volume_archive.py', 'pilot.py', 'health.py', 'public_course.py')})
+                    'hub/settings.py', 'homes.py', 'backup.py', 'checkpoint.py', 'volume_archive.py', 'pilot.py', 'health.py', 'public_course.py', 'allocation.py')})
 
 
 def environment(directory):

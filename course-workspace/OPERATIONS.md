@@ -9,6 +9,12 @@ credential/configuration files owner-only (0600).
 
 ## Prepare and start a course
 
+For multiple courses, review the shared [allocation policy](MULTIPLE-COURSES.md)
+and enroll each stopped course before startup. Claims reserve maximum learner/Hub
+RAM and CPU until explicitly released. Once managed, the worker refuses unenrolled
+startup. Native Linux starts require worker administrator/root for the shared lock;
+Desktop trials remain a separate single-course test path.
+
 1. Render the worker with an immutable reviewed Waypoint release:
 
    ```sh

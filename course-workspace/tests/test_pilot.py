@@ -10,6 +10,14 @@ from pilot import initialize, settings, locked, compose
 
 
 class PilotTests(unittest.TestCase):
+    def test_restored_allocation_gate_blocks_trial_start_and_prefixed_compose(self):
+        from pilot import start
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp); (root/'.worker-allocation-required.json').symlink_to(root/'missing')
+            with patch('pilot.docker') as docker, patch('pilot.subprocess.run') as run:
+                with self.assertRaisesRegex(ValueError,'cannot start'): start(root,{})
+                with self.assertRaisesRegex(ValueError,'current worker allocation'): compose(root,'--profile','build','up','hub')
+                docker.assert_not_called(); run.assert_not_called()
     def test_retirement_marker_cannot_start_through_legacy_trial_entrypoint(self):
         from pilot import start
         with tempfile.TemporaryDirectory() as tmp:

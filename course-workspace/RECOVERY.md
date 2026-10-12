@@ -87,6 +87,13 @@ authority over these executable images/scripts; protect it accordingly.
 
 ## Recover an institutional course
 
+Managed packages use version 4 and require [current worker enrollment](MULTIPLE-COURSES.md)
+before startup. Restore writes a gate before environment/homes; original binding
+is private history, with no source authority or leases imported. Older version-1/2/3
+tools refuse version 4. Its explicit retirement state keeps closed backups closed
+independently of tags. Closed same-worker recovery/export is rehearsed; reopening
+a replacement namespace remains blocked by retained collision records.
+
 Use the supported base `compose.yaml` plus `quota-compose.yaml` deployment. Put
 its configuration in an owner-only `.env` inside a private deployment directory;
 set `WORKSPACE_ENV_FILE` to that file's absolute path. The recovery format accepts

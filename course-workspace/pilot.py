@@ -75,6 +75,18 @@ def locked(directory):
 
 
 def compose(directory, *args):
+    if any(arg in ('up','start','restart','run','create') for arg in args):
+        with locked(directory):
+            from deployment import require_active_course, require_current_allocation
+            require_active_course(directory)
+            require_current_allocation(directory)
+            import allocation
+            with allocation.admission(directory, settings(directory)):
+                return _compose(directory, *args)
+    return _compose(directory, *args)
+
+
+def _compose(directory, *args):
     # Parent-shell overrides must not redirect this private trial's deployment.
     clean = {k: v for k, v in os.environ.items()
              if not k.startswith(('WORKSPACE_', 'COMPOSE_'))}
@@ -101,17 +113,30 @@ def wait_ready(env):
 
 
 def start(directory, env, build=True):
-    for name in ('.course-retired.json', '.retirement-pending.json'):
+    for name in ('.course-retired.json', '.retirement-pending.json', '.worker-allocation-required.json'):
+        if (directory / name).exists() or (directory / name).is_symlink():
+            raise ValueError('retired, retiring or restored course cannot start before review')
+    with locked(directory):
+        current = settings(directory)
+        if env != current:
+            raise ValueError('trial configuration changed; inspect the current private environment')
+        return _start(directory, current, build)
+
+
+def _start(directory, env, build=True):
+    for name in ('.course-retired.json', '.retirement-pending.json', '.worker-allocation-required.json'):
         path = directory / name
         if path.exists() or path.is_symlink():
             raise ValueError('retired or retiring course cannot start; retain its saved work')
     info = json.loads(docker('info', '--format', '{{json .}}'))
     if info['MemTotal'] < 3 * 1024**3 or info['NCPU'] < 2:
         raise ValueError('trial requires at least 3 GiB Docker RAM and 2 CPUs; use a 4 GiB host')
-    if build:
-        compose(directory, '--profile', 'build', 'build')
-    compose(directory, 'up', '-d', '--no-build', 'hub')
-    wait_ready(env)
+    import allocation
+    with allocation.admission(directory, env):
+        if build:
+            _compose(directory, '--profile', 'build', 'build')
+        _compose(directory, 'up', '-d', '--no-build', 'hub')
+        wait_ready(env)
     print(f"Ready: {env['WORKSPACE_PUBLIC_URL']} (synthetic users alice or bob; one active at a time)")
     print(f'Password is WORKSPACE_TEST_PASSWORD in {directory / "pilot.env"}; never publish this file.')
 
@@ -129,10 +154,10 @@ def main():
         if args.operation == 'init':
             initialize(directory, args.port)
             return
-        env = settings(directory)
         with locked(directory):
+            env = settings(directory)
             if args.operation == 'start':
-                start(directory, env, not args.no_build)
+                _start(directory, env, not args.no_build)
             elif args.operation == 'stop':
                 compose(directory, 'stop', 'hub')
                 print('Stopped. Saved files and configuration retained.')

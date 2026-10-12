@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - 'course-workspace/deployment.py'
+      - 'course-workspace/allocation.py'
+      - 'course-workspace/pilot.py'
       - 'course-workspace/recovery.py'
       - 'course-workspace/backup.py'
       - 'course-workspace/checkpoint.py'
@@ -22,7 +24,9 @@ jobs:
           python-version: '3.12'
       - run: sudo apt-get update && sudo apt-get install -y restic
       - run: pip install -r course-workspace/requirements-test.txt
-      - run: python course-workspace/verify_recovery.py source --transfer "$RUNNER_TEMP/transfer"
+      - run: sudo "$(command -v python)" course-workspace/verify_recovery.py source --transfer "$RUNNER_TEMP/transfer"
+      - name: Let the artifact runner read its synthetic encrypted transfer
+        run: sudo chown -R "$(id -u):$(id -g)" "$RUNNER_TEMP/transfer"
       - uses: actions/upload-artifact@v4
         with:
           name: synthetic-encrypted-repository
@@ -44,4 +48,4 @@ jobs:
         with:
           name: synthetic-encrypted-repository
           path: ${{ runner.temp }}/transfer
-      - run: python course-workspace/verify_recovery.py target --transfer "$RUNNER_TEMP/transfer" --require-clean
+      - run: sudo "$(command -v python)" course-workspace/verify_recovery.py target --transfer "$RUNNER_TEMP/transfer" --require-clean

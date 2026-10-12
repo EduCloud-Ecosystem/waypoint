@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 import json
 
 from backup import backup, docker, LABEL
-from deployment import compose, wait_ready
+from deployment import _compose_locked as compose, wait_ready
 
 
 def checkpoint(directory, env, destination):

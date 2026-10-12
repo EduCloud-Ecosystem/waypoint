@@ -18,6 +18,9 @@ class DeploymentTests(unittest.TestCase):
         native = patch('deployment.require_native_worker')
         self.native = native.start()
         self.addCleanup(native.stop)
+        empty = patch('allocation.running_containers', return_value=[])
+        empty.start()
+        self.addCleanup(empty.stop)
 
     def fixture(self, root):
         _, _, env = render('course.example.org', 'https://id.example.org/realms/course',
@@ -191,6 +194,50 @@ class DeploymentTests(unittest.TestCase):
 
 class InterruptedOperationTests(unittest.TestCase):
     fixture = DeploymentTests.fixture
+    def test_restored_allocation_gate_blocks_all_admission_before_docker(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp); self.fixture(root)
+            (root/'.worker-allocation-required.json').symlink_to(root/'missing')
+            with patch('deployment.docker_json') as docker, patch('deployment.subprocess.run') as run:
+                with self.assertRaisesRegex(ValueError,'current worker allocation'): preflight(root)
+                for args in (('up','-d','hub'),('--profile','build','run','hub')):
+                    with self.assertRaisesRegex(ValueError,'current worker allocation'): compose(root,*args)
+                docker.assert_not_called(); run.assert_not_called()
+
+    def test_public_activation_holds_course_lock_and_admission_across_transport(self):
+        from contextlib import contextmanager
+        from pilot import locked
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp); self.fixture(root); active=[]
+            @contextmanager
+            def admission(directory,env):
+                self.assertEqual(directory,root)
+                with self.assertRaisesRegex(ValueError,'in progress'):
+                    with locked(root): pass
+                active.append(True)
+                try: yield
+                finally: active.pop()
+            def transport(*args): self.assertEqual(active,[True])
+            with patch('allocation.admission',side_effect=admission), patch('deployment.require_native_worker'), patch('deployment._compose',side_effect=transport):
+                compose(root,'--profile','build','up','-d','hub')
+            self.assertEqual(active,[])
+
+    def test_cli_admission_includes_readiness_without_nested_course_lock(self):
+        import deployment
+        from contextlib import contextmanager
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp).resolve(); self.fixture(root); active=[]
+            @contextmanager
+            def admission(directory,env):
+                active.append(True)
+                try: yield
+                finally: active.pop()
+            def inside(*args): self.assertEqual(active,[True])
+            with patch('deployment.sys.argv',['deployment.py','start','--directory',str(root)]), \
+                    patch('deployment.preflight'), patch('allocation.admission',side_effect=admission), \
+                    patch('deployment._compose',side_effect=inside), patch('deployment.wait_ready',side_effect=inside):
+                deployment.main()
+            self.assertEqual(active,[])
     def test_retirement_seal_blocks_all_admission_but_allows_stop_and_status(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
