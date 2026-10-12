@@ -138,3 +138,34 @@ jobs:
           path: output/rehearsal-diagnostic
           if-no-files-found: ignore
           retention-days: 7
+  multiple-courses:
+    name: Multiple course allocation and isolation
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: /tmp/educloud-rehearsal-browsers
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y xfsprogs openssl restic
+      - run: pip install -r course-workspace/rehearsal/requirements.txt
+      - run: python -m playwright install --with-deps chromium
+      - name: Exercise two-course allocation and failure isolation
+        run: sudo --preserve-env=PLAYWRIGHT_BROWSERS_PATH "$(command -v python)" course-workspace/rehearsal/verify_multiple_courses.py --output /tmp/educloud-multiple-course-rehearsal
+      - name: Publish bounded multiple-course evidence
+        if: success()
+        run: |
+          mkdir -p output/multiple-course-evidence
+          sudo cp /tmp/educloud-multiple-course-rehearsal/MULTI-COURSE-PASS.json output/multiple-course-evidence/
+          sudo chmod 644 output/multiple-course-evidence/MULTI-COURSE-PASS.json
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: synthetic-multiple-course-evidence
+          path: output/multiple-course-evidence
+          if-no-files-found: error
+          retention-days: 7

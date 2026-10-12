@@ -11,6 +11,101 @@ from recovery import load_config, private_json, restic, retention, restore_repos
 
 
 class RecoveryTests(unittest.TestCase):
+    def test_managed_restore_gate_precedes_usable_environment_and_home_allocation(self):
+        from deployment import require_current_allocation
+        for retired in (False, True):
+            with self.subTest(retired=retired), tempfile.TemporaryDirectory() as tmp:
+                root=Path(tmp); destination=root/'restored'; snapshot_id='a'*64
+                saved={'WORKSPACE_AUTH_MODE':'oidc','WORKSPACE_HOME_ROOT':'/source/homes'}
+                rows=json.dumps([{'id':snapshot_id,'tags':['educloud-workspace-v1']}])
+                with patch('recovery.restic',side_effect=[rows,'']), \
+                        patch('recovery.validate_bundle',return_value=({'version':4,'retirement_protected':retired,'images':{}},saved)), \
+                        patch('recovery.current_institutional_environment',return_value={'WORKSPACE_ALLOWED_SUBJECTS':'bob'}), \
+                        patch('recovery.docker',side_effect=RuntimeError('before allocation')):
+                    with self.assertRaisesRegex(RuntimeError,'before allocation'):
+                        restore_repository({},snapshot_id,destination,18000,root/'homes',root/'current.env')
+                gate=json.loads((destination/'.worker-allocation-required.json').read_text())
+                self.assertEqual(gate, {'version':'educloud-worker-allocation-required-v1','source':'snapshot_restore'})
+                self.assertFalse((destination/'.env').exists())
+                self.assertFalse((destination/'.worker-allocation.json').exists())
+                self.assertEqual((destination/'.course-retired.json').exists(),retired)
+                with self.assertRaisesRegex(ValueError,'current worker allocation'):
+                    require_current_allocation(destination)
+
+    def test_managed_historical_binding_is_private_and_cannot_silently_downgrade(self):
+        import allocation
+        from recovery import copy_worker_allocation
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp).resolve(); source=root/'source'; source.mkdir(mode=0o700)
+            bundle=root/'bundle'; bundle.mkdir(mode=0o700); authority=root/'authority'
+            record={'version':allocation.VERSION,'status':'ENROLLED','config_file':str(root/'policy.json'),
+                    'worker_id':'synthetic-worker','policy_sha256':'a'*64,'daemon_sha256':'b'*64,
+                    'claim_sha256':'c'*64,'directory_sha256':allocation.path_digest(source)}
+            with patch.object(allocation,'AUTHORITY',authority), patch.object(allocation,'ROOT_UID',os.geteuid()):
+                self.assertFalse(copy_worker_allocation(source,bundle))
+                authority.mkdir(mode=0o700)
+                with self.assertRaisesRegex(ValueError,'marker is missing'):
+                    copy_worker_allocation(source,bundle)
+                private_json(source/allocation.MARKER,record)
+                self.assertTrue(copy_worker_allocation(source,bundle))
+                self.assertEqual(json.loads((bundle/'worker-allocation.json').read_text()),record)
+                self.assertEqual((bundle/'worker-allocation.json').stat().st_mode&0o777,0o600)
+                self.assertFalse((bundle/'authority.json').exists())
+                self.assertFalse((bundle/'ledger.json').exists())
+                (bundle/'worker-allocation.json').unlink()
+                private_json(source/allocation.MARKER,dict(record,status='PENDING'))
+                with self.assertRaisesRegex(ValueError,'enrollment is incomplete'):
+                    copy_worker_allocation(source,bundle)
+                private_json(source/allocation.REQUIRED,{'version':'educloud-worker-allocation-required-v1','source':'snapshot_restore'})
+                with self.assertRaisesRegex(ValueError,'current worker enrollment'):
+                    copy_worker_allocation(source,bundle)
+
+    def test_v4_validation_requires_managed_state_and_allocator_runtime(self):
+        from recovery import CURRENT_CODE
+        from public_course import render
+        import shutil
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp).resolve(); (root/'runtime').mkdir(); (root/'volumes').mkdir()
+            source_code=Path(__file__).resolve().parents[1]
+            for name in CURRENT_CODE:
+                target=root/'runtime'/name; target.parent.mkdir(parents=True,exist_ok=True)
+                shutil.copyfile(source_code/name,target)
+            (root/'images.tar').write_bytes(b'synthetic image')
+            (root/'volumes/runtime.json').write_text('{}')
+            archive=root/'volumes/hub-data.tar.gz'; archive.write_bytes(b'synthetic volume')
+            (root/'volumes/manifest.json').write_text(json.dumps({'version':1,'instance':'course-one',
+                'volumes':[{'suffix':'hub-data','kind':'hub','sha256':digest(archive)}]}))
+            _,_,env=render('course.example.org','https://id.example.org/realms/course','course','course-one',['bob-id'],'/srv/homes')
+            env['WORKSPACE_OIDC_CLIENT_SECRET']='synthetic-secret'; env['WORKSPACE_ENV_FILE']='/srv/course/.env'
+            (root/'environment.json').write_text(json.dumps(env))
+            (root/'worker-allocation.json').write_text('{}')
+            meta={'version':4,'retirement_protected':False,'instance':'course-one','images':{
+                'hub':{'id':'sha256:'+'a'*64,'os':'linux','architecture':'amd64'}}}
+            def save():
+                meta['files']={str(p.relative_to(root)):digest(p) for p in root.rglob('*') if p.is_file() and p.name!='bundle.json'}
+                (root/'bundle.json').write_text(json.dumps(meta))
+            save()
+            with patch('recovery.docker',return_value=json.dumps({'Architecture':'x86_64'})):
+                self.assertEqual(validate_bundle(root)[0]['version'],4)
+                for invalid in (None,1,'false'):
+                    meta['retirement_protected']=invalid; save()
+                    with self.assertRaisesRegex(ValueError,'explicit retirement state'): validate_bundle(root)
+                meta['retirement_protected']=False
+                for name in ('worker-allocation.json','runtime/allocation.py'):
+                    path=root/name; raw=path.read_bytes(); path.unlink(); save()
+                    with self.assertRaisesRegex(ValueError,'incomplete recovery bundle'): validate_bundle(root)
+                    path.write_bytes(raw); save()
+            # Archived control imports are self-contained. Required gate refuses
+            # activation before invoking Docker even with otherwise valid config.
+            import subprocess
+            closed=root/'closed'; closed.mkdir(); private_json(closed/'.worker-allocation-required.json',
+                {'version':'educloud-worker-allocation-required-v1','source':'snapshot_restore'})
+            env['WORKSPACE_ENV_FILE']=str(closed/'.env')
+            (closed/'.env').write_text(''.join(k+'='+v+'\n' for k,v in env.items())); (closed/'.env').chmod(0o600)
+            result=subprocess.run([sys.executable,str(root/'runtime/deployment.py'),'start','--directory',str(closed)],capture_output=True,text=True,timeout=10)
+            self.assertNotEqual(result.returncode,0); self.assertIn('current worker allocation',result.stderr)
+            self.assertNotIn('ModuleNotFoundError',result.stderr)
+
     def test_retirement_snapshot_seals_destination_before_partial_restore_can_start(self):
         from recovery import RETIRED_TAG
         from deployment import require_active_course

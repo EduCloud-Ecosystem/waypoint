@@ -1,12 +1,15 @@
 """Real Keycloak/Hub TLS rehearsal on a disposable Linux XFS mount."""
+from contextlib import nullcontext
 import copy
 import hashlib
 import json
+import math
 import os
 import re
 from pathlib import Path
 import secrets
 import socket
+import stat
 import subprocess
 import sys
 import time
@@ -32,12 +35,25 @@ SUBJECTS = {user: str(uuid.uuid5(uuid.NAMESPACE_DNS, 'educloud-synthetic-' + use
 
 
 class Notebook:
-    def __init__(self, root, extra_users=(), *, hub_image=None, course_image=None, synthetic_candidate_images=False):
+    def __init__(self, root, extra_users=(), *, hub_image=None, course_image=None, synthetic_candidate_images=False,
+                 domain='work.rehearsal.test', auth_domain='auth.rehearsal.test', client_id='course',
+                 capacity=None, allocation_policy=None):
         if bool(hub_image) != bool(course_image) or (synthetic_candidate_images and hub_image):
             raise ValueError('supply paired immutable image references or synthetic candidate images')
         for reference in (hub_image, course_image):
             if reference is not None and not re.fullmatch(r'(?:sha256:[0-9a-f]{64}|[a-z0-9][a-z0-9._:/-]{0,254}@sha256:[0-9a-f]{64})', reference):
                 raise ValueError('preloaded candidate images require immutable references')
+        for hostname in (domain, auth_domain):
+            if not re.fullmatch(r'[a-z][a-z0-9-]*\.rehearsal\.test', hostname):
+                raise ValueError('synthetic notebook hosts must be distinct rehearsal DNS names')
+        if domain == auth_domain or not re.fullmatch(r'[a-zA-Z0-9_-]{1,128}', client_id):
+            raise ValueError('synthetic notebook identity hosts and client ID invalid')
+        default_capacity = {'memory_mb':1024, 'cpu':1, 'active_limit':2, 'idle_seconds':1800, 'max_age_seconds':28800}
+        if capacity is not None and (not isinstance(capacity, dict) or set(capacity)-set(default_capacity)):
+            raise ValueError('synthetic capacity overrides must use manifest capacity fields')
+        self.capacity = dict(default_capacity, **(capacity or {}))
+        self.domain, self.auth_domain, self.client_id = domain, auth_domain, client_id
+        self.allocation_policy = allocation_policy
         self.requested_hub_image = hub_image
         self.synthetic_candidate_images = synthetic_candidate_images
         self.users = ("alice", "bob", *extra_users)
@@ -45,8 +61,8 @@ class Notebook:
         self.root = root
         self.instance = 'rehearsal-' + uuid.uuid4().hex[:10]
         self.port = port()
-        self.origin = f'https://work.rehearsal.test:{self.port}'
-        self.auth = f'https://auth.rehearsal.test:{self.port}'
+        self.origin = f'https://{self.domain}:{self.port}'
+        self.auth = f'https://{self.auth_domain}:{self.port}'
         self.password = secrets.token_urlsafe(32)
         self.image = course_image or 'educloud-python-r:2026-10-06'
         self.mounted = False
@@ -63,9 +79,14 @@ class Notebook:
 
     def compose(self, *args):
         env = {k:v for k,v in os.environ.items() if not k.startswith(('WORKSPACE_', 'COMPOSE_'))}
-        return run('docker', 'compose', '--env-file', str(self.env_file), '-f', str(ROOT / 'compose.yaml'),
-                   '-f', str(ROOT / 'quota-compose.yaml'), '-f', str(self.root / 'override.json'), *args,
-                   cwd=ROOT, env=env)
+        context = nullcontext()
+        if self.allocation_policy is not None and args and args[0] in ('up','start','restart','run','create'):
+            import allocation
+            context = allocation.admission(self.deployment, read_environment(self.env_file))
+        with context:
+            return run('docker', 'compose', '--env-file', str(self.env_file), '-f', str(ROOT / 'compose.yaml'),
+                       '-f', str(ROOT / 'quota-compose.yaml'), '-f', str(self.root / 'override.json'), *args,
+                       cwd=ROOT, env=env)
 
     def write_env(self):
         self.env_file.write_text(''.join(f'{k}={v}\n' for k,v in self.env.items()))
@@ -83,10 +104,11 @@ class Notebook:
         xfs_run('mkfs.xfs', '-f', str(disk))
         xfs_run('mount', '-o', 'loop,prjquota', str(disk), str(self.homes))
         self.mounted = True
-        _, _, self.env = render('work.rehearsal.test', self.auth + '/realms/course', 'course', self.instance,
+        _, _, self.env = render(self.domain, self.auth + '/realms/course', self.client_id, self.instance,
                                         [SUBJECTS[user] for user in self.users], str(self.homes), port())
         self.env.update(WORKSPACE_PUBLIC_URL=self.origin, WORKSPACE_OIDC_CLIENT_SECRET=secrets.token_urlsafe(32),
-                        WORKSPACE_HOME_QUOTA_MB='256', WORKSPACE_MEMORY_MB='1024', WORKSPACE_ACTIVE_LIMIT='2',
+                        WORKSPACE_HOME_QUOTA_MB='256', WORKSPACE_MEMORY_MB=str(self.capacity['memory_mb']),
+                        WORKSPACE_CPU_LIMIT=str(self.capacity['cpu']), WORKSPACE_ACTIVE_LIMIT=str(self.capacity['active_limit']),
                         WORKSPACE_ENV_FILE=str(self.env_file))
         self.env['WORKSPACE_IMAGE'] = self.image
         if self.requested_hub_image:
@@ -96,9 +118,9 @@ class Notebook:
         # A private fixture CA is trusted explicitly by Hub and HTTP clients.
         run('openssl', 'req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '1', '-subj', '/CN=EduCloud synthetic CA',
             '-keyout', str(self.root/'ca.key'), '-out', str(self.root/'ca.pem'))
-        run('openssl', 'req', '-newkey', 'rsa:2048', '-nodes', '-subj', '/CN=work.rehearsal.test',
+        run('openssl', 'req', '-newkey', 'rsa:2048', '-nodes', '-subj', '/CN='+self.domain,
             '-keyout', str(self.root/'privkey.pem'), '-out', str(self.root/'server.csr'))
-        (self.root/'extensions').write_text('subjectAltName=DNS:work.rehearsal.test,DNS:*.work.rehearsal.test,DNS:auth.rehearsal.test\nextendedKeyUsage=serverAuth\n')
+        (self.root/'extensions').write_text('subjectAltName=DNS:'+self.domain+',DNS:*.'+self.domain+',DNS:'+self.auth_domain+'\nextendedKeyUsage=serverAuth\n')
         run('openssl', 'x509', '-req', '-in', str(self.root/'server.csr'), '-CA', str(self.root/'ca.pem'),
             '-CAkey', str(self.root/'ca.key'), '-CAcreateserial', '-days', '1', '-extfile', str(self.root/'extensions'),
             '-out', str(self.root/'fullchain.pem'))
@@ -111,32 +133,150 @@ class Notebook:
         (self.root/'override.json').write_text(json.dumps(override))
         self.prepare_images()
         self.render_setup()
+        if self.allocation_policy is not None:
+            import allocation
+            allocation.enroll(self.deployment, self.allocation_policy)
         self.verify_startup_preflight(self.deployment)
         self.configure_fixture_edges()
         self.compose('up','-d','--no-build','--pull','never','hub')
         run('docker','run','-d','--name',self.instance+'-proxy','--label','educloud.rehearsal='+self.instance,'--network',self.network,
-            '--network-alias','auth.rehearsal.test','--memory','128m','-p',f'127.0.0.1:{self.port}:{self.port}',
+            '--network-alias',self.auth_domain,'--memory','128m','-p',f'127.0.0.1:{self.port}:{self.port}',
+            *(['--cpus','0.1'] if self.allocation_policy is not None else []),
             '-v',str(self.root/'nginx.conf')+':/etc/nginx/nginx.conf:ro',
-            '-v',str(self.root)+':/etc/educloud/tls:ro',NGINX_IMAGE)
+            '-v',str(self.root/'fullchain.pem')+':/etc/educloud/tls/fullchain.pem:ro',
+            '-v',str(self.root/'privkey.pem')+':/etc/educloud/tls/privkey.pem:ro',NGINX_IMAGE)
         def resolve(host, *args, **kwargs):
             return self.original_dns('127.0.0.1' if host.endswith('.rehearsal.test') else host, *args, **kwargs)
         socket.getaddrinfo = resolve
         self.session = requests.Session()
         self.session.trust_env = False
         self.session.verify = str(self.root/'ca.pem')
-        for _ in range(120):
-            try:
-                discovery = self.session.get(self.auth+'/realms/course/.well-known/openid-configuration',timeout=2)
-                if discovery.status_code==200 and self.session.get(self.origin+'/hub/login',timeout=2).status_code==200:
-                    assert discovery.json()['issuer'] == self.auth+'/realms/course'
-                    break
-            except requests.RequestException:
-                pass
-            time.sleep(1)
-        else:
-            raise AssertionError('OIDC fixture did not become ready')
+        self.wait_for_fixture()
         inspect(self.homes,self.instance)
         print('Keycloak discovery, TLS and Hub are ready.',flush=True)
+
+    def container_state_diagnostic(self, identity):
+        """Read only state scalars; never print Docker error text or environment."""
+        try:
+            result = subprocess.run(['docker', 'inspect', '--format', '{{json .State}}', identity],
+                                    capture_output=True, text=True, timeout=5)
+            if result.returncode != 0 or len(result.stdout) > 64 * 1024:
+                return {'status':'unavailable'}
+            state = json.loads(result.stdout)
+            if (not isinstance(state,dict) or state.get('Status') not in
+                    ('created','running','paused','restarting','removing','exited','dead')
+                    or type(state.get('Running')) is not bool or type(state.get('OOMKilled')) is not bool
+                    or type(state.get('ExitCode')) is not int or not 0 <= state['ExitCode'] <= 255):
+                return {'status':'unavailable'}
+            return {'status':state['Status'], 'running':state['Running'],
+                    'oom_killed':state['OOMKilled'], 'exit_code':state['ExitCode']}
+        except (OSError, subprocess.SubprocessError, ValueError, TypeError, OverflowError, RecursionError):
+            return {'status':'unavailable'}
+
+    def readiness_diagnostics(self, last_status):
+        """Emit fixed state fields only, without container logs or environment."""
+        states = {role:self.container_state_diagnostic(self.instance + '-' + role)
+                  for role in ('identity','proxy','hub')}
+        report = {'scope':'synthetic-notebook-readiness', 'status':'NOT_READY',
+                  'managed_worker':self.allocation_policy is not None,
+                  'last_http_status':{key: (last_status.get(key) if type(last_status.get(key)) is int
+                                             and 100 <= last_status[key] <= 599 else None)
+                                      for key in ('discovery','hub')},
+                  'containers':states}
+        print('Synthetic notebook readiness diagnostics: ' + json.dumps(report,sort_keys=True,allow_nan=False), flush=True)
+        return report
+
+    def quota_status_diagnostic(self):
+        """Report only validated health/age; do not alter quota verification."""
+        unknown = {'healthy':None,'age_seconds':None,'fresh':None}
+        if not hasattr(self,'homes'): return unknown
+        path = self.homes / '.educloud-status' / (self.instance + '.json')
+        try:
+            fd = os.open(path,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK)
+            with os.fdopen(fd,'rb') as source:
+                metadata = os.fstat(source.fileno())
+                if (not stat.S_ISREG(metadata.st_mode) or metadata.st_size > 64*1024
+                        or metadata.st_uid not in (0,os.geteuid()) or metadata.st_mode & 0o077
+                        or metadata.st_nlink != 1): return unknown
+                raw = source.read(64*1024+1)
+            if len(raw) > 64*1024: return unknown
+            value = json.loads(raw)
+            if (not isinstance(value,dict) or value.get('instance') != self.instance
+                    or type(value.get('healthy')) is not bool or type(value.get('checked_at')) not in (int,float)
+                    or not math.isfinite(value['checked_at'])): return unknown
+            age = time.time()-value['checked_at']
+            if not math.isfinite(age) or not -86400 <= age <= 86400: return unknown
+            return {'healthy':value['healthy'],'age_seconds':math.floor(age),
+                    'fresh':value['healthy'] and 0 <= age <= 120}
+        except (OSError,ValueError,TypeError,OverflowError,RecursionError):
+            return unknown
+
+    def learner_readiness_diagnostics(self, last_status):
+        """Emit bounded learner state and API scalars without IDs or credentials."""
+        states = []; count = None
+        try:
+            result = subprocess.run(['docker','ps','-aq','--no-trunc','--filter',
+                                     'label=educloud.workspace.instance='+self.instance,'--filter',
+                                     'label=educloud.workspace.kind=learner'],capture_output=True,text=True,timeout=5)
+            identities = result.stdout.split()
+            if (result.returncode == 0 and len(result.stdout) <= 64*1024 and len(identities) <= 1024
+                    and len(identities) == len(set(identities))
+                    and all(re.fullmatch(r'[0-9a-f]{64}',identity) for identity in identities)):
+                count = len(identities)
+                states = [self.container_state_diagnostic(identity) for identity in sorted(identities)[:4]]
+        except (OSError,subprocess.SubprocessError):
+            pass
+        report = {'scope':'synthetic-learner-readiness','status':'NOT_READY',
+                  'last_http_status':{key:(last_status.get(key) if type(last_status.get(key)) is int
+                                          and 100 <= last_status[key] <= 599 else None)
+                                      for key in ('hub_api','contents')},
+                  'server_present':last_status.get('server_present') if type(last_status.get('server_present')) is bool else None,
+                  'quota_verification':self.quota_status_diagnostic(),
+                  'learner_count':count,'container_states':states,'states_truncated':count is not None and count > 4}
+        print('Synthetic learner readiness diagnostics: '+json.dumps(report,sort_keys=True,allow_nan=False),flush=True)
+        return report
+
+    def wait_for_fixture(self):
+        managed = self.allocation_policy is not None
+        # Preserve the existing 120-poll default. The two-course fixture has a
+        # separate, bounded 240-second wall deadline for its capped IdP.
+        deadline = time.monotonic() + 240 if managed else None
+        last_status = {'discovery':None,'hub':None}
+        for _ in range(240 if managed else 120):
+            if managed and time.monotonic() >= deadline:
+                break
+            try:
+                last_status['discovery'] = None
+                timeout = min(2, deadline-time.monotonic()) if managed else 2
+                if timeout <= 0: break
+                discovery = self.session.get(self.auth+'/realms/course/.well-known/openid-configuration',timeout=timeout)
+                last_status['discovery'] = discovery.status_code
+                if discovery.status_code == 200:
+                    last_status['hub'] = None
+                    timeout = min(2, deadline-time.monotonic()) if managed else 2
+                    if timeout <= 0: break
+                    hub = self.session.get(self.origin+'/hub/login',timeout=timeout)
+                    last_status['hub'] = hub.status_code
+                    if hub.status_code == 200:
+                        assert discovery.json()['issuer'] == self.auth+'/realms/course'
+                        return
+            except requests.RequestException:
+                pass
+            if managed:
+                remaining = deadline-time.monotonic()
+                if remaining <= 0: break
+                time.sleep(min(1,remaining))
+            else:
+                time.sleep(1)
+        # If discovery never became ready, still distinguish a working proxy
+        # and Hub from a failed transport with one bounded anonymous probe.
+        if last_status['hub'] is None:
+            try:
+                last_status['hub'] = self.session.get(self.origin+'/hub/login',timeout=2).status_code
+            except requests.RequestException:
+                pass
+        self.readiness_diagnostics(last_status)
+        raise AssertionError('OIDC fixture did not become ready')
 
     def prepare_images(self):
         if not self.requested_hub_image:
@@ -159,13 +299,13 @@ class Notebook:
         # Its parent fixture directory remains private and is never published.
         (self.root/'realm.json').chmod(0o644)
         run('docker','run','-d','--name',self.instance+'-identity','--label','educloud.rehearsal='+self.instance,'--network',self.network,'--network-alias','identity',
-            '--memory','1g','--cpus','1','-v',str(self.root/'realm.json')+':/opt/keycloak/data/import/course.json:ro',
+            '--memory','1g','--cpus','0.4' if self.allocation_policy is not None else '1','-v',str(self.root/'realm.json')+':/opt/keycloak/data/import/course.json:ro',
             '-e','KC_HOSTNAME='+self.auth,'-e','KC_PROXY_HEADERS=xforwarded',KEYCLOAK_IMAGE,'start-dev','--import-realm')
         # Keep the generated TLS/DNS policy. Only the private Compose-network
         # upstream and separate synthetic IdP virtual host are fixture adapters.
         nginx = (self.deployment / 'nginx.conf').read_text()
         nginx = nginx.replace('http://127.0.0.1:'+self.env['WORKSPACE_PORT'], f'http://{self.instance}-hub:8000')
-        nginx += f'''\nserver {{ listen {self.port} ssl; server_name auth.rehearsal.test;
+        nginx += f'''\nserver {{ listen {self.port} ssl; server_name {self.auth_domain};
 ssl_certificate /etc/educloud/tls/fullchain.pem; ssl_certificate_key /etc/educloud/tls/privkey.pem;
 location / {{ proxy_pass http://identity:8080; proxy_set_header Host $http_host;
 proxy_set_header X-Forwarded-Proto https; proxy_set_header X-Forwarded-Host $http_host;
@@ -189,13 +329,12 @@ proxy_set_header X-Forwarded-Port {self.port}; proxy_set_header X-Forwarded-For 
         self.manifest = {
             'version': 1, 'scope': 'synthetic', 'instance': self.instance,
             'images': {'hub': self.hub_image, 'course': self.image},
-            'identity': {'issuer': self.auth + '/realms/course', 'client_id': 'course',
+            'identity': {'issuer': self.auth + '/realms/course', 'client_id': self.client_id,
                          'client_secret_file': str(secret_file),
                          'subjects': [SUBJECTS[user] for user in self.users]},
             'workspace': {'origin': self.origin, 'port': int(self.env['WORKSPACE_PORT'])},
             'storage': {'home_root': str(self.homes), 'quota_mb': 256, 'inode_limit': 100000},
-            'capacity': {'memory_mb': 1024, 'cpu': 1, 'active_limit': 2,
-                         'idle_seconds': 1800, 'max_age_seconds': 28800},
+            'capacity': dict(self.capacity),
             'backup': {'repository': str(self.root / 'encrypted-repository'),
                        'password_file': str(backup_file), 'staging_dir': str(self.deployment),
                        'keep_last': 7, 'keep_daily': 7, 'keep_weekly': 4},
@@ -301,12 +440,26 @@ proxy_set_header X-Forwarded-Port {self.port}; proxy_set_header X-Forwarded-For 
             self.report.append('course-manifest-images-consumed')
 
     def login(self, page, user):
-        page.goto(self.origin+'/hub/login')
+        from playwright.sync_api import Error as PlaywrightError
+        target = self.origin + '/hub/login'
+        for attempt in range(3):
+            try:
+                page.goto(target)
+                break
+            except PlaywrightError as exc:
+                # Docker bridge cutovers can invalidate Chromium's first
+                # anonymous GET. Retry only this exact transport error and
+                # target; never repeat authentication actions or POSTs.
+                first_line = str(exc).splitlines()[0] if str(exc) else ''
+                if first_line != 'Page.goto: net::ERR_NETWORK_CHANGED at ' + target or attempt == 2:
+                    raise
+                print('Synthetic notebook anonymous login GET network-change retry ' + str(attempt + 1) + '/2.', flush=True)
+                time.sleep(0.25)
         page.get_by_role('button', name='Sign in with').click()
         page.locator('input[name="username"]').fill(user)
         page.locator('input[name="password"]').fill(self.password)
         page.locator('input[type="submit"],button[type="submit"]').click()
-        page.wait_for_url(lambda u: urlsplit(u).hostname != 'auth.rehearsal.test')
+        page.wait_for_url(lambda u: urlsplit(u).hostname != self.auth_domain)
 
     def http_session(self, context):
         session = requests.Session()
@@ -324,11 +477,16 @@ proxy_set_header X-Forwarded-Port {self.port}; proxy_set_header X-Forwarded-For 
         expected = origin._replace(netloc=subject + '.' + origin.netloc,
                                    path='/user/' + subject + '/', query='', fragment='').geturl()
         page.goto(self.origin+'/hub/spawn/'+subject)
+        last_status = {'hub_api':None,'contents':None,'server_present':None}
         for _ in range(60):
             session = self.http_session(page.context)
             response = session.get(self.origin+'/hub/api/users/'+subject, timeout=10)
-            if response.ok and response.json().get('server'):
-                if response.json()['server'] != expected:
+            last_status['hub_api'] = response.status_code
+            last_status['server_present'] = None
+            state = response.json() if response.ok else {}
+            if response.ok: last_status['server_present'] = bool(state.get('server'))
+            if response.ok and state.get('server'):
+                if state['server'] != expected:
                     raise AssertionError('Hub returned an unexpected learner server URL')
                 # /hub/spawn already redirects when readiness completes. A
                 # second goto races that navigation and can interrupt OAuth.
@@ -336,11 +494,13 @@ proxy_set_header X-Forwarded-Port {self.port}; proxy_set_header X-Forwarded-For 
                 url = expected.rstrip('/')
                 session = self.http_session(page.context)
                 contents = session.get(url+'/api/contents', timeout=10, allow_redirects=False)
+                last_status['contents'] = contents.status_code
                 if (contents.status_code == 200 and 'application/json' in contents.headers.get('Content-Type', '')
                         and contents.json().get('type') == 'directory'):
                     self.verify_runtime_images()
                     return session, url
             time.sleep(1)
+        self.learner_readiness_diagnostics(last_status)
         raise AssertionError('notebook did not become ready')
 
     def kernel(self, session, url, name, code):

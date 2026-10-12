@@ -1,5 +1,10 @@
 # Smallest useful Python/R trial
 
+Native Linux starts now require worker administrator/root to cooperate with the
+shared allocation lock; use `sudo` for the startup commands below on Linux. Private
+Docker Desktop trials remain user-run. A managed worker requires institutional
+[course enrollment](MULTIPLE-COURSES.md), so do not run this trial on that pool.
+
 Run one synthetic learner at a time in JupyterLab, with Python and R, saved files,
 1 GiB learner RAM, one CPU, and automatic idle shutdown after 15 minutes. The Hub
 has its separate 1 GiB limit. There is no cloud purchase, domain, identity-server

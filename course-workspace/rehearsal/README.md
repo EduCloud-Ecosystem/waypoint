@@ -94,6 +94,19 @@ integrity on disposable Linux, not institutional retention or off-host acceptanc
 
 ## Remaining production gates
 
+The [multiple-course rehearsal](../MULTIPLE-COURSES.md) runs two managed courses
+with the same synthetic subjects on distinct origins/identity/storage. It checks
+aggregate limits, cookie/file boundaries and second-course continuity through
+saturation, revocation, retirement/release and protected closed restoration.
+`MULTI-COURSE-PASS.json` requires every control and resource/authority cleanup.
+It runs in its own fresh Linux CI job, parallel to the complete course/lifecycle
+rehearsal. Only that bounded report is uploaded. This tests closed recovery, not live
+replacement enrollment or class capacity.
+Sequential identity cold starts can outlast quota-health freshness. The fixture
+verifies actual quotas before login callbacks and explicit spawns; it does not
+extend the production freshness gate. Failure diagnostics expose only bounded
+HTTP, container-state and quota-health scalars.
+
 Passing this harness does not establish institutional identity acceptance,
 class-size capacity, uptime or provider disaster recovery. Select the actual
 worker and off-host backup account, rehearse real roster changes, certificate

@@ -48,9 +48,13 @@ The [retirement/export workflow](course-workspace/COURSE-RETIREMENT.md) seals st
 courses, preserves protected snapshots through retention and restoration, and
 verifies portable exports of every retained work folder. Institution-approved
 retention/deletion remains a separate decision; no deletion/reactivation API exists.
-Expand
-from one course only after resource attribution, port/origin separation and
-failure isolation are tested. Do not expose an unrestricted self-service Docker
+The [shared worker allocation](course-workspace/MULTIPLE-COURSES.md) reserves
+aggregate maximum RAM/CPU, checks course/port/origin/client/storage collisions,
+retains uncertain leases and requires explicit stopped release. Managed version-4
+recovery requires current enrollment; strict tombstones defer live identity transfer.
+The two-course fixture tests isolation and continuity through admission saturation,
+revocation, retirement and closed recovery. Actual class capacity still requires
+measurement. Do not expose an unrestricted self-service Docker
 control plane or presume that a pseudonym is an authenticated identity.
 
 ## 4. Hosted acceptance

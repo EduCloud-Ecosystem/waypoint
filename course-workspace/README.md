@@ -9,11 +9,15 @@ The [image upgrade guide](COURSE-UPGRADES.md) covers candidate canaries, frozen
 upgrade plans, interruption recovery and fresh-destination restoration.
 The [retirement guide](COURSE-RETIREMENT.md) covers persistent closure, protected
 encrypted retention and verified portable exports of retained coursework.
+The [multiple-course guide](MULTIPLE-COURSES.md) covers shared worker allocations,
+collision refusal, explicit capacity release and recovery enrollment.
 
-This is a tested local continuity pilot for one course, built on JupyterHub and
+The continuity baseline covers one course; shared allocation and a disposable
+two-course rehearsal extend it on the same worker. It uses JupyterHub and
 DockerSpawner. Cairn remains the classroom/assignment application. Learner files
 live in persistent home volumes; replacing the notebook container does not
 remove them. Use Python notebooks or R notebooks in JupyterLab (not RStudio).
+Actual hosted class capacity remains an acceptance task.
 
 For the smallest manual test, start with the [one-learner trial](MINIMAL-PILOT.md).
 It runs locally without a cloud account and can also use a private SSH tunnel to

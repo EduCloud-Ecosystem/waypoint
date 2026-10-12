@@ -9,7 +9,7 @@ import tempfile
 
 from backup import docker
 from homes import provision, inspect, registry, run
-from pilot import ROOT, initialize, start
+from pilot import ROOT, initialize, start, compose
 from recovery import backup_repository, restore_repository, restic
 from verify import port, cleanup
 from verify_pilot import check
@@ -84,6 +84,11 @@ finally:
             cfg = {'repository': str(temp / 'repo'), 'password_file': str(key)}
             restic(cfg, 'init')
             snapshot = backup_repository(directory, cfg)
+            # Checkpoint resumes the source Hub. This is a replacement rehearsal,
+            # so stop it before admitting the restored legacy single-course copy.
+            compose(directory, 'stop', 'hub')
+            assert not docker('ps', '-q', '--filter',
+                              'label=educloud.workspace.instance=' + env['WORKSPACE_INSTANCE'])
             destination = ROOT / 'output' / ('quota-restored-' + temp.name)
             recovered = restore_repository(cfg, snapshot, destination, port(), root)
             try:
