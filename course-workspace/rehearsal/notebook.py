@@ -149,19 +149,80 @@ class Notebook:
         self.session = requests.Session()
         self.session.trust_env = False
         self.session.verify = str(self.root/'ca.pem')
-        for _ in range(120):
-            try:
-                discovery = self.session.get(self.auth+'/realms/course/.well-known/openid-configuration',timeout=2)
-                if discovery.status_code==200 and self.session.get(self.origin+'/hub/login',timeout=2).status_code==200:
-                    assert discovery.json()['issuer'] == self.auth+'/realms/course'
-                    break
-            except requests.RequestException:
-                pass
-            time.sleep(1)
-        else:
-            raise AssertionError('OIDC fixture did not become ready')
+        self.wait_for_fixture()
         inspect(self.homes,self.instance)
         print('Keycloak discovery, TLS and Hub are ready.',flush=True)
+
+    def readiness_diagnostics(self, last_status):
+        """Emit fixed state fields only, without container logs or environment."""
+        states = {}
+        for role in ('identity', 'proxy', 'hub'):
+            states[role] = {'status':'unavailable'}
+            try:
+                result = subprocess.run(['docker', 'inspect', '--format', '{{json .State}}', self.instance + '-' + role],
+                                        capture_output=True, text=True, timeout=5)
+                if result.returncode != 0 or len(result.stdout) > 64 * 1024:
+                    continue
+                state = json.loads(result.stdout)
+                if (not isinstance(state,dict) or state.get('Status') not in
+                        ('created','running','paused','restarting','removing','exited','dead')
+                        or type(state.get('Running')) is not bool or type(state.get('OOMKilled')) is not bool
+                        or type(state.get('ExitCode')) is not int or not 0 <= state['ExitCode'] <= 255):
+                    continue
+                states[role] = {'status':state['Status'], 'running':state['Running'],
+                                'oom_killed':state['OOMKilled'], 'exit_code':state['ExitCode']}
+            except (OSError, subprocess.SubprocessError, ValueError, TypeError):
+                pass
+        report = {'scope':'synthetic-notebook-readiness', 'status':'NOT_READY',
+                  'managed_worker':self.allocation_policy is not None,
+                  'last_http_status':{key: (last_status.get(key) if type(last_status.get(key)) is int
+                                             and 100 <= last_status[key] <= 599 else None)
+                                      for key in ('discovery','hub')},
+                  'containers':states}
+        print('Synthetic notebook readiness diagnostics: ' + json.dumps(report,sort_keys=True,allow_nan=False), flush=True)
+        return report
+
+    def wait_for_fixture(self):
+        managed = self.allocation_policy is not None
+        # Preserve the existing 120-poll default. The two-course fixture has a
+        # separate, bounded 240-second wall deadline for its capped IdP.
+        deadline = time.monotonic() + 240 if managed else None
+        last_status = {'discovery':None,'hub':None}
+        for _ in range(240 if managed else 120):
+            if managed and time.monotonic() >= deadline:
+                break
+            try:
+                last_status['discovery'] = None
+                timeout = min(2, deadline-time.monotonic()) if managed else 2
+                if timeout <= 0: break
+                discovery = self.session.get(self.auth+'/realms/course/.well-known/openid-configuration',timeout=timeout)
+                last_status['discovery'] = discovery.status_code
+                if discovery.status_code == 200:
+                    last_status['hub'] = None
+                    timeout = min(2, deadline-time.monotonic()) if managed else 2
+                    if timeout <= 0: break
+                    hub = self.session.get(self.origin+'/hub/login',timeout=timeout)
+                    last_status['hub'] = hub.status_code
+                    if hub.status_code == 200:
+                        assert discovery.json()['issuer'] == self.auth+'/realms/course'
+                        return
+            except requests.RequestException:
+                pass
+            if managed:
+                remaining = deadline-time.monotonic()
+                if remaining <= 0: break
+                time.sleep(min(1,remaining))
+            else:
+                time.sleep(1)
+        # If discovery never became ready, still distinguish a working proxy
+        # and Hub from a failed transport with one bounded anonymous probe.
+        if last_status['hub'] is None:
+            try:
+                last_status['hub'] = self.session.get(self.origin+'/hub/login',timeout=2).status_code
+            except requests.RequestException:
+                pass
+        self.readiness_diagnostics(last_status)
+        raise AssertionError('OIDC fixture did not become ready')
 
     def prepare_images(self):
         if not self.requested_hub_image:
@@ -184,7 +245,7 @@ class Notebook:
         # Its parent fixture directory remains private and is never published.
         (self.root/'realm.json').chmod(0o644)
         run('docker','run','-d','--name',self.instance+'-identity','--label','educloud.rehearsal='+self.instance,'--network',self.network,'--network-alias','identity',
-            '--memory','1g','--cpus','0.25' if self.allocation_policy is not None else '1','-v',str(self.root/'realm.json')+':/opt/keycloak/data/import/course.json:ro',
+            '--memory','1g','--cpus','0.4' if self.allocation_policy is not None else '1','-v',str(self.root/'realm.json')+':/opt/keycloak/data/import/course.json:ro',
             '-e','KC_HOSTNAME='+self.auth,'-e','KC_PROXY_HEADERS=xforwarded',KEYCLOAK_IMAGE,'start-dev','--import-realm')
         # Keep the generated TLS/DNS policy. Only the private Compose-network
         # upstream and separate synthetic IdP virtual host are fixture adapters.

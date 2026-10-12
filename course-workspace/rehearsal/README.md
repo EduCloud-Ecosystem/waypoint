@@ -99,7 +99,8 @@ with the same synthetic subjects on distinct origins/identity/storage. It checks
 aggregate limits, cookie/file boundaries and second-course continuity through
 saturation, revocation, retirement/release and protected closed restoration.
 `MULTI-COURSE-PASS.json` requires every control and resource/authority cleanup.
-Only that bounded report is uploaded. This tests closed recovery, not live
+It runs in its own fresh Linux CI job, parallel to the complete course/lifecycle
+rehearsal. Only that bounded report is uploaded. This tests closed recovery, not live
 replacement enrollment or class capacity.
 
 Passing this harness does not establish institutional identity acceptance,
