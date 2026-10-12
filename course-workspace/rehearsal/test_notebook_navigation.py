@@ -4,6 +4,7 @@ import tempfile
 from types import SimpleNamespace
 import unittest
 from unittest.mock import Mock, patch
+from playwright.sync_api import Error as PlaywrightError
 
 from notebook import Notebook, SUBJECTS
 
@@ -17,6 +18,71 @@ class NotebookNavigationTests(unittest.TestCase):
         session = Mock()
         book.http_session = Mock(return_value=session)
         return book, subject, expected, page, session
+
+    def test_login_retries_only_initial_anonymous_get_before_any_credentials(self):
+        with tempfile.TemporaryDirectory() as directory:
+            book, _, _, page, _ = self.fixture(directory)
+            target = book.origin + '/hub/login'
+            def navigate(url):
+                self.assertEqual(url, target)
+                page.get_by_role.assert_not_called(); page.locator.assert_not_called()
+                if page.goto.call_count < 3:
+                    raise PlaywrightError('Page.goto: net::ERR_NETWORK_CHANGED at ' + target + '\nCall log:\n  - navigating')
+            page.goto.side_effect = navigate
+            with patch('notebook.time.sleep') as sleep, patch('builtins.print') as log:
+                book.login(page, 'alice')
+            self.assertEqual(page.goto.call_count, 3)
+            self.assertEqual(sleep.call_args_list, [unittest.mock.call(0.25), unittest.mock.call(0.25)])
+            self.assertEqual(log.call_args_list, [
+                unittest.mock.call('Synthetic notebook anonymous login GET network-change retry 1/2.', flush=True),
+                unittest.mock.call('Synthetic notebook anonymous login GET network-change retry 2/2.', flush=True)])
+            page.get_by_role.assert_called_once_with('button', name='Sign in with')
+            self.assertEqual([call.args[0] for call in page.locator.call_args_list],
+                             ['input[name="username"]', 'input[name="password"]', 'input[type="submit"],button[type="submit"]'])
+            page.wait_for_url.assert_called_once()
+
+    def test_login_other_errors_targets_or_network_code_mentions_do_not_retry(self):
+        with tempfile.TemporaryDirectory() as directory:
+            book, _, _, page, _ = self.fixture(directory)
+            target = book.origin + '/hub/login'
+            errors = [PlaywrightError('Page.goto: net::ERR_CONNECTION_REFUSED at ' + target),
+                      PlaywrightError('Page.goto: net::ERR_NETWORK_CHANGED_EXTRA at ' + target),
+                      PlaywrightError('Page.goto: net::ERR_NETWORK_CHANGED at ' + target + '/other'),
+                      PlaywrightError('Page.goto: net::ERR_ABORTED at ' + target + '\nCall log:\n net::ERR_NETWORK_CHANGED'),
+                      RuntimeError('Page.goto: net::ERR_NETWORK_CHANGED at ' + target)]
+            for error in errors:
+                with self.subTest(error=error):
+                    page.reset_mock(); page.goto.side_effect = error
+                    with patch('notebook.time.sleep') as sleep, patch('builtins.print') as log:
+                        with self.assertRaises(type(error)) as result: book.login(page, 'alice')
+                    self.assertIs(result.exception, error)
+                    page.goto.assert_called_once_with(target)
+                    page.get_by_role.assert_not_called(); page.locator.assert_not_called()
+                    page.wait_for_url.assert_not_called(); sleep.assert_not_called(); log.assert_not_called()
+
+    def test_login_network_changed_exhausts_two_retries_without_authentication(self):
+        with tempfile.TemporaryDirectory() as directory:
+            book, _, _, page, _ = self.fixture(directory)
+            target = book.origin + '/hub/login'
+            error = PlaywrightError('Page.goto: net::ERR_NETWORK_CHANGED at ' + target)
+            page.goto.side_effect = error
+            with patch('notebook.time.sleep') as sleep, patch('builtins.print') as log:
+                with self.assertRaises(PlaywrightError) as result: book.login(page, 'alice')
+            self.assertIs(result.exception, error)
+            self.assertEqual(page.goto.call_count, 3); self.assertEqual(sleep.call_count, 2)
+            self.assertEqual(log.call_count, 2)
+            page.get_by_role.assert_not_called(); page.locator.assert_not_called(); page.wait_for_url.assert_not_called()
+
+    def test_login_authentication_action_error_is_never_retried(self):
+        with tempfile.TemporaryDirectory() as directory:
+            book, _, _, page, _ = self.fixture(directory)
+            error = PlaywrightError('Page.goto: net::ERR_NETWORK_CHANGED at ' + book.origin + '/hub/login')
+            page.get_by_role.return_value.click.side_effect = error
+            with patch('notebook.time.sleep') as sleep:
+                with self.assertRaises(PlaywrightError) as result: book.login(page, 'alice')
+            self.assertIs(result.exception, error)
+            page.goto.assert_called_once_with(book.origin + '/hub/login')
+            page.locator.assert_not_called(); sleep.assert_not_called()
 
     def test_hub_auto_redirect_finishes_without_a_second_goto(self):
         with tempfile.TemporaryDirectory() as directory:

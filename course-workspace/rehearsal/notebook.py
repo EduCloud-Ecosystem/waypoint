@@ -325,7 +325,21 @@ proxy_set_header X-Forwarded-Port {self.port}; proxy_set_header X-Forwarded-For 
             self.report.append('course-manifest-images-consumed')
 
     def login(self, page, user):
-        page.goto(self.origin+'/hub/login')
+        from playwright.sync_api import Error as PlaywrightError
+        target = self.origin + '/hub/login'
+        for attempt in range(3):
+            try:
+                page.goto(target)
+                break
+            except PlaywrightError as exc:
+                # Docker bridge cutovers can invalidate Chromium's first
+                # anonymous GET. Retry only this exact transport error and
+                # target; never repeat authentication actions or POSTs.
+                first_line = str(exc).splitlines()[0] if str(exc) else ''
+                if first_line != 'Page.goto: net::ERR_NETWORK_CHANGED at ' + target or attempt == 2:
+                    raise
+                print('Synthetic notebook anonymous login GET network-change retry ' + str(attempt + 1) + '/2.', flush=True)
+                time.sleep(0.25)
         page.get_by_role('button', name='Sign in with').click()
         page.locator('input[name="username"]').fill(user)
         page.locator('input[name="password"]').fill(self.password)
