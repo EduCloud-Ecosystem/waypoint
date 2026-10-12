@@ -14,6 +14,9 @@ and enroll each stopped course before startup. Claims reserve maximum learner/Hu
 RAM and CPU until explicitly released. Once managed, the worker refuses unenrolled
 startup. Native Linux starts require worker administrator/root for the shared lock;
 Desktop trials remain a separate single-course test path.
+Use [resource changes](RESOURCE-CHANGES.md) for RAM/CPU or active learner caps;
+stop, preview a private plan, apply it and explicitly restart after verification.
+An interrupted resource change blocks other target lifecycle operations until resumed.
 
 1. Render the worker with an immutable reviewed Waypoint release:
 

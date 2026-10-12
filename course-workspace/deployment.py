@@ -17,7 +17,15 @@ from hub.settings import load
 from pilot import ROOT, locked, settings as trial_settings, wait_ready as trial_ready
 
 
+def require_no_resource_amendment(directory):
+    # Keep this guard self-contained in archived recovery runtimes.
+    pending = Path(directory) / '.resource-amendment-pending.json'
+    if pending.exists() or pending.is_symlink():
+        raise ValueError('resource amendment is incomplete; resume it before startup or policy changes')
+
+
 def require_no_maintenance(directory):
+    require_no_resource_amendment(directory)
     pending = directory / '.maintenance-pending.json'
     if pending.exists() or pending.is_symlink():
         raise ValueError('maintenance is incomplete; resume the recorded maintenance before starting or backing up')
@@ -85,6 +93,7 @@ def settings(directory, allow_pending=False):
 
 
 def require_current_allocation(directory):
+    require_no_resource_amendment(directory)
     pending = directory / '.worker-allocation-required.json'
     if pending.exists() or pending.is_symlink():
         raise ValueError('current worker allocation enrollment is required before startup')
@@ -193,6 +202,7 @@ def _inspect_course(directory, *, allow_pending=False):
     # Only the stopped-course upgrade transaction uses this internal override
     # to verify its newly written pins before removing the interruption marker.
     require_active_course(directory)
+    require_no_resource_amendment(directory)
     if allow_pending:
         pending = directory / '.maintenance-pending.json'
         if pending.exists() or pending.is_symlink():

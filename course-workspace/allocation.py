@@ -65,6 +65,11 @@ def exists(path):
     return path.exists() or path.is_symlink()
 
 
+def require_no_amendment(directory):
+    if exists(Path(directory) / '.resource-amendment-pending.json'):
+        raise AllocationError('unfinished_resource_amendment')
+
+
 def canonical(path):
     path = Path(path)
     if not path.is_absolute() or path.resolve() != path or len(str(path)) > 4096:
@@ -378,6 +383,7 @@ def required_gate(directory):
 def current(directory, env, require_active=True):
     from deployment import require_active_course
     canonical(directory)
+    require_no_amendment(directory)
     if require_active:
         require_active_course(directory)
     if env.get('WORKSPACE_AUTH_MODE') == 'local-test' and (exists(AUTHORITY) or exists(directory / MARKER) or exists(directory / REQUIRED)):
@@ -538,6 +544,7 @@ def enroll(directory, config_path):
     root_required()
     private_directory(directory)
     with locked(directory), worker_lock():
+        require_no_amendment(directory)
         require_active_course(directory)
         env = settings(directory)
         p, ph = policy(config_path)
@@ -580,6 +587,7 @@ def enroll(directory, config_path):
 
 @guarded
 def check(directory, env):
+    require_no_amendment(directory)
     if not exists(AUTHORITY) and not exists(Path(directory)/MARKER) and not exists(Path(directory)/REQUIRED):
         from deployment import require_active_course
         require_active_course(Path(directory))
@@ -594,6 +602,7 @@ def check(directory, env):
 def admission(directory,env):
     """Hold the daemon-wide lock across Compose and readiness; caller holds course lock."""
     try:
+        require_no_amendment(directory)
         if sys.platform != 'linux' and env.get('WORKSPACE_AUTH_MODE') == 'local-test' and not exists(AUTHORITY) and not exists(Path(directory)/MARKER) and not exists(Path(directory)/REQUIRED):
             from deployment import require_active_course
             require_active_course(Path(directory))
@@ -619,6 +628,7 @@ def release(directory):
     root_required()
     private_directory(directory)
     with locked(directory), worker_lock():
+        require_no_amendment(directory)
         env = settings(directory)
         marker = read_marker(directory)
         if marker['status'] != 'ENROLLED' or exists(directory / REQUIRED):

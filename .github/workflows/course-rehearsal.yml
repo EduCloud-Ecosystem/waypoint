@@ -169,3 +169,34 @@ jobs:
           path: output/multiple-course-evidence
           if-no-files-found: error
           retention-days: 7
+  resource-amendments:
+    name: Course resource amendments
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: /tmp/educloud-rehearsal-browsers
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y xfsprogs openssl restic
+      - run: pip install -r course-workspace/rehearsal/requirements.txt
+      - run: python -m playwright install --with-deps chromium
+      - name: Exercise reviewed resources, interruption recovery and peer continuity
+        run: sudo --preserve-env=PLAYWRIGHT_BROWSERS_PATH "$(command -v python)" course-workspace/rehearsal/verify_resource_amendment.py --output /tmp/educloud-resource-amendment-rehearsal
+      - name: Publish bounded resource amendment evidence
+        if: success()
+        run: |
+          mkdir -p output/resource-amendment-evidence
+          sudo cp /tmp/educloud-resource-amendment-rehearsal/RESOURCE-AMENDMENT-PASS.json output/resource-amendment-evidence/
+          sudo chmod 644 output/resource-amendment-evidence/RESOURCE-AMENDMENT-PASS.json
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: synthetic-resource-amendment-evidence
+          path: output/resource-amendment-evidence
+          if-no-files-found: error
+          retention-days: 7

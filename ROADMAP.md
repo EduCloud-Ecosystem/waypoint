@@ -54,7 +54,11 @@ retains uncertain leases and requires explicit stopped release. Managed version-
 recovery requires current enrollment; strict tombstones defer live identity transfer.
 The two-course fixture tests isolation and continuity through admission saturation,
 revocation, retirement and closed recovery. Actual class capacity still requires
-measurement. Do not expose an unrestricted self-service Docker
+measurement. [Resource amendments](course-workspace/RESOURCE-CHANGES.md) now
+provide stopped-course RAM/CPU and active-cap preview/apply/resume, conservative
+transition reservations, replay-resistant approvals and encrypted audit history.
+Next local build: reviewed replacement cutover with explicit identity transfer,
+rollback and peer continuity. Do not expose an unrestricted self-service Docker
 control plane or presume that a pseudonym is an authenticated identity.
 
 ## 4. Hosted acceptance

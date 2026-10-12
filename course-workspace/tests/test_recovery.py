@@ -91,6 +91,12 @@ class RecoveryTests(unittest.TestCase):
                     meta['retirement_protected']=invalid; save()
                     with self.assertRaisesRegex(ValueError,'explicit retirement state'): validate_bundle(root)
                 meta['retirement_protected']=False
+                # The new amendment CLI is optional historical runtime context;
+                # old managed v4 snapshots did not contain it.
+                optional=root/'runtime/resource_amendment.py'; raw=optional.read_bytes()
+                optional.unlink(); save()
+                self.assertEqual(validate_bundle(root)[0]['version'],4)
+                optional.write_bytes(raw); save()
                 for name in ('worker-allocation.json','runtime/allocation.py'):
                     path=root/name; raw=path.read_bytes(); path.unlink(); save()
                     with self.assertRaisesRegex(ValueError,'incomplete recovery bundle'): validate_bundle(root)
@@ -194,7 +200,8 @@ class RecoveryTests(unittest.TestCase):
             root = Path(tmp)
             env = {'WORKSPACE_INSTANCE':'course-one', 'WORKSPACE_IMAGE':'sha256:'+'b'*64,
                    'WORKSPACE_HUB_IMAGE':'sha256:'+'c'*64}
-            with patch('recovery.docker', return_value=json.dumps([{'Image':'sha256:'+'a'*64}])), \
+            with patch('recovery.settings', return_value=env), \
+                    patch('recovery.docker', return_value=json.dumps([{'Image':'sha256:'+'a'*64}])), \
                     patch('recovery.image_info', return_value={'Id':'sha256:'+'c'*64}), \
                     patch('recovery.subprocess.run') as export, patch('recovery.checkpoint') as checkpoint:
                 with self.assertRaisesRegex(ValueError, 'Hub image differs'):
