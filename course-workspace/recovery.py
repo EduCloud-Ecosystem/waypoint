@@ -18,14 +18,14 @@ from urllib.parse import urlsplit
 from backup import digest, docker, restore, validate_manifest
 from checkpoint import checkpoint
 from pilot import ROOT, initialize, locked
-from deployment import settings, read_environment, validate_institutional
+from deployment import settings, read_environment, validate_institutional, require_no_resource_amendment
 
 TAG = 'educloud-workspace-v1'
 RETIRED_TAG = 'educloud-retired-v1'
 BASE_CODE = ('pilot.py', 'checkpoint.py', 'backup.py', 'volume_archive.py',
         'recovery.py', 'compose.yaml')
 CODE = BASE_CODE + ('quota-compose.yaml', 'homes.py', 'deployment.py', 'hub/settings.py')
-CURRENT_CODE = CODE + ('allocation.py',)
+CURRENT_CODE = CODE + ('allocation.py', 'resource_amendment.py')
 
 
 def private_json(path, data):
@@ -134,6 +134,7 @@ def copy_source_manifest(directory, destination):
 
 def copy_worker_allocation(directory, destination):
     """Historical course binding only; never copy worker authority or shared leases."""
+    require_no_resource_amendment(directory)
     required = directory / '.worker-allocation-required.json'
     if required.exists() or required.is_symlink():
         raise ValueError('complete current worker enrollment before taking a new runtime backup')
@@ -150,8 +151,37 @@ def copy_worker_allocation(directory, destination):
     return True
 
 
+def current_resource_amendment_receipt(directory):
+    """Validate local decision history before any recovery provider effects."""
+    require_no_resource_amendment(directory)
+    path = directory / '.resource-amendment-receipt.json'
+    env = settings(directory)
+    if not path.exists() and not path.is_symlink() and not env.get('WORKSPACE_RESOURCE_REVISION'):
+        return None
+    import allocation
+    import resource_amendment
+    record = resource_amendment.completed_receipt(directory)
+    claim = allocation.claim(directory, env)
+    if (record['directory_sha256'] != allocation.path_digest(directory)
+            or record['claim_sha256'] != allocation.digest(claim)
+            or allocation.read_marker(directory)['claim_sha256'] != record['claim_sha256']):
+        raise ValueError('completed resource receipt differs from current course enrollment')
+    return record
+
+
+def copy_resource_amendment_receipt(directory, destination):
+    """Retain completed resource decisions privately, without transferring approval."""
+    record = current_resource_amendment_receipt(directory)
+    if record is None:
+        return False
+    private_json(destination / 'resource-amendment-receipt.json', record)
+    return True
+
+
 def package(directory, env, bundle, *, protected=False):
+    require_no_resource_amendment(directory)
     bundle.mkdir(mode=0o700)
+    copy_resource_amendment_receipt(directory, bundle)
     if env.get('WORKSPACE_HOME_ROOT'):
         from homes import inspect, registry
         root = Path(env['WORKSPACE_HOME_ROOT'])
@@ -250,6 +280,9 @@ def validate_bundle(bundle):
         if digest(bundle / name) != checksum:
             raise ValueError('bundle checksum differs')
     env = json.loads((bundle / 'environment.json').read_text())
+    if 'resource-amendment-receipt.json' in actual:
+        import resource_amendment
+        resource_amendment.validate_receipt(json.loads((bundle / 'resource-amendment-receipt.json').read_text()))
     if env.get('WORKSPACE_HOME_ROOT') and not {'runtime/homes.py', 'runtime/quota-compose.yaml'}.issubset(actual):
         raise ValueError('quota recovery runtime is incomplete')
     if env.get('WORKSPACE_INSTANCE') != meta['instance']:
@@ -307,6 +340,7 @@ def backup_repository_locked(directory, cfg, apply_retention=False, *, quiet=Fal
     if extra_tags not in ((), (RETIRED_TAG,)):
         raise ValueError('unsupported recovery protection tags')
     env = settings(directory)
+    current_resource_amendment_receipt(directory)
     protected = bool(extra_tags) or (directory / '.course-retired.json').exists() or (directory / '.course-retired.json').is_symlink()
     try:
         restic(cfg, 'cat', 'config')  # Credentials/repository must work before downtime.
@@ -371,7 +405,10 @@ def restore_repository(cfg, snapshot, destination, port, home_root=None, current
             if not 1024 <= port <= 65535:
                 raise ValueError('invalid loopback port')
             destination.mkdir(mode=0o700)
-            env = current
+            env = dict(current)
+            # This is a new namespace, not an approved continuation of the source.
+            # Keep its completed receipt as source history only.
+            env.pop('WORKSPACE_RESOURCE_REVISION', None)
             instance = 'recovered-' + uuid.uuid4().hex[:12]
             envfile = destination / '.env'
         else:
@@ -438,6 +475,9 @@ def restore_repository(cfg, snapshot, destination, port, home_root=None, current
         if managed_snapshot:
             shutil.copyfile(bundle / 'worker-allocation.json', destination / 'source-worker-allocation.json')
             (destination / 'source-worker-allocation.json').chmod(0o600)
+        if (bundle / 'resource-amendment-receipt.json').exists():
+            shutil.copyfile(bundle / 'resource-amendment-receipt.json', destination / 'source-resource-amendment-receipt.json')
+            (destination / 'source-resource-amendment-receipt.json').chmod(0o600)
         private_json(destination / 'recovery-source.json', {'snapshot_id': snapshot, 'source_instance': meta['instance'],
                       'fresh_hub_sessions': institutional, 'current_roster_required': institutional})
     if retired_snapshot:

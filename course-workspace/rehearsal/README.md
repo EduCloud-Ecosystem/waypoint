@@ -137,3 +137,12 @@ and [reverse-proxy](https://www.keycloak.org/server/reverseproxy) guidance and
 [Forgejo Docker installation](https://forgejo.org/docs/v16.0/admin/installation/docker/).
 Images use explicit versions and manifest digests; fixture upgrades need a fresh
 accepted run rather than assuming compatibility.
+
+## Resource amendment rehearsal
+
+The independent [resource-change harness](../RESOURCE-CHANGES.md) runs two
+managed synthetic courses and checks actual learner limits, normal Hub recreation,
+interrupted contraction and resume, stale approval refusal, unchanged peer work
+and closed encrypted recovery. Its CI job uploads only bounded
+`RESOURCE-AMENDMENT-PASS.json` after all required controls and cleanup. Private
+plans, receipts, environments, worker authority and raw logs are excluded.

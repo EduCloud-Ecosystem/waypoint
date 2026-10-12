@@ -113,6 +113,9 @@ def wait_ready(env):
 
 
 def start(directory, env, build=True):
+    pending = directory / '.resource-amendment-pending.json'
+    if pending.exists() or pending.is_symlink():
+        raise ValueError('resource amendment is incomplete; resume it before startup')
     for name in ('.course-retired.json', '.retirement-pending.json', '.worker-allocation-required.json'):
         if (directory / name).exists() or (directory / name).is_symlink():
             raise ValueError('retired, retiring or restored course cannot start before review')
@@ -124,6 +127,9 @@ def start(directory, env, build=True):
 
 
 def _start(directory, env, build=True):
+    pending = directory / '.resource-amendment-pending.json'
+    if pending.exists() or pending.is_symlink():
+        raise ValueError('resource amendment is incomplete; resume it before startup')
     for name in ('.course-retired.json', '.retirement-pending.json', '.worker-allocation-required.json'):
         path = directory / name
         if path.exists() or path.is_symlink():

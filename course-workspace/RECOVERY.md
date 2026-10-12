@@ -257,3 +257,11 @@ CI exports only a bounded successful report and screenshot for seven days.
 References: [repository setup](https://restic.readthedocs.io/en/stable/030_preparing_a_new_repo.html),
 [restore](https://restic.readthedocs.io/en/stable/050_restore.html), and
 [retention](https://restic.readthedocs.io/en/stable/060_forget.html).
+
+## Resource decision history
+
+[Resource changes](RESOURCE-CHANGES.md) preserve their latest completed receipt
+inside encrypted backups. Backup refuses missing or inconsistent current history
+before provider effects. Fresh restore retains private source history, strips the
+source active decision revision and requires current managed enrollment; it does
+not replay source approvals or reopen an interrupted change.

@@ -11,6 +11,8 @@ The [retirement guide](COURSE-RETIREMENT.md) covers persistent closure, protecte
 encrypted retention and verified portable exports of retained coursework.
 The [multiple-course guide](MULTIPLE-COURSES.md) covers shared worker allocations,
 collision refusal, explicit capacity release and recovery enrollment.
+The [resource change guide](RESOURCE-CHANGES.md) adds reviewed RAM/CPU and active
+learner cap changes with conservative reservations, resumable apply and private history.
 
 The continuity baseline covers one course; shared allocation and a disposable
 two-course rehearsal extend it on the same worker. It uses JupyterHub and

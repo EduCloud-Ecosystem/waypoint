@@ -83,8 +83,10 @@ Compose consumes configuration. CLI startup holds admission through readiness.
 Timeout/failure retains its lease. Reports expose totals/counts/digests, not full
 claims, paths, subjects, owner or credentials. Inventory does not automatically
 free processes or leases. Existing roster/quota maintenance and image upgrades
-remain available. Frozen resource/identity/origin/port/storage claims cannot be
-amended in place; resource amendment is a separate follow-up workflow.
+remain available. [Reviewed resource changes](RESOURCE-CHANGES.md) amend learner
+RAM/CPU and the active cap on a stopped enrolled course using conservative
+transition claims. Identity/origin/port/storage remain frozen; replacement
+identity transfer is a separate follow-up workflow.
 
 ## Release capacity, preserve coursework
 
