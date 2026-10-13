@@ -25,6 +25,8 @@ activate a real restored course.
   after an independently checked, persistent source revival barrier. Fencing and
   source activation share an exclusion context; both endpoint activation/boot
   exclusions stay held through the ownership CAS and receiver eligibility recheck.
+  Fencing adapters reauthorize the pending/current decision after taking both
+  exclusions and before stopping processes or changing barriers.
 - A missing authority, missing history, stale approval, wrong worker or unavailable
   fencing backend refuses. Stop acknowledgments, unreachable guests, signed
   worker self-reports and historical power-off events alone are insufficient.
@@ -101,3 +103,14 @@ reviewed inputs remain unchanged. It has no automatic cancellation, unfence,
 authority reset, destructive rollback or real-service startup operation. A later
 reviewed move consumes a fresh epoch; changed retained data requires a fresh
 snapshot and review rather than forcing an old approval.
+
+The [pending-transfer reconciliation prototype](PENDING-RECONCILIATION.md) adds
+a fresh reviewed choice of either original endpoint for pending
+PREPARED/COMMITTED transfers and interrupted recovery decisions. Both divergent copies and the exact original history
+remain retained. The new controller consumes a fresh epoch and conservatively
+counts both endpoints through completion. The updated fencing backend must invoke
+its authorization callback under both endpoint locks before any side effect.
+Existing version-1 authorities retain their schema and incarnation; all controller
+and fixture backend tools must be updated together. Authority recreation, worker
+re-enrollment and production runtime/provider enforcement remain outside this
+local prototype.

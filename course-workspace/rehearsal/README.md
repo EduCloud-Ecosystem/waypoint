@@ -171,3 +171,15 @@ exercise the provenance contract; they do not prove encrypted/off-host recovery.
 Only bounded `OWNERSHIP-CONTRACT-PASS.json` may be uploaded after every required
 control and exact-owned cleanup; private authority, plans, ledgers and raw logs
 are excluded.
+
+## Pending-transfer reconciliation rehearsal
+
+The independent [pending-recovery harness](../PENDING-RECONCILIATION.md) extends
+the local protocol with fresh reviewed ownership decisions for interrupted
+transfers. Both divergent coursework copies and the original transfer history
+remain retained; both endpoint revival barriers stay in effect. The fixture uses
+owned synthetic processes on one machine and preserves peer-course continuity.
+Only bounded `PENDING-RECONCILIATION-PASS.json` may be uploaded after every required
+control and exact-owned cleanup. Private authority, plans, ledgers and raw logs
+are excluded. Existing ordinary ownership controls run separately; hosted
+runtime/provider enforcement and actual two-host acceptance remain open.

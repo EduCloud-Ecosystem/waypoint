@@ -435,7 +435,7 @@ class FixtureBackend:
             yield
 
     @contextmanager
-    def fence_context(self,request):
+    def fence_context(self,request,*,authorize):
         worker,course=request['source_worker_id'],request['course_id']; receiver=request['receiver_worker_id']
         with self.processes.activation_locks([(worker,course),(receiver,course)]):
             observed=self.inspect_worker(worker)
@@ -446,6 +446,9 @@ class FixtureBackend:
             if (receiver_observed['provider_id']!=request['receiver_provider_id']
                     or receiver_observed['boot_id']!=request['receiver_boot_id']):
                 raise ValueError('fixture receiver endpoint changed')
+            # Revalidate the decision only after BOTH endpoint exclusions are held,
+            # before a stale controller can change a barrier or stop a new owner.
+            authorize()
             if self.inspect_course(course,receiver)['admission_floor']>request['old_epoch']+1:
                 raise ValueError('fixture receiver epoch unavailable')
             if self.processes.running_count(receiver,course): raise ValueError('fixture receiver must be stopped')
@@ -457,7 +460,7 @@ class FixtureBackend:
             else:
                 record={'version':1,'authority_id':request['authority_id'],'course_id':course,'worker_id':worker,
                     'provider_id':request['source_provider_id'],'boot_id':request['source_boot_id'],
-                    'barrier_id':uuid.uuid4().hex,'request_sha256':request_hash,
+                    'barrier_id':old['barrier_id'] if old else uuid.uuid4().hex,'request_sha256':request_hash,
                     'denied_through_epoch':max(request['old_epoch'],old['denied_through_epoch'] if old else 0)}
                 private_json(path,record)
             self.processes.stop(worker,course)

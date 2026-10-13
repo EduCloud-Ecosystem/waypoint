@@ -18,6 +18,9 @@ identity transfer, durable source fencing, interrupted resume and safe rollback.
 The [cross-worker contract prototype](CROSS-WORKER-CONTRACT.md) is a separate
 standalone ownership/fencing test; production activation and provider adapters
 remain acceptance work.
+The [pending-transfer recovery guide](PENDING-RECONCILIATION.md) adds reviewed
+selection of retained coursework at a fresh epoch, preserving both endpoint copies
+and the original transfer history. It remains a standalone local prototype.
 
 The continuity baseline covers one course; shared allocation and a disposable
 two-course rehearsal extend it on the same worker. It uses JupyterHub and
