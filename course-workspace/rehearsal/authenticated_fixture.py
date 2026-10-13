@@ -2,18 +2,20 @@
 import hashlib
 import json
 import os
+import re
+import stat
 from pathlib import Path
 import shutil
 import signal
 import sys
+import time
 import uuid
 
-import docker
 from authority_access import ReplayStore
 from authority_test_pki import TestPKI
 from hub.authority_client import AuthorityClient, AuthorityError, VERSION
 from ownership_contract import digest
-from runtime_authority import bootstrap, read_record
+from runtime_authority import bootstrap, read_record, open_directory
 
 
 def write(path, value):
@@ -32,7 +34,208 @@ def process_identity(pid):
     return digest({'pid': pid, 'start': start})
 
 
+OWNER_VERSION = 'educloud-authenticated-fixture-owner-v1'
+
+
+def capture_cleanup_owner(root, name):
+    """Bind disposal to the original private host directory before bootstrap."""
+    if not isinstance(name, str) or not re.fullmatch(r'wa[0-9a-f]{10}', name):
+        raise ValueError('fixture_owner_invalid')
+    fd = open_directory(root)
+    try:
+        info = os.fstat(fd)
+        if stat.S_IMODE(info.st_mode) != 0o700:
+            raise ValueError('fixture_root_not_private')
+        record = dict(version=OWNER_VERSION, name=name, creator_uid=info.st_uid,
+            creator_gid=info.st_gid, device=info.st_dev, inode=info.st_ino)
+        out = os.open('fixture-owner.json', os.O_CREAT | os.O_EXCL | os.O_WRONLY | os.O_NOFOLLOW, 0o600, dir_fd=fd)
+        with os.fdopen(out, 'w') as stream:
+            json.dump(record, stream, sort_keys=True); stream.flush(); os.fsync(stream.fileno())
+        os.fsync(fd)
+        return record
+    finally: os.close(fd)
+
+
+def _cleanup_record(fd, name, allowed_uids):
+    child = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=fd)
+    try:
+        info = os.fstat(child)
+        if (not stat.S_ISREG(info.st_mode) or info.st_nlink != 1 or info.st_size > 8192
+                or stat.S_IMODE(info.st_mode) != 0o600 or info.st_uid not in allowed_uids):
+            raise ValueError('fixture_cleanup_record_invalid')
+        raw = os.read(child, 8193)
+        if len(raw) > 8192: raise ValueError('fixture_cleanup_record_invalid')
+        return json.loads(raw)
+    finally: os.close(child)
+
+
+def verify_no_service_commands(root):
+    # PID metadata may be absent only before launch; do not accept a removed
+    # record while the known fixture service command still runs.
+    proc = Path('/proc')
+    if proc.exists():
+        count = 0
+        for entry in proc.iterdir():
+            if not entry.name.isdigit(): continue
+            count += 1
+            if count > 4096: raise ValueError('fixture_cleanup_process_bounds')
+            try:
+                with (entry / 'cmdline').open('rb') as stream: raw = stream.read(8193)
+            except FileNotFoundError: continue
+            if len(raw) > 8192: raise ValueError('fixture_cleanup_process_bounds')
+            args = raw.decode('utf-8', errors='replace').split('\0')
+            for index, arg in enumerate(args):
+                if (Path(arg).name == 'authenticated_fixture.py' and index + 2 < len(args)
+                        and args[index + 1] in {'serve', 'serve-prepared-fault'} and args[index + 2] == str(root)):
+                    raise ValueError('fixture_cleanup_service_running')
+                if Path(arg).name == 'controller_service.py' and str(Path(root) / 'runtime.json') in args:
+                    raise ValueError('fixture_cleanup_service_running')
+
+
+def service_state(record):
+    if (not isinstance(record, dict) or set(record) != {'pid', 'start_identity'}
+            or type(record['pid']) is not int or record['pid'] <= 0
+            or not isinstance(record['start_identity'], str) or not re.fullmatch(r'[0-9a-f]{64}', record['start_identity'])):
+        raise ValueError('fixture_service_record_invalid')
+    try: raw = (Path('/proc') / str(record['pid']) / 'stat').read_text().rsplit(')', 1)[1].split()
+    except FileNotFoundError: return None
+    if digest({'pid': record['pid'], 'start': raw[19]}) != record['start_identity']:
+        raise ValueError('fixture_service_replaced')
+    return raw[0]
+
+
+def stop_service(root, *, wait_seconds=5):
+    if not 0 < wait_seconds <= 5: raise ValueError('fixture_service_wait_invalid')
+    deadline = time.monotonic() + wait_seconds
+    try: record = read_record(Path(root) / 'service-pid.json')
+    except FileNotFoundError:
+        verify_no_service_commands(root)
+        return {'stopped': True}
+    state = service_state(record)
+    if state not in (None, 'Z'):
+        if not hasattr(os, 'pidfd_open') or not hasattr(signal, 'pidfd_send_signal'):
+            raise ValueError('fixture_service_pidfd_unavailable')
+        try: fd = os.pidfd_open(record['pid'], 0)
+        except ProcessLookupError: fd = None
+        if fd is not None:
+            try:
+                # A PID reused after this descriptor opened cannot redirect the
+                # signal; recheck its private start binding before the effect.
+                if service_state(record) not in (None, 'Z'):
+                    try: signal.pidfd_send_signal(fd, signal.SIGTERM, None, 0)
+                    except ProcessLookupError: pass
+            finally: os.close(fd)
+    while service_state(record) not in (None, 'Z'):
+        if time.monotonic() >= deadline: raise ValueError('fixture_service_stop_timeout')
+        time.sleep(0.05)
+    verify_no_service_commands(root)
+    return {'stopped': True}
+
+
+def verify_cleanup_quiescent(root_fd, record, client, root):
+    name = record['name']
+    scopes = [{'label': 'educloud.fixture=' + name}, *({'label': 'educloud.workspace.instance=' + name + '-' + suffix}
+        for suffix in ('source', 'peer', 'receiver')), *({'name': '^/' + name + '-' + worker + '-guardian$'}
+        for worker in ('worker-one', 'worker-two'))]
+    for scope in scopes:
+        for container in client.containers.list(all=False, filters=scope):
+            container.reload()
+            if (container.attrs.get('Name') != '/' + name + '-authority'
+                    or container.attrs.get('Config', {}).get('Labels', {}).get('educloud.fixture') != name):
+                raise ValueError('fixture_cleanup_participant_running')
+    verify_no_service_commands(root)
+    try: service = _cleanup_record(root_fd, 'service-pid.json', {os.geteuid(), record['creator_uid']})
+    except FileNotFoundError: return
+    if (not isinstance(service, dict) or set(service) != {'pid', 'start_identity'}
+            or type(service['pid']) is not int or service['pid'] <= 0
+            or not isinstance(service['start_identity'], str) or not re.fullmatch(r'[0-9a-f]{64}', service['start_identity'])):
+        raise ValueError('fixture_cleanup_service_invalid')
+    try:
+        raw = (Path('/proc') / str(service['pid']) / 'stat').read_text().rsplit(')', 1)[1].split()
+    except FileNotFoundError: return
+    identity = digest({'pid': service['pid'], 'start': raw[19]})
+    if identity != service['start_identity']:
+        raise ValueError('fixture_cleanup_service_replaced')
+    if raw[0] != 'Z': raise ValueError('fixture_cleanup_service_running')
+
+
+def cleanup_permissions(root, client=None):
+    """Return only this stopped disposable bind tree to its original creator."""
+    root_fd = open_directory(root)
+    try:
+        initial = os.fstat(root_fd)
+        record = _cleanup_record(root_fd, 'fixture-owner.json', {os.geteuid(), initial.st_uid})
+        if (not isinstance(record, dict) or set(record) != {'version', 'name', 'creator_uid', 'creator_gid', 'device', 'inode'}
+                or record['version'] != OWNER_VERSION or not isinstance(record['name'], str)
+                or not re.fullmatch(r'wa[0-9a-f]{10}', record['name'])
+                or any(type(record[key]) is not int or not 0 <= record[key] <= 2**32 - 1 for key in ('creator_uid', 'creator_gid'))
+                or type(record['device']) is not int or record['device'] < 0
+                or type(record['inode']) is not int or record['inode'] <= 0
+                or (initial.st_dev, initial.st_ino, initial.st_uid, initial.st_gid)
+                    != (record['device'], record['inode'], record['creator_uid'], record['creator_gid'])
+                or stat.S_IMODE(initial.st_mode) != 0o700):
+            raise ValueError('fixture_cleanup_binding_changed')
+        if client is None:
+            import docker
+            client = docker.DockerClient(base_url='unix:///var/run/docker.sock', version='auto')
+        verify_cleanup_quiescent(root_fd, record, client, root)
+        count = [0]
+        def transfer(fd, depth):
+            if depth > 64: raise ValueError('fixture_cleanup_bounds')
+            before = os.fstat(fd)
+            if before.st_dev != initial.st_dev: raise ValueError('fixture_cleanup_mount_escape')
+            with os.scandir(fd) as scan:
+                names = []
+                for entry in scan:
+                    count[0] += 1
+                    if count[0] > 20000: raise ValueError('fixture_cleanup_bounds')
+                    names.append(entry.name)
+            for name in sorted(names):
+                info = os.stat(name, dir_fd=fd, follow_symlinks=False)
+                if depth == 0 and name in {'control', 'backend'}:
+                    if not stat.S_ISDIR(info.st_mode): raise ValueError('fixture_cleanup_mount_invalid')
+                    continue  # Exact Linux-volume roots; host mountpoints were preowned.
+                if stat.S_ISLNK(info.st_mode): continue  # Parent ownership suffices to unlink; never touch target.
+                if info.st_dev != initial.st_dev: raise ValueError('fixture_cleanup_mount_escape')
+                if not stat.S_ISDIR(info.st_mode) and not stat.S_ISREG(info.st_mode):
+                    raise ValueError('fixture_cleanup_entry_invalid')
+                flags = os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK
+                if stat.S_ISDIR(info.st_mode): flags |= os.O_DIRECTORY
+                child = os.open(name, flags, dir_fd=fd)
+                try:
+                    actual = os.fstat(child)
+                    if (actual.st_dev, actual.st_ino, stat.S_IFMT(actual.st_mode)) != (info.st_dev, info.st_ino, stat.S_IFMT(info.st_mode)):
+                        raise ValueError('fixture_cleanup_entry_changed')
+                    if stat.S_ISREG(actual.st_mode) and actual.st_nlink != 1:
+                        raise ValueError('fixture_cleanup_hardlink_invalid')
+                    if stat.S_ISDIR(actual.st_mode): transfer(child, depth + 1)
+                    else:
+                        os.fchmod(child, 0o600); os.fchown(child, record['creator_uid'], record['creator_gid'])
+                    current = os.stat(name, dir_fd=fd, follow_symlinks=False)
+                    if (current.st_dev, current.st_ino) != (actual.st_dev, actual.st_ino):
+                        raise ValueError('fixture_cleanup_entry_changed')
+                finally: os.close(child)
+            final = set()
+            with os.scandir(fd) as scan:
+                for entry in scan:
+                    if len(final) >= 20000: raise ValueError('fixture_cleanup_bounds')
+                    final.add(entry.name)
+            if final != set(names): raise ValueError('fixture_cleanup_entry_changed')
+            os.fchmod(fd, 0o700); os.fchown(fd, record['creator_uid'], record['creator_gid']); os.fsync(fd)
+        transfer(root_fd, 0)
+        check = open_directory(root)
+        try:
+            current = os.fstat(check)
+            if (current.st_dev, current.st_ino) != (initial.st_dev, initial.st_ino):
+                raise ValueError('fixture_cleanup_binding_changed')
+        finally: os.close(check)
+        return {'ready': True}
+    finally: os.close(root_fd)
+
+
 def initialize(root, request):
+    import docker
+    capture_cleanup_owner(root, request['name'])
     client = docker.DockerClient(base_url='unix:///var/run/docker.sock', version='auto')
     info = client.info()
     name = request['name']
@@ -113,6 +316,7 @@ def initialize(root, request):
 
 
 def launch(root):
+    import docker
     config = read_record(root / 'runtime.json'); fixture = read_record(root / 'fixture.json')
     request = fixture['request']; client = docker.DockerClient(base_url='unix:///var/run/docker.sock', version='auto')
     for worker, courses in config['courses'].items():
@@ -215,9 +419,7 @@ def main():
             except Exception as exc:
                 result[course] = {'ready': False, 'code': getattr(exc, 'code', 'fixture_guardian_unavailable')}
     elif action == 'stop-service':
-        record = read_record(root / 'service-pid.json')
-        if process_identity(record['pid']) != record['start_identity']: raise ValueError('fixture_service_replaced')
-        os.kill(record['pid'], signal.SIGTERM); result = {'stopped': True}
+        result = stop_service(root)
     elif action == 'rpc':
         identity = payload.pop('identity', 'operator')
         settings = read_record(root / identity / 'credentials' / 'client.json')
@@ -259,10 +461,7 @@ def main():
             rows = connection.execute('SELECT status FROM transfers ORDER BY transaction_id').fetchall()
             result = {'transfer_records': len(rows), 'statuses': sorted(row['status'] for row in rows)}
     elif action == 'cleanup-permissions':
-        # Only this invocation's root is passed by the controlling harness.
-        for path in root.rglob('*'):
-            if not path.is_symlink(): path.chmod(0o700 if path.is_dir() else 0o600)
-        result = {'ready': True}
+        result = cleanup_permissions(root)
     else: raise ValueError('fixture_action_invalid')
     print(json.dumps(result, sort_keys=True), flush=True)
 

@@ -18,6 +18,7 @@ import requests
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from smoke import kernel, change, xsrf
+from hub.authority_client import ERRORS
 
 
 def command(*args, data=None, timeout=60):
@@ -60,9 +61,17 @@ def request_notebook_start(session, base, *, previous_runtime_stopped):
     session.get(base + '/hub/spawn/alice', timeout=30, allow_redirects=False).raise_for_status()
 
 
+def result_matches(reply, field, expected):
+    result = reply.get('result')
+    return (reply.get('ok') is True and isinstance(result, dict) and field in result
+            and type(result[field]) is type(expected) and result[field] == expected)
+
+
 def run(args):
     name = 'wa' + uuid.uuid4().hex[:10]
     root = Path(tempfile.mkdtemp(prefix='waypoint-authority-')).resolve()
+    for child in ('control', 'backend'):
+        (root / child).mkdir(mode=0o700)
     network, controller = name + '-control', name + '-authority'
     phases = []
     cleanup_authorized = False
@@ -74,8 +83,12 @@ def run(args):
         return json.loads(command('exec', '-i', controller, 'python', 'authenticated_fixture.py', action, str(root),
             data=json.dumps(payload) if payload is not None else None))
     def rpc(op, payload=None, identity='operator', worker='worker-one', course='course-main'):
-        return helper('rpc', dict(identity=identity, worker_id=worker, course_id=course,
+        reply = helper('rpc', dict(identity=identity, worker_id=worker, course_id=course,
             operation=op, payload=payload or {}))
+        if reply.get('ok') is False:
+            code = reply.get('code')
+            print('RPC refusal: ' + op + ': ' + (code if isinstance(code, str) and code in ERRORS else 'fixture_rpc_refused'), flush=True)
+        return reply
     def service(mode='serve'):
         command('exec', '-d', controller, 'python', 'authenticated_fixture.py', mode, str(root))
         try:
@@ -272,9 +285,10 @@ def run(args):
         helper('restore-acl')
         phase('hub_certificate_revocation_refuses_fresh_access')
         helper('stop-service'); service()
-        assert not rpc('hub.authorize', identity='source')['ok']
-        assert rpc('hub.authorize', identity='receiver', worker='worker-two')['result']['epoch'] == 2
-        assert rpc('ownership.inventory')['result']['pending'] is False
+        wait(lambda: result_matches(rpc('hub.authorize', identity='receiver', worker='worker-two'), 'epoch', 2))
+        wait(lambda: result_matches(rpc('ownership.inventory'), 'pending', False))
+        source_denial = rpc('hub.authorize', identity='source')
+        assert source_denial.get('ok') is False and source_denial.get('code') == 'authority_operation_refused'
         phase('service_restart_retains_authority_incarnation_epoch_and_barriers')
         assert all(hashlib.sha256((workspace / path).read_bytes()).hexdigest() == value for path, value in expected.items())
         assert all(hashlib.sha256((workspace / path).read_bytes()).hexdigest() == value for path, value in report['recipe_sha256'].items())
@@ -286,18 +300,25 @@ def run(args):
         # Public evidence intentionally contains no logs, URLs with credentials, or request bodies.
         from authenticated_evidence import FAILURES
         report['failure'] = type(exc).__name__ if type(exc).__name__ in FAILURES else 'RuntimeError'
+        trace = exc.__traceback__; lines = []
+        while trace is not None:
+            if trace.tb_frame.f_code.co_filename == __file__: lines.append(trace.tb_lineno)
+            trace = trace.tb_next
+        print('fixture failure lines: ' + json.dumps(lines[-8:]), flush=True)
+        if (isinstance(exc, KeyError) and exc.args and isinstance(exc.args[0], str)
+                and exc.args[0] in {'result', 'epoch', 'pending', 'ok'}):
+            print('fixture failure key: ' + exc.args[0], flush=True)
         raise
     finally:
         report['cleanup_verified'] = True
         if cleanup_authorized:
+            cleanup_failed = False
             if report['status'] != 'PASS':
                 try: print('runtime diagnostic: ' + json.dumps(helper('runtime-status'), sort_keys=True), flush=True)
                 except Exception: pass
                 if args.diagnostic_pause:
                     print('diagnostic window active', flush=True)
                     time.sleep(45)
-            try: helper('cleanup-permissions')
-            except Exception: pass
             owned_containers = [controller, *(name + '-' + suffix + '-hub' for suffix in ('source', 'peer', 'receiver')),
                 *(name + '-' + worker + '-guardian' for worker in ('worker-one', 'worker-two'))]
             for suffix in ('source', 'peer', 'receiver'):
@@ -305,8 +326,17 @@ def run(args):
                     owned_containers += command('ps', '-aq', '--filter', 'label=educloud.workspace.instance=' + name + '-' + suffix).split()
                 except Exception: pass
             for resource in owned_containers:
+                if resource == controller: continue
                 try: command('rm', '-f', resource)
                 except Exception: pass
+            # Quiesce writers before handing private host files back to their
+            # original creator. Keep this privileged controller until last.
+            try: helper('stop-service')
+            except Exception: pass  # It may have already exited after failure.
+            try: helper('cleanup-permissions')
+            except Exception: cleanup_failed = True
+            try: command('rm', '-f', controller)
+            except Exception: cleanup_failed = True
             for kind in ('network', 'volume'):
                 try:
                     resources = command(kind, 'ls', '-q', '--filter', 'label=educloud.fixture=' + name).split()
@@ -325,7 +355,7 @@ def run(args):
                 for label in ['educloud.fixture=' + name, *('educloud.workspace.instance=' + name + '-' + suffix for suffix in ('source', 'peer', 'receiver'))]:
                     try: remaining += command(kind, 'ls', '-aq' if kind == 'container' else '-q', '--filter', 'label=' + label).split()
                     except Exception: remaining.append('cleanup_check_failed')
-            report['cleanup_verified'] = not remaining
+            report['cleanup_verified'] = not remaining and not cleanup_failed
         try: shutil.rmtree(root)
         except Exception: report['cleanup_verified'] = False
         if not report['cleanup_verified']: report['status'] = 'FAIL'

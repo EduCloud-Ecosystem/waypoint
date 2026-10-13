@@ -106,6 +106,16 @@ course and Hub images are retained. No real learner data or external provider
 calls are involved. The dedicated GitHub workflow repeats this on disposable
 Linux infrastructure without deployment credentials.
 
+The fixture captures its original host creator and directory identity before
+bootstrap. Disposal stops its Hub, learner and guardian writers and verifies
+the service has exited before returning private bind files to that creator.
+Descriptor traversal refuses path escapes, hardlinks and unexpected mounts;
+private files remain mode 0600 and directories 0700. The controller is removed
+last, followed by owned networks/volumes and the host directory. Any failed
+handoff or remaining resource makes cleanup fail; running the whole harness
+as root is unnecessary. Service stopping uses a Linux process descriptor and
+rechecks start identity so a recycled process ID cannot receive its signal.
+
 Private authority, replay, and plan state uses a Docker-managed Linux volume;
 backend locks, barriers, and heartbeats use a separate private Linux volume.
 Guardians mount only the backend volume. Fresh private child directories retain
