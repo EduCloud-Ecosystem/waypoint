@@ -265,3 +265,13 @@ inside encrypted backups. Backup refuses missing or inconsistent current history
 before provider effects. Fresh restore retains private source history, strips the
 source active decision revision and requires current managed enrollment; it does
 not replay source approvals or reopen an interrupted change.
+
+## Replacement decision history
+
+[Reviewed cutover](COURSE-CUTOVER.md) preserves its latest active receipt privately
+inside encryption. Backup validates revision/history and actual current allocation
+before provider/export effects; new saved work and later resource changes do not
+rewrite historical decision hashes. Replaced senders cannot create active-course
+backups. Fresh restoration retains `source-cutover-receipt.json` only, strips active
+cutover/resource revisions and requires current enrollment. It does not replay
+source approval, pending journals or replacement fences.

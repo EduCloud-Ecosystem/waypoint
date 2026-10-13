@@ -66,6 +66,8 @@ def exists(path):
 
 
 def require_no_amendment(directory):
+    if exists(Path(directory)/'.cutover-pending.json'):
+        raise AllocationError('unfinished_cutover')
     if exists(Path(directory) / '.resource-amendment-pending.json'):
         raise AllocationError('unfinished_resource_amendment')
 
@@ -248,17 +250,62 @@ def ledger(expected, initialize=False):
         raise AllocationError('worker_ledger_binding_changed')
     if not isinstance(value['claims'], dict) or len(value['claims']) > 1024:
         raise AllocationError('worker_ledger_invalid')
-    for key, entry in value['claims'].items():
-        if (not HASH.fullmatch(key) or not isinstance(entry, dict) or set(entry) != {'status','claim','claim_sha256'}
-                or entry['status'] not in ('ACTIVE','RELEASED') or not valid_claim(entry['claim'])
-                or key != path_digest(entry['claim']['directory']) or entry['claim_sha256'] != digest(entry['claim'])):
-            raise AllocationError('worker_ledger_invalid')
-    entries = list(value['claims'].items())
-    for index, (_, left) in enumerate(entries):
-        for _, right in entries[index + 1:]:
-            if collides(left['claim'], right['claim']):
-                raise AllocationError('worker_ledger_collision')
+    validate_claims(value['claims'])
     return value
+
+
+def logical_identity(c):
+    return tuple(c[key] for key in ('origin','dns_subtree','issuer','client_id'))
+
+
+def physical_collides(left,right):
+    return (overlap(left['directory'],right['directory']) or left['instance']==right['instance']
+            or overlap(left['home_root'],right['home_root']) or left['home_namespace']==right['home_namespace']
+            or left['home_filesystem_uuid']==right['home_filesystem_uuid']
+            or overlap(left['directory'],right['home_root']) or overlap(left['home_root'],right['directory']))
+
+
+def lineage_roots(claims):
+    roots={}
+    for key in claims:
+        path=[];seen=set();current=key
+        while current not in roots:
+            if current in seen or current not in claims:
+                raise AllocationError('invalid_transfer_lineage')
+            seen.add(current);path.append(current)
+            value=claims[current]
+            if value['status']!='TRANSFERRED':
+                roots[current]=current
+                break
+            successor=value['successor']
+            if successor not in claims or logical_identity(value['claim'])!=logical_identity(claims[successor]['claim']):
+                raise AllocationError('invalid_transfer_lineage')
+            current=successor
+        for item in path:
+            roots[item]=roots[current]
+    return roots
+
+
+def validate_claims(claims):
+    if not isinstance(claims,dict) or len(claims)>1024:
+        raise AllocationError('worker_ledger_invalid')
+    for key,value in claims.items():
+        if (not isinstance(key,str) or not HASH.fullmatch(key) or not isinstance(value,dict)
+                or value.get('status') not in ('ACTIVE','RELEASED','TRANSFERRED')
+                or set(value)!=({'status','claim','claim_sha256','successor'} if value['status']=='TRANSFERRED' else {'status','claim','claim_sha256'})
+                or not valid_claim(value['claim']) or key!=path_digest(value['claim']['directory'])
+                or value['claim_sha256']!=digest(value['claim'])
+                or value['status']=='TRANSFERRED' and (not isinstance(value['successor'],str) or not HASH.fullmatch(value['successor']))):
+            raise AllocationError('worker_ledger_invalid')
+    roots=lineage_roots(claims)
+    rows=list(claims.items())
+    for index,(left_key,left) in enumerate(rows):
+        for right_key,right in rows[index+1:]:
+            if physical_collides(left['claim'],right['claim']):
+                raise AllocationError('worker_ledger_physical_collision')
+            if collides(left['claim'],right['claim']) and (roots[left_key]!=roots[right_key] or logical_identity(left['claim'])!=logical_identity(right['claim'])):
+                raise AllocationError('worker_ledger_collision')
+    return roots
 
 
 def overlap(left, right):
@@ -415,7 +462,8 @@ def report(p, value):
     active = [e['claim'] for e in value['claims'].values() if e['status'] == 'ACTIVE']
     return {'version':1,'status':'PASS','scope':'worker-allocation-inventory',
             'worker_sha256':digest(p['worker_id']),'policy_sha256':value['policy_sha256'],'daemon_sha256':value['daemon_sha256'],
-            'active_courses':len(active),'released_courses':len(value['claims'])-len(active),
+            'active_courses':len(active),'released_courses':sum(e['status']=='RELEASED' for e in value['claims'].values()),
+            'transferred_courses':sum(e['status']=='TRANSFERRED' for e in value['claims'].values()),
             'memory_reserved_mb':sum(c['memory_mb'] for c in active),'cpu_reserved':math.fsum(c['cpu'] for c in active),
             **{k:p[k] for k in ('memory_budget_mb','cpu_budget','host_reserve_mb','host_reserve_cpu')}}
 
@@ -564,9 +612,14 @@ def enroll(directory, config_path):
         stopped(c,value['claims'])
         key = path_digest(directory)
         old = value['claims'].get(key)
+        if old and old['status']=='TRANSFERRED':
+            raise AllocationError('transferred_course_cannot_enroll')
         if old and old['claim'] != c:
             raise AllocationError('frozen_course_claim_changed')
-        if any(other != key and collides(c,e['claim']) for other,e in value['claims'].items()):
+        roots=lineage_roots(value['claims'])
+        if any(other != key and (physical_collides(c,e['claim']) or collides(c,e['claim']) and
+               (old is None or roots[key]!=roots[other] or logical_identity(c)!=logical_identity(e['claim'])))
+               for other,e in value['claims'].items()):
             raise AllocationError('course_identity_or_storage_collision')
         if key not in value['claims'] and len(value['claims']) >= 1024:
             raise AllocationError('worker_course_limit_exceeded')
@@ -643,6 +696,8 @@ def release(directory):
         old = value['claims'].get(key)
         if not old or old['claim'] != c:
             raise AllocationError('course_reservation_missing')
+        if old['status']=='TRANSFERRED':
+            raise AllocationError('transferred_course_cannot_release')
         check_capacity(p,info,value['claims'])
         stopped(c,value['claims'])
         value['claims'][key] = dict(old,status='RELEASED')

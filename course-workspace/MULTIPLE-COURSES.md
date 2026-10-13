@@ -86,7 +86,7 @@ free processes or leases. Existing roster/quota maintenance and image upgrades
 remain available. [Reviewed resource changes](RESOURCE-CHANGES.md) amend learner
 RAM/CPU and the active cap on a stopped enrolled course using conservative
 transition claims. Identity/origin/port/storage remain frozen; replacement
-identity transfer is a separate follow-up workflow.
+identity transfer now uses the separate [reviewed cutover workflow](COURSE-CUTOVER.md).
 
 ## Release capacity, preserve coursework
 
@@ -103,8 +103,13 @@ files, volumes, configuration and identity/storage collision records. Released
 courses cannot start. Re-enroll the exact original stopped claim to request
 capacity again; changed claims/insufficient resources refuse. Retirement continues
 to block activation. Strict released tombstones prevent a fresh namespace reusing
-the old identity/storage through ordinary enrollment. This version has no transfer,
-record-deletion or automatic-expiry command.
+the old identity/storage through ordinary enrollment. This version has no
+record-deletion or automatic-expiry command through ordinary allocation. Reviewed
+cutover records a source as TRANSFERRED with a validated successor; the explicit
+inventory `transferred_courses` count is separate from released capacity. Ordinary
+enrollment and release refuse transferred sources, including if the local fence
+is lost. Logical collisions are permitted only within validated transfer lineage;
+physical storage/directory/filesystem/namespace collisions remain forbidden.
 
 ## Recover with current allocation
 
@@ -118,8 +123,10 @@ worker authority, policy and shared leases are never installed on the destinatio
 On an institution-approved replacement worker, review a current policy and enroll
 the restored nonretired course before starting. The gate clears only after durable
 enrollment verification. A retired backup stays closed and supports coursework
-export; it cannot be enrolled for activation. Same-worker live replacement needs
-a future reviewed identity transfer because of retained tombstones.
+export; it cannot be enrolled for activation. Same-worker replacement uses
+[reviewed cutover](COURSE-CUTOVER.md), with matched
+retained homes and explicit source fencing. Cross-worker ownership/fencing is
+separate; ordinary enrollment still respects retained tombstones.
 
 Guards apply to current entry points and managed version-4 recovery. Historical
 unmanaged scripts and direct root/Docker operations cannot enforce newer authority.

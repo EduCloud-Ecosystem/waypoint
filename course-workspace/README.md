@@ -13,6 +13,8 @@ The [multiple-course guide](MULTIPLE-COURSES.md) covers shared worker allocation
 collision refusal, explicit capacity release and recovery enrollment.
 The [resource change guide](RESOURCE-CHANGES.md) adds reviewed RAM/CPU and active
 learner cap changes with conservative reservations, resumable apply and private history.
+The [replacement cutover guide](COURSE-CUTOVER.md) covers same-worker reviewed
+identity transfer, durable source fencing, interrupted resume and safe rollback.
 
 The continuity baseline covers one course; shared allocation and a disposable
 two-course rehearsal extend it on the same worker. It uses JupyterHub and

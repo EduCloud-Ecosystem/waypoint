@@ -75,8 +75,8 @@ images, include the current runtime and retain the receipt inside encryption.
 Fresh restoration keeps it as private `source-resource-amendment-receipt.json`
 only. Source approvals, pending journals and the active decision revision are not
 installed in the replacement namespace. Managed recovery still requires current
-worker enrollment and does not bypass identity tombstones. This workflow does
-not implement live replacement cutover.
+worker enrollment and does not bypass identity tombstones. Use the separate [same-worker cutover](COURSE-CUTOVER.md) workflow; it
+does not transfer identity by changing resource limits.
 
 Use current entry points. Historical scripts and direct root/Docker changes cannot
 enforce newer guards. A revision marker is not protection against an administrator

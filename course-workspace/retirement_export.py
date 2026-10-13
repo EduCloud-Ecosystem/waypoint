@@ -370,7 +370,7 @@ def export_course(directory, destination):
         if any(destination==path or destination in path.parents or path in destination.parents for path in (directory,root)):
             raise ExportError('export_destination_overlaps_source')
         with home_lock(root):
-            pending_paths=(directory/retirement.PENDING,directory/upgrade.PENDING,directory/MAINTENANCE_PENDING,root/ROOT_PENDING,directory/'.resource-amendment-pending.json')
+            pending_paths=(directory/retirement.PENDING,directory/upgrade.PENDING,directory/MAINTENANCE_PENDING,root/ROOT_PENDING,directory/'.resource-amendment-pending.json',directory/'.cutover-pending.json',directory/'.course-replaced.json')
             if any(path.exists() or path.is_symlink() for path in pending_paths):
                 raise ExportError('unfinished_operation_prevents_export')
             before=retained_state(directory,env,ledger)
