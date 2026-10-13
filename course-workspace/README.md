@@ -170,6 +170,11 @@ this design does not implement automatic failover or active/active writes.
 
 ## Required before real learner use
 
+The opt-in [authenticated authority/local runtime rehearsal](AUTHENTICATED-RUNTIME.md)
+adds socketless Hub admission and independent runtime enforcement with preserved
+coursework and ownership history. Its actual local Docker evidence remains
+separate from the hosted requirements below.
+
 - Institution-approved host, data destination, support owner and recurring budget.
 - Live OIDC allowlist/revocation, wildcard HTTPS/subdomains and browser tests.
 - Target-worker quota/mount verification, host disk/inode monitoring and retention/deletion.

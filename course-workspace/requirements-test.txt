@@ -8,3 +8,7 @@ jupyter-core==5.9.1
 python-dateutil==2.9.0.post0
 pyzmq==27.2.0
 traitlets==5.16.1
+
+# Exercise the socketless Spawner and fresh authentication against the real Hub API.
+jupyterhub==6.0.1
+oauthenticator==17.4.0
