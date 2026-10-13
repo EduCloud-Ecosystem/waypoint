@@ -489,8 +489,8 @@ def main():
                 verify_peer(peer,two,two_url,peer_work,peer_learners,peer_hub)
                 checks.append('peer-unchanged-after-receiver-use')
                 added='receiver-only work after explicit activation\n'
-                response=new.put(new_url+'/api/contents/receiver-only.txt',json={'type':'file','format':'text','content':added},timeout=20)
-                assert response.status_code in (200,201)
+                response=change(new,'PUT',new_url+'/api/contents/receiver-only.txt',json={'type':'file','format':'text','content':added})
+                assert response.status_code in (200,201), 'authenticated receiver-only write HTTP status='+str(response.status_code)
                 compose(destination,'stop','hub'); assert_stopped(receiver)
                 expected['alice']['receiver-only.txt']=added; preserved_work(receiver,expected)
                 checks.append('receiver-only-work-preserved')
