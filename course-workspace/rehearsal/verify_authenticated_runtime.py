@@ -44,6 +44,22 @@ def wait(check, timeout=30):
     raise RuntimeError('fixture_condition_timeout')
 
 
+def request_notebook_start(session, base, *, previous_runtime_stopped):
+    if previous_runtime_stopped:
+        # Hub's normal poll must clear its old server metadata first. One spawn
+        # GET while it still looks running redirects to the old server; later
+        # /user/ readiness requests do not implicitly request a replacement.
+        def hub_stopped():
+            url = base + '/hub/api/user'
+            response = session.get(url, headers={'X-XSRFToken': xsrf(session, url)}, timeout=10)
+            response.raise_for_status()
+            model = response.json()
+            return (isinstance(model, dict) and 'server' in model and model['server'] is None
+                    and isinstance(model.get('servers'), dict) and '' not in model['servers'])
+        wait(hub_stopped, 45)
+    session.get(base + '/hub/spawn/alice', timeout=30, allow_redirects=False).raise_for_status()
+
+
 def run(args):
     name = 'wa' + uuid.uuid4().hex[:10]
     root = Path(tempfile.mkdtemp(prefix='waypoint-authority-')).resolve()
@@ -83,7 +99,7 @@ def run(args):
         session.get(base + '/hub/login', timeout=10).raise_for_status()
         session.post(base + '/hub/login', data={'username': 'alice', 'password': password,
             '_xsrf': xsrf(session, base + '/hub/login')}, timeout=30, allow_redirects=False).raise_for_status()
-        session.get(base + '/hub/spawn/alice', timeout=30, allow_redirects=False).raise_for_status()
+        request_notebook_start(session, base, previous_runtime_stopped=not learners(suffix))
         print(suffix + ': waiting for authenticated notebook', flush=True)
         def ready():
             session.get(base + '/user/alice/lab', timeout=10)

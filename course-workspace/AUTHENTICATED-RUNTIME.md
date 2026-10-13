@@ -57,6 +57,10 @@ The opt-in Hub allows 120 seconds for notebook HTTP startup. Browser readiness
 requests allow ten seconds and eight redirects; its retry deadline can be
 overrun by a bounded in-flight request. These are test readiness limits, not
 authorization leases or performance guarantees.
+When Docker confirms a previous learner runtime has stopped, the harness waits
+up to 45 seconds for the authenticated Hub self API to clear that server's
+metadata before requesting a replacement. User notebook URLs do not implicitly
+spawn; this wait allows Hub's normal polling cleanup and changes no runtime policy.
 The initial Guardian snapshot waits at most one second for endpoint exclusion;
 busy cycles retry after 0.1 seconds without issuing a heartbeat. Pending stops
 retain 0.1-second attempts. Watchdog checks start with that quick attempt; after
