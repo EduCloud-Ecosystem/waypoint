@@ -130,3 +130,72 @@ c.JupyterHub.services = [{
                 f'--timeout={s["idle_seconds"]}', f'--max-age={s["max_age_seconds"]}',
                 '--cull-every=60'],
 }]
+
+if s['runtime_mode'] == 'authority-local':
+    # Avoid self-hostname resolution in the proxy's readiness check when
+    # this socketless Hub joins both its edge and private control networks.
+    c.JupyterHub.bind_url = 'http://0.0.0.0:8000'
+    # The local enforcement rehearsal deliberately uses a small CPU allocation.
+    # Give its cold notebook process time to become HTTP-ready.
+    c.Spawner.http_timeout = 120
+    # Explicit local integration opt-in. This Hub must not have Docker access.
+    if Path('/var/run/docker.sock').exists():
+        raise ValueError('authority-local Hub must not mount the Docker socket')
+    c.JupyterHub.spawner_class = 'authority_spawner.AuthoritySpawner'
+    for name in ('authority_url', 'authority_id', 'authority_ca', 'authority_cert', 'authority_key', 'worker_id', 'course_id'):
+        setattr(c.AuthoritySpawner, name, s[name])
+    c.Spawner.environment = {}
+    c.Spawner.env_keep = []
+
+    async def authority_roster(spawner):
+        allowed = s['subjects'] if s['mode'] == 'oidc' else {'alice', 'bob'}
+        if spawner.user.name not in allowed:
+            raise HTTPError(403, 'learner is not in this course roster')
+
+    c.Spawner.pre_spawn_hook = authority_roster
+    from authority_client import AuthorityClient
+    from jupyterhub.auth import DummyAuthenticator
+
+    async def authority_probe():
+        import asyncio
+        client = AuthorityClient(s['authority_url'], s['authority_id'], s['authority_ca'],
+            s['authority_cert'], s['authority_key'], s['worker_id'], s['course_id'], timeout=10)
+        view = await asyncio.to_thread(client.call, 'hub.authorize', {})
+        if (set(view) != {'authorized', 'epoch', 'worker_id', 'course_id'} or view['authorized'] is not True
+                or type(view['epoch']) is not int or not 1 <= view['epoch'] <= 10**9
+                or view['worker_id'] != s['worker_id'] or view['course_id'] != s['course_id']):
+            raise ValueError('authority_login_view_invalid')
+
+    async def authority_login(authenticator, handler, authentication):
+        try:
+            await authority_probe()
+        except Exception:
+            raise HTTPError(403, 'course runtime authorization unavailable') from None
+        return authentication
+
+    class AuthorityRefresh:
+        async def refresh_user(self, user, handler=None):
+            try:
+                refreshed = await super().refresh_user(user, handler)
+                if refreshed is False:
+                    return False
+                await authority_probe()
+            except Exception:
+                return False
+            return refreshed if isinstance(refreshed, dict) else True
+
+    class AuthorityDummyAuthenticator(AuthorityRefresh, DummyAuthenticator):
+        pass
+
+    if s['mode'] == 'oidc':
+        from oauthenticator.generic import GenericOAuthenticator
+
+        class AuthorityGenericAuthenticator(AuthorityRefresh, GenericOAuthenticator):
+            pass
+
+        c.JupyterHub.authenticator_class = AuthorityGenericAuthenticator
+    else:
+        c.JupyterHub.authenticator_class = AuthorityDummyAuthenticator
+    c.Authenticator.post_auth_hook = authority_login
+    c.Authenticator.auth_refresh_age = 1
+    c.Authenticator.refresh_pre_spawn = True

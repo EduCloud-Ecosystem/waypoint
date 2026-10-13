@@ -1,0 +1,15 @@
+# The controller build must never transmit local credentials or virtualenvs.
+*
+!controller.Dockerfile
+!ownership_contract.py
+!authority_access.py
+!authority_operator.py
+!runtime_authority.py
+!runtime_guardian.py
+!controller_service.py
+!hub/
+!hub/authority_client.py
+!tests/
+!tests/authority_test_pki.py
+!rehearsal/
+!rehearsal/authenticated_fixture.py

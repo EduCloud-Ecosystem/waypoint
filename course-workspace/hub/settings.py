@@ -84,4 +84,26 @@ def load(env):
             raise ValueError('WORKSPACE_ALLOWED_SUBJECTS must contain approved subject IDs')
     else:
         result['test_password'] = required('WORKSPACE_TEST_PASSWORD')
+    result['runtime_mode'] = env.get('WORKSPACE_RUNTIME_MODE', 'docker')
+    if result['runtime_mode'] not in ('docker', 'authority-local'):
+        raise ValueError('WORKSPACE_RUNTIME_MODE must be docker or authority-local')
+    if result['runtime_mode'] == 'authority-local':
+        authority = urlsplit(required('WORKSPACE_AUTHORITY_URL'))
+        if (authority.scheme != 'https' or not authority.hostname or authority.username or authority.password
+                or authority.query or authority.fragment or authority.path not in ('', '/v1/authority')):
+            raise ValueError('WORKSPACE_AUTHORITY_URL requires a trusted HTTPS authority')
+        result['authority_url'] = authority.geturl()
+        result['authority_id'] = required('WORKSPACE_AUTHORITY_ID')
+        if not re.fullmatch(r'[0-9a-f]{32}', result['authority_id']):
+            raise ValueError('WORKSPACE_AUTHORITY_ID requires a pinned authority identity')
+        for name in ('WORKER_ID', 'COURSE_ID'):
+            value = required('WORKSPACE_AUTHORITY_' + name)
+            if not re.fullmatch(r'[a-z][a-z0-9-]{0,63}', value):
+                raise ValueError('invalid authority endpoint scope')
+            result[name.lower()] = value
+        for name in ('CA', 'CERT', 'KEY'):
+            value = required('WORKSPACE_AUTHORITY_' + name)
+            if not re.fullmatch(r'/[A-Za-z0-9_./-]+', value) or '..' in value.split('/'):
+                raise ValueError('authority material requires an absolute file path')
+            result['authority_' + name.lower()] = value
     return result

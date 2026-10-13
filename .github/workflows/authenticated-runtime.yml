@@ -1,0 +1,35 @@
+name: Authenticated local runtime
+on:
+  pull_request:
+    paths: ['course-workspace/**', '.github/workflows/authenticated-runtime.yml']
+  push:
+    branches: [main]
+    paths: ['course-workspace/**', '.github/workflows/authenticated-runtime.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  runtime:
+    name: Actual mTLS Hub Python R runtime
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r course-workspace/requirements-test.txt
+      - name: Build reviewed local images
+        run: |
+          docker build -t waypoint-authority-hub:local course-workspace/hub
+          docker build -t waypoint-authority-course:local course-workspace/course
+          docker build --build-arg HUB_IMAGE=waypoint-authority-hub:local -t waypoint-authority-controller:local -f course-workspace/controller.Dockerfile course-workspace
+      - name: Exercise actual local enforcement and retained coursework
+        run: python course-workspace/rehearsal/verify_authenticated_runtime.py --output /tmp/AUTHENTICATED-RUNTIME.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: authenticated-local-runtime-evidence
+          path: /tmp/AUTHENTICATED-RUNTIME.json
+          if-no-files-found: error
+          retention-days: 7
