@@ -5,11 +5,12 @@ import unittest
 import authenticated_evidence as evidence
 
 
-def example():
+def example(cpu=4):
     return {'version':evidence.VERSION,'status':'PASS','scope':evidence.SCOPE,'phases':list(evidence.PHASES),
         'images':{'course':'sha256:'+'a'*64,'hub':'sha256:'+'b'*64,'controller':'sha256:'+'c'*64},
         'source':'a'*40,'source_dirty':False,'code_sha256':{path:'a'*64 for path in evidence.CODE_FILES},
-        'recipe_sha256':{path:'b'*64 for path in evidence.RECIPE_FILES},'host':{'memory_bytes':6656*1024**2,'cpu':4},
+        'recipe_sha256':{path:'b'*64 for path in evidence.RECIPE_FILES},'host':{'memory_bytes':6656*1024**2,'cpu':cpu},
+        'allocation':deepcopy(evidence.ALLOCATION_PRESETS['five-cpu-local' if cpu>=5 else 'four-cpu-ci']),
         'cleanup_verified':True,'acceptance_eligible':True}
 
 
@@ -19,7 +20,8 @@ class AuthenticatedEvidenceTests(unittest.TestCase):
 
     def test_exact_complete_clean_boundary_report_validated_without_mutation(self):
         report=example();before=deepcopy(report);self.assertIsNone(evidence.validate_report(report));self.assertEqual(report,before)
-        self.assertIn('rehearsal/verify_authenticated_runtime.py',evidence.CODE_FILES);self.assertEqual(len(evidence.CODE_FILES),14)
+        self.assertIn('rehearsal/verify_authenticated_runtime.py',evidence.CODE_FILES);self.assertEqual(len(evidence.CODE_FILES),15)
+        self.assertIn('rehearsal/authenticated_evidence.py',evidence.CODE_FILES)
         self.assertIn('.dockerignore',evidence.RECIPE_FILES);self.assertEqual(len(evidence.PHASES),12)
 
     def test_every_phase_missing_duplicate_out_of_order_or_extra_is_refused(self):
@@ -52,6 +54,54 @@ class AuthenticatedEvidenceTests(unittest.TestCase):
                           ('cpu',3),('cpu',4.0),('cpu',True),('cpu',float('nan')),('cpu',4097)]:
             report=example();report['host'][field]=bad
             with self.subTest(field=field,bad=bad):self.refused(report)
+
+    def test_verified_host_cpu_deterministically_selects_exact_allocation(self):
+        for cpu,name in ((4,'four-cpu-ci'),(5,'five-cpu-local'),(64,'five-cpu-local')):
+            report=example(cpu);self.assertIsNone(evidence.validate_report(report))
+            self.assertEqual(report['allocation']['name'],name)
+            report['allocation']=deepcopy(evidence.ALLOCATION_PRESETS['five-cpu-local' if cpu==4 else 'four-cpu-ci'])
+            with self.subTest(cpu=cpu):self.refused(report)
+
+    def test_allocation_fields_limits_types_and_unknown_values_fail_closed(self):
+        for cpu in (4,5):
+            for field in example(cpu)['allocation']:
+                report=example(cpu);del report['allocation'][field]
+                with self.subTest(cpu=cpu,missing=field):self.refused(report)
+            for field,bad in [('name','automatic'),('learner_cpu',.2),('hub_cpu',.5),('reserved_cpu',3.9),
+                              ('minimum_cpu',True),('minimum_cpu',4.0),('minimum_cpu',6),
+                              ('learner_cpu',True),('hub_cpu',True),('reserved_cpu',True),
+                              ('learner_cpu',float('nan')),('reserved_cpu',float('inf'))]:
+                report=example(cpu);report['allocation'][field]=bad
+                with self.subTest(cpu=cpu,field=field,bad=bad):self.refused(report)
+            report=example(cpu);report['allocation']['worker_id']='private';self.refused(report)
+        report=example();del report['allocation'];self.refused(report)
+
+    def test_legacy_pass_and_failed_history_keep_distinct_version_and_code_schema(self):
+        report=example();report['version']=evidence.LEGACY_VERSION;del report['allocation']
+        report['code_sha256']={path:'a'*64 for path in evidence.LEGACY_CODE_FILES}
+        before=deepcopy(report);self.assertIsNone(evidence.validate_report(report));self.assertEqual(report,before)
+        self.assertEqual(len(evidence.LEGACY_CODE_FILES),14)
+        report['status']='FAIL';report['acceptance_eligible']=False;report['failure']='RuntimeError'
+        self.assertIsNone(evidence.validate_report(report))
+        report={'version':evidence.LEGACY_VERSION,'status':'FAIL','scope':evidence.SCOPE,'phases':[],
+                'cleanup_verified':True,'acceptance_eligible':False,'failure':'RuntimeError'}
+        self.assertIsNone(evidence.validate_report(report))
+
+    def test_legacy_schema_cannot_be_relabelled_or_silently_promoted_to_v2(self):
+        report=example();report['version']=evidence.LEGACY_VERSION
+        self.refused(report)  # Old reports cannot contain new allocation fields.
+        del report['allocation'];self.refused(report)  # Nor the new dependency hash.
+        report['code_sha256']={path:'a'*64 for path in evidence.LEGACY_CODE_FILES}
+        self.assertIsNone(evidence.validate_report(report))
+        report['version']=evidence.VERSION;self.refused(report)
+        report['allocation']=deepcopy(evidence.ALLOCATION_PRESETS['four-cpu-ci']);self.refused(report)
+
+    def test_partial_v2_failure_validates_observed_allocation_without_acceptance(self):
+        report=example(5);report['status']='FAIL';report['acceptance_eligible']=False
+        report['phases']=list(evidence.PHASES[:2]);report['failure']='RuntimeError'
+        self.assertIsNone(evidence.validate_report(report))
+        report['allocation']=deepcopy(evidence.ALLOCATION_PRESETS['four-cpu-ci']);self.refused(report)
+        del report['allocation'];self.assertIsNone(evidence.validate_report(report))
 
     def test_cleanup_and_required_schema_cannot_be_promoted_by_truthy_values(self):
         for field in ('cleanup_verified','acceptance_eligible'):

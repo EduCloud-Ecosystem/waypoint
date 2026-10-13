@@ -19,6 +19,7 @@ import requests
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from smoke import kernel, change, xsrf
 from hub.authority_client import ERRORS
+from authenticated_evidence import VERSION
 
 
 def command(*args, data=None, timeout=60):
@@ -75,7 +76,7 @@ def run(args):
     network, controller = name + '-control', name + '-authority'
     phases = []
     cleanup_authorized = False
-    report = {'version': 'waypoint-authenticated-runtime-rehearsal-v1', 'status': 'FAIL',
+    report = {'version': VERSION, 'status': 'FAIL',
         'scope': 'actual-local-docker-one-daemon-two-logical-workers-synthetic-learners', 'phases': phases}
     def phase(value):
         phases.append(value); print(value + ': PASS', flush=True)
@@ -152,7 +153,8 @@ def run(args):
             assert observed == current, 'built_image_source_mismatch'
             expected.update({str(source.relative_to(workspace)): current[target] for source, target in files.items()})
         report['code_sha256'] = expected
-        expected['rehearsal/verify_authenticated_runtime.py'] = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+        for path in ('rehearsal/verify_authenticated_runtime.py', 'rehearsal/authenticated_evidence.py'):
+            expected[path] = hashlib.sha256((workspace / path).read_bytes()).hexdigest()
         report['recipe_sha256'] = {path: hashlib.sha256((workspace / path).read_bytes()).hexdigest()
             for path in ('.dockerignore', 'hub/Dockerfile', 'controller.Dockerfile', 'course/Dockerfile')}
         ports = {suffix: port() for suffix in ('source', 'receiver', 'peer')}
@@ -187,6 +189,7 @@ def run(args):
         observed = helper('bootstrap', dict(name=name, network=network, edge_network=name + '-edge', ports=ports, password=password,
             course_image=course_image, hub_image=hub_image, controller_image=controller_image))
         report['host'] = {key: observed[key] for key in ('memory_bytes', 'cpu')}
+        report['allocation'] = observed['allocation']
         service(); helper('launch')
         for base in bases.values(): wait(lambda: requests.get(base + '/hub/login', timeout=3).status_code == 200, 60)
         try:
@@ -212,7 +215,7 @@ def run(args):
             host = learner['HostConfig']; mounts = learner['Mounts']
             assert host['ReadonlyRootfs'] and not host['Privileged'] and host['PidsLimit'] == 128
             assert host['Memory'] == host['MemorySwap'] == 512 * 1024**2
-            assert host['CpuQuota'] / host['CpuPeriod'] == 0.1
+            assert host['CpuQuota'] / host['CpuPeriod'] == report['allocation']['learner_cpu']
             assert host['RestartPolicy']['Name'] == 'no' and learner['Config']['User'] == '1000:1000'
             assert len(mounts) == 1 and mounts[0]['Destination'] == '/home/learner'
             assert len(learner['NetworkSettings']['Networks']) == 1
@@ -314,7 +317,7 @@ def run(args):
         if cleanup_authorized:
             cleanup_failed = False
             if report['status'] != 'PASS':
-                try: print('runtime diagnostic: ' + json.dumps(helper('runtime-status'), sort_keys=True), flush=True)
+                try: print('failure diagnostic: ' + json.dumps(helper('failure-status'), sort_keys=True), flush=True)
                 except Exception: pass
                 if args.diagnostic_pause:
                     print('diagnostic window active', flush=True)

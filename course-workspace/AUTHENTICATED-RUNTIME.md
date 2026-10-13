@@ -79,11 +79,17 @@ Use a disposable local Docker environment with at least 6,656 MiB and four CPUs
 available to the daemon. Static namespace reservations include all three Hubs
 and their possible learner slots, including the standby receiver. The control
 plane uses at most 512 MiB and 0.6 CPU; the remaining reserve covers host overhead.
-Each synthetic learner gets 512 MiB and 0.1 CPU; each Hub gets 1,024 MiB
-and one CPU. The three namespaces reserve 3.3 CPUs, with 0.7 more reserved
-for the control plane (0.6 CPU) and host overhead. A measured cold notebook
-startup under this allocation took about 100 seconds. These limits demonstrate
-enforcement, not class capacity or interactive performance.
+Each synthetic learner gets 512 MiB; each Hub gets 1,024 MiB and one CPU.
+The fixture selects a fixed allocation from the daemon's freshly verified CPU
+count. With four CPUs (the disposable CI runner), each learner gets 0.1 CPU;
+the three namespaces reserve 3.3 CPUs and the control/host reserve is 0.7 CPU.
+With at least five CPUs, each learner gets 0.25 CPU; the three namespaces reserve
+3.75 CPUs and the control/host reserve is 0.75 CPU, totaling 4.5 CPUs. Memory
+requirements remain 6,656 MiB. These fixture allocations demonstrate enforcement;
+they do not establish class capacity or interactive performance. Runtime defaults
+outside this disposable fixture are unchanged. The larger local allocation is
+a controlled experiment; earlier restart failures do not establish CPU shortage
+as their cause.
 
 ```sh
 python -m pip install -r course-workspace/requirements-test.txt
@@ -98,10 +104,16 @@ python course-workspace/rehearsal/verify_authenticated_runtime.py \
 
 Run from a clean reviewed checkout. The harness refuses built Hub/controller
 modules whose bytes differ from the checkout and records immutable executed
-image IDs, source revision, code/recipe hashes, controls, and verified cleanup.
+image IDs, source revision, all fifteen executed source hashes, recipe hashes,
+host capacity, the selected allocation, controls, and verified cleanup. Version
+2 reports require the allocation; historical version 1 reports retain their
+separate schema and cannot stand in for current acceptance.
 `--allow-dirty` is for development diagnostics only. Generated certificates,
 passwords, Hub tokens, private plans, and raw container logs are excluded from
-public evidence. Cleanup selects only this invocation's names and labels;
+public evidence. On failure, bounded diagnostics contain only fixed reason
+enums, counts, startup stages and learner process state. Raw logs are read only
+in memory and never printed or copied to the evidence packet. Cleanup selects
+only this invocation's names and labels;
 course and Hub images are retained. No real learner data or external provider
 calls are involved. The dedicated GitHub workflow repeats this on disposable
 Linux infrastructure without deployment credentials.

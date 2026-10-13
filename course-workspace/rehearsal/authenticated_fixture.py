@@ -13,7 +13,7 @@ import uuid
 
 from authority_access import ReplayStore
 from authority_test_pki import TestPKI
-from hub.authority_client import AuthorityClient, AuthorityError, VERSION
+from hub.authority_client import AuthorityClient, AuthorityError, VERSION, ERRORS
 from ownership_contract import digest
 from runtime_authority import bootstrap, read_record, open_directory
 
@@ -233,24 +233,34 @@ def cleanup_permissions(root, client=None):
     finally: os.close(root_fd)
 
 
+def course_allocation(cpu):
+    if type(cpu) is not int or cpu < 4: raise ValueError('fixture_cpu_capacity_invalid')
+    if cpu >= 5:
+        return {'name': 'five-cpu-local', 'learner_cpu': 0.25, 'hub_cpu': 1.0, 'reserved_cpu': 4.5, 'minimum_cpu': 5}
+    return {'name': 'four-cpu-ci', 'learner_cpu': 0.1, 'hub_cpu': 1.0, 'reserved_cpu': 4.0, 'minimum_cpu': 4}
+
+
 def initialize(root, request):
     import docker
     capture_cleanup_owner(root, request['name'])
     client = docker.DockerClient(base_url='unix:///var/run/docker.sock', version='auto')
     info = client.info()
+    allocation = course_allocation(info['NCPU'])
+    course_cpu = allocation['hub_cpu'] + allocation['learner_cpu']
+    reserve_cpu = allocation['reserved_cpu'] - 3 * course_cpu
     name = request['name']
     # SQLite and endpoint locks live on private Linux volumes; homes retain
     # their actual host bindings. Fresh child directories are bootstrapped once.
     (root / 'control').chmod(0o700)
     (root / 'backend').chmod(0o700)
     workers = {}
-    for worker, memory, cpu in [('worker-one', 3072, 2.2), ('worker-two', 1536, 1.1)]:
+    for worker, memory, cpu in [('worker-one', 3072, 2 * course_cpu), ('worker-two', 1536, course_cpu)]:
         workers[worker] = dict(worker_id=worker, provider_id=worker, boot_id=uuid.uuid4().hex,
             policy_sha256=digest({'local': name, 'worker': worker}), memory_budget_mb=memory,
             capacity_memory_mb=memory, cpu_budget=cpu, capacity_cpu=cpu)
     courses = {worker: {} for worker in workers}
     resources = []
-    p = dict(active_limit=1, learner_memory_mb=512, learner_cpu=0.1, memory_mb=1536, cpu=1.1)
+    p = dict(active_limit=1, learner_memory_mb=512, learner_cpu=allocation['learner_cpu'], memory_mb=1536, cpu=course_cpu)
     for worker, course, suffix in [('worker-one', 'course-main', 'source'),
                                   ('worker-one', 'course-peer', 'peer'),
                                   ('worker-two', 'course-main', 'receiver')]:
@@ -274,7 +284,7 @@ def initialize(root, request):
         resources.append({'kind': 'volume', 'name': volume.name})
     config = dict(version='educloud-local-runtime-v1', authority_id='0' * 32,
         daemon_id=info['ID'], backend_directory=str(root / 'backend' / 'state'), host_reserve_mb=2048,
-        host_reserve_cpu=0.7, workers=workers, courses=courses,
+        host_reserve_cpu=round(reserve_cpu, 6), workers=workers, courses=courses,
         guardians={worker: dict(container_name=name + '-' + worker + '-guardian',
             image_id=request['controller_image'], heartbeat_seconds=10) for worker in workers})
     authority, backend, config = bootstrap(config, str(root / 'control' / 'authority'), client)
@@ -311,8 +321,8 @@ def initialize(root, request):
     write(root / 'service.json', dict(bind='0.0.0.0', port=8443, authority_directory=str(root / 'control' / 'authority'),
         replay_directory=str(root / 'control' / 'replay'), plan_directory=str(root / 'control' / 'plans'), certfile=str(cert),
         keyfile=str(key), ca_file=str(pki.ca_cert), acl_file=str(root / 'acl.json')))
-    write(root / 'fixture.json', dict(request=request, identities=identities, resources=resources))
-    return {'authority_id': authority.authority_id, 'daemon_id': info['ID'], 'memory_bytes': info['MemTotal'], 'cpu': info['NCPU']}
+    write(root / 'fixture.json', dict(request=request, allocation=allocation, identities=identities, resources=resources))
+    return {'authority_id': authority.authority_id, 'daemon_id': info['ID'], 'memory_bytes': info['MemTotal'], 'cpu': info['NCPU'], 'allocation': allocation}
 
 
 def launch(root):
@@ -325,8 +335,8 @@ def launch(root):
             credentials = root / suffix / 'credentials'
             env = dict(WORKSPACE_INSTANCE=item['instance'], WORKSPACE_IMAGE=item['image_id'],
                 WORKSPACE_AUTH_MODE='local-test', WORKSPACE_PUBLIC_URL='http://127.0.0.1:' + str(request['ports'][suffix]),
-                WORKSPACE_TEST_PASSWORD=request['password'], WORKSPACE_MEMORY_MB='512', WORKSPACE_CPU_LIMIT='0.1',
-                WORKSPACE_ACTIVE_LIMIT='1', WORKSPACE_IDLE_SECONDS='3600', WORKSPACE_MAX_AGE_SECONDS='7200',
+                WORKSPACE_TEST_PASSWORD=request['password'], WORKSPACE_MEMORY_MB=str(item['profile']['learner_memory_mb']),
+                WORKSPACE_CPU_LIMIT=str(item['profile']['learner_cpu']), WORKSPACE_ACTIVE_LIMIT=str(item['profile']['active_limit']), WORKSPACE_IDLE_SECONDS='3600', WORKSPACE_MAX_AGE_SECONDS='7200',
                 WORKSPACE_RUNTIME_MODE='authority-local', WORKSPACE_AUTHORITY_URL='https://authority.local.test:8443/v1/authority',
                 WORKSPACE_AUTHORITY_ID=config['authority_id'], WORKSPACE_AUTHORITY_WORKER_ID=worker,
                 WORKSPACE_AUTHORITY_COURSE_ID=course, WORKSPACE_AUTHORITY_CA=str(credentials / 'ca.crt'),
@@ -337,7 +347,7 @@ def launch(root):
                 environment=env, network=request['edge_network'], ports={'8000/tcp': ('127.0.0.1', request['ports'][suffix])},
                 volumes={str(credentials): {'bind': str(credentials), 'mode': 'ro'}, hubdata: {'bind': '/data', 'mode': 'rw'}},
                 labels={'educloud.workspace.instance': item['instance'], 'educloud.workspace.kind': 'hub'},
-                mem_limit=1024 * 1024**2, cpu_period=100000, cpu_quota=100000, restart_policy={'Name': 'no'})
+                mem_limit=1024 * 1024**2, cpu_period=100000, cpu_quota=int(fixture['allocation']['hub_cpu'] * 100000), restart_policy={'Name': 'no'})
             client.networks.get(request['network']).connect(hub)
             hub.start()
         identity = 'guardian-one' if worker == 'worker-one' else 'guardian-two'
@@ -351,6 +361,150 @@ def launch(root):
             labels={'educloud.runtime.authority': config['authority_id'], 'educloud.runtime.worker': worker, 'educloud.runtime.kind': 'guardian'},
             mem_limit=128 * 1024**2, cpu_period=100000, cpu_quota=10000, restart_policy={'Name': 'no'})
     return {'launched': True}
+
+
+DIAGNOSTIC_LIMIT = 256 * 1024
+SUPERVISOR_CODES = frozenset({'guardian_unavailable', 'guardian_stale_or_changed',
+    'guardian_container_unavailable', 'runtime_cached_epoch_invalid', 'runtime_container_policy_invalid', 'runtime_supervision_refused'})
+OBSERVATION_CODES = ERRORS | frozenset({'guardian_observation_invalid', 'guardian_unavailable',
+    'guardian_stale_or_changed', 'guardian_container_unavailable', 'runtime_cached_epoch_invalid', 'guardian_observation_failed'})
+AUTHORITY_FAILURES = ERRORS | frozenset({'fixture_service_refused', 'runtime_endpoint_enforcement_unavailable', 'authority_supervision_failed'})
+STAGES = {'ownership': 'checking ownership', 'environment': 'preparing environment',
+          'create': 'creating runtime', 'created': 'runtime created'}
+
+
+def _diagnostic_counts(raw, prefix, codes):
+    counts = {code: 0 for code in sorted(codes)}
+    for line in raw.splitlines():
+        position = line.find(prefix)
+        if position < 0: continue
+        code = line[position + len(prefix):].strip()
+        if code in counts: counts[code] = min(10000, counts[code] + 1)
+    return counts
+
+
+def _diagnostic_owned(container, name, image, labels):
+    container.reload()
+    actual = container.attrs
+    if (actual.get('Name') != '/' + name or actual.get('Image') != image
+            or {key: value for key, value in (actual.get('Config', {}).get('Labels') or {}).items()
+                if key.startswith('educloud.')} != labels):
+        raise ValueError('fixture_diagnostic_scope_invalid')
+
+
+def _diagnostic_logs(container):
+    stream = container.logs(stream=True, follow=False, tail=2000)
+    raw = bytearray(); truncated = False
+    try:
+        for chunks, chunk in enumerate(stream, 1):
+            if chunks > 16384:
+                truncated = True; break
+            if not isinstance(chunk, bytes): raise ValueError('fixture_diagnostic_log_invalid')
+            remaining = DIAGNOSTIC_LIMIT - len(raw)
+            raw.extend(chunk[:remaining])
+            if len(chunk) > remaining:
+                truncated = True; break
+    finally:
+        close = getattr(stream, 'close', None)
+        if close is not None: close()
+    return raw.decode('utf-8', errors='replace'), truncated
+
+
+def failure_status(root, client=None):
+    """Read-only bounded fixed counters; raw log lines never leave this helper."""
+    config = read_record(root / 'runtime.json'); fixture = read_record(root / 'fixture.json')
+    request = fixture['request']
+    name = request.get('name')
+    expected_courses = {'worker-one': {'course-main': 'source', 'course-peer': 'peer'}, 'worker-two': {'course-main': 'receiver'}}
+    if (not isinstance(name, str) or not re.fullmatch(r'wa[0-9a-f]{10}', name)
+            or set(config['courses']) != set(expected_courses) or set(config['guardians']) != set(expected_courses)):
+        raise ValueError('fixture_diagnostic_scope_invalid')
+    for worker, courses in expected_courses.items():
+        if set(config['courses'][worker]) != set(courses): raise ValueError('fixture_diagnostic_scope_invalid')
+        for course, suffix in courses.items():
+            item = config['courses'][worker][course]
+            if item['instance'] != name + '-' + suffix or item['hub_container'] != name + '-' + suffix + '-hub':
+                raise ValueError('fixture_diagnostic_scope_invalid')
+        if config['guardians'][worker]['container_name'] != name + '-' + worker + '-guardian':
+            raise ValueError('fixture_diagnostic_scope_invalid')
+    if client is None:
+        import docker
+        client = docker.DockerClient(base_url='unix:///var/run/docker.sock', version='auto', timeout=3)
+    result = {'version': 'educloud-authenticated-fixture-diagnostics-v1', 'authority_failure': 'none',
+        'supervisor': {'available': False, 'truncated': False, 'reason_counts': {code: 0 for code in sorted(SUPERVISOR_CODES)}},
+        'hubs': {}, 'guardians': {}, 'learners': {}}
+    try:
+        code = read_record(root / 'service-failure.json').get('failure')
+        result['authority_failure'] = code if code in AUTHORITY_FAILURES else 'unknown'
+    except FileNotFoundError: pass
+    except Exception: result['authority_failure'] = 'unavailable'
+    try:
+        fd = os.open(root / 'supervision.log', os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+        try:
+            info = os.fstat(fd)
+            if (not stat.S_ISREG(info.st_mode) or info.st_nlink != 1 or info.st_uid != os.geteuid()
+                    or stat.S_IMODE(info.st_mode) != 0o600): raise ValueError('fixture_diagnostic_log_invalid')
+            start = max(0, info.st_size - DIAGNOSTIC_LIMIT)
+            os.lseek(fd, start, os.SEEK_SET); raw = os.read(fd, DIAGNOSTIC_LIMIT).decode('utf-8', errors='replace')
+            if start: raw = raw.partition('\n')[2]
+            result['supervisor'] = {'available': True, 'truncated': bool(start),
+                'reason_counts': _diagnostic_counts(raw, 'Runtime supervision stopping owned learners: ', SUPERVISOR_CODES)}
+        finally: os.close(fd)
+    except Exception: pass
+    for worker, courses in config['courses'].items():
+        for course, item in courses.items():
+            suffix = item['instance'].rsplit('-', 1)[1]
+            hub = {'available': False, 'truncated': False, 'startup_stage_counts': {key: 0 for key in STAGES},
+                'authority_error_counts': {code: 0 for code in sorted(ERRORS)}, 'http_startup_timeout_count': 0}
+            try:
+                container = client.containers.get(item['hub_container'])
+                _diagnostic_owned(container, item['hub_container'], request['hub_image'],
+                    {'educloud.workspace.instance': item['instance'], 'educloud.workspace.kind': 'hub'})
+                raw, truncated = _diagnostic_logs(container)
+                hub.update(available=True, truncated=truncated)
+                hub['startup_stage_counts'] = {key: min(10000, raw.count('Authority notebook startup: ' + value)) for key, value in STAGES.items()}
+                hub['authority_error_counts'] = _diagnostic_counts(raw, 'AuthorityError: ', ERRORS)
+                hub['http_startup_timeout_count'] = min(10000, sum('server never showed up at ' in line and '. Giving up.' in line for line in raw.splitlines()))
+            except Exception: pass
+            result['hubs'][suffix] = hub
+            learners = {'available': False, 'states': []}
+            try:
+                values = client.containers.list(all=True, filters={'label': [
+                    'educloud.workspace.instance=' + item['instance'], 'educloud.workspace.kind=learner']})
+                if len(values) > len(item['subjects']): raise ValueError('fixture_diagnostic_bounds')
+                states = []
+                for container in values:
+                    container.reload(); labels = container.attrs['Config'].get('Labels') or {}
+                    key = labels.get('educloud.runtime.subject'); epoch = labels.get('educloud.runtime.epoch')
+                    if (key not in {hashlib.sha256(subject.encode()).hexdigest()[:24] for subject in item['subjects']}
+                            or not isinstance(epoch, str) or not epoch.isdecimal() or not 1 <= int(epoch) <= 10**9
+                            or str(int(epoch)) != epoch): raise ValueError('fixture_diagnostic_scope_invalid')
+                    _diagnostic_owned(container, item['instance'] + '-learner-' + key, item['image_id'],
+                        {'educloud.workspace.instance': item['instance'], 'educloud.workspace.kind': 'learner',
+                         'educloud.runtime.authority': config['authority_id'], 'educloud.runtime.worker': worker,
+                         'educloud.runtime.course': course, 'educloud.runtime.subject': key, 'educloud.runtime.epoch': epoch})
+                    state = container.attrs['State']
+                    if (type(state['Running']) is not bool or type(state['OOMKilled']) is not bool
+                            or type(state['ExitCode']) is not int or not -2**31 <= state['ExitCode'] < 2**31):
+                        raise ValueError('fixture_diagnostic_state_invalid')
+                    states.append({key: state[key] for key in ('Running', 'OOMKilled', 'ExitCode')})
+                learners = {'available': True, 'states': states}
+            except Exception: pass
+            result['learners'][suffix] = learners
+        guardian = {'available': False, 'truncated': False, 'observation_reason_counts': {code: 0 for code in sorted(OBSERVATION_CODES)},
+            'snapshot_busy_count': 0, 'stop_busy_count': 0}
+        try:
+            item = config['guardians'][worker]; container = client.containers.get(item['container_name'])
+            _diagnostic_owned(container, item['container_name'], item['image_id'],
+                {'educloud.runtime.authority': config['authority_id'], 'educloud.runtime.worker': worker, 'educloud.runtime.kind': 'guardian'})
+            raw, truncated = _diagnostic_logs(container)
+            guardian.update(available=True, truncated=truncated)
+            guardian['observation_reason_counts'] = _diagnostic_counts(raw, 'Guardian observation refused: ', OBSERVATION_CODES)
+            guardian['snapshot_busy_count'] = min(10000, raw.count('Guardian snapshot deferred: endpoint_busy'))
+            guardian['stop_busy_count'] = min(10000, raw.count('Guardian stop deferred: endpoint_busy'))
+        except Exception: pass
+        result['guardians'][worker] = guardian
+    return result
 
 
 def main():
@@ -398,6 +552,8 @@ def main():
         return
     elif action == 'service-status':
         result = read_record(root / 'service-failure.json') if (root / 'service-failure.json').exists() else {'failure': None}
+    elif action == 'failure-status':
+        result = failure_status(root)
     elif action == 'runtime-status':
         result = read_record(root / 'runtime-failure.json') if (root / 'runtime-failure.json').exists() else {'code': None}
     elif action == 'guardian-status':
