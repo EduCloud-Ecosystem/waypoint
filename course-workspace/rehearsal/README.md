@@ -157,3 +157,17 @@ Its bridge-only relay is disposable fixture routing, not a hosted service. Only
 bounded `CUTOVER-PASS.json` is uploaded after all controls and verified cleanup;
 private plans, full receipts, environments, authority and plaintext backups stay
 excluded. Older worker controls refuse the new lineage records.
+
+## Logical-worker ownership contract rehearsal
+
+The independent [ownership contract](../CROSS-WORKER-CONTRACT.md) uses two logical
+workers, separate private fixture ledgers and owned supervised service processes
+on one machine. It checks persistent course-specific fencing and ownership CAS,
+including interruption, source-client restart refusal and unchanged peer work.
+This is a standalone protocol prototype: real Waypoint enrollment, existing Hub
+runtime enforcement, authenticated remote transport, provider integration and
+actual two-host isolation remain separate acceptance work. Synthetic backup fields
+exercise the provenance contract; they do not prove encrypted/off-host recovery.
+Only bounded `OWNERSHIP-CONTRACT-PASS.json` may be uploaded after every required
+control and exact-owned cleanup; private authority, plans, ledgers and raw logs
+are excluded.

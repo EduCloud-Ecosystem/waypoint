@@ -63,8 +63,11 @@ The [reviewed replacement cutover](course-workspace/COURSE-CUTOVER.md) adds
 stopped same-worker identity transfer, source fencing, interruption recovery and
 pre-use rollback. It refuses divergent retained work and keeps peer courses live.
 All operator controls must be current; cross-worker fencing remains separate.
-Next: operator testing of the complete lifecycle, then funded hosted acceptance
-and a separately reviewed cross-worker transfer/fencing design. Do not expose
+A [standalone cross-worker ownership/fencing contract](course-workspace/CROSS-WORKER-CONTRACT.md)
+is the next executable protocol test, using two logical workers and supervised
+synthetic processes. Production transport, runtime admission and provider fencing
+remain separate adapter work. Next: independent operator testing, then funded
+hosted acceptance and accepted cross-worker enforcement. Do not expose
 an unrestricted self-service Docker
 control plane or presume that a pseudonym is an authenticated identity.
 

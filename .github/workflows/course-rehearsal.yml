@@ -231,3 +231,32 @@ jobs:
           path: output/cutover-evidence/CUTOVER-PASS.json
           if-no-files-found: error
           retention-days: 7
+
+  ownership-contract:
+    name: Logical-worker ownership and fencing contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify owned-process controls and bounded publication
+        run: python -m unittest discover -s course-workspace/rehearsal -p 'test_ownership_contract_rehearsal.py' -v
+      - name: Exercise the standalone two-logical-worker contract
+        run: python course-workspace/rehearsal/verify_ownership_contract.py --output /tmp/educloud-ownership-contract
+      - name: Publish bounded contract evidence
+        if: success()
+        run: |
+          mkdir -p output/ownership-contract-evidence
+          cp /tmp/educloud-ownership-contract/OWNERSHIP-CONTRACT-PASS.json output/ownership-contract-evidence/
+          chmod 644 output/ownership-contract-evidence/OWNERSHIP-CONTRACT-PASS.json
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: synthetic-ownership-contract-evidence
+          path: output/ownership-contract-evidence/OWNERSHIP-CONTRACT-PASS.json
+          if-no-files-found: error
+          retention-days: 7
