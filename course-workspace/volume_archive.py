@@ -7,7 +7,8 @@ import tarfile
 
 def ordinary_permissions(member):
     permissions = stat.S_IMODE(member.mode)
-    if permissions & ~0o777:
+    allowed = 0o777 | (stat.S_ISVTX if member.isdir() else 0)
+    if permissions & ~allowed:
         raise ValueError('archive special permission bits are unsupported')
     return member.replace(mode=permissions, deep=False)
 

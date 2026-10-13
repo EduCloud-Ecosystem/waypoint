@@ -32,7 +32,8 @@ symlink targets must match; special entries and unstable inspection refuse. The
 backup's snapshot ID alone does not prove that source work is still current.
 Inspections are bounded to 200,000 entries, 100 GiB of retained regular-file bytes
 and 2 GiB per file. Archive restoration preserves ordinary permissions and safe
-literal links; special permission bits and escaping links are refused. Orphan/missing registered homes or owned Docker home volumes
+literal links and directory sticky bits; privilege-changing permissions,
+non-directory sticky bits and escaping links are refused. Orphan/missing registered homes or owned Docker home volumes
 refuse; they cannot be silently omitted from preservation proof.
 Changes to resource limits use the separate [resource workflow](RESOURCE-CHANGES.md)
 after cutover.

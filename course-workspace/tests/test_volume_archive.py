@@ -129,6 +129,29 @@ class VolumeArchiveTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,'special permission'):
                 archive.pack(original,source,os.geteuid(),os.getegid())
 
+    def test_actual_jupyter_connection_directory_sticky_bit_survives(self):
+        from jupyter_client.connect import write_connection_file
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp); original=root/'source'; original.mkdir(mode=0o700)
+            runtime=original/'runtime'; runtime.mkdir(mode=0o700)
+            write_connection_file(str(runtime/'kernel-test.json'))
+            self.assertEqual(runtime.stat().st_mode & 0o7777,0o1700)
+            target=root/'restored'; target.mkdir(); source=root/'actual.tar.gz'
+            archive.pack(original,source,os.geteuid(),os.getegid())
+            archive.unpack(target,source,os.geteuid(),os.getegid())
+            self.assertEqual((target/'runtime').stat().st_mode & 0o7777,0o1700)
+            self.assertEqual((target/'runtime/kernel-test.json').read_bytes(),(runtime/'kernel-test.json').read_bytes())
+            self.assertEqual((target/'runtime/kernel-test.json').stat().st_mode & 0o7777,0o600)
+
+    def test_directory_sticky_allowed_but_privilege_bits_refuse(self):
+        for mode in (0o1700,0o1777):
+            member,_=self.directory('runtime',mode)
+            self.assertEqual(archive.ordinary_permissions(member).mode,mode)
+        for mode in (0o2700,0o4700,0o3700,0o5700):
+            member,_=self.directory('runtime',mode)
+            with self.assertRaisesRegex(ValueError,'special permission'):
+                archive.ordinary_permissions(member)
+
     def test_existing_or_symlink_destination_refuses_before_ownership_changes(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp); destination = root / 'home'; destination.mkdir()

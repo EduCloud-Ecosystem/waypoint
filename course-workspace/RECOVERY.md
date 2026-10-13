@@ -280,8 +280,9 @@ source approval, pending journals or replacement fences.
 
 The network-disabled helper applies Python's data-filter path/link/special-file
 protections before restoring ordinary rwx permissions and contained literal link
-targets. Private and group-writable directory/file modes are preserved. Setuid,
-setgid and sticky permission bits are unsupported and refused explicitly.
+targets. Private and group-writable directory/file modes and directory sticky bits
+are preserved, including Jupyter connection-file protection. Setuid/setgid bits
+and sticky bits on non-directory entries are unsupported and refused explicitly.
 Ownership stays normalized to the established learner/Hub owner; source ownership
 must already match for exact cutover equality. Only a verified empty new volume
 root is temporarily owned by the helper so metadata can be restored without
