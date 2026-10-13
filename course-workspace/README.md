@@ -15,6 +15,9 @@ The [resource change guide](RESOURCE-CHANGES.md) adds reviewed RAM/CPU and activ
 learner cap changes with conservative reservations, resumable apply and private history.
 The [replacement cutover guide](COURSE-CUTOVER.md) covers same-worker reviewed
 identity transfer, durable source fencing, interrupted resume and safe rollback.
+The [cross-worker contract prototype](CROSS-WORKER-CONTRACT.md) is a separate
+standalone ownership/fencing test; production activation and provider adapters
+remain acceptance work.
 
 The continuity baseline covers one course; shared allocation and a disposable
 two-course rehearsal extend it on the same worker. It uses JupyterHub and
