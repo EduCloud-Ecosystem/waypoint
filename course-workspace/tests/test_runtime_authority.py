@@ -579,6 +579,49 @@ class RuntimeTests(unittest.TestCase):
         self.assertNotIn(first['server_id'], f.client.containers.items)
         self.assertNotIn(('worker-one', 'course-main'), f.dispatcher.busy_since)
 
+    def test_watchdog_bounded_fairness_acquires_actual_periodic_flock_gap(self):
+        f = self.fixture; source = f.spawn(); peer = f.spawn(course='course-peer')
+        clock = [0.0]; f.dispatcher.monotonic = lambda: clock[0]
+        stop = threading.Event(); held = threading.Event(); windows = []
+        def holder():
+            while not stop.is_set():
+                with f.backend.locks([('worker-one', 'course-main')]):
+                    held.set(); stop.wait(0.3)
+                stop.wait(0.15)
+        thread = threading.Thread(target=holder); thread.start()
+        real = f.dispatcher._supervise_endpoint
+        def supervise(worker, course, *, wait_seconds=0.1):
+            if (worker, course) == ('worker-one', 'course-main'): windows.append(wait_seconds)
+            return real(worker, course, wait_seconds=wait_seconds)
+        try:
+            self.assertTrue(held.wait(2))
+            with patch.object(f.dispatcher, '_supervise_endpoint', side_effect=supervise):
+                f.dispatcher.supervision_tick()
+                self.assertIn(('worker-one', 'course-main'), f.dispatcher.busy_since)
+                clock[0] = 0.6; f.dispatcher.supervision_tick()
+            self.assertEqual(windows, [0.1, 1])
+            self.assertNotIn(('worker-one', 'course-main'), f.dispatcher.busy_since)
+            self.assertTrue(f.client.containers.get(source['server_id']).attrs['State']['Running'])
+            self.assertTrue(f.client.containers.get(peer['server_id']).attrs['State']['Running'])
+            self.assertEqual(f.backend.require_guardian('worker-one', 'course-main', 1)['checked_at'], 100)
+        finally: stop.set(); thread.join(5)
+        self.assertFalse(thread.is_alive())
+
+    def test_watchdog_acquisition_window_never_extends_remaining_inability_limit(self):
+        f = self.fixture; f.dispatcher.monotonic = lambda: 9.75
+        f.dispatcher.busy_since[('worker-one', 'course-main')] = 0
+        windows = []
+        def supervise(worker, course, *, wait_seconds=0.1):
+            if (worker, course) == ('worker-one', 'course-main'):
+                windows.append(wait_seconds); raise RuntimeRefusal('runtime_endpoint_lock_busy')
+        with patch.object(f.dispatcher, '_supervise_endpoint', side_effect=supervise):
+            f.dispatcher.supervision_tick()
+            self.assertEqual(windows, [0.25])
+            self.assertEqual(f.dispatcher.busy_since[('worker-one', 'course-main')], 0)
+            f.dispatcher.monotonic = lambda: 10
+            self.refuses('runtime_endpoint_enforcement_unavailable', f.dispatcher.supervision_tick)
+            self.assertEqual(windows, [0.25, 0.1])
+
     def test_supervisor_warning_is_fixed_only_when_owned_learners_exist(self):
         f = self.fixture
         with self.assertNoLogs('runtime_authority', level='WARNING'): f.dispatcher.supervision_tick()

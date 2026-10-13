@@ -893,8 +893,14 @@ class RuntimeDispatcher:
         for worker, courses in self.backend.config['courses'].items():
             for course in courses:
                 endpoint = (worker, course)
+                first = self.busy_since.get(endpoint)
+                age = self.monotonic() - first if first is not None else 0
+                # Brief probes stay responsive initially. Repeated contention
+                # gets a bounded gap-acquisition window without extending the
+                # existing continuous-inability limit or renewing any grant.
+                wait = min(1, 10 - age) if 0.5 <= age < 10 else 0.1
                 try:
-                    self._supervise_endpoint(worker, course)
+                    self._supervise_endpoint(worker, course, wait_seconds=wait)
                 except RuntimeRefusal as error:
                     if error.code != 'runtime_endpoint_lock_busy': raise
                     first = self.busy_since.setdefault(endpoint, self.monotonic())
@@ -903,8 +909,8 @@ class RuntimeDispatcher:
                 self.busy_since.pop(endpoint, None)
         if overdue: refuse('runtime_endpoint_enforcement_unavailable')
 
-    def _supervise_endpoint(self, worker, course):
-        with self.backend.locks([(worker, course)], wait_seconds=0.1):
+    def _supervise_endpoint(self, worker, course, *, wait_seconds=0.1):
+        with self.backend.locks([(worker, course)], wait_seconds=wait_seconds):
             valid = False
             reason = 'runtime_supervision_refused'
             try:

@@ -59,9 +59,12 @@ overrun by a bounded in-flight request. These are test readiness limits, not
 authorization leases or performance guarantees.
 The initial Guardian snapshot waits at most one second for endpoint exclusion;
 busy cycles retry after 0.1 seconds without issuing a heartbeat. Pending stops
-and watchdog checks retain 0.1-second attempts and never renew authorization.
-Ten seconds of continuous watchdog inability to obtain exclusion closes the
-authority service. The guardian keeps exact pending stops and retries when
+retain 0.1-second attempts. Watchdog checks start with that quick attempt; after
+repeated contention they wait up to one second for an available gap, clipped to
+the remaining ten-second failure window. Neither path renews authorization.
+A ten-second continuous-inability threshold, evaluated on watchdog cycles,
+closes the authority service; this is not a strict wall-clock stop deadline.
+The guardian keeps exact pending stops and retries when
 exclusion becomes available; it issues no heartbeat while those stops are pending.
 This does not guarantee recovery from permanently held locks or loss of both
 control paths.
