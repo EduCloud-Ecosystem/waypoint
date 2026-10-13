@@ -16,7 +16,7 @@ import subprocess
 import upgrade as u
 from maintenance import write, sync_directory, home_lock, digest
 from pilot import locked
-from deployment import preflight, require_no_resource_amendment
+from deployment import preflight, require_no_resource_amendment, require_no_cutover
 from recovery import backup_repository_locked, restic, TAG, RETIRED_TAG
 
 VERSION = 'educloud-retirement-v1'
@@ -59,6 +59,7 @@ def tool_hash():
 def environment(directory):
     """Read retained configuration for retirement resume/export, never activation."""
     u.safe_directory(directory)
+    require_no_cutover(directory)
     require_no_resource_amendment(directory)
     if (directory / 'pilot.env').exists() or (directory / 'pilot.env').is_symlink():
         raise RetirementError('institutional_course_required')
@@ -134,6 +135,7 @@ def read_retirement(directory):
 
 
 def no_conflicts(directory, root, allow_retirement=False):
+    require_no_cutover(directory)
     require_no_resource_amendment(directory)
     paths = [directory / u.PENDING, directory / u.MAINTENANCE_PENDING, root / u.ROOT_PENDING]
     if not allow_retirement:

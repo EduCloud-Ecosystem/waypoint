@@ -18,14 +18,14 @@ from urllib.parse import urlsplit
 from backup import digest, docker, restore, validate_manifest
 from checkpoint import checkpoint
 from pilot import ROOT, initialize, locked
-from deployment import settings, read_environment, validate_institutional, require_no_resource_amendment
+from deployment import settings, read_environment, validate_institutional, require_no_resource_amendment, require_no_cutover
 
 TAG = 'educloud-workspace-v1'
 RETIRED_TAG = 'educloud-retired-v1'
 BASE_CODE = ('pilot.py', 'checkpoint.py', 'backup.py', 'volume_archive.py',
         'recovery.py', 'compose.yaml')
 CODE = BASE_CODE + ('quota-compose.yaml', 'homes.py', 'deployment.py', 'hub/settings.py')
-CURRENT_CODE = CODE + ('allocation.py', 'resource_amendment.py')
+CURRENT_CODE = CODE + ('allocation.py', 'resource_amendment.py', 'cutover.py')
 
 
 def private_json(path, data):
@@ -134,6 +134,7 @@ def copy_source_manifest(directory, destination):
 
 def copy_worker_allocation(directory, destination):
     """Historical course binding only; never copy worker authority or shared leases."""
+    require_no_cutover(directory)
     require_no_resource_amendment(directory)
     required = directory / '.worker-allocation-required.json'
     if required.exists() or required.is_symlink():
@@ -153,6 +154,7 @@ def copy_worker_allocation(directory, destination):
 
 def current_resource_amendment_receipt(directory):
     """Validate local decision history before any recovery provider effects."""
+    require_no_cutover(directory)
     require_no_resource_amendment(directory)
     path = directory / '.resource-amendment-receipt.json'
     env = settings(directory)
@@ -178,10 +180,40 @@ def copy_resource_amendment_receipt(directory, destination):
     return True
 
 
+def current_cutover_receipt(directory):
+    """Validate active local transfer history before recovery provider effects."""
+    require_no_cutover(directory)
+    env = settings(directory)
+    path = directory / '.cutover-receipt.json'
+    if not path.exists() and not path.is_symlink() and not env.get('WORKSPACE_CUTOVER_REVISION'):
+        return None
+    import allocation
+    import cutover
+    record = cutover.completed_receipt(directory)
+    if record['role'] != 'ACTIVE' or record['active_sha256'] != allocation.path_digest(directory):
+        raise ValueError('replaced source cannot create a new active-course backup')
+    # The receipt is history. New learner work and later resource changes do not
+    # rewrite it; current allocation separately proves the active enrollment.
+    with allocation.worker_lock():
+        if allocation.current(directory, env) is None:
+            raise ValueError('current managed enrollment is required for cutover history')
+    return record
+
+
+def copy_cutover_receipt(directory, destination):
+    record = current_cutover_receipt(directory)
+    if record is None:
+        return False
+    private_json(destination / 'cutover-receipt.json', record)
+    return True
+
+
 def package(directory, env, bundle, *, protected=False):
+    require_no_cutover(directory)
     require_no_resource_amendment(directory)
     bundle.mkdir(mode=0o700)
     copy_resource_amendment_receipt(directory, bundle)
+    copy_cutover_receipt(directory, bundle)
     if env.get('WORKSPACE_HOME_ROOT'):
         from homes import inspect, registry
         root = Path(env['WORKSPACE_HOME_ROOT'])
@@ -280,7 +312,14 @@ def validate_bundle(bundle):
         if digest(bundle / name) != checksum:
             raise ValueError('bundle checksum differs')
     env = json.loads((bundle / 'environment.json').read_text())
+    if 'cutover-receipt.json' in actual:
+        if not {'runtime/cutover.py', 'runtime/resource_amendment.py'}.issubset(actual):
+            raise ValueError('cutover history recovery runtime is incomplete')
+        import cutover
+        cutover.validate_receipt(json.loads((bundle / 'cutover-receipt.json').read_text()))
     if 'resource-amendment-receipt.json' in actual:
+        if 'runtime/resource_amendment.py' not in actual:
+            raise ValueError('resource history recovery runtime is incomplete')
         import resource_amendment
         resource_amendment.validate_receipt(json.loads((bundle / 'resource-amendment-receipt.json').read_text()))
     if env.get('WORKSPACE_HOME_ROOT') and not {'runtime/homes.py', 'runtime/quota-compose.yaml'}.issubset(actual):
@@ -341,6 +380,7 @@ def backup_repository_locked(directory, cfg, apply_retention=False, *, quiet=Fal
         raise ValueError('unsupported recovery protection tags')
     env = settings(directory)
     current_resource_amendment_receipt(directory)
+    current_cutover_receipt(directory)
     protected = bool(extra_tags) or (directory / '.course-retired.json').exists() or (directory / '.course-retired.json').is_symlink()
     try:
         restic(cfg, 'cat', 'config')  # Credentials/repository must work before downtime.
@@ -409,6 +449,7 @@ def restore_repository(cfg, snapshot, destination, port, home_root=None, current
             # This is a new namespace, not an approved continuation of the source.
             # Keep its completed receipt as source history only.
             env.pop('WORKSPACE_RESOURCE_REVISION', None)
+            env.pop('WORKSPACE_CUTOVER_REVISION', None)
             instance = 'recovered-' + uuid.uuid4().hex[:12]
             envfile = destination / '.env'
         else:
@@ -478,6 +519,9 @@ def restore_repository(cfg, snapshot, destination, port, home_root=None, current
         if (bundle / 'resource-amendment-receipt.json').exists():
             shutil.copyfile(bundle / 'resource-amendment-receipt.json', destination / 'source-resource-amendment-receipt.json')
             (destination / 'source-resource-amendment-receipt.json').chmod(0o600)
+        if (bundle / 'cutover-receipt.json').exists():
+            shutil.copyfile(bundle / 'cutover-receipt.json', destination / 'source-cutover-receipt.json')
+            (destination / 'source-cutover-receipt.json').chmod(0o600)
         private_json(destination / 'recovery-source.json', {'snapshot_id': snapshot, 'source_instance': meta['instance'],
                       'fresh_hub_sessions': institutional, 'current_roster_required': institutional})
     if retired_snapshot:

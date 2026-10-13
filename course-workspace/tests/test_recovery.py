@@ -93,10 +93,41 @@ class RecoveryTests(unittest.TestCase):
                 meta['retirement_protected']=False
                 # The new amendment CLI is optional historical runtime context;
                 # old managed v4 snapshots did not contain it.
+                for module in ('resource_amendment.py', 'cutover.py'):
+                    optional=root/'runtime'/module; raw=optional.read_bytes()
+                    optional.unlink(); save()
+                    self.assertEqual(validate_bundle(root)[0]['version'],4)
+                    optional.write_bytes(raw); save()
+                import cutover
+                key='a'*64
+                receipt={'version':cutover.VERSION,'status':'COMPLETE','role':'ACTIVE',
+                         'endpoint_sha256':key,'counterpart_sha256':'b'*64,'active_sha256':key,
+                         'claim_sha256':'c'*64,'tree_sha256':'d'*64,'plan_sha256':'e'*64,'revision':'f'*32}
+                import allocation
+                receipt['digest']=allocation.digest(receipt)
+                (root/'cutover-receipt.json').write_text(json.dumps(receipt)); save()
+                self.assertEqual(validate_bundle(root)[0]['version'],4)
+                for module in ('cutover.py','resource_amendment.py'):
+                    optional=root/'runtime'/module; raw=optional.read_bytes()
+                    optional.unlink(); save()
+                    with self.assertRaisesRegex(ValueError,'cutover history recovery runtime is incomplete'):
+                        validate_bundle(root)
+                    optional.write_bytes(raw); save()
+                (root/'cutover-receipt.json').unlink(); save()
+                import resource_amendment
+                old_profile={'active_limit':1,'learner_memory_mb':512,'learner_cpu':0.25,'memory_mb':1536,'cpu':1.25}
+                new_profile=dict(old_profile,active_limit=2,memory_mb=2048,cpu=1.5)
+                receipt={'version':resource_amendment.VERSION,'status':'COMPLETE','plan_sha256':'a'*64,
+                         'directory_sha256':'b'*64,'claim_sha256':'c'*64,'env_sha256':'d'*64,
+                         'old':old_profile,'new':new_profile,'peak':new_profile,'revision':'e'*32}
+                receipt['digest']=allocation.digest(receipt)
+                (root/'resource-amendment-receipt.json').write_text(json.dumps(receipt)); save()
+                self.assertEqual(validate_bundle(root)[0]['version'],4)
                 optional=root/'runtime/resource_amendment.py'; raw=optional.read_bytes()
                 optional.unlink(); save()
-                self.assertEqual(validate_bundle(root)[0]['version'],4)
-                optional.write_bytes(raw); save()
+                with self.assertRaisesRegex(ValueError,'resource history recovery runtime is incomplete'):
+                    validate_bundle(root)
+                optional.write_bytes(raw); (root/'resource-amendment-receipt.json').unlink(); save()
                 for name in ('worker-allocation.json','runtime/allocation.py'):
                     path=root/name; raw=path.read_bytes(); path.unlink(); save()
                     with self.assertRaisesRegex(ValueError,'incomplete recovery bundle'): validate_bundle(root)

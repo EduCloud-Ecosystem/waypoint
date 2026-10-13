@@ -17,6 +17,10 @@ Desktop trials remain a separate single-course test path.
 Use [resource changes](RESOURCE-CHANGES.md) for RAM/CPU or active learner caps;
 stop, preview a private plan, apply it and explicitly restart after verification.
 An interrupted resource change blocks other target lifecycle operations until resumed.
+Use [replacement cutover](COURSE-CUTOVER.md) to transfer an existing course identity
+to a closed restored namespace on the same worker. Update every worker control
+tool first, stop both participants, review and apply the private plan, then
+explicitly switch routing/start the accepted receiver. Peer courses remain live.
 
 1. Render the worker with an immutable reviewed Waypoint release:
 

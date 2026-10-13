@@ -113,6 +113,10 @@ def wait_ready(env):
 
 
 def start(directory, env, build=True):
+    for name in ('.cutover-pending.json', '.course-replaced.json'):
+        path = directory / name
+        if path.exists() or path.is_symlink():
+            raise ValueError('replacement cutover blocks startup; use the current reviewed workflow')
     pending = directory / '.resource-amendment-pending.json'
     if pending.exists() or pending.is_symlink():
         raise ValueError('resource amendment is incomplete; resume it before startup')
@@ -127,6 +131,10 @@ def start(directory, env, build=True):
 
 
 def _start(directory, env, build=True):
+    for name in ('.cutover-pending.json', '.course-replaced.json'):
+        path = directory / name
+        if path.exists() or path.is_symlink():
+            raise ValueError('replacement cutover blocks startup; use the current reviewed workflow')
     pending = directory / '.resource-amendment-pending.json'
     if pending.exists() or pending.is_symlink():
         raise ValueError('resource amendment is incomplete; resume it before startup')

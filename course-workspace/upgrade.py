@@ -20,7 +20,7 @@ import sys
 from functools import wraps
 
 from course_manifest import _read_regular, _unique_object, _image
-from deployment import preflight, docker_json, validate_institutional, require_active_course, require_no_resource_amendment
+from deployment import preflight, docker_json, validate_institutional, require_active_course, require_no_resource_amendment, require_no_cutover
 from maintenance import (safe_directory, environment as maintenance_environment, home_lock, snapshot, stopped,
                          write, sync_directory, ROOT_PENDING, PENDING as MAINTENANCE_PENDING, digest)
 from pilot import locked
@@ -86,12 +86,13 @@ def tool_hash():
     here = Path(__file__).resolve().parent
     return digest({name: sha((here / name).read_bytes()) for name in
                    ('upgrade.py', 'maintenance.py', 'deployment.py', 'recovery.py', 'course_manifest.py', 'rehearsal/evidence.py',
-                    'hub/settings.py', 'homes.py', 'backup.py', 'checkpoint.py', 'volume_archive.py', 'pilot.py', 'health.py', 'public_course.py', 'allocation.py', 'resource_amendment.py')})
+                    'hub/settings.py', 'homes.py', 'backup.py', 'checkpoint.py', 'volume_archive.py', 'pilot.py', 'health.py', 'public_course.py', 'allocation.py', 'resource_amendment.py', 'cutover.py')})
 
 
 def environment(directory):
     """Resume-only reader: upgrade journal blocks public lifecycle, not this path."""
     safe_directory(directory)
+    require_no_cutover(directory)
     require_no_resource_amendment(directory)
     require_active_course(directory)
     pending = directory / '.retirement-pending.json'

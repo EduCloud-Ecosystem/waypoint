@@ -200,3 +200,34 @@ jobs:
           path: output/resource-amendment-evidence
           if-no-files-found: error
           retention-days: 7
+  replacement-cutover:
+    name: Reviewed replacement cutover
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: /tmp/educloud-rehearsal-browsers
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y xfsprogs openssl restic
+      - run: pip install -r course-workspace/rehearsal/requirements.txt
+      - run: python -m playwright install --with-deps chromium
+      - name: Exercise reviewed transfer, resume, rollback and peer continuity
+        run: sudo --preserve-env=PLAYWRIGHT_BROWSERS_PATH "$(command -v python)" course-workspace/rehearsal/verify_cutover.py --output /tmp/educloud-cutover-rehearsal
+      - name: Publish bounded replacement cutover evidence
+        if: success()
+        run: |
+          mkdir -p output/cutover-evidence
+          sudo cp /tmp/educloud-cutover-rehearsal/CUTOVER-PASS.json output/cutover-evidence/
+          sudo chmod 644 output/cutover-evidence/CUTOVER-PASS.json
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: synthetic-cutover-evidence
+          path: output/cutover-evidence/CUTOVER-PASS.json
+          if-no-files-found: error
+          retention-days: 7

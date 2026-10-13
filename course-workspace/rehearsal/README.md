@@ -146,3 +146,14 @@ interrupted contraction and resume, stale approval refusal, unchanged peer work
 and closed encrypted recovery. Its CI job uploads only bounded
 `RESOURCE-AMENDMENT-PASS.json` after all required controls and cleanup. Private
 plans, receipts, environments, worker authority and raw logs are excluded.
+
+## Reviewed replacement rehearsal
+
+The independent [cutover harness](../COURSE-CUTOVER.md) keeps an authenticated peer
+live while a stopped course restores into a closed namespace and transfers its
+identity through a reviewed journaled decision. It covers resume, pre-use rollback,
+repeated approvals, real receiver work and refusal of rollback after divergence.
+Its bridge-only relay is disposable fixture routing, not a hosted service. Only
+bounded `CUTOVER-PASS.json` is uploaded after all controls and verified cleanup;
+private plans, full receipts, environments, authority and plaintext backups stay
+excluded. Older worker controls refuse the new lineage records.

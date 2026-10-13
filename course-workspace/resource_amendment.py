@@ -20,7 +20,7 @@ import uuid
 import re
 
 import allocation as a
-from deployment import validate_institutional, require_active_course
+from deployment import validate_institutional, require_active_course, require_no_cutover
 from pilot import locked
 
 VERSION = 'educloud-resource-amendment-v1'
@@ -156,6 +156,7 @@ def publish_plan(path,plan):
 
 
 def no_other_pending(directory,root):
+    require_no_cutover(directory)
     require_active_course(directory)
     for path in (directory/a.REQUIRED,directory/'.maintenance-pending.json',directory/'.upgrade-pending.json',
                  directory/'.retirement-pending.json',Path(root)/'.educloud-maintenance.json'):

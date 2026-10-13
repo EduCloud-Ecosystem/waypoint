@@ -13,7 +13,7 @@ import subprocess
 
 import homes
 from backup import docker
-from deployment import read_environment, validate_institutional, require_native_worker, require_active_course, require_no_resource_amendment
+from deployment import read_environment, validate_institutional, require_native_worker, require_active_course, require_no_resource_amendment, require_no_cutover
 from pilot import locked
 
 PENDING = '.maintenance-pending.json'
@@ -73,6 +73,7 @@ def safe_directory(directory):
 
 def environment(directory):
     safe_directory(directory)
+    require_no_cutover(directory)
     require_no_resource_amendment(directory)
     require_active_course(directory)
     pending = directory / '.retirement-pending.json'

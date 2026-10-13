@@ -17,6 +17,16 @@ from hub.settings import load
 from pilot import ROOT, locked, settings as trial_settings, wait_ready as trial_ready
 
 
+def require_no_cutover(directory):
+    # Presence guards remain self-contained in historical recovery runtimes.
+    pending = Path(directory) / '.cutover-pending.json'
+    if pending.exists() or pending.is_symlink():
+        raise ValueError('replacement cutover is incomplete; resume the reviewed plan')
+    replaced = Path(directory) / '.course-replaced.json'
+    if replaced.exists() or replaced.is_symlink():
+        raise ValueError('course was replaced; activation and policy changes require reviewed rollback')
+
+
 def require_no_resource_amendment(directory):
     # Keep this guard self-contained in archived recovery runtimes.
     pending = Path(directory) / '.resource-amendment-pending.json'
@@ -25,6 +35,7 @@ def require_no_resource_amendment(directory):
 
 
 def require_no_maintenance(directory):
+    require_no_cutover(directory)
     require_no_resource_amendment(directory)
     pending = directory / '.maintenance-pending.json'
     if pending.exists() or pending.is_symlink():
@@ -38,6 +49,9 @@ def require_no_maintenance(directory):
 
 
 def require_active_course(directory):
+    replaced = directory / '.course-replaced.json'
+    if replaced.exists() or replaced.is_symlink():
+        raise ValueError('course was replaced; activation and policy changes require reviewed rollback')
     marker = directory / '.course-retired.json'
     if marker.exists() or marker.is_symlink():
         raise ValueError('course is retired; startup and policy changes are blocked while work is retained')
@@ -93,6 +107,7 @@ def settings(directory, allow_pending=False):
 
 
 def require_current_allocation(directory):
+    require_no_cutover(directory)
     require_no_resource_amendment(directory)
     pending = directory / '.worker-allocation-required.json'
     if pending.exists() or pending.is_symlink():
@@ -202,6 +217,7 @@ def _inspect_course(directory, *, allow_pending=False):
     # Only the stopped-course upgrade transaction uses this internal override
     # to verify its newly written pins before removing the interruption marker.
     require_active_course(directory)
+    require_no_cutover(directory)
     require_no_resource_amendment(directory)
     if allow_pending:
         pending = directory / '.maintenance-pending.json'

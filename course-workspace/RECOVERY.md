@@ -265,3 +265,25 @@ inside encrypted backups. Backup refuses missing or inconsistent current history
 before provider effects. Fresh restore retains private source history, strips the
 source active decision revision and requires current managed enrollment; it does
 not replay source approvals or reopen an interrupted change.
+
+## Replacement decision history
+
+[Reviewed cutover](COURSE-CUTOVER.md) preserves its latest active receipt privately
+inside encryption. Backup validates revision/history and actual current allocation
+before provider/export effects; new saved work and later resource changes do not
+rewrite historical decision hashes. Replaced senders cannot create active-course
+backups. Fresh restoration retains `source-cutover-receipt.json` only, strips active
+cutover/resource revisions and requires current enrollment. It does not replay
+source approval, pending journals or replacement fences.
+
+## Supported archive metadata
+
+The network-disabled helper applies Python's data-filter path/link/special-file
+protections before restoring ordinary rwx permissions and contained literal link
+targets. Private and group-writable directory/file modes and directory sticky bits
+are preserved, including Jupyter connection-file protection. Setuid/setgid bits
+and sticky bits on non-directory entries are unsupported and refused explicitly.
+Ownership stays normalized to the established learner/Hub owner; source ownership
+must already match for exact cutover equality. Only a verified empty new volume
+root is temporarily owned by the helper so metadata can be restored without
+adding CAP_FOWNER. Existing volumes are not overwritten.
