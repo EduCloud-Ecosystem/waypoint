@@ -20,6 +20,7 @@ from urllib.parse import urlsplit
 import uuid
 
 VERSION='educloud-ownership-contract-v1'
+RECONCILIATION_VERSION='educloud-pending-transfer-reconciliation-v1'
 SCOPE='standalone-disposable-logical-worker-contract'
 HEX32=re.compile(r'[0-9a-f]{32}\Z');HEX64=re.compile(r'[0-9a-f]{64}\Z');SLUG=re.compile(r'[a-z][a-z0-9-]{0,63}\Z')
 MAX_JSON=256*1024;MAX_EVENTS=4096;MAX_COURSES=256;MAX_WORKERS=64
@@ -27,6 +28,8 @@ WORKER_FIELDS={'worker_id','provider_id','boot_id','policy_sha256','memory_budge
 COURSE_FIELDS={'logical_identity','profile','snapshot_sha256','runtime_sha256','retained_tree_sha256','admission_floor','running_count'}
 PLAN_FIELDS={'version','scope','authority_id','transaction_id','course_id','source_worker_id','receiver_worker_id','old_epoch',
              'workers','evidence','authority_state_sha256','digest'}
+
+RECONCILIATION_FIELDS=(PLAN_FIELDS-{'version'})|{'version','original_transaction_id','original_record_sha256','current_owner_id','selected_worker_id'}
 
 
 class OwnershipError(ValueError):
@@ -276,37 +279,66 @@ class Authority:
             if row['pending'] is not None:
                 tx=conn.execute('SELECT * FROM transfers WHERE transaction_id=?',(row['pending'],)).fetchone()
                 if tx is None or tx['course_id']!=key or tx['status'] not in ('PREPARED','COMMITTED'):raise OwnershipError('authority_transfer_history_invalid')
-        histories={key:[] for key in courses}
+        histories={key:[] for key in courses};records={};recoveries={}
         for row in conn.execute('SELECT * FROM transfers'):
-            plan=parsed(row['plan']);self._validate_plan(plan)
+            row=dict(row);plan=parsed(row['plan']);self._validate_record_plan(plan)
             if row['transaction_id']!=plan['transaction_id'] or row['course_id']!=plan['course_id'] or row['course_id'] not in courses or row['status'] not in ('PREPARED','COMMITTED','COMPLETE'):raise OwnershipError('authority_transfer_history_invalid')
             if any(key not in workers or plan['workers'][key]!=workers[key] for key in plan['workers']):raise OwnershipError('authority_transfer_history_invalid')
+            recovery=plan['version']==RECONCILIATION_VERSION
             if row['status']=='PREPARED':
                 if row['proof'] is not None or row['receipt'] is not None:raise OwnershipError('authority_transfer_history_invalid')
             else:
-                proof=self._proof_record(parsed(row['proof']),self._request(plan))
+                proof=(self._reconciliation_proof_record(parsed(row['proof']),self._reconciliation_request(plan)) if recovery
+                       else self._proof_record(parsed(row['proof']),self._request(plan)))
                 if row['status']=='COMPLETE':
-                    if parsed(row['receipt'])!=self._receipt(plan,proof):raise OwnershipError('authority_transfer_history_invalid')
+                    expected=self._reconciliation_receipt(plan,proof) if recovery else self._receipt(plan,proof)
+                    if parsed(row['receipt'])!=expected:raise OwnershipError('authority_transfer_history_invalid')
                 elif row['receipt'] is not None:raise OwnershipError('authority_transfer_history_invalid')
-            histories[row['course_id']].append((plan,row['status']))
+            records[row['transaction_id']]=(row,plan)
+            if recovery:
+                original=plan['original_transaction_id']
+                if original in recoveries:raise OwnershipError('authority_reconciliation_history_invalid')
+                recoveries[original]=(row,plan)
+            else:histories[row['course_id']].append((row,plan))
+        for original,(row,plan) in recoveries.items():
+            if original not in records:raise OwnershipError('authority_reconciliation_history_invalid')
+            old,oldplan=records[original]
+            if (oldplan['version'] not in (VERSION,RECONCILIATION_VERSION) or old['status'] not in ('PREPARED','COMMITTED') or old['course_id']!=row['course_id']
+                    or digest(old)!=plan['original_record_sha256'] or oldplan['workers']!=plan['workers']
+                    or any(plan[key]!=oldplan[key] for key in ('source_worker_id','receiver_worker_id'))):raise OwnershipError('authority_reconciliation_history_invalid')
+            for worker in plan['workers']:
+                if any(plan['evidence'][worker][key]!=oldplan['evidence'][worker][key] for key in ('logical_identity','profile','runtime_sha256')):raise OwnershipError('authority_reconciliation_history_invalid')
+        visited=set()
         for key,history in histories.items():
-            history.sort(key=lambda item:item[0]['old_epoch']);current=courses[key]
-            epoch=1;owner=history[0][0]['source_worker_id'] if history else current['owner'];pending=None
-            for index,(plan,status) in enumerate(history):
-                if plan['old_epoch']!=epoch or plan['source_worker_id']!=owner or (status!='COMPLETE' and index!=len(history)-1):raise OwnershipError('authority_transfer_history_invalid')
-                if status!='PREPARED':epoch+=1;owner=plan['receiver_worker_id']
-                if status!='COMPLETE':pending=plan['transaction_id']
+            history.sort(key=lambda item:item[1]['old_epoch']);current=courses[key]
+            epoch=1;owner=history[0][1]['source_worker_id'] if history else current['owner'];pending=None;pending_expected={};known_fenced=set()
+            for index,(row,plan) in enumerate(history):
+                status=row['status']
+                if plan['old_epoch']!=epoch or plan['source_worker_id']!=owner:raise OwnershipError('authority_transfer_history_invalid')
+                leases={plan['source_worker_id']:'OWNER' if status=='PREPARED' else 'FENCED',plan['receiver_worker_id']:'RESERVED' if status=='PREPARED' else 'OWNER'}
+                if status!='PREPARED':epoch+=1;owner=plan['receiver_worker_id'];known_fenced.add(plan['source_worker_id'])
+                terminal_row,terminal_plan=row,plan
+                while terminal_plan['transaction_id'] in recoveries:
+                    rrow,rplan=recoveries[terminal_plan['transaction_id']]
+                    if rplan['transaction_id'] in visited:raise OwnershipError('authority_reconciliation_history_invalid')
+                    visited.add(rplan['transaction_id'])
+                    if rplan['old_epoch']!=epoch or rplan['current_owner_id']!=owner:raise OwnershipError('authority_reconciliation_history_invalid')
+                    if rrow['status']!='PREPARED':
+                        epoch+=1;owner=rplan['selected_worker_id'];known_fenced.update(set(rplan['workers'])-{owner})
+                        leases={worker:'OWNER' if worker==owner else 'FENCED' for worker in rplan['workers']}
+                    terminal_row,terminal_plan=rrow,rplan
+                if terminal_row['status']!='COMPLETE':
+                    if index!=len(history)-1:raise OwnershipError('authority_transfer_history_invalid')
+                    pending=terminal_plan['transaction_id'];pending_expected=leases
             if current['epoch']!=epoch or current['owner']!=owner or current['pending']!=pending:raise OwnershipError('authority_transfer_history_invalid')
-            if pending is not None:
-                plan,status=history[-1]
-                for worker,expected in [(plan['source_worker_id'],'OWNER' if status=='PREPARED' else 'FENCED'),
-                                        (plan['receiver_worker_id'],'RESERVED' if status=='PREPARED' else 'OWNER')]:
-                    row=conn.execute('SELECT status,profile FROM reservations WHERE course_id=? AND worker_id=?',(key,worker)).fetchone()
-                    if row is None or row['status']!=expected or parsed(row['profile'])!=plan['evidence'][worker]['profile']:raise OwnershipError('authority_reservations_invalid')
+            for worker,expected in pending_expected.items():
+                row=conn.execute('SELECT status,profile FROM reservations WHERE course_id=? AND worker_id=?',(key,worker)).fetchone()
+                if row is None or row['status']!=expected or parsed(row['profile'])!=parsed(current['profile']):raise OwnershipError('authority_reservations_invalid')
             for row in conn.execute('SELECT * FROM reservations WHERE course_id=?',(key,)):
-                if row['status']=='RESERVED':
-                    if pending is None or history[-1][1]!='PREPARED' or row['worker_id']!=history[-1][0]['receiver_worker_id']:raise OwnershipError('authority_reservations_invalid')
-                elif row['status']=='FENCED' and not any(plan['source_worker_id']==row['worker_id'] and status!='PREPARED' for plan,status in history):raise OwnershipError('authority_reservations_invalid')
+                if parsed(row['profile'])!=parsed(current['profile']):raise OwnershipError('authority_reservations_invalid')
+                if row['status']=='RESERVED' and pending_expected.get(row['worker_id'])!='RESERVED':raise OwnershipError('authority_reservations_invalid')
+                if row['status']=='FENCED' and row['worker_id'] not in known_fenced:raise OwnershipError('authority_reservations_invalid')
+        if visited!={plan['transaction_id'] for row,plan in recoveries.values()}:raise OwnershipError('authority_reconciliation_history_invalid')
         self._capacity(conn,workers)
 
     def _counted_profiles(self,conn,worker):
@@ -315,7 +347,9 @@ class Authority:
             counted=row['status'] in ('OWNER','RESERVED')
             if row['status']=='FENCED' and row['pending'] is not None:
                 tx=conn.execute('SELECT plan FROM transfers WHERE transaction_id=?',(row['pending'],)).fetchone()
-                counted=tx is not None and parsed(tx['plan'])['source_worker_id']==worker
+                if tx is not None:
+                    plan=parsed(tx['plan'])
+                    counted=(worker in plan['workers'] if plan['version']==RECONCILIATION_VERSION else plan['source_worker_id']==worker)
             if counted:profiles.append(parsed(row['profile']))
         return profiles
 
@@ -392,6 +426,30 @@ class Authority:
         if plan['evidence'][plan['receiver_worker_id']]['running_count']!=0:raise OwnershipError('receiver_course_must_be_stopped')
         if plan['evidence'][plan['receiver_worker_id']]['admission_floor']>plan['old_epoch']+1:raise OwnershipError('backend_admission_epoch_unavailable')
 
+    def _validate_record_plan(self,plan):
+        if plan.get('version')==RECONCILIATION_VERSION:self._validate_reconciliation_plan(plan)
+        else:self._validate_plan(plan)
+
+    def _validate_reconciliation_plan(self,plan):
+        if (not isinstance(plan,dict) or set(plan)!=RECONCILIATION_FIELDS or plan['version']!=RECONCILIATION_VERSION
+                or plan['scope']!=SCOPE or plan['authority_id']!=self.authority_id
+                or any(not isinstance(plan[key],str) or not HEX32.fullmatch(plan[key]) for key in ('transaction_id','original_transaction_id'))
+                or plan['transaction_id']==plan['original_transaction_id']
+                or any(not isinstance(plan[key],str) or not HEX64.fullmatch(plan[key]) for key in ('original_record_sha256','authority_state_sha256'))
+                or any(not slug(plan[key]) for key in ('course_id','source_worker_id','receiver_worker_id','current_owner_id','selected_worker_id'))
+                or plan['source_worker_id']==plan['receiver_worker_id'] or plan['current_owner_id'] not in (plan['source_worker_id'],plan['receiver_worker_id'])
+                or plan['selected_worker_id'] not in (plan['source_worker_id'],plan['receiver_worker_id'])
+                or type(plan['old_epoch']) is not int or not 1<=plan['old_epoch']<10**9
+                or not isinstance(plan['workers'],dict) or not isinstance(plan['evidence'],dict)
+                or set(plan['workers'])!={plan['source_worker_id'],plan['receiver_worker_id']} or set(plan['evidence'])!=set(plan['workers'])
+                or plan['digest']!=digest({k:v for k,v in plan.items() if k!='digest'})):raise OwnershipError('invalid_reconciliation_plan')
+        for key in plan['workers']:
+            worker_evidence(plan['workers'][key],key);course_evidence(plan['evidence'][key])
+            if plan['evidence'][key]['running_count']!=0:raise OwnershipError('reconciliation_endpoint_must_be_stopped')
+            if plan['evidence'][key]['admission_floor']>plan['old_epoch']+1:raise OwnershipError('backend_admission_epoch_unavailable')
+        source=plan['evidence'][plan['source_worker_id']];receiver=plan['evidence'][plan['receiver_worker_id']]
+        if any(source[key]!=receiver[key] for key in ('logical_identity','profile','runtime_sha256')):raise OwnershipError('reconciliation_binding_changed')
+
     @guarded
     def preview(self,course_id,receiver_id,plan_path):
         plan_path=canonical(plan_path)
@@ -458,6 +516,18 @@ class Authority:
         value['digest']=digest(value)
         return value
 
+    def _authorize_transfer_effects(self,plan):
+        observations=self._observe(plan['course_id'],plan['workers'])
+        with self._connection() as conn:
+            conn.execute('BEGIN');self._validate(conn);course=self._course(conn,plan['course_id'])
+            row=conn.execute('SELECT * FROM transfers WHERE transaction_id=?',(plan['transaction_id'],)).fetchone()
+            if row is None or parsed(row['plan'])!=plan:raise OwnershipError('transfer_pending_history_changed')
+            complete=row['status']=='COMPLETE'
+            if complete:
+                if course['owner']!=plan['receiver_worker_id'] or course['epoch']!=plan['old_epoch']+1 or course['pending'] is not None:raise OwnershipError('stale_completed_ownership_decision')
+            elif course['pending']!=plan['transaction_id']:raise OwnershipError('transfer_pending_history_changed')
+            self._fresh(conn,plan,observations,complete);conn.execute('COMMIT')
+
     @guarded
     def apply(self,plan_path):
         plan_path=canonical(plan_path)
@@ -488,7 +558,7 @@ class Authority:
         # BOTH endpoint activation, boot and barrier exclusions remain held until
         # durable ownership/receipt proof is complete. Never hold SQL while
         # entering a backend context or performing a blocking backend read.
-        with self.backend.fence_context(request) as context:
+        with self.backend.fence_context(request,authorize=lambda:self._authorize_transfer_effects(plan)) as context:
             proof=self._proof(context,request)
             if not complete:fault_hook('fenced',tx)
             observations=self._observe(cid,plan['workers']);proof=self._proof(context,request)
@@ -529,6 +599,149 @@ class Authority:
 
     resume=apply
 
+    def _bound_original(self,conn,plan):
+        row=conn.execute('SELECT * FROM transfers WHERE transaction_id=?',(plan['original_transaction_id'],)).fetchone()
+        if row is None:raise OwnershipError('reconciliation_pending_history_changed')
+        row=dict(row);old=parsed(row['plan'])
+        if (old.get('version') not in (VERSION,RECONCILIATION_VERSION) or row['status'] not in ('PREPARED','COMMITTED') or digest(row)!=plan['original_record_sha256']
+                or row['course_id']!=plan['course_id'] or old['workers']!=plan['workers']
+                or any(old[key]!=plan[key] for key in ('source_worker_id','receiver_worker_id'))
+                or any(old['evidence'][worker][key]!=plan['evidence'][worker][key] for worker in old['workers'] for key in ('logical_identity','profile','runtime_sha256'))):raise OwnershipError('reconciliation_binding_changed')
+        return row
+
+    def _reconciliation_fresh(self,conn,plan,observations):
+        workers,evidence=observations
+        for worker in plan['workers']:
+            if self._worker(conn,worker,workers[worker])!=plan['workers'][worker]:raise OwnershipError('reconciliation_binding_changed')
+            if stable_evidence(evidence[worker])!=stable_evidence(plan['evidence'][worker]):raise OwnershipError('reconciliation_evidence_changed')
+            if evidence[worker]['running_count']!=0:raise OwnershipError('reconciliation_endpoint_must_be_stopped')
+            if evidence[worker]['admission_floor']>plan['old_epoch']+1:raise OwnershipError('backend_admission_epoch_unavailable')
+
+    @guarded
+    def reconcile_preview(self,course_id,selected_worker_id,plan_path):
+        plan_path=canonical(plan_path)
+        if self.directory==plan_path or self.directory in plan_path.parents:raise OwnershipError('plan_overlaps_authority')
+        with self._connection() as conn:
+            conn.execute('BEGIN');self._validate(conn);course=self._course(conn,course_id)
+            original=conn.execute('SELECT * FROM transfers WHERE transaction_id=?',(course['pending'],)).fetchone()
+            if original is None or parsed(original['plan']).get('version') not in (VERSION,RECONCILIATION_VERSION) or original['status'] not in ('PREPARED','COMMITTED'):raise OwnershipError('pending_transfer_required')
+            original=dict(original);old=parsed(original['plan']);state=digest(self._snapshot(conn));conn.execute('COMMIT')
+        if selected_worker_id not in old['workers']:raise OwnershipError('original_endpoint_selection_required')
+        workers,evidence=self._observe(course_id,old['workers'])
+        plan={'version':RECONCILIATION_VERSION,'scope':SCOPE,'authority_id':self.authority_id,'transaction_id':uuid.uuid4().hex,
+              'course_id':course_id,'source_worker_id':old['source_worker_id'],'receiver_worker_id':old['receiver_worker_id'],
+              'old_epoch':course['epoch'],'current_owner_id':course['owner'],'selected_worker_id':selected_worker_id,
+              'original_transaction_id':original['transaction_id'],'original_record_sha256':digest(original),
+              'workers':workers,'evidence':evidence,'authority_state_sha256':state}
+        plan['digest']=digest(plan);self._validate_reconciliation_plan(plan)
+        with self._connection() as conn:
+            conn.execute('BEGIN');self._validate(conn)
+            if self._course(conn,course_id)!=course or digest(self._snapshot(conn))!=state:raise OwnershipError('preview_authority_changed')
+            self._bound_original(conn,plan);self._reconciliation_fresh(conn,plan,(workers,evidence));self._capacity(conn);conn.execute('COMMIT')
+        publish(plan_path,plan)
+        return self._summary('PLAN_READY',course,plan)
+
+    def _reconciliation_request(self,plan):
+        request=self._request(plan)
+        request.update(selected_worker_id=plan['selected_worker_id'],original_transaction_id=plan['original_transaction_id'])
+        return request
+
+    def _reconciliation_proof_record(self,value,request):
+        if (not isinstance(value,dict) or set(value)!={'request_sha256','scope','endpoints'} or value['scope']!='course'
+                or value['request_sha256']!=digest(request) or not isinstance(value['endpoints'],dict)
+                or set(value['endpoints'])!={request['source_worker_id'],request['receiver_worker_id']}):raise OwnershipError('persistent_reconciliation_fence_unverified')
+        for endpoint in value['endpoints'].values():
+            if (not isinstance(endpoint,dict) or set(endpoint)!={'barrier_id','barrier_sha256','denied_through_epoch','observed_running_count'}
+                    or not isinstance(endpoint['barrier_id'],str) or not HEX32.fullmatch(endpoint['barrier_id'])
+                    or not isinstance(endpoint['barrier_sha256'],str) or not HEX64.fullmatch(endpoint['barrier_sha256'])
+                    or type(endpoint['denied_through_epoch']) is not int or endpoint['denied_through_epoch']!=request['old_epoch']
+                    or type(endpoint['observed_running_count']) is not int or endpoint['observed_running_count']!=0):raise OwnershipError('persistent_reconciliation_fence_unverified')
+        return value
+
+    def _reconciliation_proof(self,context,request):return self._reconciliation_proof_record(context.inspect(),request)
+
+    def _reconciliation_receipt(self,plan,proof):
+        value={'version':RECONCILIATION_VERSION,'scope':SCOPE,'authority_id':self.authority_id,'transaction_id':plan['transaction_id'],
+               'course_id':plan['course_id'],'plan_sha256':plan['digest'],'original_transaction_id':plan['original_transaction_id'],
+               'original_record_sha256':plan['original_record_sha256'],'owner_worker_id':plan['selected_worker_id'],
+               'epoch':plan['old_epoch']+1,'fences_sha256':digest(proof),
+               'endpoint_evidence_sha256':{worker:digest(stable_evidence(value)) for worker,value in plan['evidence'].items()}}
+        value['digest']=digest(value)
+        return value
+
+    def _authorize_reconciliation_effects(self,plan):
+        observations=self._observe(plan['course_id'],plan['workers'])
+        with self._connection() as conn:
+            conn.execute('BEGIN');self._validate(conn);course=self._course(conn,plan['course_id']);self._bound_original(conn,plan)
+            row=conn.execute('SELECT * FROM transfers WHERE transaction_id=?',(plan['transaction_id'],)).fetchone()
+            if row is None or parsed(row['plan'])!=plan:raise OwnershipError('reconciliation_pending_history_changed')
+            if row['status']=='COMPLETE':
+                if course['owner']!=plan['selected_worker_id'] or course['epoch']!=plan['old_epoch']+1 or course['pending'] is not None:raise OwnershipError('stale_completed_reconciliation_decision')
+            elif course['pending']!=plan['transaction_id']:raise OwnershipError('reconciliation_pending_history_changed')
+            self._reconciliation_fresh(conn,plan,observations);conn.execute('COMMIT')
+
+    @guarded
+    def reconcile_apply(self,plan_path):
+        info=private(self.database);plan=read_json(canonical(plan_path),protected=(info.st_dev,info.st_ino));self._validate_reconciliation_plan(plan)
+        tx=plan['transaction_id'];cid=plan['course_id'];selected=plan['selected_worker_id'];next_epoch=plan['old_epoch']+1
+        observations=self._observe(cid,plan['workers'])
+        with self._connection() as conn:
+            conn.execute('BEGIN IMMEDIATE');self._validate(conn);course=self._course(conn,cid);self._bound_original(conn,plan)
+            row=conn.execute('SELECT * FROM transfers WHERE transaction_id=?',(tx,)).fetchone()
+            if row is not None and parsed(row['plan'])!=plan:raise OwnershipError('transfer_plan_changed')
+            complete=row is not None and row['status']=='COMPLETE'
+            if complete:
+                if course['owner']!=selected or course['epoch']!=next_epoch or course['pending'] is not None:raise OwnershipError('stale_completed_reconciliation_decision')
+            elif row is None:
+                if (course['pending']!=plan['original_transaction_id'] or course['owner']!=plan['current_owner_id'] or course['epoch']!=plan['old_epoch']
+                        or digest(self._snapshot(conn))!=plan['authority_state_sha256']):raise OwnershipError('stale_reconciliation_approval')
+                self._reconciliation_fresh(conn,plan,observations)
+                conn.execute('INSERT INTO transfers VALUES(?,?,?,?,NULL,NULL)',(tx,cid,encoded(plan).decode(),'PREPARED'))
+                changed=conn.execute('UPDATE courses SET pending=? WHERE course_id=? AND pending=?',(tx,cid,plan['original_transaction_id'])).rowcount
+                if changed!=1:raise OwnershipError('reconciliation_pending_history_changed')
+                self._capacity(conn);self._event(conn,'reconciliation_prepared',tx);self._validate(conn)
+            elif course['pending']!=tx:raise OwnershipError('reconciliation_pending_history_changed')
+            self._reconciliation_fresh(conn,plan,observations)
+            conn.execute('COMMIT')
+        if not complete:fault_hook('reconciliation_prepared',tx)
+        request=self._reconciliation_request(plan)
+        with self.backend.reconciliation_context(request,authorize=lambda:self._authorize_reconciliation_effects(plan)) as context:
+            proof=self._reconciliation_proof(context,request)
+            if not complete:fault_hook('reconciliation_fenced',tx)
+            observations=self._observe(cid,plan['workers']);proof=self._reconciliation_proof(context,request)
+            with self._connection() as conn:
+                conn.execute('BEGIN IMMEDIATE');self._validate(conn);self._reconciliation_fresh(conn,plan,observations);self._bound_original(conn,plan)
+                course=self._course(conn,cid);row=conn.execute('SELECT * FROM transfers WHERE transaction_id=?',(tx,)).fetchone()
+                if row is None or parsed(row['plan'])!=plan:raise OwnershipError('reconciliation_pending_history_changed')
+                if complete:
+                    if row['status']!='COMPLETE' or course['pending'] is not None or course['owner']!=selected or course['epoch']!=next_epoch or parsed(row['proof'])!=proof or parsed(row['receipt'])!=self._reconciliation_receipt(plan,proof):raise OwnershipError('completed_reconciliation_state_changed')
+                    conn.execute('COMMIT');return self._summary('COMPLETE',course,plan)
+                if course['pending']!=tx:raise OwnershipError('reconciliation_pending_history_changed')
+                if row['status']=='PREPARED':
+                    changed=conn.execute('UPDATE courses SET owner=?,epoch=? WHERE course_id=? AND owner=? AND epoch=? AND pending=?',
+                        (selected,next_epoch,cid,plan['current_owner_id'],plan['old_epoch'],tx)).rowcount
+                    if changed!=1:raise OwnershipError('ownership_compare_and_swap_failed')
+                    for worker in plan['workers']:
+                        status='OWNER' if worker==selected else 'FENCED'
+                        if conn.execute('UPDATE reservations SET status=? WHERE worker_id=? AND course_id=?',(status,worker,cid)).rowcount!=1:raise OwnershipError('authority_reservations_invalid')
+                    conn.execute("UPDATE transfers SET status='COMMITTED',proof=? WHERE transaction_id=?",(encoded(proof).decode(),tx))
+                    self._capacity(conn);self._event(conn,'reconciliation_committed',tx);self._validate(conn)
+                elif row['status']!='COMMITTED' or course['owner']!=selected or course['epoch']!=next_epoch or parsed(row['proof'])!=proof:raise OwnershipError('committed_reconciliation_state_changed')
+                conn.execute('COMMIT')
+            fault_hook('reconciliation_committed',tx)
+            observations=self._observe(cid,plan['workers']);proof=self._reconciliation_proof(context,request)
+            with self._connection() as conn:
+                conn.execute('BEGIN IMMEDIATE');self._validate(conn);self._reconciliation_fresh(conn,plan,observations);self._bound_original(conn,plan)
+                row=conn.execute('SELECT * FROM transfers WHERE transaction_id=?',(tx,)).fetchone();course=self._course(conn,cid)
+                if row is None or row['status']!='COMMITTED' or parsed(row['proof'])!=proof or course['pending']!=tx or course['owner']!=selected or course['epoch']!=next_epoch:raise OwnershipError('committed_reconciliation_state_changed')
+                receipt=self._reconciliation_receipt(plan,proof)
+                conn.execute("UPDATE transfers SET status='COMPLETE',receipt=? WHERE transaction_id=?",(encoded(receipt).decode(),tx))
+                conn.execute('UPDATE courses SET pending=NULL WHERE course_id=? AND pending=?',(cid,tx));self._event(conn,'reconciliation_complete',tx);self._validate(conn);conn.execute('COMMIT')
+            fault_hook('reconciliation_complete',tx)
+        return self._summary('COMPLETE',course,plan)
+
+    reconcile_resume=reconcile_apply
+
     @contextmanager
     def admission(self,course_id,worker_id):
         try:
@@ -559,7 +772,7 @@ class Authority:
             conn.execute('BEGIN');self._validate(conn)
             result=self._summary('INVENTORY');result['registered_workers']=conn.execute('SELECT count(*) FROM workers').fetchone()[0]
             result['registered_courses']=conn.execute('SELECT count(*) FROM courses').fetchone()[0]
-            result['pending_transfers']=conn.execute("SELECT count(*) FROM transfers WHERE status!='COMPLETE'").fetchone()[0]
+            result['pending_transfers']=conn.execute('SELECT count(*) FROM courses WHERE pending IS NOT NULL').fetchone()[0]
             result['reservations']={}
             for row in conn.execute('SELECT worker_id FROM workers ORDER BY worker_id'):
                 key=row['worker_id'];profiles=self._counted_profiles(conn,key)

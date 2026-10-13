@@ -6,6 +6,8 @@ import os
 from pathlib import Path
 import shutil
 import sqlite3
+import subprocess
+import types
 import threading
 import uuid
 
@@ -83,9 +85,10 @@ class FakeBackend:
             finally:self.held.difference_update(keys)
 
     @contextmanager
-    def fence_context(self,request):
+    def fence_context(self,request,*,authorize=None):
         cid=request['course_id'];source=request['source_worker_id'];receiver=request['receiver_worker_id']
         with self.locks_for([(cid,source),(cid,receiver)]):
+            if authorize is not None:authorize()
             for role,worker in [('source',source),('receiver',receiver)]:
                 actual=self.inspect_worker(worker)
                 if (actual['provider_id']!=request[role+'_provider_id'] or actual['boot_id']!=request[role+'_boot_id']):raise oc.OwnershipError('fixture_boot_changed')
@@ -103,6 +106,32 @@ class FakeBackend:
                     value=deepcopy(backend.proofs[key])
                     value['observed_running_count']=backend.inspect_course(cid,source)['running_count']
                     if backend.barriers.get((cid,source),0)<request['old_epoch']:raise oc.OwnershipError('fixture_barrier_missing')
+                    if backend.proof_change:backend.proof_change(value)
+                    return value
+            yield Context()
+
+    @contextmanager
+    def reconciliation_context(self,request,*,authorize):
+        cid=request['course_id'];endpoints=(request['source_worker_id'],request['receiver_worker_id']);tx=request['transaction_id']
+        with self.locks_for([(cid,worker) for worker in endpoints]):
+            authorize()
+            for role in ('source','receiver'):
+                worker=request[role+'_worker_id'];actual=self.inspect_worker(worker)
+                if actual['provider_id']!=request[role+'_provider_id'] or actual['boot_id']!=request[role+'_boot_id']:raise oc.OwnershipError('fixture_boot_changed')
+                self.barriers[cid,worker]=max(request['old_epoch'],self.barriers.get((cid,worker),0))
+                self.courses[cid,worker]['running_count']=0
+            if tx not in self.proofs:
+                self.proofs[tx]={'request_sha256':oc.digest(request),'scope':'course','endpoints':{
+                    worker:{'barrier_id':uuid.uuid4().hex,'barrier_sha256':oc.digest({'request':request,'worker':worker}),
+                    'denied_through_epoch':self.barriers[cid,worker],'observed_running_count':0} for worker in endpoints}}
+            backend=self
+            class Context:
+                def inspect(self):
+                    assert all((cid,worker) in backend.held for worker in endpoints)
+                    value=deepcopy(backend.proofs[tx])
+                    for worker in endpoints:
+                        if backend.barriers.get((cid,worker),0)<request['old_epoch']:raise oc.OwnershipError('fixture_barrier_missing')
+                        value['endpoints'][worker]['observed_running_count']=backend.inspect_course(cid,worker)['running_count']
                     if backend.proof_change:backend.proof_change(value)
                     return value
             yield Context()
@@ -379,6 +408,260 @@ def test_host_or_production_backends_refused(setup):
     refused('fixture_course_backend_required',lambda:oc.Authority.open(a.directory,a.authority_id,b))
     b.scope='course';b.fixture_only=False
     refused('fixture_course_backend_required',lambda:oc.Authority.open(a.directory,a.authority_id,b))
+
+
+def pending(setup,monkeypatch,stage='prepared',name='ordinary.json'):
+    a,b,p=setup;target=plan(setup,name)
+    def stop(current,tx):
+        if current==stage:raise RuntimeError('lost reply')
+    monkeypatch.setattr(oc,'fault_hook',stop)
+    refused('ownership_contract_refused_or_incomplete',lambda:a.apply(target))
+    monkeypatch.setattr(oc,'fault_hook',lambda *args:None)
+    with a._connection() as conn:original=dict(conn.execute('SELECT * FROM transfers').fetchone())
+    return target,original
+
+
+@support.mark.parametrize('stage,selected',[('prepared','one'),('prepared','two'),('fenced','one'),('fenced','two'),('committed','one'),('committed','two')])
+def test_reviewed_reconciliation_divergent_retained_bytes_both_choices(setup,monkeypatch,stage,selected):
+    a,b,p=setup;ordinary,original=pending(setup,monkeypatch,stage)
+    b.courses['course','one']['retained_tree_sha256']='e'*64;b.courses['course','two']['snapshot_sha256']='f'*64
+    before=deepcopy(b.courses);target=p/'resolve.json';a.reconcile_preview('course',selected,target)
+    result=a.reconcile_apply(target);expected=3 if stage=='committed' else 2
+    assert result['status']=='COMPLETE' and result['epoch']==expected and owner(a)['owner']==selected
+    assert b.courses==before and a.inventory()['pending_transfers']==0
+    with a._connection() as conn:assert dict(conn.execute('SELECT * FROM transfers WHERE transaction_id=?',(original['transaction_id'],)).fetchone())==original
+    assert a.inventory()['reservations'][selected]['count']==1
+    refused('transfer_pending_history_changed',lambda:a.resume(ordinary))
+    assert a.reconcile_resume(target)==result
+    with a.admission('course',selected):pass
+    for worker in ('one','two'):assert b.barriers['course',worker]==expected-1
+
+
+@support.mark.parametrize('stage',['reconciliation_prepared','reconciliation_fenced','reconciliation_committed','reconciliation_complete'])
+def test_reconciliation_faults_both_capacity_and_exact_reopen_resume(setup,monkeypatch,stage):
+    a,b,p=setup;ordinary,original=pending(setup,monkeypatch,'committed');b.courses['course','two']['retained_tree_sha256']='e'*64
+    target=p/'resolve.json';a.reconcile_preview('course','one',target)
+    monkeypatch.setattr(oc,'fault_hook',lambda current,tx:(_ for _ in ()).throw(RuntimeError()) if current==stage else None)
+    refused('ownership_contract_refused_or_incomplete',lambda:a.reconcile_apply(target))
+    a=oc.Authority.open(a.directory,a.authority_id,b);inventory=a.inventory();assert inventory['pending_transfers']==(0 if stage=='reconciliation_complete' else 1)
+    assert inventory['reservations']['one']['count']==1
+    assert inventory['reservations']['two']['count']==(0 if stage=='reconciliation_complete' else 1)
+    refused('transfer_pending_history_changed',lambda:a.resume(ordinary))
+    monkeypatch.setattr(oc,'fault_hook',lambda *args:None);a.reconcile_resume(target);assert owner(a)['epoch']==3
+
+
+@support.mark.parametrize('change',['tree','snapshot','runtime','identity','profile','boot','floor','running','unreachable'])
+def test_reconciliation_stale_fresh_evidence_no_new_pending_sideeffects(setup,monkeypatch,change):
+    a,b,p=setup;ordinary,original=pending(setup,monkeypatch);target=p/'resolve.json';a.reconcile_preview('course','one',target)
+    before=a.inventory()
+    if change=='tree':b.courses['course','two']['retained_tree_sha256']='e'*64
+    elif change=='snapshot':b.courses['course','two']['snapshot_sha256']='e'*64
+    elif change=='runtime':b.courses['course','two']['runtime_sha256']='e'*64
+    elif change=='identity':b.courses['course','two']['logical_identity']['client_id']='other'
+    elif change=='profile':b.courses['course','two']['profile']={'active_limit':2,'learner_memory_mb':512,'learner_cpu':.25,'memory_mb':2048,'cpu':1.5}
+    elif change=='boot':b.workers['two']['boot_id']='e'*32
+    elif change=='floor':b.courses['course','two']['admission_floor']=3
+    elif change=='running':b.courses['course','two']['running_count']=1
+    elif change=='unreachable':b.unavailable.add('two')
+    with support.raises(oc.OwnershipError):a.reconcile_apply(target)
+    assert a.inventory()==before and owner(a)['pending']==original['transaction_id']
+
+
+def test_reconciliation_competing_decisions_one_fresh_epoch(setup,monkeypatch):
+    a,b,p=setup;pending(setup,monkeypatch);paths=[]
+    for selected in ('one','two'):
+        target=p/(selected+'.json');a.reconcile_preview('course',selected,target);paths.append(target)
+    barrier=threading.Barrier(2);results=[]
+    def run(target):
+        barrier.wait()
+        try:results.append(a.reconcile_apply(target)['status'])
+        except oc.OwnershipError as error:results.append(error.code)
+    threads=[threading.Thread(target=run,args=(target,)) for target in paths]
+    for thread in threads:thread.start()
+    for thread in threads:thread.join(10);assert not thread.is_alive()
+    assert results.count('COMPLETE')==1 and owner(a)['epoch']==2 and a.inventory()['pending_transfers']==0
+
+
+def test_reconciliation_prepared_excludes_old_resume_even_restored_old_evidence(setup,monkeypatch):
+    a,b,p=setup;ordinary,original=pending(setup,monkeypatch);target=p/'resolve.json';a.reconcile_preview('course','one',target)
+    monkeypatch.setattr(oc,'fault_hook',lambda stage,tx:(_ for _ in ()).throw(RuntimeError()) if stage=='reconciliation_prepared' else None)
+    refused('ownership_contract_refused_or_incomplete',lambda:a.reconcile_apply(target))
+    refused('transfer_pending_history_changed',lambda:a.resume(ordinary))
+    for worker in ('one','two'):
+        with support.raises(oc.OwnershipError):
+            with a.admission('course',worker):pass
+    # A new immutable decision can supersede the pending recovery.
+    a.reconcile_preview('course','two',p/'recursive.json')
+
+
+def test_reconciliation_peer_changes_resume_and_historical_third_host_accounting(setup,monkeypatch):
+    a,b,p=setup;a.apply(plan(setup));b.course('peer','one');a.register_course('peer','one')
+    ordinary=p/'third.json';a.preview('course','three',ordinary)
+    monkeypatch.setattr(oc,'fault_hook',lambda stage,tx:(_ for _ in ()).throw(RuntimeError()) if stage=='committed' else None)
+    refused('ownership_contract_refused_or_incomplete',lambda:a.apply(ordinary));monkeypatch.setattr(oc,'fault_hook',lambda *args:None)
+    before=a.inventory()['reservations']['one'];target=p/'resolve.json';a.reconcile_preview('course','two',target)
+    monkeypatch.setattr(oc,'fault_hook',lambda stage,tx:(_ for _ in ()).throw(RuntimeError()) if stage=='reconciliation_committed' else None)
+    refused('ownership_contract_refused_or_incomplete',lambda:a.reconcile_apply(target));assert a.inventory()['reservations']['one']==before
+    b.course('extra','one');a.register_course('extra','one');monkeypatch.setattr(oc,'fault_hook',lambda *args:None);a.reconcile_resume(target)
+    assert a.inventory()['reservations']['one']['count']==2
+    with a.admission('peer','one'):pass
+
+
+@support.mark.parametrize('change',['proof','original','missing'])
+def test_reconciliation_tampered_history_refuses(setup,monkeypatch,change):
+    a,b,p=setup;ordinary,original=pending(setup,monkeypatch,'committed');target=p/'resolve.json';a.reconcile_preview('course','one',target);a.reconcile_apply(target)
+    with a._connection() as conn:
+        conn.execute('BEGIN IMMEDIATE')
+        if change=='proof':conn.execute("UPDATE transfers SET proof='{}' WHERE transaction_id!=?",(original['transaction_id'],))
+        elif change=='original':conn.execute("UPDATE transfers SET status='COMPLETE' WHERE transaction_id=?",(original['transaction_id'],))
+        else:conn.execute('DELETE FROM transfers WHERE transaction_id=?',(original['transaction_id'],))
+        a._event(conn,'tamper',None);conn.execute('COMMIT')
+    with support.raises(oc.OwnershipError):a.inventory()
+
+
+def test_reconciliation_lost_barrier_proof_and_stale_retry_after_next_transfer(setup,monkeypatch):
+    a,b,p=setup;pending(setup,monkeypatch);target=p/'resolve.json';a.reconcile_preview('course','one',target);a.reconcile_apply(target)
+    recovery=json.loads(target.read_text());saved=b.proofs.pop(recovery['transaction_id'])
+    refused('completed_reconciliation_state_changed',lambda:a.reconcile_resume(target))
+    b.proofs[recovery['transaction_id']]=saved;a.apply(plan(setup,'next.json','two'))
+    refused('stale_completed_reconciliation_decision',lambda:a.reconcile_resume(target))
+
+
+def test_preexisting_v1_authority_is_opened_without_schema_reset(setup,monkeypatch):
+    a,b,p=setup
+    source=subprocess.check_output(['git','show','1ebecdbe0c712c295f83de3ac76be5ef580791f0:course-workspace/ownership_contract.py'],cwd=Path(__file__).resolve().parents[2],text=True)
+    historic=types.ModuleType('historical_ownership');exec(compile(source,'historical_ownership.py','exec'),historic.__dict__)
+    old=historic.Authority.create(p/'existing-v1',b)
+    for worker in ('one','two'):old.register_worker(worker)
+    old.register_course('course','one');ordinary=p/'legacy-plan.json';old.preview('course','two',ordinary)
+    with patch.object(historic,'fault_hook',side_effect=lambda stage,tx:(_ for _ in ()).throw(RuntimeError()) if stage=='prepared' else None):
+        with support.raises(historic.OwnershipError):old.apply(ordinary)
+    with old._connection() as conn:
+        schema=[tuple(row) for row in conn.execute('SELECT type,name,sql FROM sqlite_master ORDER BY name')]
+    current=oc.Authority.open(old.directory,old.authority_id,b);target=p/'resolve-legacy.json';current.reconcile_preview('course','one',target);current.reconcile_apply(target)
+    with current._connection() as conn:assert [tuple(row) for row in conn.execute('SELECT type,name,sql FROM sqlite_master ORDER BY name')]==schema
+    with support.raises(historic.OwnershipError):historic.Authority.open(old.directory,old.authority_id,b)
+
+
+def test_paused_old_resume_refuses_before_any_fence_or_new_owner_stop(setup,monkeypatch):
+    a,b,p=setup;ordinary,original=pending(setup,monkeypatch);reached=threading.Event();release=threading.Event();failures=[]
+    initial=b.fence_context
+    @contextmanager
+    def pause(request,*,authorize):
+        if threading.current_thread().name=='stale-controller':
+            reached.set();assert release.wait(10)
+        with initial(request,authorize=authorize) as context:yield context
+    monkeypatch.setattr(b,'fence_context',pause)
+    def old_resume():
+        try:a.resume(ordinary)
+        except oc.OwnershipError as error:failures.append(error.code)
+    thread=threading.Thread(target=old_resume,name='stale-controller');thread.start();assert reached.wait(10)
+    target=p/'resolve.json';a.reconcile_preview('course','one',target);a.reconcile_apply(target)
+    with a.admission('course','one'):b.courses['course','one']['running_count']=1
+    before=deepcopy((b.barriers,b.proofs,b.courses));release.set();thread.join(10);assert not thread.is_alive()
+    assert failures==['transfer_pending_history_changed'] and (b.barriers,b.proofs,b.courses)==before
+
+
+def test_pending_reconciliation_no_backend_callback_inside_sql(setup,monkeypatch):
+    a,b,p=setup;pending(setup,monkeypatch);connections=[];original=a._connection
+    @contextmanager
+    def track():
+        with original() as conn:
+            connections.append(conn)
+            try:yield conn
+            finally:connections.remove(conn)
+    monkeypatch.setattr(a,'_connection',track)
+    b.callback=lambda:all(not conn.in_transaction for conn in connections) or (_ for _ in ()).throw(AssertionError())
+    target=p/'resolve.json';a.reconcile_preview('course','one',target);a.reconcile_apply(target);a.reconcile_resume(target)
+
+
+@support.mark.parametrize('stage,selected',[(stage,selected) for stage in ('reconciliation_prepared','reconciliation_fenced','reconciliation_committed') for selected in ('one','two')])
+def test_nested_reviewed_pending_reconciliation_preserves_every_parent_and_data(setup,monkeypatch,stage,selected):
+    a,b,p=setup;ordinary,base=pending(setup,monkeypatch);first=p/'first-recovery.json';a.reconcile_preview('course',selected,first)
+    monkeypatch.setattr(oc,'fault_hook',lambda current,tx:(_ for _ in ()).throw(RuntimeError()) if current==stage else None)
+    refused('ownership_contract_refused_or_incomplete',lambda:a.reconcile_apply(first));monkeypatch.setattr(oc,'fault_hook',lambda *args:None)
+    with a._connection() as conn:parents=[dict(row) for row in conn.execute('SELECT * FROM transfers ORDER BY transaction_id')]
+    before_epoch=owner(a)['epoch'];b.courses['course','one']['retained_tree_sha256']='e'*64;b.courses['course','two']['snapshot_sha256']='f'*64
+    bytes_before=deepcopy(b.courses);other='two' if selected=='one' else 'one';second=p/'second-recovery.json';a.reconcile_preview('course',other,second)
+    assert json.loads(second.read_text())['original_transaction_id']==json.loads(first.read_text())['transaction_id']
+    a.reconcile_apply(second);assert owner(a)['epoch']==before_epoch+1 and owner(a)['owner']==other and b.courses==bytes_before
+    with a._connection() as conn:
+        for parent in parents:assert dict(conn.execute('SELECT * FROM transfers WHERE transaction_id=?',(parent['transaction_id'],)).fetchone())==parent
+    assert a.inventory()['pending_transfers']==0 and sum(row['count'] for row in a.inventory()['reservations'].values())==1
+    refused('transfer_pending_history_changed',lambda:a.resume(ordinary))
+    refused('reconciliation_pending_history_changed',lambda:a.reconcile_resume(first))
+    with a.admission('course',other):pass
+
+
+def test_nested_prepared_keeps_prior_committed_reservation_roles_and_capacity(setup,monkeypatch):
+    a,b,p=setup;pending(setup,monkeypatch);first=p/'r1.json';a.reconcile_preview('course','two',first)
+    monkeypatch.setattr(oc,'fault_hook',lambda stage,tx:(_ for _ in ()).throw(RuntimeError()) if stage=='reconciliation_committed' else None)
+    refused('ownership_contract_refused_or_incomplete',lambda:a.reconcile_apply(first));monkeypatch.setattr(oc,'fault_hook',lambda *args:None)
+    b.courses['course','two']['retained_tree_sha256']='e'*64;second=p/'r2.json';a.reconcile_preview('course','one',second)
+    monkeypatch.setattr(oc,'fault_hook',lambda stage,tx:(_ for _ in ()).throw(RuntimeError()) if stage=='reconciliation_prepared' else None)
+    refused('ownership_contract_refused_or_incomplete',lambda:a.reconcile_apply(second))
+    with a._connection() as conn:assert dict(conn.execute('SELECT worker_id,status FROM reservations WHERE course_id=?',('course',)))=={'one':'FENCED','two':'OWNER'}
+    assert a.inventory()['reservations']['one']['count']==a.inventory()['reservations']['two']['count']==1
+    reopened=oc.Authority.open(a.directory,a.authority_id,b);monkeypatch.setattr(oc,'fault_hook',lambda *args:None);reopened.reconcile_resume(second)
+    assert owner(reopened)['epoch']==3
+
+
+def test_stale_nested_recovery_controller_refuses_before_selected_process_effect(setup,monkeypatch):
+    a,b,p=setup;pending(setup,monkeypatch);first=p/'r1.json';a.reconcile_preview('course','one',first)
+    monkeypatch.setattr(oc,'fault_hook',lambda stage,tx:(_ for _ in ()).throw(RuntimeError()) if stage=='reconciliation_prepared' else None)
+    refused('ownership_contract_refused_or_incomplete',lambda:a.reconcile_apply(first));monkeypatch.setattr(oc,'fault_hook',lambda *args:None)
+    reached=threading.Event();release=threading.Event();errors=[];initial=b.reconciliation_context
+    @contextmanager
+    def pause(request,*,authorize):
+        if threading.current_thread().name=='old-recovery':reached.set();assert release.wait(10)
+        with initial(request,authorize=authorize) as context:yield context
+    monkeypatch.setattr(b,'reconciliation_context',pause)
+    def old():
+        try:a.reconcile_resume(first)
+        except oc.OwnershipError as error:errors.append(error.code)
+    thread=threading.Thread(target=old,name='old-recovery');thread.start();assert reached.wait(10)
+    second=p/'r2.json';a.reconcile_preview('course','one',second);a.reconcile_apply(second)
+    with a.admission('course','one'):b.courses['course','one']['running_count']=1
+    before=deepcopy((b.barriers,b.proofs,b.courses));release.set();thread.join(10);assert not thread.is_alive()
+    assert errors==['reconciliation_pending_history_changed'] and (b.barriers,b.proofs,b.courses)==before
+
+
+@support.mark.parametrize('change',['orphan','multiple','cycle','complete-parent','wrong-roles'])
+def test_nested_graph_malformed_or_role_drift_refuses(setup,monkeypatch,change):
+    a,b,p=setup;pending(setup,monkeypatch);first=p/'r1.json';a.reconcile_preview('course','two',first)
+    monkeypatch.setattr(oc,'fault_hook',lambda stage,tx:(_ for _ in ()).throw(RuntimeError()) if stage=='reconciliation_committed' else None)
+    refused('ownership_contract_refused_or_incomplete',lambda:a.reconcile_apply(first));monkeypatch.setattr(oc,'fault_hook',lambda *args:None)
+    second=p/'r2.json';a.reconcile_preview('course','one',second)
+    monkeypatch.setattr(oc,'fault_hook',lambda stage,tx:(_ for _ in ()).throw(RuntimeError()) if stage=='reconciliation_prepared' else None)
+    refused('ownership_contract_refused_or_incomplete',lambda:a.reconcile_apply(second))
+    record=json.loads(second.read_text());first_record=json.loads(first.read_text())
+    with a._connection() as conn:
+        conn.execute('BEGIN IMMEDIATE')
+        if change=='orphan':record['original_transaction_id']='f'*32
+        elif change=='multiple':record['original_transaction_id']=first_record['original_transaction_id']
+        elif change=='cycle':record['original_transaction_id']=record['transaction_id']
+        elif change=='complete-parent':conn.execute("UPDATE transfers SET status='COMPLETE' WHERE transaction_id=?",(first_record['transaction_id'],))
+        else:
+            conn.execute("UPDATE reservations SET status='OWNER' WHERE worker_id='one'");conn.execute("UPDATE reservations SET status='FENCED' WHERE worker_id='two'")
+        if change in ('orphan','multiple','cycle'):
+            record['digest']=oc.digest({k:v for k,v in record.items() if k!='digest'});conn.execute('UPDATE transfers SET plan=? WHERE transaction_id=?',(oc.encoded(record).decode(),record['transaction_id']))
+        a._event(conn,'tamper',None);conn.execute('COMMIT')
+    with support.raises(oc.OwnershipError):a.inventory()
+
+
+def test_nested_complete_chain_allows_subsequent_ordinary_transfer_and_blocks_all_old_decisions(setup,monkeypatch):
+    a,b,p=setup;ordinary,base=pending(setup,monkeypatch);first=p/'r1.json';a.reconcile_preview('course','two',first)
+    monkeypatch.setattr(oc,'fault_hook',lambda stage,tx:(_ for _ in ()).throw(RuntimeError()) if stage=='reconciliation_committed' else None)
+    refused('ownership_contract_refused_or_incomplete',lambda:a.reconcile_apply(first));monkeypatch.setattr(oc,'fault_hook',lambda *args:None)
+    second=p/'r2.json';a.reconcile_preview('course','one',second);a.reconcile_apply(second)
+    assert owner(a)['epoch']==3
+    b.courses['course','three']=deepcopy(b.courses['course','one']);b.courses['course','three']['admission_floor']=1
+    next_plan=p/'next.json';a.preview('course','three',next_plan);a.apply(next_plan)
+    assert owner(a)['epoch']==4 and owner(a)['owner']=='three'
+    refused('transfer_pending_history_changed',lambda:a.resume(ordinary))
+    refused('reconciliation_pending_history_changed',lambda:a.reconcile_resume(first))
+    refused('stale_completed_reconciliation_decision',lambda:a.reconcile_resume(second))
+    with a.admission('course','three'):pass
 
 
 class OwnershipContractTests(unittest.TestCase):

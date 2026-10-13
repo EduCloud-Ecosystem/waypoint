@@ -260,3 +260,32 @@ jobs:
           path: output/ownership-contract-evidence/OWNERSHIP-CONTRACT-PASS.json
           if-no-files-found: error
           retention-days: 7
+
+  pending-reconciliation:
+    name: Reviewed pending-transfer reconciliation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify reconciliation process and publication boundaries
+        run: python -m unittest discover -s course-workspace/rehearsal -p 'test_pending_reconciliation_rehearsal.py' -v
+      - name: Exercise reviewed recovery with retained divergent coursework
+        run: python course-workspace/rehearsal/verify_pending_reconciliation.py --output /tmp/educloud-pending-reconciliation
+      - name: Publish bounded reconciliation evidence
+        if: success()
+        run: |
+          mkdir -p output/pending-reconciliation-evidence
+          cp /tmp/educloud-pending-reconciliation/PENDING-RECONCILIATION-PASS.json output/pending-reconciliation-evidence/
+          chmod 644 output/pending-reconciliation-evidence/PENDING-RECONCILIATION-PASS.json
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: synthetic-pending-reconciliation-evidence
+          path: output/pending-reconciliation-evidence/PENDING-RECONCILIATION-PASS.json
+          if-no-files-found: error
+          retention-days: 7
