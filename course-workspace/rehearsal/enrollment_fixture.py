@@ -2,8 +2,12 @@
 import hashlib
 from pathlib import Path
 import shutil
+import subprocess
+import sys
+import time
+import json
 
-from authenticated_fixture import write, _diagnostic_owned
+from authenticated_fixture import write, _diagnostic_owned, process_identity
 from authority_access import AccessPolicy
 from authority_test_pki import TestPKI
 from hub.authority_client import AuthorityClient, AuthorityError
@@ -54,7 +58,39 @@ def apply(root, store, plan, config, service):
     return store.apply(plan['plan_id'], plan['plan_sha256'], lambda: verify_binding(config, service))
 
 
+def _heartbeat(backend, course):
+    with backend.connection() as connection:
+        connection.execute('BEGIN'); backend._validate(connection)
+        row = connection.execute('SELECT record FROM guardians WHERE endpoint=?',
+            (backend.endpoint('worker-one', course),)).fetchone()
+        connection.execute('COMMIT')
+    return None if row is None else row['record']
+
+
+def _deferred(result, worker, course):
+    return (isinstance(result, dict) and set(result) == {'authorized', 'deferred', 'worker_id', 'course_id'}
+        and result['authorized'] is False and result['deferred'] is True
+        and result['worker_id'] == worker and result['course_id'] == course)
+
+
+def _hold_endpoint(root, course, seconds):
+    # Disposable holder only: fixed configured worker/course and finite duration.
+    if course not in ('course-main', 'course-peer') or type(seconds) is not int or seconds not in (4, 13):
+        raise ValueError('fixture_contention_invalid')
+    backend = DockerBackend(read_record(root / 'runtime.json'))
+    marker = root / 'control' / ('enrollment-lock-' + course + '.json')
+    with backend.locks([('worker-one', course)]):
+        original = _heartbeat(backend, course)
+        if original is None: raise ValueError('fixture_heartbeat_missing')
+        write(marker, {'held': True, 'heartbeat_sha256': digest(original)})
+        time.sleep(seconds)
+    write(marker, {'held': False, 'heartbeat_sha256': digest(original)})
+
+
 def _dispatch(root, action, payload):
+    if action == 'enrollment-contention-hold':
+        _hold_endpoint(root, payload['course'], payload['seconds'])
+        return {'released': True}
     if action == 'enrollment-create':
         config = read_record(root / 'runtime.json'); service = read_record(root / 'service.json')
         directory = root / 'control' / 'enrollment'
@@ -62,6 +98,42 @@ def _dispatch(root, action, payload):
         service['enrollment_directory'] = str(directory); write(root / 'service.json', service)
         return {'created': True}
     config, service, backend, store = context(root)
+    if action == 'enrollment-contention-start':
+        course, seconds = payload['course'], payload['seconds']
+        if course not in ('course-main', 'course-peer') or type(seconds) is not int or seconds not in (4, 13):
+            raise ValueError('fixture_contention_invalid')
+        marker = root / 'control' / ('enrollment-lock-' + course + '.json')
+        if marker.exists(): raise ValueError('fixture_contention_reuse')
+        child = subprocess.Popen([sys.executable, 'authenticated_fixture.py', 'enrollment-contention-hold',
+            str(root)], stdin=subprocess.PIPE,
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        write(root / 'control' / ('enrollment-holder-' + course + '.json'),
+            {'pid': child.pid, 'start_identity': process_identity(child.pid)})
+        child.stdin.write(json.dumps({'course': course, 'seconds': seconds}).encode()); child.stdin.close()
+        deadline = time.monotonic() + 5
+        while time.monotonic() < deadline:
+            if marker.exists() and read_record(marker)['held']: return {'held': True}
+            time.sleep(0.05)
+        raise ValueError('fixture_contention_unavailable')
+    if action == 'enrollment-contention-status':
+        course = payload['course']
+        if course not in ('course-main', 'course-peer'): raise ValueError('fixture_contention_invalid')
+        marker = read_record(root / 'control' / ('enrollment-lock-' + course + '.json'))
+        current = _heartbeat(backend, course)
+        expired = (current is not None and backend.clock() - json.loads(current)['checked_at'] >
+                   config['guardians']['worker-one']['heartbeat_seconds'])
+        return {'held': marker['held'], 'heartbeat_unchanged': digest(current) == marker['heartbeat_sha256'],
+                'heartbeat_expired': expired}
+    if action == 'enrollment-observation-probe':
+        course = payload['course']
+        if course not in ('course-main', 'course-peer'): raise ValueError('fixture_contention_invalid')
+        settings = read_record(root / 'guardian-one' / 'credentials' / 'client.json')
+        settings['url'] = 'https://127.0.0.1:8443/v1/authority'
+        api = AuthorityClient(worker_id='worker-one', course_id=course, **settings)
+        started = time.monotonic()
+        result = api.call('guardian.observe', backend.guardian_identity('worker-one'))
+        deferred = _deferred(result, 'worker-one', course)
+        return {'deferred': deferred, 'elapsed_ms': round(1000 * (time.monotonic() - started), 3)}
     if action == 'enrollment-negative':
         try: store.preview('enroll', 'unapproved-worker', credentials={})
         except Exception: unknown = True
@@ -154,9 +226,9 @@ def _dispatch(root, action, payload):
         settings = read_record(root / identity / 'credentials' / 'client.json')
         settings['url'] = 'https://127.0.0.1:8443/v1/authority'
         api = AuthorityClient(worker_id=worker, course_id='course-main', **settings)
-        try: api.call('guardian.observe', backend.guardian_identity(worker))
+        try: result = api.call('guardian.observe', backend.guardian_identity(worker))
         except AuthorityError: return {'authorized': False}
-        return {'authorized': True}
+        return {'authorized': result.get('authorized') is True and 'deferred' not in result}
     if action == 'enrollment-revoke-worker':
         plan = store.preview('revoke_worker', payload['worker']); apply(root, store, plan, config, service)
         return {'revoked': True}

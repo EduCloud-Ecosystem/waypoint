@@ -44,6 +44,13 @@ class RuntimeRefusal(OwnershipError):
         super().__init__(code)
 
 
+class _GuardianAcquisitionBusy(RuntimeRefusal):
+    """Private marker for this observation's pre-effect lock acquisition only."""
+    def __init__(self, token, endpoint):
+        super().__init__('runtime_endpoint_lock_busy')
+        self.token, self.endpoint = token, endpoint
+
+
 def refuse(code):
     raise RuntimeRefusal(code)
 
@@ -249,6 +256,7 @@ class DockerBackend:
         self.directory = Path(config['backend_directory'])
         self.clock = clock
         self.admission_scope = threading.local()
+        self.observation_scope = threading.local()
         if client is None:
             import docker
             client = docker.DockerClient(base_url='unix:///var/run/docker.sock', version='auto', timeout=5)
@@ -515,9 +523,27 @@ class DockerBackend:
                 refuse('runtime_worker_incarnation_changed')
 
     @contextmanager
+    def guardian_observation_budget(self):
+        # Only the trusted Guardian dispatch path enters this context. No
+        # request field can shorten a Hub admission or choose a lock budget.
+        if (getattr(self.observation_scope, 'token', None) is not None
+                or getattr(self.admission_scope, 'endpoint', None) is not None):
+            refuse('runtime_observation_scope_nested')
+        token = object(); self.observation_scope.token = token
+        try: yield token
+        finally: self.observation_scope.token = None
+
+    @contextmanager
     def activation_context(self, request):
         worker, course = request['worker_id'], request['course_id']
-        with self.locks([(worker, course)]):
+        token = getattr(self.observation_scope, 'token', None)
+        with ExitStack() as stack:
+            try:
+                stack.enter_context(self.locks([(worker, course)], wait_seconds=0.1 if token is not None else 3))
+            except RuntimeRefusal as error:
+                if token is not None and error.code == 'runtime_endpoint_lock_busy':
+                    raise _GuardianAcquisitionBusy(token, (worker, course)) from None
+                raise
             self.validate_request(request, [worker])
             if self.barrier(worker, course)['denied_through_epoch'] >= request['epoch']:
                 refuse('runtime_epoch_fenced')
@@ -785,6 +811,13 @@ class RuntimeDispatcher:
         self.monotonic = monotonic
         self.busy_since = {}
 
+    def _observe(self, principal, op, worker, course_id, payload):
+        with self.authority.admission(course_id, worker) as view:
+            principal['authorize']()
+            if op == 'guardian.observe':
+                self.backend.guardian_heartbeat(worker, course_id, view['epoch'], payload, principal['cert_sha256'])
+            return {'authorized': True, 'epoch': view['epoch'], 'worker_id': worker, 'course_id': course_id}
+
     def dispatch(self, principal, op, course_id, payload):
         worker = principal.get('worker_id')
         if (principal.get('course_id') != course_id or not callable(principal.get('authorize'))
@@ -798,11 +831,14 @@ class RuntimeDispatcher:
             if op == 'guardian.observe' and (set(payload) != {'guardian_container_id', 'start_identity'}
                     or any(not isinstance(value, str) or not HASH.fullmatch(value) for value in payload.values())):
                 refuse('runtime_payload_invalid')
-            with self.authority.admission(course_id, worker) as view:
-                principal['authorize']()
-                if op == 'guardian.observe':
-                    self.backend.guardian_heartbeat(worker, course_id, view['epoch'], payload, principal['cert_sha256'])
-                return {'authorized': True, 'epoch': view['epoch'], 'worker_id': worker, 'course_id': course_id}
+            if op == 'guardian.observe':
+                with self.backend.guardian_observation_budget() as token:
+                    try:
+                        return self._observe(principal, op, worker, course_id, payload)
+                    except _GuardianAcquisitionBusy as error:
+                        if error.token is not token or error.endpoint != (worker, course_id): raise
+                        return {'authorized': False, 'deferred': True, 'worker_id': worker, 'course_id': course_id}
+            return self._observe(principal, op, worker, course_id, payload)
         subject = payload.get('subject')
         self.backend.subject(worker, course_id, subject)
         if op == 'hub.spawn':

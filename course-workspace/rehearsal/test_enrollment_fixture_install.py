@@ -13,6 +13,22 @@ import enrollment_fixture as fixture
 
 
 class EnrollmentInstallTests(unittest.TestCase):
+    def test_contention_probe_requires_exact_authenticated_no_grant_shape(self):
+        result = {'authorized': False, 'deferred': True, 'worker_id': 'worker-one', 'course_id': 'course-main'}
+        self.assertTrue(fixture._deferred(result, 'worker-one', 'course-main'))
+        for field, value in [('authorized', 0), ('deferred', 1), ('worker_id', 'worker-two'),
+                             ('course_id', 'course-peer'), ('epoch', 1)]:
+            changed = dict(result); changed[field] = value
+            self.assertFalse(fixture._deferred(changed, 'worker-one', 'course-main'))
+        for value in (None, {}, dict(result, authorized=True)):
+            self.assertFalse(fixture._deferred(value, 'worker-one', 'course-main'))
+
+    def test_contention_holder_rejects_unconfigured_scope_or_unbounded_duration(self):
+        for course, seconds in [('other', 4), ('course-main', 999), ('course-peer', -1)]:
+            with patch.object(fixture, 'DockerBackend', side_effect=AssertionError('no provider before scope validation')):
+                with self.assertRaisesRegex(ValueError, '^fixture_contention_invalid$'):
+                    fixture._hold_endpoint(Path('/unused'), course, seconds)
+
     def test_other_live_role_worker_course_or_candidate_refused_before_docker(self):
         certificate = {'fingerprint': 'a' * 64, 'spki_sha256': 'b' * 64, 'not_before': 1, 'not_after': 9999999999}
         valid_entry = {'role': 'hub', 'workers': ['worker-one'], 'courses': ['course-main']}

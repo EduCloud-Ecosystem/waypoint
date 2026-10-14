@@ -56,6 +56,16 @@ revocation, including worker revocation, invokes the existing exact-runtime stop
 paths. Saved homes and ownership history remain. These are bounded polling controls,
 not instantaneous or highly available enforcement.
 
+Guardian observation uses a 0.1-second endpoint-acquisition budget. Only a known
+acquisition conflict returns an authenticated, scoped busy reply with no epoch;
+it renews no heartbeat or permission. The Guardian defers that observation and
+tries again. Other transport, identity, authorization and storage errors retain
+the exact-runtime stop behavior. The three-second RPC budget, ten-second heartbeat
+eligibility age and continuous-lock-inability watchdog bound remain unchanged.
+Eligibility age is not an absolute stop deadline: lock acquisition and Docker
+stopping take additional time. Prolonged exclusion closes the authority service,
+which can affect all courses; restart preserves saved homes and reviewed history.
+
 ## Trusted local operator workflow
 
 Run this tool as the trusted local administrator with access to the private runtime

@@ -52,6 +52,20 @@ def exercise(ctx):
         assert host['CpuQuota'] / host['CpuPeriod'] == ctx['allocation']['learner_cpu']
         assert host['RestartPolicy']['Name'] == 'no' and learner['Config']['User'] == '1000:1000'
         assert len(learner['Mounts']) == 1 and learner['Mounts'][0]['Destination'] == '/home/learner'
+    # A real four-second held endpoint exceeds the unchanged three-second RPC
+    # budget. Authenticated busy responses must not renew its heartbeat or stop
+    # either live notebook; the next observation recovers after release.
+    busy_ids = {suffix: learners(suffix) for suffix in ('source', 'peer')}
+    assert helper('enrollment-contention-start', {'course': 'course-main', 'seconds': 4}) == {'held': True}
+    for _ in range(2):
+        probe = helper('enrollment-observation-probe', {'course': 'course-main'})
+        assert probe['deferred'] is True and 0 <= probe['elapsed_ms'] < 3000
+        status = helper('enrollment-contention-status', {'course': 'course-main'})
+        assert status['held'] is True and status['heartbeat_unchanged'] is True
+    wait(lambda: not helper('enrollment-contention-status', {'course': 'course-main'})['held'], 10)
+    wait(lambda: helper('guardian-status')['course-main']['ready'], 10)
+    for suffix, session in sessions.items():
+        assert learners(suffix) == busy_ids[suffix]; read(session, suffix)
     phase(evidence.PHASES[2])
     helper('enrollment-stage', {'identity': 'source'})
     assert rpc('hub.authorize', identity='source-next')['ok'] is False
@@ -114,6 +128,19 @@ def exercise(ctx):
     assert learners('peer') == peer_id; read(sessions['peer'], 'peer')
     phase(evidence.PHASES[8])
     helper('enrollment-checkpoint', {})
+    # Prolonged exclusion never turns busy into a lease renewal. Prove the
+    # actual saved heartbeat expires, service watchdog closes, and the owned
+    # peer stops. Service outage may stop every course; restart must retain its
+    # coursework and the already-revoked worker must remain denied.
+    wait(lambda: helper('guardian-status')['course-peer']['ready'], 10)
+    assert helper('enrollment-contention-start', {'course': 'course-peer', 'seconds': 13}) == {'held': True}
+    for _ in range(2):
+        probe = helper('enrollment-observation-probe', {'course': 'course-peer'})
+        assert probe['deferred'] is True and 0 <= probe['elapsed_ms'] < 3000
+    wait(lambda: helper('enrollment-contention-status', {'course': 'course-peer'})['heartbeat_expired'], 15)
+    assert helper('enrollment-contention-status', {'course': 'course-peer'})['heartbeat_unchanged'] is True
+    wait(lambda: helper('service-status')['failure'] == 'runtime_endpoint_enforcement_unavailable', 15)
+    wait(lambda: not learners('peer'), 30)
     helper('stop-service'); ctx['service']()
     assert helper('enrollment-checkpoint-proof', {}) == {'unchanged': True}
     assert rpc('hub.authorize', identity='receiver', worker='worker-two')['ok'] is False

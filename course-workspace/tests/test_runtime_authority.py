@@ -1,5 +1,7 @@
 """Runtime controls use real private SQLite authority/barriers and injected Docker."""
 import hashlib
+from contextlib import contextmanager
+import json
 import os
 from pathlib import Path
 import shutil
@@ -14,7 +16,8 @@ import uuid
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from ownership_contract import OwnershipError, digest
 from runtime_authority import (DockerBackend, RuntimeDispatcher, RuntimeRefusal, VERSION, bootstrap,
-                               tree_hash, file_hash, ADMISSION_UNUSED_SNAPSHOT, ADMISSION_UNUSED_RETAINED)
+                               tree_hash, file_hash, ADMISSION_UNUSED_SNAPSHOT, ADMISSION_UNUSED_RETAINED,
+                               _GuardianAcquisitionBusy)
 
 
 class Container:
@@ -621,6 +624,151 @@ class RuntimeTests(unittest.TestCase):
             f.dispatcher.monotonic = lambda: 10
             self.refuses('runtime_endpoint_enforcement_unavailable', f.dispatcher.supervision_tick)
             self.assertEqual(windows, [0.25, 0.1])
+
+    def test_guardian_actual_held_flock_defers_without_epoch_heartbeat_or_effect(self):
+        f = self.fixture; source = f.spawn(); peer = f.spawn(course='course-peer')
+        before = {item.id: list(item.actions) for item in f.client.containers.items.values()}
+        identity = f.backend.guardian_identity('worker-one'); held = threading.Event(); release = threading.Event(); authorized = []
+        with f.backend.connection() as conn:
+            history = [tuple(row) for row in conn.execute('SELECT * FROM guardians ORDER BY endpoint')]
+        def holder():
+            with f.backend.locks([('worker-one', 'course-main')]): held.set(); release.wait(5)
+        thread = threading.Thread(target=holder); thread.start()
+        try:
+            self.assertTrue(held.wait(2)); f.now += 1
+            result = f.dispatcher.dispatch(f.principal(role='guardian', authorize=lambda: authorized.append(True)),
+                'guardian.observe', 'course-main', identity)
+            self.assertEqual(result, {'authorized': False, 'deferred': True, 'worker_id': 'worker-one', 'course_id': 'course-main'})
+            self.assertEqual(authorized, [])
+            with f.backend.connection() as conn:
+                self.assertEqual([tuple(row) for row in conn.execute('SELECT * FROM guardians ORDER BY endpoint')], history)
+            self.assertEqual({item.id: item.actions for item in f.client.containers.items.values()}, before)
+            self.assertEqual(f.dispatcher.busy_since, {})
+        finally: release.set(); thread.join(5)
+        self.assertFalse(thread.is_alive())
+        self.assertIsNone(getattr(f.backend.observation_scope, 'token', None))
+        self.assertTrue(f.client.containers.get(source['server_id']).attrs['State']['Running'])
+        self.assertTrue(f.client.containers.get(peer['server_id']).attrs['State']['Running'])
+        self.assertTrue(f.heartbeat('worker-one', 'course-main')['authorized'])
+        self.assertEqual(f.backend.require_guardian('worker-one', 'course-main', 1)['checked_at'], 101)
+
+    def test_guardian_budget_is_thread_local_restored_and_hub_default_unchanged(self):
+        f = self.fixture; waits = []; entered = threading.Event(); release = threading.Event()
+        identity = f.backend.guardian_identity('worker-one')
+        @contextmanager
+        def unavailable(endpoints, *, wait_seconds=3):
+            waits.append((threading.current_thread().name, wait_seconds))
+            raise RuntimeRefusal('runtime_endpoint_lock_busy')
+            yield
+        def scoped():
+            with f.backend.guardian_observation_budget():
+                entered.set(); release.wait(3)
+            self.assertIsNone(getattr(f.backend.observation_scope, 'token', None))
+        thread = threading.Thread(target=scoped); thread.start()
+        try:
+            self.assertTrue(entered.wait(2))
+            with patch.object(f.backend, 'locks', side_effect=unavailable):
+                self.refuses('runtime_endpoint_lock_busy', lambda: f.dispatcher.dispatch(f.principal(), 'hub.authorize', 'course-main', {}))
+                self.assertTrue(f.dispatcher.dispatch(f.principal(role='guardian'), 'guardian.observe', 'course-main', identity)['deferred'])
+                self.refuses('runtime_endpoint_lock_busy', lambda: f.dispatcher.dispatch(f.principal(), 'hub.authorize', 'course-main', {}))
+            self.assertEqual([wait for _, wait in waits], [3, .1, 3])
+        finally: release.set(); thread.join(5)
+        self.assertFalse(thread.is_alive())
+
+    def test_nested_observation_context_is_refused_and_outer_scope_survives(self):
+        f = self.fixture
+        with f.backend.guardian_observation_budget() as token:
+            with self.assertRaisesRegex(RuntimeRefusal, '^runtime_observation_scope_nested$'):
+                with f.backend.guardian_observation_budget(): pass
+            self.assertIs(f.backend.observation_scope.token, token)
+        self.assertIsNone(f.backend.observation_scope.token)
+
+    def test_post_acquisition_busy_errors_never_become_deferred(self):
+        f = self.fixture; identity = f.backend.guardian_identity('worker-one')
+        for target in ('validate_request', 'guardian_heartbeat'):
+            with self.subTest(target=target), patch.object(f.backend, target, side_effect=RuntimeRefusal('runtime_endpoint_lock_busy')):
+                self.refuses('runtime_endpoint_lock_busy', lambda: f.dispatcher.dispatch(f.principal(role='guardian'), 'guardian.observe', 'course-main', identity))
+            self.assertIsNone(getattr(f.backend.observation_scope, 'token', None))
+            self.assertIsNone(getattr(f.backend.admission_scope, 'endpoint', None))
+        def deny(): raise RuntimeRefusal('runtime_endpoint_lock_busy')
+        self.refuses('runtime_endpoint_lock_busy', lambda: f.dispatcher.dispatch(f.principal(role='guardian', authorize=deny), 'guardian.observe', 'course-main', identity))
+        with patch.object(f.backend, 'inspect_worker', side_effect=RuntimeRefusal('runtime_endpoint_lock_busy')):
+            self.refuses('runtime_endpoint_lock_busy', lambda: f.dispatcher.dispatch(f.principal(role='guardian'), 'guardian.observe', 'course-main', identity))
+        self.assertIsNone(f.backend.observation_scope.token)
+
+    def test_deferred_marker_must_match_current_token_and_exact_endpoint(self):
+        f = self.fixture; identity = f.backend.guardian_identity('worker-one')
+        def wrong_token(*args): raise _GuardianAcquisitionBusy(object(), ('worker-one', 'course-main'))
+        def wrong_endpoint(*args): raise _GuardianAcquisitionBusy(f.backend.observation_scope.token, ('worker-one', 'course-peer'))
+        for callback in (wrong_token, wrong_endpoint):
+            with patch.object(f.dispatcher, '_observe', side_effect=callback):
+                with self.assertRaises(_GuardianAcquisitionBusy):
+                    f.dispatcher.dispatch(f.principal(role='guardian'), 'guardian.observe', 'course-main', identity)
+            self.assertIsNone(f.backend.observation_scope.token)
+
+    def test_nonowner_or_pending_sql_refusals_are_not_busy_deferrals(self):
+        f = self.fixture
+        identity = f.backend.guardian_identity('worker-two')
+        with self.assertRaisesRegex(OwnershipError, '^current_owner_required$'):
+            f.dispatcher.dispatch(f.principal('worker-two', role='guardian'), 'guardian.observe', 'course-main', identity)
+        with f.authority._connection() as conn:
+            conn.execute("UPDATE courses SET pending=? WHERE course_id='course-main'", ('f' * 32,))
+        with self.assertRaises(OwnershipError):
+            f.dispatcher.dispatch(f.principal(role='guardian'), 'guardian.observe', 'course-main', f.backend.guardian_identity('worker-one'))
+        self.assertIsNone(f.backend.observation_scope.token)
+
+    def test_deferred_observations_do_not_reset_prolonged_watchdog_inability(self):
+        f = self.fixture; held = threading.Event(); release = threading.Event(); f.dispatcher.monotonic = lambda: 10
+        f.dispatcher.busy_since[('worker-one', 'course-main')] = 0
+        identity = f.backend.guardian_identity('worker-one')
+        def holder():
+            with f.backend.locks([('worker-one', 'course-main')]): held.set(); release.wait(5)
+        thread = threading.Thread(target=holder); thread.start()
+        try:
+            self.assertTrue(held.wait(2))
+            self.assertTrue(f.dispatcher.dispatch(f.principal(role='guardian'), 'guardian.observe', 'course-main', identity)['deferred'])
+            self.assertEqual(f.dispatcher.busy_since[('worker-one', 'course-main')], 0)
+            self.refuses('runtime_endpoint_enforcement_unavailable', f.dispatcher.supervision_tick)
+        finally: release.set(); thread.join(5)
+        self.assertFalse(thread.is_alive())
+
+    def test_real_tls_busy_response_requires_guardian_scope_and_valid_body(self):
+        from authority_test_pki import TestPKI
+        from authority_access import AuthorityServer, ReplayStore
+        from hub.authority_client import AuthorityClient, AuthorityError, VERSION as ACCESS_VERSION
+        f = self.fixture; pki = TestPKI(f.directory / 'tls-pki')
+        guardian_cert, guardian_key = pki.issue('guardian'); hub_cert, hub_key = pki.issue('hub')
+        acl = f.directory / 'tls-acl.json'
+        acl.write_text(json.dumps({'version': ACCESS_VERSION, 'authority_id': f.authority.authority_id,
+            'clients': {pki.fingerprint(guardian_cert): {'role': 'guardian', 'workers': ['worker-one'], 'courses': ['course-main']},
+                        pki.fingerprint(hub_cert): {'role': 'hub', 'workers': ['worker-one'], 'courses': ['course-main']}}})); acl.chmod(0o600)
+        replay = ReplayStore.create(f.directory / 'tls-replay', f.authority.authority_id)
+        server = AuthorityServer(('127.0.0.1', 0), authority_id=f.authority.authority_id,
+            certfile=pki.server_cert, keyfile=pki.server_key, ca_file=pki.ca_cert, acl_file=acl,
+            replay_store=replay, dispatch=f.dispatcher.dispatch, timeout=.5)
+        serving = threading.Thread(target=server.serve_forever, kwargs={'poll_interval': .02}); serving.start()
+        held = threading.Event(); release = threading.Event()
+        def holder():
+            with f.backend.locks([('worker-one', 'course-main')]): held.set(); release.wait(5)
+        holding = threading.Thread(target=holder); holding.start()
+        def client(cert, key, course='course-main'):
+            return AuthorityClient('https://localhost:' + str(server.server_port), f.authority.authority_id,
+                pki.ca_cert, cert, key, 'worker-one', course, timeout=1)
+        try:
+            self.assertTrue(held.wait(2)); identity = f.backend.guardian_identity('worker-one')
+            for api, payload, code in [(client(hub_cert, hub_key), identity, 'authority_access_refused'),
+                                        (client(guardian_cert, guardian_key, 'course-peer'), identity, 'authority_access_refused'),
+                                        (client(guardian_cert, guardian_key), {}, 'authority_frame_invalid')]:
+                with self.assertRaises(AuthorityError) as caught: api.call('guardian.observe', payload)
+                self.assertEqual(caught.exception.code, code)
+            result = client(guardian_cert, guardian_key).call('guardian.observe', identity)
+            self.assertEqual(result, {'authorized': False, 'deferred': True, 'worker_id': 'worker-one', 'course_id': 'course-main'})
+            # The normal replay audit remains mandatory even for a no-grant reply.
+            with replay._connection() as conn: self.assertEqual(conn.execute('SELECT count(*) FROM requests').fetchone()[0], 1)
+            self.assertEqual(f.backend.require_guardian('worker-one', 'course-main', 1)['checked_at'], 100)
+        finally:
+            release.set(); holding.join(5); server.shutdown(); server.server_close(); serving.join(2)
+        self.assertFalse(holding.is_alive()); self.assertFalse(serving.is_alive())
 
     def test_supervisor_warning_is_fixed_only_when_owned_learners_exist(self):
         f = self.fixture

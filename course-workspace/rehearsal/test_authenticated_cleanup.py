@@ -170,6 +170,48 @@ class CleanupTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'fixture_cleanup_service_running'): fixture.cleanup_permissions(self.root, Docker())
             with self.assertRaisesRegex(ValueError, 'fixture_cleanup_service_running'): fixture.stop_service(self.root)
         finally: child.kill(); child.wait(timeout=3)
+
+    @unittest.skipUnless(sys.platform.startswith('linux'), 'actual Linux holder identity required')
+    def test_early_failure_stops_exact_holder_before_private_tree_handoff(self):
+        control = self.root / 'control'; control.mkdir(mode=0o700)
+        marker = self.root / 'late-writer'
+        code = ('import pathlib,sys,time; print("ready",flush=True); time.sleep(1); '
+                'pathlib.Path(sys.argv[4]).write_text("unexpected late write")')
+        child = subprocess.Popen([sys.executable, '-c', code, 'authenticated_fixture.py',
+            'enrollment-contention-hold', str(self.root), str(marker)], stdout=subprocess.PIPE, text=True)
+        try:
+            self.assertEqual(child.stdout.readline().strip(), 'ready')
+            fixture.write(control / 'enrollment-holder-course-main.json',
+                {'pid': child.pid, 'start_identity': fixture.process_identity(child.pid)})
+            with self.assertRaisesRegex(ValueError, 'fixture_cleanup_service_running'):
+                fixture.cleanup_permissions(self.root, Docker())
+            self.assertEqual(fixture.stop_service(self.root), {'stopped': True})
+            child.wait(timeout=3)
+            self.assertFalse(marker.exists())
+            self.assertEqual(fixture.cleanup_permissions(self.root, Docker()), {'ready': True})
+        finally:
+            if child.poll() is None: child.kill()
+            child.wait(timeout=3); child.stdout.close()
+
+    @unittest.skipUnless(sys.platform.startswith('linux'), 'actual Linux holder identity required')
+    def test_missing_or_replaced_holder_identity_refuses_handoff_without_numeric_signal(self):
+        control = self.root / 'control'; control.mkdir(mode=0o700)
+        child = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(30)',
+            'authenticated_fixture.py', 'enrollment-contention-hold', str(self.root)])
+        try:
+            deadline = time.monotonic() + 2
+            while not (Path('/proc') / str(child.pid) / 'cmdline').read_bytes() and time.monotonic() < deadline: time.sleep(.01)
+            with self.assertRaisesRegex(ValueError, 'fixture_cleanup_service_running'):
+                fixture.cleanup_permissions(self.root, Docker())
+            with self.assertRaisesRegex(ValueError, 'fixture_cleanup_service_running'):
+                fixture.stop_service(self.root)
+            fixture.write(control / 'enrollment-holder-course-peer.json',
+                {'pid': child.pid, 'start_identity': 'f' * 64})
+            with patch.object(fixture.signal, 'pidfd_send_signal') as send, patch.object(fixture.os, 'kill') as numeric:
+                with self.assertRaisesRegex(ValueError, 'fixture_service_replaced'): fixture.stop_service(self.root)
+                send.assert_not_called(); numeric.assert_not_called()
+            self.assertIsNone(child.poll())
+        finally: child.kill(); child.wait(timeout=3)
     @unittest.skipUnless(sys.platform.startswith('linux') and os.geteuid() == 0, 'root Linux fixture run required')
     def test_real_root_generated_tree_becomes_removable_by_unprivileged_creator(self):
         # Dedicated tmpfs during Docker verification; no host homes or Docker socket.

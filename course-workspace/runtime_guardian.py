@@ -58,7 +58,14 @@ class RuntimeGuardian:
             raise
         try:
             result = client.call('guardian.observe', identity)
-            if (set(result) != {'authorized', 'epoch', 'worker_id', 'course_id'} or result['authorized'] is not True
+            if (isinstance(result, dict) and set(result) == {'authorized', 'deferred', 'worker_id', 'course_id'}
+                    and result['authorized'] is False and result['deferred'] is True
+                    and result['worker_id'] == self.worker and result['course_id'] == course):
+                # Authenticated endpoint contention is not an ownership view.
+                # NO epoch, heartbeat, grant, or pending-stop state is renewed.
+                self.deferred(course, 'snapshot')
+                return False
+            if (not isinstance(result, dict) or set(result) != {'authorized', 'epoch', 'worker_id', 'course_id'} or result['authorized'] is not True
                     or result['worker_id'] != self.worker or result['course_id'] != course
                     or type(result['epoch']) is not int or not 1 <= result['epoch'] <= 10**9):
                 raise RuntimeRefusal('guardian_observation_invalid')

@@ -86,7 +86,8 @@ def verify_no_service_commands(root):
             args = raw.decode('utf-8', errors='replace').split('\0')
             for index, arg in enumerate(args):
                 if (Path(arg).name == 'authenticated_fixture.py' and index + 2 < len(args)
-                        and args[index + 1] in {'serve', 'serve-prepared-fault'} and args[index + 2] == str(root)):
+                        and args[index + 1] in {'serve', 'serve-prepared-fault', 'enrollment-contention-hold'}
+                        and args[index + 2] == str(root)):
                     raise ValueError('fixture_cleanup_service_running')
                 if Path(arg).name == 'controller_service.py' and str(Path(root) / 'runtime.json') in args:
                     raise ValueError('fixture_cleanup_service_running')
@@ -104,13 +105,7 @@ def service_state(record):
     return raw[0]
 
 
-def stop_service(root, *, wait_seconds=5):
-    if not 0 < wait_seconds <= 5: raise ValueError('fixture_service_wait_invalid')
-    deadline = time.monotonic() + wait_seconds
-    try: record = read_record(Path(root) / 'service-pid.json')
-    except FileNotFoundError:
-        verify_no_service_commands(root)
-        return {'stopped': True}
+def _stop_process(record, deadline):
     state = service_state(record)
     if state not in (None, 'Z'):
         if not hasattr(os, 'pidfd_open') or not hasattr(signal, 'pidfd_send_signal'):
@@ -128,6 +123,16 @@ def stop_service(root, *, wait_seconds=5):
     while service_state(record) not in (None, 'Z'):
         if time.monotonic() >= deadline: raise ValueError('fixture_service_stop_timeout')
         time.sleep(0.05)
+
+
+def stop_service(root, *, wait_seconds=5):
+    if not 0 < wait_seconds <= 5: raise ValueError('fixture_service_wait_invalid')
+    deadline = time.monotonic() + wait_seconds
+    for path in [Path(root) / 'service-pid.json', *(Path(root) / 'control' /
+            ('enrollment-holder-' + course + '.json') for course in ('course-main', 'course-peer'))]:
+        try: record = read_record(path)
+        except FileNotFoundError: continue
+        _stop_process(record, deadline)
     verify_no_service_commands(root)
     return {'stopped': True}
 
