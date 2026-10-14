@@ -3,12 +3,32 @@
 import argparse
 import json
 from pathlib import Path
+import time
 
 import requests
 
 import worker_enrollment_evidence as evidence
 from verify_authenticated_runtime import run
 from smoke import kernel
+
+
+def await_hub_authorization(call, worker='worker-one', course='course-main', *, timeout=30,
+                            monotonic=time.monotonic, sleep=time.sleep):
+    """Await startup transport readiness; logical denials never become retries."""
+    deadline = monotonic() + timeout
+    while True:
+        reply = call()
+        if isinstance(reply, dict) and reply.get('ok') is True:
+            assert set(reply) == {'ok', 'result'}
+            result = reply.get('result')
+            assert (isinstance(result, dict) and set(result) == {'authorized', 'epoch', 'worker_id', 'course_id'}
+                and result['authorized'] is True and type(result['epoch']) is int and 1 <= result['epoch'] <= 10**9
+                and result['worker_id'] == worker and result['course_id'] == course)
+            return
+        assert (isinstance(reply, dict) and set(reply) == {'ok', 'refused', 'code'}
+            and reply['ok'] is False and reply['refused'] is True and reply['code'] == 'authority_transport_unavailable')
+        if monotonic() >= deadline: raise RuntimeError('fixture_hub_startup_unavailable')
+        sleep(0.2)
 
 
 def exercise(ctx):
@@ -72,7 +92,7 @@ def exercise(ctx):
     assert rpc('hub.authorize', identity='source')['ok'] is True
     helper('stop-service'); ctx['service']()
     assert rpc('hub.authorize', identity='source-next')['ok'] is False
-    assert rpc('hub.authorize', identity='source')['ok'] is True
+    await_hub_authorization(lambda: rpc('hub.authorize', identity='source'))
     # Authority restart may correctly trigger Guardian outage stops. Reopen
     # saved notebooks before measuring worker-local rotation continuity.
     sessions = {suffix: notebook(suffix) for suffix in ('source', 'peer')}

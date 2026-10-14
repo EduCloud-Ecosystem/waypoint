@@ -2,7 +2,8 @@
 from copy import deepcopy
 import authenticated_evidence as base
 
-VERSION = 'waypoint-worker-enrollment-rehearsal-v1'
+LEGACY_VERSION = 'waypoint-worker-enrollment-rehearsal-v1'
+VERSION = 'waypoint-worker-enrollment-rehearsal-v2'
 SCOPE = base.SCOPE
 FAILURES = base.FAILURES
 CODE_FILES = base.CODE_FILES | {'worker_enrollment.py', 'worker_credentials.py',
@@ -24,7 +25,7 @@ PHASES = (
 
 def validate_report(report, require_clean=True):
     try:
-        if (not isinstance(report, dict) or report.get('version') != VERSION
+        if (not isinstance(report, dict) or report.get('version') not in (VERSION, LEGACY_VERSION)
                 or not isinstance(report.get('phases'), list)
                 or report['phases'] != list(PHASES[:len(report['phases'])])):
             raise ValueError()
@@ -35,7 +36,7 @@ def validate_report(report, require_clean=True):
         # Reuse the exact capacity, allocation, privacy and provenance checks.
         # This normalized value is internal schema validation, never evidence.
         normalized = deepcopy(report)
-        normalized['version'] = base.VERSION
+        normalized['version'] = base.PREVIOUS_VERSION if report['version'] == LEGACY_VERSION else base.VERSION
         normalized['phases'] = list(base.PHASES) if report.get('status') == 'PASS' else []
         if 'code_sha256' in normalized:
             normalized['code_sha256'] = {path: normalized['code_sha256'][path] for path in base.CODE_FILES}

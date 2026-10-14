@@ -15,4 +15,5 @@
 !tests/authority_test_pki.py
 !rehearsal/
 !rehearsal/authenticated_fixture.py
+!rehearsal/authenticated_evidence.py
 !rehearsal/enrollment_fixture.py

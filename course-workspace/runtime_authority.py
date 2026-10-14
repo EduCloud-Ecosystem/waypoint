@@ -690,6 +690,15 @@ class DockerBackend:
             conn.execute('COMMIT')
         if row is None: refuse('guardian_unavailable')
         record = json.loads(row['record'])
+        self.guardian_deadline(worker, course, epoch, record)
+        if self.guardian_identity(worker) != {key: record.get(key) for key in ('guardian_container_id', 'start_identity')}:
+            logging.getLogger(__name__).warning('Guardian heartbeat refused: container_identity_changed')
+            refuse('guardian_stale_or_changed')
+        self.guardian_deadline(worker, course, epoch, record)
+        return record
+
+    def guardian_deadline(self, worker, course, epoch, record):
+        """Recheck a freshly inspected lease after slow work, without I/O or renewal."""
         expected = {'authority_id': self.authority_id, 'worker_id': worker, 'course_id': course,
             'provider_id': self.config['workers'][worker]['provider_id'], 'boot_id': self.config['workers'][worker]['boot_id'], 'epoch': epoch}
         reason = None
@@ -700,11 +709,13 @@ class DockerBackend:
         elif type(record.get('checked_at')) not in (int, float) or not math.isfinite(record['checked_at']):
             reason = 'timestamp_invalid'
         else:
-            age = self.clock() - record['checked_at']
-            if age < 0: reason = 'heartbeat_future'
-            elif age > self.config['guardians'][worker]['heartbeat_seconds']: reason = 'heartbeat_expired'
-            elif self.guardian_identity(worker) != {key: record.get(key) for key in ('guardian_container_id', 'start_identity')}:
-                reason = 'container_identity_changed'
+            now = self.clock()
+            if type(now) not in (int, float) or not math.isfinite(now):
+                reason = 'timestamp_invalid'
+            else:
+                age = now - record['checked_at']
+                if age < 0: reason = 'heartbeat_future'
+                elif age > self.config['guardians'][worker]['heartbeat_seconds']: reason = 'heartbeat_expired'
         if reason is not None:
             logging.getLogger(__name__).warning('Guardian heartbeat refused: %s', reason)
             refuse('guardian_stale_or_changed')
@@ -858,6 +869,8 @@ class RuntimeDispatcher:
                     heartbeat = self.backend.require_guardian(worker, course_id, epoch)
                     self.guardian_authorize(heartbeat['cert_sha256'], worker, course_id)
                     principal['authorize']()  # Guardian verification can itself perform slow inspection.
+                    self.backend.guardian_deadline(worker, course_id, epoch, heartbeat)
+                    return heartbeat
                 heartbeat = self.backend.require_guardian(worker, course_id, epoch)
                 self.guardian_authorize(heartbeat['cert_sha256'], worker, course_id)
                 item = self.backend.course(worker, course_id)
@@ -877,10 +890,9 @@ class RuntimeDispatcher:
                         compatible = {key: value for key, value in current_environment.items()
                             if key in ENV_KEYS or key in environment} == environment
                         if self.backend.running(container) and compatible:
-                            principal['authorize']()
-                            heartbeat = self.backend.require_guardian(worker, course_id, epoch)
-                            self.guardian_authorize(heartbeat['cert_sha256'], worker, course_id)
-                            return self.server(container, epoch)
+                            result = self.server(container, epoch)
+                            authorize_effect()
+                            return result
                         authorize_effect()
                         self.backend.remove(container, worker, course_id, authorize=authorize_effect)
                 values = self.backend.containers(worker, course_id)
@@ -899,10 +911,12 @@ class RuntimeDispatcher:
                     cpu_period=100000, cpu_quota=int(item['profile']['learner_cpu'] * 100000),
                     tmpfs={'/tmp': 'rw,nosuid,nodev,size=128m,mode=1777'}, restart_policy={'Name': 'no'}, detach=True)
                 try:
-                    authorize_effect()
+                    heartbeat = authorize_effect()
                     container.start()
                     self.backend.verified_container(container, worker, course_id, check_policy=True)
-                    return self.server(container, epoch)
+                    result = self.server(container, epoch)
+                    self.backend.guardian_deadline(worker, course_id, epoch, heartbeat)
+                    return result
                 except BaseException:
                     self.backend.remove(container, worker, course_id)
                     raise

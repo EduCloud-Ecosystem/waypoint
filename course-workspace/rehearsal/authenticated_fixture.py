@@ -239,10 +239,8 @@ def cleanup_permissions(root, client=None):
 
 
 def course_allocation(cpu):
-    if type(cpu) is not int or cpu < 4: raise ValueError('fixture_cpu_capacity_invalid')
-    if cpu >= 5:
-        return {'name': 'five-cpu-local', 'learner_cpu': 0.25, 'hub_cpu': 1.0, 'reserved_cpu': 4.5, 'minimum_cpu': 5}
-    return {'name': 'four-cpu-ci', 'learner_cpu': 0.1, 'hub_cpu': 1.0, 'reserved_cpu': 4.0, 'minimum_cpu': 4}
+    from authenticated_evidence import allocation_for_cpu
+    return allocation_for_cpu(cpu)
 
 
 def initialize(root, request):
@@ -252,7 +250,8 @@ def initialize(root, request):
     info = client.info()
     allocation = course_allocation(info['NCPU'])
     course_cpu = allocation['hub_cpu'] + allocation['learner_cpu']
-    reserve_cpu = allocation['reserved_cpu'] - 3 * course_cpu
+    reserve_cpu = allocation['host_reserve_cpu']
+    assert 3 * course_cpu + reserve_cpu == allocation['reserved_cpu']
     name = request['name']
     # SQLite and endpoint locks live on private Linux volumes; homes retain
     # their actual host bindings. Fresh child directories are bootstrapped once.
@@ -364,7 +363,8 @@ def launch(root):
                 request['name'] + '-backend': {'bind': str(root / 'backend'), 'mode': 'rw'},
                 '/var/run/docker.sock': {'bind': '/var/run/docker.sock', 'mode': 'rw'}},
             labels={'educloud.runtime.authority': config['authority_id'], 'educloud.runtime.worker': worker, 'educloud.runtime.kind': 'guardian'},
-            mem_limit=128 * 1024**2, cpu_period=100000, cpu_quota=10000, restart_policy={'Name': 'no'})
+            mem_limit=128 * 1024**2, cpu_period=100000,
+            cpu_quota=int(fixture['allocation']['guardian_cpu'] * 100000), restart_policy={'Name': 'no'})
     return {'launched': True}
 
 

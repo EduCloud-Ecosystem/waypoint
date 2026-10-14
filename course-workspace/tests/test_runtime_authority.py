@@ -338,6 +338,61 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual(f.backend.containers('worker-one', 'course-main'), [])
         self.assertEqual(len(f.client.volume_items), 6)
 
+    def test_heartbeat_expiry_during_final_hub_authorization_prevents_start(self):
+        f = self.fixture; calls = []
+        def authorize():
+            if any(item.attrs['Config']['Labels'].get('educloud.workspace.kind') == 'learner'
+                   for item in f.client.containers.items.values()):
+                calls.append(True)
+                if len(calls) == 2: f.now = 104
+        self.refuses('guardian_stale_or_changed', lambda: f.spawn(authorize=authorize))
+        created = f.client.containers.created[-1][0]
+        self.assertNotIn('start', created.actions)
+        self.assertNotIn(created.id, f.client.containers.items)
+        self.assertEqual(created.actions[-1], ('remove', False, False))
+
+    def test_heartbeat_expiry_during_final_authorization_prevents_network_creation(self):
+        f = self.fixture; calls = []; created = len(f.client.containers.created)
+        def authorize():
+            calls.append(True)
+            if len(calls) == 2: f.now = 104
+        self.refuses('guardian_stale_or_changed', lambda: f.spawn(authorize=authorize))
+        self.assertEqual(f.client.networks.items, {})
+        self.assertEqual(len(f.client.containers.created), created)
+
+    def test_existing_server_adoption_refuses_heartbeat_expired_by_slow_guardian_policy(self):
+        f = self.fixture; first = f.spawn(); container = f.client.containers.get(first['server_id'])
+        actions = list(container.actions); created = len(f.client.containers.created); calls = []
+        original = f.dispatcher.guardian_authorize
+        def authorize(*args):
+            original(*args); calls.append(True)
+            if len(calls) == 2: f.now = 104
+        with patch.object(f.dispatcher, 'guardian_authorize', side_effect=authorize):
+            self.refuses('guardian_stale_or_changed', f.spawn)
+        self.assertEqual(container.actions, actions)
+        self.assertEqual(len(f.client.containers.created), created)
+        self.assertTrue(container.attrs['State']['Running'])
+
+    def test_adoption_return_checks_lease_after_slow_server_inspection(self):
+        f = self.fixture; first = f.spawn(); container = f.client.containers.get(first['server_id'])
+        actions = list(container.actions); original = f.dispatcher.server
+        def observe(*args):
+            result = original(*args); f.now = 104; return result
+        with patch.object(f.dispatcher, 'server', side_effect=observe):
+            self.refuses('guardian_stale_or_changed', f.spawn)
+        self.assertEqual(container.actions, actions)
+
+    def test_new_server_return_expiry_cleans_only_its_newly_started_container(self):
+        f = self.fixture; peer = f.spawn(course='course-peer'); original = f.dispatcher.server
+        def observe(*args):
+            result = original(*args); f.now = 104; return result
+        with patch.object(f.dispatcher, 'server', side_effect=observe):
+            self.refuses('guardian_stale_or_changed', f.spawn)
+        created = f.client.containers.created[-1][0]
+        self.assertIn('start', created.actions)
+        self.assertNotIn(created.id, f.client.containers.items)
+        self.assertTrue(f.client.containers.get(peer['server_id']).attrs['State']['Running'])
+
     def test_guardian_revocation_during_create_refuses_start_and_cleans_owned_container(self):
         f = self.fixture; original = f.client.containers.create
         def create(*args, **kwargs):

@@ -118,8 +118,14 @@ counts. Worker revocation has no automatic undo or re-enrollment shortcut.
 ## Repeat the actual local test
 
 Use the clean reviewed checkout and the disposable environment described in
-[the authenticated runtime guide](AUTHENTICATED-RUNTIME.md): at least four Docker
-CPUs and 6,656 MiB. Build the Hub/course/controller images using that guide, then:
+[the authenticated runtime guide](AUTHENTICATED-RUNTIME.md). Desktop testing uses
+at least six Docker CPUs and 6,656 MiB. Its controller receives one CPU, and the
+fixture reserves 1.5 CPUs for the controller, both Guardians and overhead;
+the complete reservation is 5.25 CPUs. The four/five-CPU Linux profiles retain
+their 0.4-CPU controller. Reports record these selected limits and compare them
+with actual Docker quotas. These describe disposable component tests; representative
+class capacity requires its own rehearsal. Build the Hub/course/controller images
+using that guide, then:
 
 ```sh
 python course-workspace/rehearsal/verify_worker_enrollment.py \
@@ -130,6 +136,9 @@ The test creates a fresh registry, proves legacy runtime ACL entries cannot bypa
 unenrolled status, enrolls reviewed worker credentials and executes Python/R with
 saved files. It checks inert staging across authority restart, old/new mutual TLS
 overlap, retirement, actual credential installation, and restored coursework.
+It also holds a real endpoint lock for four seconds: busy responses leave the
+heartbeat unchanged and preserve both notebooks. A thirteen-second exclusion
+proves heartbeat expiry and authority shutdown, followed by saved-work recovery.
 It lets an old Guardian's five-second overlap expire without an operator retirement
 call, confirms its worker's notebook stops while the peer worker continues, then
 installs the replacement and reopens saved work. Worker revocation and service
@@ -138,7 +147,7 @@ authority outage may correctly replace ephemeral notebooks; continuity means sav
 coursework across that outage, and exact peer-runtime continuity during worker-local
 failures while authority remains available.
 
-The report has ten ordered controls, twenty executed source fingerprints, recipe
+The report has ten ordered controls, twenty reviewed source fingerprints, recipe
 and image hashes, actual capacity/allocation and verified owned cleanup. The existing
 legacy twelve-control runtime test remains separate. The CI workflow runs them
 sequentially. Dirty runs are diagnostics only and cannot establish acceptance.

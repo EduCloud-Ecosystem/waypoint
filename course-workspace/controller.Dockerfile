@@ -8,4 +8,5 @@ COPY worker_enrollment.py worker_credentials.py /srv/authority/
 COPY hub/authority_client.py /srv/authority/hub/authority_client.py
 COPY tests/authority_test_pki.py /srv/authority/authority_test_pki.py
 COPY rehearsal/authenticated_fixture.py rehearsal/enrollment_fixture.py /srv/authority/
+COPY rehearsal/authenticated_evidence.py /srv/authority/
 CMD ["python", "controller_service.py"]

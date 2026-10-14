@@ -60,6 +60,24 @@ class WorkerEnrollmentEvidenceTests(unittest.TestCase):
         report['acceptance_eligible'] = True; self.refused(report)
         report['acceptance_eligible'] = False; report['allocation']['learner_cpu'] = True; self.refused(report)
 
+    def test_historical_v1_uses_base_v2_five_field_presets_without_promotion(self):
+        for cpu in (4,5,8):
+            report=example();report['host']['cpu']=cpu;report['version']=evidence.LEGACY_VERSION
+            report['allocation']=deepcopy(base.LEGACY_ALLOCATION_PRESETS['four-cpu-ci' if cpu==4 else 'five-cpu-local'])
+            before=deepcopy(report);evidence.validate_report(report);self.assertEqual(report,before)
+            report['version']=evidence.VERSION;self.refused(report)
+            report=before;report['allocation']=base.allocation_for_cpu(cpu);self.refused(report)
+
+    def test_current_v2_requires_exact_eight_field_control_allocation_and_twenty_hashes(self):
+        for cpu in (4,5,6,64):
+            report=example();report['host']['cpu']=cpu;report['allocation']=base.allocation_for_cpu(cpu)
+            evidence.validate_report(report)
+            for field in ('controller_cpu','guardian_cpu','host_reserve_cpu'):
+                changed=deepcopy(report);changed['allocation'][field]=True;self.refused(changed)
+                changed=deepcopy(report);del changed['allocation'][field];self.refused(changed)
+            report['allocation']=deepcopy(base.LEGACY_ALLOCATION_PRESETS['four-cpu-ci' if cpu==4 else 'five-cpu-local'])
+            self.refused(report)
+
     def test_cli_redacts_private_exception_and_still_writes_failure_evidence(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory); report = root / 'report.json'

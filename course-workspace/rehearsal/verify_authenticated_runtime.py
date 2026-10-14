@@ -19,7 +19,7 @@ import requests
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from smoke import kernel, change, xsrf
 from hub.authority_client import ERRORS
-from authenticated_evidence import VERSION
+from authenticated_evidence import VERSION, allocation_for_cpu
 
 
 def command(*args, data=None, timeout=60):
@@ -83,8 +83,15 @@ def run(args, *, exercise=None, evidence=None):
     def phase(value):
         phases.append(value); print(value + ': PASS', flush=True)
     def helper(action, payload=None):
-        return json.loads(command('exec', '-i', controller, 'python', 'authenticated_fixture.py', action, str(root),
+        result = json.loads(command('exec', '-i', controller, 'python', 'authenticated_fixture.py', action, str(root),
             data=json.dumps(payload) if payload is not None else None))
+        if action == 'launch':
+            for worker in ('worker-one', 'worker-two'):
+                guardian = json.loads(command('inspect', name + '-' + worker + '-guardian'))[0]
+                limits = guardian['HostConfig']
+                assert guardian['Image'] == controller_image and limits['Memory'] == 128 * 1024**2
+                assert limits['CpuQuota'] / limits['CpuPeriod'] == allocation['guardian_cpu']
+        return result
     def rpc(op, payload=None, identity='operator', worker='worker-one', course='course-main'):
         reply = helper('rpc', dict(identity=identity, worker_id=worker, course_id=course,
             operation=op, payload=payload or {}))
@@ -146,7 +153,8 @@ def run(args, *, exercise=None, evidence=None):
             'runtime_guardian.py', 'controller_service.py')}
         controller_files.update({workspace / 'hub/authority_client.py': '/srv/authority/hub/authority_client.py',
             workspace / 'tests/authority_test_pki.py': '/srv/authority/authority_test_pki.py',
-            workspace / 'rehearsal/authenticated_fixture.py': '/srv/authority/authenticated_fixture.py'})
+            workspace / 'rehearsal/authenticated_fixture.py': '/srv/authority/authenticated_fixture.py',
+            workspace / 'rehearsal/authenticated_evidence.py': '/srv/authority/authenticated_evidence.py'})
         if exercise is not None:
             for path in ('worker_enrollment.py', 'worker_credentials.py'):
                 controller_files[workspace / path] = '/srv/authority/' + path
@@ -182,6 +190,7 @@ def run(args, *, exercise=None, evidence=None):
                 if command(kind, 'ls', '-aq' if kind == 'container' else '-q', '--filter',
                     'label=educloud.workspace.instance=' + name + '-' + suffix):
                     raise RuntimeError('fixture_name_collision')
+        allocation = allocation_for_cpu(int(command('info', '--format', '{{.NCPU}}')))
         cleanup_authorized = True
         command('network', 'create', '--internal', '--label', 'educloud.fixture=' + name, network)
         command('network', 'create', '--label', 'educloud.fixture=' + name, name + '-edge')
@@ -192,9 +201,12 @@ def run(args, *, exercise=None, evidence=None):
             '--mount', 'type=volume,src=' + name + '-control,dst=' + str(root / 'control') + ',volume-nocopy',
             '--mount', 'type=volume,src=' + name + '-backend,dst=' + str(root / 'backend') + ',volume-nocopy',
             '--mount', 'type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock', '--memory', '256m',
-            '--cpus', '0.4', controller_image, 'python', '-c', 'import time; time.sleep(86400)')
+            '--cpus', str(allocation['controller_cpu']), controller_image, 'python', '-c', 'import time; time.sleep(86400)')
+        limits = json.loads(command('inspect', controller))[0]['HostConfig']
+        assert limits['CpuQuota'] / limits['CpuPeriod'] == allocation['controller_cpu'] and limits['Memory'] == 256 * 1024**2
         observed = helper('bootstrap', dict(name=name, network=network, edge_network=name + '-edge', ports=ports, password=password,
             course_image=course_image, hub_image=hub_image, controller_image=controller_image))
+        assert observed['allocation'] == allocation
         report['host'] = {key: observed[key] for key in ('memory_bytes', 'cpu')}
         report['allocation'] = observed['allocation']
         if exercise is not None:

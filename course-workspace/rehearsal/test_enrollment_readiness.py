@@ -1,0 +1,45 @@
+"""Startup transport polling must never mask a logical authorization denial."""
+import unittest
+from verify_worker_enrollment import await_hub_authorization
+
+
+def authorized():
+    return {'ok': True, 'result': {'authorized': True, 'epoch': 1,
+        'worker_id': 'worker-one', 'course_id': 'course-main'}}
+
+
+class EnrollmentReadinessTests(unittest.TestCase):
+    def test_transport_then_exact_current_authorization(self):
+        replies = iter([{'ok': False, 'refused': True, 'code': 'authority_transport_unavailable'}, authorized()])
+        sleeps = []
+        await_hub_authorization(lambda: next(replies), sleep=sleeps.append)
+        self.assertEqual(sleeps, [0.2])
+
+    def test_logical_denial_and_unknown_failure_are_immediate(self):
+        for reply in ({'ok': False, 'code': 'authority_access_refused'},
+                      {'ok': False, 'code': 'authority_operation_refused'}, None, {}, {'ok': 1},
+                      {'ok': False, 'code': 'authority_transport_unavailable'},
+                      {'ok': False, 'refused': 1, 'code': 'authority_transport_unavailable'},
+                      {'ok': False, 'refused': True, 'code': 'authority_transport_unavailable', 'result': {'authorized': False}}):
+            with self.subTest(reply=reply), self.assertRaises(AssertionError):
+                await_hub_authorization(lambda: reply, sleep=lambda _: self.fail('denial must not retry'))
+        reply = authorized(); reply['code'] = 'authority_access_refused'
+        with self.assertRaises(AssertionError): await_hub_authorization(lambda: reply)
+
+    def test_success_requires_exact_scope_boolean_epoch_and_no_deferred_grant(self):
+        for field, value in [('authorized', 1), ('epoch', True), ('epoch', 0),
+                             ('worker_id', 'worker-two'), ('course_id', 'course-peer'), ('deferred', True)]:
+            reply = authorized(); reply['result'][field] = value
+            with self.subTest(field=field, value=value), self.assertRaises(AssertionError):
+                await_hub_authorization(lambda: reply)
+
+    def test_continuous_transport_failure_is_bounded(self):
+        now = [0.0]; calls = []
+        def call(): calls.append(True); return {'ok': False, 'refused': True, 'code': 'authority_transport_unavailable'}
+        def sleep(seconds): now[0] += seconds
+        with self.assertRaisesRegex(RuntimeError, '^fixture_hub_startup_unavailable$'):
+            await_hub_authorization(call, timeout=0.4, monotonic=lambda: now[0], sleep=sleep)
+        self.assertEqual(len(calls), 3)
+
+
+if __name__ == '__main__': unittest.main()

@@ -89,14 +89,15 @@ class PresetDiagnosticsTests(unittest.TestCase):
         return client, captured[0], result
 
     def test_deterministic_verified_cpu_presets_and_malformed_capacity_refusal(self):
-        self.assertEqual(fixture.course_allocation(4), {'name': 'four-cpu-ci', 'learner_cpu': .1, 'hub_cpu': 1.0, 'reserved_cpu': 4.0, 'minimum_cpu': 4})
-        for cpu in (5, 8, 64):
-            self.assertEqual(fixture.course_allocation(cpu), {'name': 'five-cpu-local', 'learner_cpu': .25, 'hub_cpu': 1.0, 'reserved_cpu': 4.5, 'minimum_cpu': 5})
-        for cpu in (True, False, 4.0, 3, -1, '8', None):
+        self.assertEqual(fixture.course_allocation(4), {'name': 'four-cpu-ci', 'learner_cpu': .1, 'hub_cpu': 1.0, 'reserved_cpu': 4.0, 'minimum_cpu': 4,'controller_cpu':.4,'guardian_cpu':.1,'host_reserve_cpu':.7})
+        self.assertEqual(fixture.course_allocation(5), {'name': 'five-cpu-local', 'learner_cpu': .25, 'hub_cpu': 1.0, 'reserved_cpu': 4.5, 'minimum_cpu': 5,'controller_cpu':.4,'guardian_cpu':.1,'host_reserve_cpu':.75})
+        for cpu in (6, 8, 64):
+            self.assertEqual(fixture.course_allocation(cpu), {'name': 'six-cpu-local', 'learner_cpu': .25, 'hub_cpu': 1.0, 'reserved_cpu': 5.25, 'minimum_cpu': 6,'controller_cpu':1.0,'guardian_cpu':.1,'host_reserve_cpu':1.5})
+        for cpu in (True, False, 4.0, 3, -1, '8', None,4097):
             with self.subTest(cpu=cpu), self.assertRaises(ValueError): fixture.course_allocation(cpu)
 
     def test_initialization_and_launch_use_selected_actual_profile(self):
-        for cpu in (4, 8):
+        for cpu in (4, 5, 8):
             with self.subTest(cpu=cpu), tempfile.TemporaryDirectory() as directory:
                 self.root = Path(directory).resolve(); self.root.chmod(0o700)
                 for name in ('control', 'backend'): (self.root / name).mkdir(mode=0o700)
@@ -105,6 +106,7 @@ class PresetDiagnosticsTests(unittest.TestCase):
                 self.assertEqual(result['allocation'], allocation)
                 self.assertEqual(fixture.read_record(self.root / 'fixture.json')['allocation'], allocation)
                 self.assertEqual(sum(worker['cpu_budget'] for worker in config['workers'].values()) + config['host_reserve_cpu'], allocation['reserved_cpu'])
+                self.assertEqual(config['host_reserve_cpu'],allocation['host_reserve_cpu'])
                 self.assertEqual(sum(worker['memory_budget_mb'] for worker in config['workers'].values()) + config['host_reserve_mb'], 6656)
                 sdk = types.SimpleNamespace(DockerClient=lambda **options: client)
                 with patch.dict(sys.modules, {'docker': sdk}): fixture.launch(self.root)
@@ -114,6 +116,8 @@ class PresetDiagnosticsTests(unittest.TestCase):
                     self.assertEqual(options['environment']['WORKSPACE_MEMORY_MB'], '512')
                     self.assertEqual(options['cpu_quota'] / options['cpu_period'], 1)
                     self.assertEqual(options['mem_limit'], 1024 * 1024**2)
+                for options in client.guards:
+                    self.assertEqual(options['cpu_quota']/options['cpu_period'],allocation['guardian_cpu'])
                 for courses in config['courses'].values():
                     for item in courses.values():
                         self.assertEqual(item['profile']['learner_cpu'], allocation['learner_cpu'])
