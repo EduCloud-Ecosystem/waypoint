@@ -68,6 +68,16 @@ def result_matches(reply, field, expected):
             and type(result[field]) is type(expected) and result[field] == expected)
 
 
+def configured_cpu_limit(limits):
+    """Accept exactly one Docker CPU-limit representation; refuse unbounded caps."""
+    nano, quota, period = (limits.get(key, 0) for key in ('NanoCpus', 'CpuQuota', 'CpuPeriod'))
+    if any(type(value) is not int for value in (nano, quota, period)):
+        raise ValueError('fixture_cpu_limit_invalid')
+    if nano > 0 and quota == 0 and period == 0: return nano / 10**9
+    if nano == 0 and quota > 0 and period > 0: return quota / period
+    raise ValueError('fixture_cpu_limit_invalid')
+
+
 def run(args, *, exercise=None, evidence=None):
     if evidence is None:
         import authenticated_evidence as evidence
@@ -90,7 +100,7 @@ def run(args, *, exercise=None, evidence=None):
                 guardian = json.loads(command('inspect', name + '-' + worker + '-guardian'))[0]
                 limits = guardian['HostConfig']
                 assert guardian['Image'] == controller_image and limits['Memory'] == 128 * 1024**2
-                assert limits['CpuQuota'] / limits['CpuPeriod'] == allocation['guardian_cpu']
+                assert configured_cpu_limit(limits) == allocation['guardian_cpu']
         return result
     def rpc(op, payload=None, identity='operator', worker='worker-one', course='course-main'):
         reply = helper('rpc', dict(identity=identity, worker_id=worker, course_id=course,
@@ -202,10 +212,12 @@ def run(args, *, exercise=None, evidence=None):
             '--mount', 'type=volume,src=' + name + '-backend,dst=' + str(root / 'backend') + ',volume-nocopy',
             '--mount', 'type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock', '--memory', '256m',
             '--cpus', str(allocation['controller_cpu']), controller_image, 'python', '-c', 'import time; time.sleep(86400)')
-        limits = json.loads(command('inspect', controller))[0]['HostConfig']
-        assert limits['CpuQuota'] / limits['CpuPeriod'] == allocation['controller_cpu'] and limits['Memory'] == 256 * 1024**2
         observed = helper('bootstrap', dict(name=name, network=network, edge_network=name + '-edge', ports=ports, password=password,
             course_image=course_image, hub_image=hub_image, controller_image=controller_image))
+        # Bootstrap binds cleanup to the original private directory before any
+        # quota-proof refusal; the service and learner runtimes have not started.
+        limits = json.loads(command('inspect', controller))[0]['HostConfig']
+        assert configured_cpu_limit(limits) == allocation['controller_cpu'] and limits['Memory'] == 256 * 1024**2
         assert observed['allocation'] == allocation
         report['host'] = {key: observed[key] for key in ('memory_bytes', 'cpu')}
         report['allocation'] = observed['allocation']
