@@ -1,6 +1,6 @@
 """Startup transport polling must never mask a logical authorization denial."""
 import unittest
-from verify_worker_enrollment import await_hub_authorization, await_guardian_authorization
+from verify_worker_enrollment import await_hub_authorization, await_guardian_authorization, verify_contention_batch
 
 
 def authorized():
@@ -9,6 +9,20 @@ def authorized():
 
 
 class EnrollmentReadinessTests(unittest.TestCase):
+    def test_batch_requires_exact_two_held_busy_unchanged_heartbeat_proofs(self):
+        from copy import deepcopy
+        value = {'observations': [{'deferred': True, 'held_before': True, 'held_after': True,
+            'heartbeat_unchanged': True, 'elapsed_ms': 100.0}] * 2, 'expiry_while_held': False}
+        verify_contention_batch(value, expiry=False)
+        for key in ('deferred', 'held_before', 'held_after', 'heartbeat_unchanged'):
+            altered = deepcopy(value); altered['observations'][0][key] = False
+            with self.subTest(key=key), self.assertRaises(AssertionError): verify_contention_batch(altered, expiry=False)
+        for bad in (True, 3000, -1, float('nan')):
+            altered = deepcopy(value); altered['observations'][0]['elapsed_ms'] = bad
+            with self.subTest(bad=bad), self.assertRaises(AssertionError): verify_contention_batch(altered, expiry=False)
+        altered = deepcopy(value); altered['observations'].pop()
+        with self.assertRaises(AssertionError): verify_contention_batch(altered, expiry=False)
+        with self.assertRaises(AssertionError): verify_contention_batch(value, expiry=True)
     def test_guardian_positive_retries_only_explicit_authenticated_busy(self):
         replies = iter([{'authorized': False, 'deferred': True}] * 2 + [{'authorized': True}])
         sleeps = []

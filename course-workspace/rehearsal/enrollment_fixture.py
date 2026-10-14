@@ -1,5 +1,7 @@
 """Private disposable enrollment controls; never a production provisioner/issuer."""
 import hashlib
+import math
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -7,12 +9,12 @@ import sys
 import time
 import json
 
-from authenticated_fixture import write, _diagnostic_owned, process_identity
-from authority_access import AccessPolicy
+from authenticated_fixture import write, _diagnostic_owned, process_identity, service_state
+from authority_access import AccessPolicy, publish
 from authority_test_pki import TestPKI
 from hub.authority_client import AuthorityClient, AuthorityError
 from ownership_contract import Authority, digest
-from runtime_authority import DockerBackend, read_record
+from runtime_authority import DockerBackend, RuntimeRefusal, read_record
 from worker_credentials import verify_binding, verify_certificate
 from worker_enrollment import EnrollmentStore
 
@@ -94,12 +96,123 @@ def _hold_endpoint(root, course, seconds):
         raise ValueError('fixture_contention_invalid')
     backend = DockerBackend(read_record(root / 'runtime.json'))
     marker = root / 'control' / ('enrollment-lock-' + course + '.json')
+    record = read_record(root / 'control' / ('enrollment-holder-' + course + '.json'))
+    if record != {'pid': os.getpid(), 'start_identity': process_identity(os.getpid())}:
+        raise ValueError('fixture_contention_process_changed')
+    deadline = time.monotonic() + 5
+    while True:
+        original = _heartbeat(backend, course)
+        checked_at = _heartbeat_time(original)
+        age = backend.clock() - checked_at
+        if 0 <= age <= 1: break
+        if (not math.isfinite(age) or age < 0
+                or age > backend.config['guardians']['worker-one']['heartbeat_seconds']
+                or time.monotonic() >= deadline): raise ValueError('fixture_contention_heartbeat_stale')
+        time.sleep(.05)  # Readonly readiness: only the actual Guardian renews.
     with backend.locks([('worker-one', course)]):
         original = _heartbeat(backend, course)
-        if original is None: raise ValueError('fixture_heartbeat_missing')
-        write(marker, {'held': True, 'heartbeat_sha256': digest(original)})
+        checked_at = _heartbeat_time(original)
+        if not 0 <= backend.clock() - checked_at <= 1: raise ValueError('fixture_contention_heartbeat_stale')
+        started = time.monotonic()
+        ready = {'held': True, 'holder': record, 'seconds': seconds, 'started': started,
+            'release_at': started + seconds, 'heartbeat_sha256': digest(original), 'checked_at': checked_at}
+        publish(marker, ready)
         time.sleep(seconds)
-    write(marker, {'held': False, 'heartbeat_sha256': digest(original)})
+        # Publish release intent BEFORE unlocking; stale READY cannot prove a
+        # hold after exit. Exterior recovery additionally requires holder exit.
+        publish(root / 'control' / ('enrollment-release-' + course + '.json'), dict(ready, held=False))
+
+
+def _heartbeat_time(raw):
+    if raw is None: raise ValueError('fixture_heartbeat_missing')
+    value = json.loads(raw).get('checked_at')
+    if type(value) not in (int, float) or not math.isfinite(value) or value < 0:
+        raise ValueError('fixture_contention_heartbeat_invalid')
+    return value
+
+
+def _start_holder(root, course, seconds, *, monotonic=time.monotonic, sleep=time.sleep):
+    if course not in ('course-main', 'course-peer') or type(seconds) is not int or seconds not in (4, 13):
+        raise ValueError('fixture_contention_invalid')
+    marker = root / 'control' / ('enrollment-lock-' + course + '.json')
+    holder = root / 'control' / ('enrollment-holder-' + course + '.json')
+    if any(os.path.lexists(path) for path in (marker, holder, root / 'control' / ('enrollment-release-' + course + '.json'))):
+        raise ValueError('fixture_contention_reuse')
+    child = subprocess.Popen([sys.executable, 'authenticated_fixture.py', 'enrollment-contention-hold',
+        str(root)], stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    record = {'pid': child.pid, 'start_identity': process_identity(child.pid)}
+    publish(holder, record)
+    child.stdin.write(json.dumps({'course': course, 'seconds': seconds}).encode()); child.stdin.close()
+    deadline = monotonic() + 10  # Initialization/readiness is outside the hold.
+    while monotonic() < deadline:
+        if child.poll() is not None: raise ValueError('fixture_contention_holder_exited')
+        if marker.exists(): return child
+        sleep(.05)
+    raise ValueError('fixture_contention_unavailable')
+
+
+def _contention_marker(root, course):
+    ready = read_record(root / 'control' / ('enrollment-lock-' + course + '.json'))
+    release = root / 'control' / ('enrollment-release-' + course + '.json')
+    if release.exists():
+        ended = read_record(release)
+        if ended != dict(ready, held=False): raise ValueError('fixture_contention_marker_changed')
+        return ended
+    return ready
+
+
+def _held_heartbeat(root, backend, course, child, *, monotonic=time.monotonic, process_state=service_state):
+    marker = _contention_marker(root, course)
+    if (set(marker) != {'held', 'holder', 'seconds', 'started', 'release_at', 'heartbeat_sha256', 'checked_at'}
+            or marker['held'] is not True or marker['seconds'] not in (4, 13)
+            or type(marker['seconds']) is not int or child.pid != marker['holder'].get('pid')
+            or child.poll() is not None or process_state(marker['holder']) in (None, 'Z')
+            or any(type(marker[key]) not in (int, float) or not math.isfinite(marker[key]) for key in ('started', 'release_at', 'checked_at'))
+            or marker['release_at'] != marker['started'] + marker['seconds']
+            or not marker['started'] <= monotonic() < marker['release_at']):
+        raise ValueError('fixture_contention_window_invalid')
+    current = _heartbeat(backend, course)
+    if digest(current) != marker['heartbeat_sha256'] or _heartbeat_time(current) != marker['checked_at']:
+        raise ValueError('fixture_contention_heartbeat_changed')
+    age = backend.clock() - marker['checked_at']
+    if not math.isfinite(age) or age < 0: raise ValueError('fixture_contention_heartbeat_invalid')
+    try:
+        with backend.locks([('worker-one', course)], wait_seconds=.001):
+            raise ValueError('fixture_contention_not_held')
+    except RuntimeRefusal as error:
+        if error.code != 'runtime_endpoint_lock_busy': raise
+    if _contention_marker(root, course) != marker or monotonic() >= marker['release_at']:
+        raise ValueError('fixture_contention_window_invalid')
+    return marker
+
+
+def _contention_batch(root, backend, course, seconds, *, monotonic=time.monotonic, sleep=time.sleep,
+                      start_holder=_start_holder, process_state=service_state):
+    if course not in ('course-main', 'course-peer') or type(seconds) is not int or seconds not in (4, 13):
+        raise ValueError('fixture_contention_invalid')
+    settings = read_record(root / 'guardian-one' / 'credentials' / 'client.json')
+    settings['url'] = 'https://127.0.0.1:8443/v1/authority'
+    api = AuthorityClient(worker_id='worker-one', course_id=course, **settings)
+    identity = backend.guardian_identity('worker-one')
+    child = start_holder(root, course, seconds)
+    observations = []
+    for _ in range(2):
+        _held_heartbeat(root, backend, course, child, monotonic=monotonic, process_state=process_state)
+        started = monotonic(); result = api.call('guardian.observe', identity)
+        elapsed = 1000 * (monotonic() - started)
+        if not _deferred(result, 'worker-one', course) or not 0 <= elapsed < 3000:
+            raise ValueError('fixture_contention_probe_invalid')
+        _held_heartbeat(root, backend, course, child, monotonic=monotonic, process_state=process_state)
+        observations.append({'deferred': True, 'held_before': True, 'held_after': True,
+            'heartbeat_unchanged': True, 'elapsed_ms': round(elapsed, 3)})
+    expired = False
+    if seconds == 13:
+        while True:
+            marker = _held_heartbeat(root, backend, course, child, monotonic=monotonic, process_state=process_state)
+            if backend.clock() - marker['checked_at'] > backend.config['guardians']['worker-one']['heartbeat_seconds']:
+                expired = True; break
+            sleep(.05)
+    return {'observations': observations, 'expiry_while_held': expired}
 
 
 def _dispatch(root, action, payload):
@@ -113,32 +226,21 @@ def _dispatch(root, action, payload):
         service['enrollment_directory'] = str(directory); write(root / 'service.json', service)
         return {'created': True}
     config, service, backend, store = context(root)
+    if action == 'enrollment-contention-batch':
+        return _contention_batch(root, backend, payload['course'], payload['seconds'])
     if action == 'enrollment-contention-start':
-        course, seconds = payload['course'], payload['seconds']
-        if course not in ('course-main', 'course-peer') or type(seconds) is not int or seconds not in (4, 13):
-            raise ValueError('fixture_contention_invalid')
-        marker = root / 'control' / ('enrollment-lock-' + course + '.json')
-        if marker.exists(): raise ValueError('fixture_contention_reuse')
-        child = subprocess.Popen([sys.executable, 'authenticated_fixture.py', 'enrollment-contention-hold',
-            str(root)], stdin=subprocess.PIPE,
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        write(root / 'control' / ('enrollment-holder-' + course + '.json'),
-            {'pid': child.pid, 'start_identity': process_identity(child.pid)})
-        child.stdin.write(json.dumps({'course': course, 'seconds': seconds}).encode()); child.stdin.close()
-        deadline = time.monotonic() + 5
-        while time.monotonic() < deadline:
-            if marker.exists() and read_record(marker)['held']: return {'held': True}
-            time.sleep(0.05)
-        raise ValueError('fixture_contention_unavailable')
+        _start_holder(root, payload['course'], payload['seconds'])
+        return {'held': True}
     if action == 'enrollment-contention-status':
         course = payload['course']
         if course not in ('course-main', 'course-peer'): raise ValueError('fixture_contention_invalid')
-        marker = read_record(root / 'control' / ('enrollment-lock-' + course + '.json'))
+        marker = _contention_marker(root, course)
         current = _heartbeat(backend, course)
         expired = (current is not None and backend.clock() - json.loads(current)['checked_at'] >
                    config['guardians']['worker-one']['heartbeat_seconds'])
         return {'held': marker['held'], 'heartbeat_unchanged': digest(current) == marker['heartbeat_sha256'],
-                'heartbeat_expired': expired}
+                'heartbeat_expired': expired, 'holder_exited': service_state(marker['holder']) in (None, 'Z'),
+                'heartbeat_renewed': current is not None and _heartbeat_time(current) > marker['checked_at']}
     if action == 'enrollment-observation-probe':
         course = payload['course']
         if course not in ('course-main', 'course-peer'): raise ValueError('fixture_contention_invalid')

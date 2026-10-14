@@ -47,6 +47,16 @@ def await_guardian_authorization(call, *, timeout=5, monotonic=time.monotonic, s
         sleep(min(.1, max(0, deadline - monotonic())))
 
 
+def verify_contention_batch(result, *, expiry):
+    assert isinstance(result, dict) and set(result) == {'observations', 'expiry_while_held'}
+    assert result['expiry_while_held'] is expiry
+    assert isinstance(result['observations'], list) and len(result['observations']) == 2
+    for observed in result['observations']:
+        assert isinstance(observed, dict) and set(observed) == {'deferred', 'held_before', 'held_after', 'heartbeat_unchanged', 'elapsed_ms'}
+        assert all(observed[key] is True for key in ('deferred', 'held_before', 'held_after', 'heartbeat_unchanged'))
+        assert type(observed['elapsed_ms']) in (int, float) and 0 <= observed['elapsed_ms'] < 3000
+
+
 def exercise(ctx):
     helper, rpc, phase = ctx['helper'], ctx['rpc'], ctx['phase']
     wait, learners, notebook, read = ctx['wait'], ctx['learners'], ctx['notebook'], ctx['read']
@@ -92,13 +102,11 @@ def exercise(ctx):
     # budget. Authenticated busy responses must not renew its heartbeat or stop
     # either live notebook; the next observation recovers after release.
     busy_ids = {suffix: learners(suffix) for suffix in ('source', 'peer')}
-    assert helper('enrollment-contention-start', {'course': 'course-main', 'seconds': 4}) == {'held': True}
-    for _ in range(2):
-        probe = helper('enrollment-observation-probe', {'course': 'course-main'})
-        assert probe['deferred'] is True and 0 <= probe['elapsed_ms'] < 3000
+    verify_contention_batch(helper('enrollment-contention-batch', {'course': 'course-main', 'seconds': 4}), expiry=False)
+    def released_and_renewed():
         status = helper('enrollment-contention-status', {'course': 'course-main'})
-        assert status['held'] is True and status['heartbeat_unchanged'] is True
-    wait(lambda: not helper('enrollment-contention-status', {'course': 'course-main'})['held'], 10)
+        return status['held'] is False and status['holder_exited'] is True and status['heartbeat_renewed'] is True
+    wait(released_and_renewed, 10)
     wait(lambda: helper('guardian-status')['course-main']['ready'], 10)
     for suffix, session in sessions.items():
         assert learners(suffix) == busy_ids[suffix]; read(session, suffix)
@@ -169,12 +177,7 @@ def exercise(ctx):
     # peer stops. Service outage may stop every course; restart must retain its
     # coursework and the already-revoked worker must remain denied.
     wait(lambda: helper('guardian-status')['course-peer']['ready'], 10)
-    assert helper('enrollment-contention-start', {'course': 'course-peer', 'seconds': 13}) == {'held': True}
-    for _ in range(2):
-        probe = helper('enrollment-observation-probe', {'course': 'course-peer'})
-        assert probe['deferred'] is True and 0 <= probe['elapsed_ms'] < 3000
-    wait(lambda: helper('enrollment-contention-status', {'course': 'course-peer'})['heartbeat_expired'], 15)
-    assert helper('enrollment-contention-status', {'course': 'course-peer'})['heartbeat_unchanged'] is True
+    verify_contention_batch(helper('enrollment-contention-batch', {'course': 'course-peer', 'seconds': 13}), expiry=True)
     wait(lambda: helper('service-status')['failure'] == 'runtime_endpoint_enforcement_unavailable', 15)
     wait(lambda: not learners('peer'), 30)
     helper('stop-service'); ctx['service']()

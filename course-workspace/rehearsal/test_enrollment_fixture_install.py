@@ -1,8 +1,10 @@
 """Credential replacement must refuse scope/candidate drift before Docker effects."""
 from copy import deepcopy
+import json
 from pathlib import Path
 import sys
 import tempfile
+import threading
 import types
 import unittest
 from unittest.mock import patch
@@ -11,9 +13,141 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tests'))
 import enrollment_fixture as fixture
 from hub.authority_client import AuthorityError
+from test_runtime_authority import RuntimeFixture
 
 
 class EnrollmentInstallTests(unittest.TestCase):
+    def test_stale_or_symlink_holder_record_refuses_before_process_creation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve(); root.chmod(0o700); (root / 'control').mkdir(mode=0o700)
+            holder = root / 'control' / 'enrollment-holder-course-main.json'
+            for symlink in (False, True):
+                if symlink: holder.symlink_to(root / 'absent')
+                else: fixture.publish(holder, {'pid': 123, 'start_identity': 'a' * 64})
+                try:
+                    with patch.object(fixture.subprocess, 'Popen', side_effect=AssertionError('no untracked child')):
+                        with self.assertRaisesRegex(ValueError, '^fixture_contention_reuse$'):
+                            fixture._start_holder(root, 'course-main', 4)
+                finally: holder.unlink()
+
+    def test_batch_startup_is_outside_hold_and_later_normal_renewal_is_not_locked_evidence(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve(); root.chmod(0o700); (root / 'control').mkdir(mode=0o700)
+            f = RuntimeFixture(root); now = [0.0]; calls = []; released = threading.Event(); held = threading.Event()
+            child = types.SimpleNamespace(pid=123, poll=lambda: None)
+            record = {'pid': 123, 'start_identity': 'a' * 64}
+            threads = []
+            class Client:
+                def __init__(self, **options): calls.append('client-ready')
+                def call(self, operation, identity):
+                    calls.append(operation); now[0] += .25
+                    return f.dispatcher.dispatch(f.principal(role='guardian'), operation, 'course-main', identity)
+            def start(root, course, seconds):
+                self.assertEqual(calls, ['client-ready'])
+                now[0] += 20  # Slow child/backend startup must not spend the4s hold.
+                f.now += 20; f.heartbeat('worker-one', 'course-main')  # Normal Guardian setup, not batch renewal.
+                def owner():
+                    with f.backend.locks([('worker-one', course)]):
+                        raw = fixture._heartbeat(f.backend, course)
+                        ready = {'held': True, 'holder': record, 'seconds': seconds, 'started': now[0],
+                            'release_at': now[0] + seconds, 'checked_at': fixture._heartbeat_time(raw),
+                            'heartbeat_sha256': fixture.digest(raw)}
+                        fixture.publish(root / 'control' / ('enrollment-holder-' + course + '.json'), record)
+                        fixture.publish(root / 'control' / ('enrollment-lock-' + course + '.json'), ready)
+                        held.set(); released.wait(5)
+                        fixture.publish(root / 'control' / ('enrollment-release-' + course + '.json'), dict(ready, held=False))
+                thread = threading.Thread(target=owner); threads.append(thread); thread.start()
+                self.assertTrue(held.wait(2)); return child
+            try:
+                with patch.object(fixture, 'read_record', wraps=fixture.read_record) as reader, patch.object(fixture, 'AuthorityClient', Client):
+                    real_read = fixture.read_record._mock_wraps
+                    reader.side_effect = lambda path: {} if str(path).endswith('client.json') else real_read(path)
+                    result = fixture._contention_batch(root, f.backend, 'course-main', 4, start_holder=start,
+                        monotonic=lambda: now[0], process_state=lambda _: 'R')
+                self.assertEqual(calls, ['client-ready', 'guardian.observe', 'guardian.observe'])
+                self.assertEqual(len(result['observations']), 2); self.assertFalse(result['expiry_while_held'])
+                self.assertEqual(now[0], 20.5)
+                self.assertTrue(all(item['held_before'] and item['held_after'] and item['heartbeat_unchanged'] for item in result['observations']))
+            finally:
+                released.set()
+                for thread in threads: thread.join(5)
+            self.assertTrue(all(not thread.is_alive() for thread in threads))
+            now[0] += 5; f.now += 5; f.heartbeat('worker-one', 'course-main')
+            with patch.object(fixture, 'context', return_value=(f.config, {}, f.backend, None)), patch.object(fixture, 'service_state', return_value=None):
+                status = fixture._dispatch(root, 'enrollment-contention-status', {'course': 'course-main'})
+            self.assertFalse(status['held']); self.assertTrue(status['holder_exited']); self.assertTrue(status['heartbeat_renewed'])
+            self.assertFalse(status['heartbeat_unchanged'])
+
+    def test_batch_cannot_claim_old_marker_after_release_or_exhausted_window(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve(); root.chmod(0o700); (root / 'control').mkdir(mode=0o700)
+            f = RuntimeFixture(root); raw = fixture._heartbeat(f.backend, 'course-main')
+            ready = {'held': True, 'holder': {'pid': 123, 'start_identity': 'a' * 64}, 'seconds': 4,
+                'started': 10, 'release_at': 14, 'checked_at': fixture._heartbeat_time(raw), 'heartbeat_sha256': fixture.digest(raw)}
+            fixture.publish(root / 'control' / 'enrollment-lock-course-main.json', ready)
+            child = types.SimpleNamespace(pid=123, poll=lambda: None)
+            for clock in (14, 20):
+                with self.subTest(clock=clock), self.assertRaisesRegex(ValueError, '^fixture_contention_window_invalid$'):
+                    fixture._held_heartbeat(root, f.backend, 'course-main', child, monotonic=lambda: clock, process_state=lambda _: 'R')
+            # An old READY with a live-looking PID never substitutes for a real flock.
+            with self.assertRaisesRegex(ValueError, '^fixture_contention_not_held$'):
+                fixture._held_heartbeat(root, f.backend, 'course-main', child, monotonic=lambda: 11, process_state=lambda _: 'R')
+            fixture.publish(root / 'control' / 'enrollment-release-course-main.json', dict(ready, held=False))
+            f.now += 1; f.heartbeat('worker-one', 'course-main')
+            with self.assertRaisesRegex(ValueError, '^fixture_contention_window_invalid$'):
+                fixture._held_heartbeat(root, f.backend, 'course-main', child, monotonic=lambda: 11, process_state=lambda _: 'R')
+
+    def test_thirteen_second_batch_reads_expiry_inside_window_without_retry_or_renewal(self):
+        now = [0.0]; calls = []; checked = []
+        backend = types.SimpleNamespace(clock=lambda: now[0], guardian_identity=lambda _: {},
+            config={'guardians': {'worker-one': {'heartbeat_seconds': 10}}})
+        class Client:
+            def call(self, operation, identity):
+                calls.append(operation); now[0] += .1
+                return {'authorized': False, 'deferred': True, 'worker_id': 'worker-one', 'course_id': 'course-peer'}
+        def held(*args, **kwargs):
+            self.assertLess(now[0], 13); checked.append(now[0]); return {'checked_at': 0}
+        def sleep(seconds): now[0] += seconds
+        with patch.object(fixture, 'read_record', return_value={}), patch.object(fixture, 'AuthorityClient', return_value=Client()), patch.object(fixture, '_held_heartbeat', side_effect=held):
+            result = fixture._contention_batch(Path('/unused'), backend, 'course-peer', 13,
+                start_holder=lambda *args: object(), monotonic=lambda: now[0], sleep=sleep)
+        self.assertTrue(result['expiry_while_held']); self.assertEqual(calls, ['guardian.observe'] * 2)
+        self.assertGreater(now[0], 10); self.assertLess(now[0], 13)
+        self.assertGreater(len(checked), 4)
+
+    def test_holder_reads_normal_heartbeat_and_keeps_exact_configured_sleep_without_rpc(self):
+        for seconds in (4, 13):
+            with self.subTest(seconds=seconds), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory).resolve(); root.chmod(0o700); (root / 'control').mkdir(mode=0o700)
+                f = RuntimeFixture(root); fixture.write(root / 'runtime.json', f.config)
+                fixture.publish(root / 'control' / 'enrollment-holder-course-main.json', {'pid': 123, 'start_identity': 'a' * 64})
+                f.now += 2; sleeps = []
+                def sleep(delay):
+                    sleeps.append(delay)
+                    if delay == .05: f.heartbeat('worker-one', 'course-main')
+                with patch.object(fixture, 'DockerBackend', return_value=f.backend), patch.object(fixture.os, 'getpid', return_value=123), patch.object(fixture, 'process_identity', return_value='a' * 64), patch.object(fixture.time, 'sleep', side_effect=sleep), patch.object(fixture, 'AuthorityClient', side_effect=AssertionError('no heartbeat seeding RPC')):
+                    fixture._hold_endpoint(root, 'course-main', seconds)
+                self.assertEqual(sleeps, [.05, seconds])
+                ready = fixture.read_record(root / 'control' / 'enrollment-lock-course-main.json')
+                ended = fixture._contention_marker(root, 'course-main')
+                self.assertEqual(ended, dict(ready, held=False)); self.assertEqual(ready['release_at'] - ready['started'], seconds)
+                self.assertEqual(ready['checked_at'], f.now)
+                self.assertEqual(ready['heartbeat_sha256'], fixture.digest(fixture._heartbeat(f.backend, 'course-main')))
+
+    def test_holder_refuses_expired_future_or_invalid_normal_heartbeat_before_hold(self):
+        for delta in (-1, 4):
+            with self.subTest(delta=delta), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory).resolve(); root.chmod(0o700); (root / 'control').mkdir(mode=0o700)
+                f = RuntimeFixture(root); fixture.write(root / 'runtime.json', f.config)
+                fixture.publish(root / 'control' / 'enrollment-holder-course-main.json', {'pid': 123, 'start_identity': 'a' * 64})
+                f.now += delta
+                with patch.object(fixture, 'DockerBackend', return_value=f.backend), patch.object(fixture.os, 'getpid', return_value=123), patch.object(fixture, 'process_identity', return_value='a' * 64), patch.object(fixture.time, 'sleep', side_effect=AssertionError('invalid lease cannot wait or hold')):
+                    with self.assertRaisesRegex(ValueError, '^fixture_contention_heartbeat_stale$'):
+                        fixture._hold_endpoint(root, 'course-main', 4)
+                self.assertFalse((root / 'control' / 'enrollment-lock-course-main.json').exists())
+        for value in (None, '{"checked_at":true}', '{"checked_at":NaN}', '{"checked_at":-1}'):
+            with self.subTest(value=value), self.assertRaises(ValueError): fixture._heartbeat_time(value)
+
     def test_guardian_probe_distinguishes_valid_grant_busy_and_actual_access_denial(self):
         class Client:
             def __init__(self, response): self.response = response
