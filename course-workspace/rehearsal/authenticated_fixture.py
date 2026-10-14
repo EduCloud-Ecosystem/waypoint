@@ -86,7 +86,8 @@ def verify_no_service_commands(root):
             args = raw.decode('utf-8', errors='replace').split('\0')
             for index, arg in enumerate(args):
                 if (Path(arg).name == 'authenticated_fixture.py' and index + 2 < len(args)
-                        and args[index + 1] in {'serve', 'serve-prepared-fault'} and args[index + 2] == str(root)):
+                        and args[index + 1] in {'serve', 'serve-prepared-fault', 'enrollment-contention-hold'}
+                        and args[index + 2] == str(root)):
                     raise ValueError('fixture_cleanup_service_running')
                 if Path(arg).name == 'controller_service.py' and str(Path(root) / 'runtime.json') in args:
                     raise ValueError('fixture_cleanup_service_running')
@@ -104,13 +105,7 @@ def service_state(record):
     return raw[0]
 
 
-def stop_service(root, *, wait_seconds=5):
-    if not 0 < wait_seconds <= 5: raise ValueError('fixture_service_wait_invalid')
-    deadline = time.monotonic() + wait_seconds
-    try: record = read_record(Path(root) / 'service-pid.json')
-    except FileNotFoundError:
-        verify_no_service_commands(root)
-        return {'stopped': True}
+def _stop_process(record, deadline):
     state = service_state(record)
     if state not in (None, 'Z'):
         if not hasattr(os, 'pidfd_open') or not hasattr(signal, 'pidfd_send_signal'):
@@ -128,6 +123,16 @@ def stop_service(root, *, wait_seconds=5):
     while service_state(record) not in (None, 'Z'):
         if time.monotonic() >= deadline: raise ValueError('fixture_service_stop_timeout')
         time.sleep(0.05)
+
+
+def stop_service(root, *, wait_seconds=5):
+    if not 0 < wait_seconds <= 5: raise ValueError('fixture_service_wait_invalid')
+    deadline = time.monotonic() + wait_seconds
+    for path in [Path(root) / 'service-pid.json', *(Path(root) / 'control' /
+            ('enrollment-holder-' + course + '.json') for course in ('course-main', 'course-peer'))]:
+        try: record = read_record(path)
+        except FileNotFoundError: continue
+        _stop_process(record, deadline)
     verify_no_service_commands(root)
     return {'stopped': True}
 
@@ -234,10 +239,8 @@ def cleanup_permissions(root, client=None):
 
 
 def course_allocation(cpu):
-    if type(cpu) is not int or cpu < 4: raise ValueError('fixture_cpu_capacity_invalid')
-    if cpu >= 5:
-        return {'name': 'five-cpu-local', 'learner_cpu': 0.25, 'hub_cpu': 1.0, 'reserved_cpu': 4.5, 'minimum_cpu': 5}
-    return {'name': 'four-cpu-ci', 'learner_cpu': 0.1, 'hub_cpu': 1.0, 'reserved_cpu': 4.0, 'minimum_cpu': 4}
+    from authenticated_evidence import allocation_for_cpu
+    return allocation_for_cpu(cpu)
 
 
 def initialize(root, request):
@@ -247,7 +250,8 @@ def initialize(root, request):
     info = client.info()
     allocation = course_allocation(info['NCPU'])
     course_cpu = allocation['hub_cpu'] + allocation['learner_cpu']
-    reserve_cpu = allocation['reserved_cpu'] - 3 * course_cpu
+    reserve_cpu = allocation['host_reserve_cpu']
+    assert 3 * course_cpu + reserve_cpu == allocation['reserved_cpu']
     name = request['name']
     # SQLite and endpoint locks live on private Linux volumes; homes retain
     # their actual host bindings. Fresh child directories are bootstrapped once.
@@ -359,7 +363,8 @@ def launch(root):
                 request['name'] + '-backend': {'bind': str(root / 'backend'), 'mode': 'rw'},
                 '/var/run/docker.sock': {'bind': '/var/run/docker.sock', 'mode': 'rw'}},
             labels={'educloud.runtime.authority': config['authority_id'], 'educloud.runtime.worker': worker, 'educloud.runtime.kind': 'guardian'},
-            mem_limit=128 * 1024**2, cpu_period=100000, cpu_quota=10000, restart_policy={'Name': 'no'})
+            mem_limit=128 * 1024**2, cpu_period=100000,
+            cpu_quota=int(fixture['allocation']['guardian_cpu'] * 100000), restart_policy={'Name': 'no'})
     return {'launched': True}
 
 
@@ -371,6 +376,56 @@ OBSERVATION_CODES = ERRORS | frozenset({'guardian_observation_invalid', 'guardia
 AUTHORITY_FAILURES = ERRORS | frozenset({'fixture_service_refused', 'runtime_endpoint_enforcement_unavailable', 'authority_supervision_failed'})
 STAGES = {'ownership': 'checking ownership', 'environment': 'preparing environment',
           'create': 'creating runtime', 'created': 'runtime created'}
+
+
+EXCEPTION_TYPES = frozenset({'AuthorityError', 'RuntimeRefusal', 'HTTPError', 'TimeoutError', 'CancelledError',
+    'RuntimeError', 'ValueError', 'TypeError', 'KeyError', 'AttributeError', 'OSError', 'PermissionError',
+    'FileNotFoundError', 'ConnectionError', 'ConnectionRefusedError', 'SSLError', 'OperationalError', 'IntegrityError'})
+HUB_EVENTS = {
+    'hub_running': r'JupyterHub is now running(?: at |, internal Hub API at )',
+    'proxy_start_requested': r'Starting proxy @ ',
+    'proxy_start_failed': r'Failed to start proxy|Proxy failed to start with exit code ',
+    'proxy_connection_failed': r'api_request to (?:the )?proxy failed',
+    'proxy_retry_exhausted': r'Repeated api_request to proxy path ',
+    'auth_stale':r'has stale auth info\. Login is required to refresh\.',
+    'auth_refresh_denied':r'Auth expired for .+; cannot spawn until they login again',
+    'failed_login':r'Failed login for ',
+    'login_http_error':r'\b(?:401|403|500|502|503) POST /hub/login(?:[? ]|$)',
+    'spawn_http_error':r'\b(?:401|403|404|429|500|502|503) (?:GET|POST) /hub/spawn(?:[/ ?]|$)',
+    'spawn_pending':r' is pending spawn(?:\s|$)',
+    'spawn_start_called':r'Calling Spawner\.start for ',
+    'spawn_start_timeout':r'server failed to start in [0-9]+(?:\.[0-9]+)? seconds, giving up\.',
+    'spawn_start_refused':r'Not starting .+\x27s server ',
+    'spawn_start_error':r'Error starting .+\x27s server:',
+    'spawn_start_unhandled':r'Unhandled error starting .+\x27s server:',
+    'previous_spawn_failed':r'Previous spawn for .+ failed:',
+    'spawn_cleanup_error':r'Failed to cleanup .+\x27s server that failed to start',
+    'proxy_registration_failed':r'Failed to add .+ to proxy!',
+}
+TRACEBACK_MODULES = {
+    'jupyterhub_user':'/jupyterhub/user.py',
+    'jupyterhub_handlers_base':'/jupyterhub/handlers/base.py',
+    'jupyterhub_handlers_pages':'/jupyterhub/handlers/pages.py',
+    'jupyterhub_auth':'/jupyterhub/auth.py',
+    'authority_spawner':'/authority_spawner.py',
+    'authority_client':'/authority_client.py',
+    'jupyterhub_config':'/jupyterhub_config.py',
+}
+def _diagnostic_hub_counts(raw):
+    exceptions = {kind: 0 for kind in sorted(EXCEPTION_TYPES)}
+    events = {kind: 0 for kind in HUB_EVENTS}
+    modules = {kind: 0 for kind in TRACEBACK_MODULES}
+    exception = re.compile(r'^\s*(?:[A-Za-z_][A-Za-z0-9_]*\.)*(' + '|'.join(sorted(EXCEPTION_TYPES)) + r')(?=:|$)')
+    for line in raw.splitlines():
+        match = exception.match(line)
+        if match: exceptions[match[1]] = min(10000, exceptions[match[1]] + 1)
+        for kind, pattern in HUB_EVENTS.items():
+            if re.search(pattern, line): events[kind] = min(10000, events[kind] + 1)
+        if line.lstrip().startswith('File "'):
+            for kind, suffix in TRACEBACK_MODULES.items():
+                if suffix + '"' in line: modules[kind] = min(10000, modules[kind] + 1)
+    return {'exception_type_counts': exceptions, 'event_counts': events, 'traceback_module_counts': modules}
+
 
 
 def _diagnostic_counts(raw, prefix, codes):
@@ -430,7 +485,7 @@ def failure_status(root, client=None):
     if client is None:
         import docker
         client = docker.DockerClient(base_url='unix:///var/run/docker.sock', version='auto', timeout=3)
-    result = {'version': 'educloud-authenticated-fixture-diagnostics-v1', 'authority_failure': 'none',
+    result = {'version': 'educloud-authenticated-fixture-diagnostics-v2', 'authority_failure': 'none',
         'supervisor': {'available': False, 'truncated': False, 'reason_counts': {code: 0 for code in sorted(SUPERVISOR_CODES)}},
         'hubs': {}, 'guardians': {}, 'learners': {}}
     try:
@@ -455,13 +510,14 @@ def failure_status(root, client=None):
         for course, item in courses.items():
             suffix = item['instance'].rsplit('-', 1)[1]
             hub = {'available': False, 'truncated': False, 'startup_stage_counts': {key: 0 for key in STAGES},
-                'authority_error_counts': {code: 0 for code in sorted(ERRORS)}, 'http_startup_timeout_count': 0}
+                'authority_error_counts': {code: 0 for code in sorted(ERRORS)}, 'http_startup_timeout_count': 0,
+                **_diagnostic_hub_counts('')}
             try:
                 container = client.containers.get(item['hub_container'])
                 _diagnostic_owned(container, item['hub_container'], request['hub_image'],
                     {'educloud.workspace.instance': item['instance'], 'educloud.workspace.kind': 'hub'})
                 raw, truncated = _diagnostic_logs(container)
-                hub.update(available=True, truncated=truncated)
+                hub.update(available=True, truncated=truncated, **_diagnostic_hub_counts(raw))
                 hub['startup_stage_counts'] = {key: min(10000, raw.count('Authority notebook startup: ' + value)) for key, value in STAGES.items()}
                 hub['authority_error_counts'] = _diagnostic_counts(raw, 'AuthorityError: ', ERRORS)
                 hub['http_startup_timeout_count'] = min(10000, sum('server never showed up at ' in line and '. Giving up.' in line for line in raw.splitlines()))
@@ -509,8 +565,11 @@ def failure_status(root, client=None):
 
 def main():
     action, directory = sys.argv[1:3]; root = Path(directory)
-    payload = json.load(sys.stdin) if action in {'bootstrap', 'rpc', 'revoke'} else {}
-    if action == 'bootstrap': result = initialize(root, payload)
+    payload = json.load(sys.stdin) if action in {'bootstrap', 'rpc', 'revoke'} or action.startswith('enrollment-') else {}
+    if action.startswith('enrollment-'):
+        from enrollment_fixture import dispatch
+        result = dispatch(root, action, payload)
+    elif action == 'bootstrap': result = initialize(root, payload)
     elif action == 'launch': result = launch(root)
     elif action in {'serve', 'serve-prepared-fault'}:
         import logging
@@ -561,7 +620,15 @@ def main():
         from authority_access import AccessPolicy
         from ownership_contract import Authority
         config = read_record(root / 'runtime.json'); backend = DockerBackend(config)
-        policy = AccessPolicy(root / 'acl.json', config['authority_id'])
+        service = read_record(root / 'service.json')
+        enrollment = None
+        if 'enrollment_directory' in service:
+            from worker_credentials import verify_binding, make_runtime_binding_verifier
+            from worker_enrollment import EnrollmentStore
+            enrollment = EnrollmentStore.open(service['enrollment_directory'], config['authority_id'],
+                verify_binding(config, service, backend=backend))
+        binding_verifier = None if enrollment is None else make_runtime_binding_verifier(config, service, backend, enrollment.binding)
+        policy = AccessPolicy(root / 'acl.json', config['authority_id'], enrollment=enrollment, binding_verifier=binding_verifier)
         authority = Authority.open(root / 'control' / 'authority', config['authority_id'], backend)
         result = {}
         for course in ('course-main', 'course-peer'):

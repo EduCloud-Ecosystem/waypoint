@@ -26,10 +26,14 @@ jobs:
           docker build --build-arg HUB_IMAGE=waypoint-authority-hub:local -t waypoint-authority-controller:local -f course-workspace/controller.Dockerfile course-workspace
       - name: Exercise actual local enforcement and retained coursework
         run: python course-workspace/rehearsal/verify_authenticated_runtime.py --output /tmp/AUTHENTICATED-RUNTIME.json
+      - name: Exercise reviewed worker enrollment and certificate rotation
+        run: python course-workspace/rehearsal/verify_worker_enrollment.py --output /tmp/ENROLLMENT-RUNTIME.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: authenticated-local-runtime-evidence
-          path: /tmp/AUTHENTICATED-RUNTIME.json
+          path: |
+            /tmp/AUTHENTICATED-RUNTIME.json
+            /tmp/ENROLLMENT-RUNTIME.json
           if-no-files-found: error
           retention-days: 7

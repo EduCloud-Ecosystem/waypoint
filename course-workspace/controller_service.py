@@ -11,7 +11,19 @@ from authority_operator import OperatorDispatcher
 def serve(config, service):
     backend = DockerBackend(config)
     authority = Authority.open(service['authority_directory'], config['authority_id'], backend)
-    policy = AccessPolicy(service['acl_file'], config['authority_id'])
+    enrollment = None
+    binding_verifier = None
+    if 'enrollment_directory' in service:
+        # Explicit configured mode; missing/corrupt managed state never falls
+        # back to legacy runtime entries or creates a replacement registry.
+        from worker_credentials import verify_binding, make_runtime_binding_verifier
+        from worker_enrollment import EnrollmentStore
+        directory = service['enrollment_directory']
+        if not isinstance(directory, str) or not directory: raise ValueError('managed_enrollment_required')
+        binding = verify_binding(config, service, backend=backend, authority=authority)
+        enrollment = EnrollmentStore.open(directory, config['authority_id'], binding)
+        binding_verifier = make_runtime_binding_verifier(config, service, backend, enrollment.binding)
+    policy = AccessPolicy(service['acl_file'], config['authority_id'], enrollment=enrollment, binding_verifier=binding_verifier)
     runtime = RuntimeDispatcher(authority, backend,
         lambda fingerprint, worker, course: policy.authorize_fingerprint(fingerprint, 'guardian', worker, course))
     operator = OperatorDispatcher(authority, service['plan_directory'])
@@ -21,7 +33,7 @@ def serve(config, service):
     server = AuthorityServer((service['bind'], service['port']),
         authority_id=config['authority_id'], certfile=service['certfile'], keyfile=service['keyfile'],
         ca_file=service['ca_file'], acl_file=service['acl_file'],
-        replay_store=ReplayStore.open(service['replay_directory'], config['authority_id']), dispatch=dispatch)
+        replay_store=ReplayStore.open(service['replay_directory'], config['authority_id']), dispatch=dispatch, access_policy=policy)
     stopped = threading.Event()
     failed = []
     def supervise():

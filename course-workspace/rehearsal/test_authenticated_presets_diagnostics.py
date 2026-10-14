@@ -89,14 +89,15 @@ class PresetDiagnosticsTests(unittest.TestCase):
         return client, captured[0], result
 
     def test_deterministic_verified_cpu_presets_and_malformed_capacity_refusal(self):
-        self.assertEqual(fixture.course_allocation(4), {'name': 'four-cpu-ci', 'learner_cpu': .1, 'hub_cpu': 1.0, 'reserved_cpu': 4.0, 'minimum_cpu': 4})
-        for cpu in (5, 8, 64):
-            self.assertEqual(fixture.course_allocation(cpu), {'name': 'five-cpu-local', 'learner_cpu': .25, 'hub_cpu': 1.0, 'reserved_cpu': 4.5, 'minimum_cpu': 5})
-        for cpu in (True, False, 4.0, 3, -1, '8', None):
+        self.assertEqual(fixture.course_allocation(4), {'name': 'four-cpu-ci', 'learner_cpu': .1, 'hub_cpu': 1.0, 'reserved_cpu': 4.0, 'minimum_cpu': 4,'controller_cpu':.4,'guardian_cpu':.1,'host_reserve_cpu':.7})
+        self.assertEqual(fixture.course_allocation(5), {'name': 'five-cpu-local', 'learner_cpu': .25, 'hub_cpu': 1.0, 'reserved_cpu': 4.5, 'minimum_cpu': 5,'controller_cpu':.4,'guardian_cpu':.1,'host_reserve_cpu':.75})
+        for cpu in (6, 8, 64):
+            self.assertEqual(fixture.course_allocation(cpu), {'name': 'six-cpu-local', 'learner_cpu': .25, 'hub_cpu': 1.0, 'reserved_cpu': 5.25, 'minimum_cpu': 6,'controller_cpu':1.0,'guardian_cpu':.1,'host_reserve_cpu':1.5})
+        for cpu in (True, False, 4.0, 3, -1, '8', None,4097):
             with self.subTest(cpu=cpu), self.assertRaises(ValueError): fixture.course_allocation(cpu)
 
     def test_initialization_and_launch_use_selected_actual_profile(self):
-        for cpu in (4, 8):
+        for cpu in (4, 5, 8):
             with self.subTest(cpu=cpu), tempfile.TemporaryDirectory() as directory:
                 self.root = Path(directory).resolve(); self.root.chmod(0o700)
                 for name in ('control', 'backend'): (self.root / name).mkdir(mode=0o700)
@@ -105,6 +106,7 @@ class PresetDiagnosticsTests(unittest.TestCase):
                 self.assertEqual(result['allocation'], allocation)
                 self.assertEqual(fixture.read_record(self.root / 'fixture.json')['allocation'], allocation)
                 self.assertEqual(sum(worker['cpu_budget'] for worker in config['workers'].values()) + config['host_reserve_cpu'], allocation['reserved_cpu'])
+                self.assertEqual(config['host_reserve_cpu'],allocation['host_reserve_cpu'])
                 self.assertEqual(sum(worker['memory_budget_mb'] for worker in config['workers'].values()) + config['host_reserve_mb'], 6656)
                 sdk = types.SimpleNamespace(DockerClient=lambda **options: client)
                 with patch.dict(sys.modules, {'docker': sdk}): fixture.launch(self.root)
@@ -114,6 +116,8 @@ class PresetDiagnosticsTests(unittest.TestCase):
                     self.assertEqual(options['environment']['WORKSPACE_MEMORY_MB'], '512')
                     self.assertEqual(options['cpu_quota'] / options['cpu_period'], 1)
                     self.assertEqual(options['mem_limit'], 1024 * 1024**2)
+                for options in client.guards:
+                    self.assertEqual(options['cpu_quota']/options['cpu_period'],allocation['guardian_cpu'])
                 for courses in config['courses'].values():
                     for item in courses.values():
                         self.assertEqual(item['profile']['learner_cpu'], allocation['learner_cpu'])
@@ -159,6 +163,45 @@ class PresetDiagnosticsTests(unittest.TestCase):
         for private in (CANARY, NAME, str(self.root), IMAGE, 'educloud.', 'alice'): self.assertNotIn(private, serialized)
         self.assertEqual(client.hubs, []); self.assertEqual(client.guards, [])
         self.assertTrue(all(stream.closed for container in client.items.values() for stream in container.streams))
+
+    def test_hub_exception_startup_events_and_traceback_modules_are_fixed_private_counters(self):
+        client = self.populate(); source = client.items[NAME + '-source-hub']
+        source.raw = ('TypeError: ' + CANARY + '\nsqlalchemy.exc.OperationalError: ' + CANARY
+            + '\nUnknownPrivateError: ' + CANARY + '\nTypeErrorExtra: ' + CANARY
+            + '\nPRIVATE=ValueError: ' + CANARY
+            + '\n[E JupyterHub user:1] Unhandled error starting ' + CANARY + "'s server: " + CANARY
+            + '\n[E JupyterHub pages:1] Previous spawn for ' + CANARY + ' failed: ' + CANARY
+            + '\n[W JupyterHub log:1] 403 POST /hub/login?token=' + CANARY
+            + '\n[I JupyterHub proxy:1] Starting proxy @ http://' + CANARY
+            + '\n[C JupyterHub app:1] Failed to start proxy ' + CANARY
+            + '\n[I JupyterHub app:1] JupyterHub is now running at http://' + CANARY
+            + '\n  File "' + CANARY + '/jupyterhub/user.py", line 1, in ' + CANARY).encode()
+        result = fixture.failure_status(self.root, client); hub = result['hubs']['source']
+        self.assertEqual(set(hub['exception_type_counts']), fixture.EXCEPTION_TYPES)
+        self.assertEqual(set(hub['event_counts']), set(fixture.HUB_EVENTS))
+        self.assertEqual(set(hub['traceback_module_counts']), set(fixture.TRACEBACK_MODULES))
+        self.assertEqual(hub['exception_type_counts']['TypeError'], 1)
+        self.assertEqual(hub['exception_type_counts']['OperationalError'], 1)
+        self.assertEqual(hub['exception_type_counts']['ValueError'], 0)
+        for event in ('spawn_start_unhandled', 'previous_spawn_failed', 'login_http_error',
+                      'proxy_start_requested', 'proxy_start_failed', 'hub_running'):
+            self.assertEqual(hub['event_counts'][event], 1)
+        self.assertEqual(hub['traceback_module_counts']['jupyterhub_user'], 1)
+        encoded = json.dumps(result)
+        for private in (CANARY, NAME, str(self.root), IMAGE, 'UnknownPrivateError', 'http://'):
+            self.assertNotIn(private, encoded)
+        self.assertEqual(client.hubs, []); self.assertEqual(client.guards, [])
+
+    def test_hub_diagnostic_counters_saturate_and_unavailable_roles_keep_exact_zero_maps(self):
+        raw = 'TypeError: private\n' * 10001
+        result = fixture._diagnostic_hub_counts(raw)
+        self.assertEqual(result['exception_type_counts']['TypeError'], 10000)
+        self.assertTrue(all(type(count) is int and 0 <= count <= 10000 for group in result.values() for count in group.values()))
+        client = self.populate(); source = client.items[NAME + '-source-hub']; source.attrs['Image'] = IMAGE
+        hub = fixture.failure_status(self.root, client)['hubs']['source']
+        self.assertFalse(hub['available']); self.assertEqual(source.reads, 0)
+        for key in ('exception_type_counts', 'event_counts', 'traceback_module_counts'):
+            self.assertEqual(set(hub[key]), set(result[key])); self.assertEqual(set(hub[key].values()), {0})
 
     def test_foreign_identity_never_read_and_malformed_state_never_published(self):
         client = self.populate()

@@ -18,6 +18,21 @@ import runtime_authority
 import verify_authenticated_runtime as verifier
 
 
+class CpuLimitTests(unittest.TestCase):
+    def test_cli_nanocpu_and_sdk_period_quota_caps(self):
+        self.assertEqual(verifier.configured_cpu_limit({'NanoCpus': 1000000000, 'CpuQuota': 0, 'CpuPeriod': 0}), 1)
+        self.assertEqual(verifier.configured_cpu_limit({'NanoCpus': 400000000, 'CpuQuota': 0, 'CpuPeriod': 0}), .4)
+        self.assertEqual(verifier.configured_cpu_limit({'NanoCpus': 0, 'CpuQuota': 10000, 'CpuPeriod': 100000}), .1)
+
+    def test_unbounded_ambiguous_partial_or_boolean_caps_refuse(self):
+        for limits in ({}, {'CpuQuota': -1, 'CpuPeriod': 100000}, {'CpuQuota': 10000},
+                       {'NanoCpus': 1000000000, 'CpuQuota': 100000, 'CpuPeriod': 100000},
+                       {'NanoCpus': True}, {'CpuQuota': True, 'CpuPeriod': 100000},
+                       {'NanoCpus': -1}, {'NanoCpus': 1.0}):
+            with self.subTest(limits=limits), self.assertRaisesRegex(ValueError, '^fixture_cpu_limit_invalid$'):
+                verifier.configured_cpu_limit(limits)
+
+
 class LoopbackHub:
     """HTTP lifecycle model: readiness reads cannot create a replacement."""
     def __init__(self, *, healthy=False, api_mode='normal'):

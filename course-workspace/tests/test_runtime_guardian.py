@@ -60,6 +60,87 @@ class GuardianTests(unittest.TestCase):
     def test_wrong_guardian_course_set_refused(self):
         with self.assertRaises(Exception): RuntimeGuardian(self.f.backend, 'worker-one', {'course-main': self.client('course-main')})
 
+    def test_authenticated_busy_reply_preserves_epoch_and_ids_without_heartbeat_and_peer_refreshes(self):
+        f = self.f; main = f.spawn(); peer = f.spawn(course='course-peer')
+        calls = []
+        class Busy:
+            def call(self, op, payload):
+                calls.append(op)
+                return {'authorized': False, 'deferred': True, 'worker_id': 'worker-one', 'course_id': 'course-main'}
+        guardian = RuntimeGuardian(f.backend, 'worker-one', {'course-main': Busy(), 'course-peer': self.client('course-peer')})
+        guardian.epochs['course-main'] = 1
+        heartbeat = f.backend.require_guardian('worker-one', 'course-main', 1)
+        f.now += 4
+        with self.assertLogs('runtime_guardian', level='WARNING') as logs:
+            self.assertFalse(guardian.tick_course('course-main'))
+        self.assertEqual(logs.output, ['WARNING:runtime_guardian:Guardian snapshot deferred: endpoint_busy'])
+        self.assertEqual(guardian.epochs['course-main'], 1); self.assertEqual(guardian.pending_stops, {})
+        self.assertEqual(calls, ['guardian.observe'])
+        with f.backend.connection() as conn:
+            row = conn.execute('SELECT record FROM guardians WHERE endpoint=?', (f.backend.endpoint('worker-one', 'course-main'),)).fetchone()
+        import json
+        self.assertEqual(json.loads(row['record']), heartbeat)
+        with self.assertRaises(RuntimeRefusal): f.backend.require_guardian('worker-one', 'course-main', 1)
+        self.assertTrue(f.client.containers.get(main['server_id']).attrs['State']['Running'])
+        self.assertTrue(guardian.tick_course('course-peer'))
+        self.assertEqual(f.backend.require_guardian('worker-one', 'course-peer', 1)['checked_at'], f.now)
+        f.dispatcher.supervision_tick()
+        self.assertNotIn(main['server_id'], f.client.containers.items)
+        self.assertTrue(f.client.containers.get(peer['server_id']).attrs['State']['Running'])
+
+    def test_malformed_or_wrong_scope_busy_replies_stop_exact_owned_ids(self):
+        f = self.f; peer = f.spawn(course='course-peer')
+        correct = {'authorized': False, 'deferred': True, 'worker_id': 'worker-one', 'course_id': 'course-main'}
+        replies = [dict(correct, worker_id='worker-two'), dict(correct, course_id='course-peer'),
+                   dict(correct, epoch=1), dict(correct, authorized=0), dict(correct, deferred=1),
+                   dict(correct, deferred=False), {'authorized': False, 'deferred': True}, None]
+        for reply in replies:
+            with self.subTest(reply=reply):
+                f.heartbeat('worker-one', 'course-main'); main = f.spawn()
+                class Malformed:
+                    def call(self, op, payload): return reply
+                guardian = RuntimeGuardian(f.backend, 'worker-one', {'course-main': Malformed(), 'course-peer': self.client('course-peer')})
+                with self.assertLogs('runtime_guardian', level='WARNING') as logs:
+                    self.assertTrue(guardian.tick_course('course-main'))
+                self.assertEqual(logs.output, ['WARNING:runtime_guardian:Guardian observation refused: guardian_observation_invalid'])
+                self.assertEqual(guardian.epochs['course-main'], 0); self.assertEqual(guardian.pending_stops, {})
+                self.assertNotIn(main['server_id'], f.client.containers.items)
+                self.assertTrue(f.client.containers.get(peer['server_id']).attrs['State']['Running'])
+                self.assertEqual(len(f.client.volume_items), 6)
+
+    def test_busy_reply_cannot_bypass_existing_failed_exact_id_stop(self):
+        f = self.f; main = f.spawn(); calls = []
+        class Busy:
+            def call(self, op, payload):
+                calls.append(op)
+                return {'authorized': False, 'deferred': True, 'worker_id': 'worker-one', 'course_id': 'course-main'}
+        guardian = RuntimeGuardian(f.backend, 'worker-one', {'course-main': Busy(), 'course-peer': self.client('course-peer')})
+        pending = (f.backend.guardian_identity('worker-one'), 1, [(main['server_id'], 1)])
+        guardian.pending_stops['course-main'] = pending
+        with patch.object(f.backend, 'guardian_failclosed', side_effect=RuntimeRefusal('runtime_endpoint_lock_busy')):
+            with self.assertLogs('runtime_guardian', level='WARNING'):
+                self.assertFalse(guardian.tick_course('course-main'))
+        self.assertEqual(calls, []); self.assertEqual(guardian.pending_stops['course-main'], pending)
+        self.assertEqual(guardian.epochs['course-main'], 0)
+        with self.assertLogs('runtime_guardian', level='WARNING'):
+            self.assertFalse(guardian.tick_course('course-main'))
+        self.assertEqual(calls, ['guardian.observe']); self.assertEqual(guardian.pending_stops, {})
+        self.assertNotIn(main['server_id'], f.client.containers.items)
+
+    def test_lost_reply_after_late_success_is_not_busy_and_still_stops_exact_ids(self):
+        f = self.f; main = f.spawn(); peer = f.spawn(course='course-peer'); base = self.client('course-main')
+        class Lost:
+            def call(self, op, payload):
+                base.call(op, payload)
+                raise TimeoutError('PRIVATE_LOST_RESPONSE_CANARY')
+        guardian = RuntimeGuardian(f.backend, 'worker-one', {'course-main': Lost(), 'course-peer': self.client('course-peer')})
+        with self.assertLogs('runtime_guardian', level='WARNING') as logs:
+            self.assertTrue(guardian.tick_course('course-main'))
+        self.assertEqual(logs.output, ['WARNING:runtime_guardian:Guardian observation refused: guardian_observation_failed'])
+        self.assertNotIn(main['server_id'], f.client.containers.items)
+        self.assertTrue(f.client.containers.get(peer['server_id']).attrs['State']['Running'])
+        self.assertEqual(guardian.epochs['course-main'], 0); self.assertEqual(guardian.pending_stops, {})
+
     def test_busy_snapshot_skips_heartbeat_without_exiting_or_affecting_peer(self):
         f = self.f; main = f.spawn(); peer = f.spawn(course='course-peer')
         calls = []
@@ -195,8 +276,10 @@ class GuardianTests(unittest.TestCase):
             base = self.client(course)
             class Client:
                 def call(self, op, payload):
-                    result = base.call(op, payload); calls[course] += 1
-                    if calls[course] >= 2: (source_seen if course == 'course-main' else peer_seen).set()
+                    result = base.call(op, payload)
+                    if result.get('authorized') is True:
+                        calls[course] += 1
+                        if calls[course] >= 2: (source_seen if course == 'course-main' else peer_seen).set()
                     return result
             return Client()
         guardian = RuntimeGuardian(f.backend, 'worker-one', {course: client(course) for course in calls})

@@ -44,6 +44,13 @@ class RuntimeRefusal(OwnershipError):
         super().__init__(code)
 
 
+class _GuardianAcquisitionBusy(RuntimeRefusal):
+    """Private marker for this observation's pre-effect lock acquisition only."""
+    def __init__(self, token, endpoint):
+        super().__init__('runtime_endpoint_lock_busy')
+        self.token, self.endpoint = token, endpoint
+
+
 def refuse(code):
     raise RuntimeRefusal(code)
 
@@ -249,10 +256,16 @@ class DockerBackend:
         self.directory = Path(config['backend_directory'])
         self.clock = clock
         self.admission_scope = threading.local()
+        self.observation_scope = threading.local()
         if client is None:
             import docker
             client = docker.DockerClient(base_url='unix:///var/run/docker.sock', version='auto', timeout=5)
         self.client = client
+        self._pinned_images = frozenset(
+            [item['image_id'] for courses in config['courses'].values() for item in courses.values()]
+            + [item['image_id'] for item in config['guardians'].values()])
+        self._image_labels_cache = {}
+        self._image_labels_lock = threading.Lock()
         self.database = self.directory / 'runtime-barriers.sqlite'
         self.sentinel = self.directory / 'runtime-state.json'
         self.home_bindings = {}
@@ -363,8 +376,20 @@ class DockerBackend:
             refuse('runtime_shared_daemon_budget_exceeded')
 
     def image_labels(self, image_id):
-        """Only exact inherited labels of the pinned image are harmless provenance."""
+        """Cache public provenance only for configured immutable content IDs."""
+        if not isinstance(image_id, str) or not IMAGE.fullmatch(image_id):
+            refuse('runtime_image_labels_unsupported')
+        if image_id in self._pinned_images:
+            with self._image_labels_lock:
+                if image_id not in self._image_labels_cache:
+                    self._image_labels_cache[image_id] = self._inspect_image_labels(image_id)
+                return dict(self._image_labels_cache[image_id])
+        # Legacy Hub images have no configured image pin. Do not promote a
+        # container's mutable Image attribute into the approved metadata cache.
         self.daemon()
+        return self._inspect_image_labels(image_id)
+
+    def _inspect_image_labels(self, image_id):
         image = self.client.images.get(image_id)
         labels = image.attrs.get('Config', {}).get('Labels') or {}
         if (image.attrs.get('Id') != image_id or not isinstance(labels, dict) or len(labels) > 64
@@ -515,9 +540,27 @@ class DockerBackend:
                 refuse('runtime_worker_incarnation_changed')
 
     @contextmanager
+    def guardian_observation_budget(self):
+        # Only the trusted Guardian dispatch path enters this context. No
+        # request field can shorten a Hub admission or choose a lock budget.
+        if (getattr(self.observation_scope, 'token', None) is not None
+                or getattr(self.admission_scope, 'endpoint', None) is not None):
+            refuse('runtime_observation_scope_nested')
+        token = object(); self.observation_scope.token = token
+        try: yield token
+        finally: self.observation_scope.token = None
+
+    @contextmanager
     def activation_context(self, request):
         worker, course = request['worker_id'], request['course_id']
-        with self.locks([(worker, course)]):
+        token = getattr(self.observation_scope, 'token', None)
+        with ExitStack() as stack:
+            try:
+                stack.enter_context(self.locks([(worker, course)], wait_seconds=0.1 if token is not None else 3))
+            except RuntimeRefusal as error:
+                if token is not None and error.code == 'runtime_endpoint_lock_busy':
+                    raise _GuardianAcquisitionBusy(token, (worker, course)) from None
+                raise
             self.validate_request(request, [worker])
             if self.barrier(worker, course)['denied_through_epoch'] >= request['epoch']:
                 refuse('runtime_epoch_fenced')
@@ -628,7 +671,11 @@ class DockerBackend:
         container.remove(v=False, force=False)  # NEVER volumes, NEVER unrelated resources.
 
     def stop_endpoint(self, worker, course):
-        for container in self.containers(worker, course): self.remove(container, worker, course)
+        self._stop_observed(worker, course, self.containers(worker, course))
+
+    def _stop_observed(self, worker, course, containers):
+        # Caller retains the endpoint lock; remove rechecks each exact identity.
+        for container in containers: self.remove(container, worker, course)
         if self.containers(worker, course): refuse('runtime_quiescence_unverified')
 
     def guardian_identity(self, worker):
@@ -664,6 +711,15 @@ class DockerBackend:
             conn.execute('COMMIT')
         if row is None: refuse('guardian_unavailable')
         record = json.loads(row['record'])
+        self.guardian_deadline(worker, course, epoch, record)
+        if self.guardian_identity(worker) != {key: record.get(key) for key in ('guardian_container_id', 'start_identity')}:
+            logging.getLogger(__name__).warning('Guardian heartbeat refused: container_identity_changed')
+            refuse('guardian_stale_or_changed')
+        self.guardian_deadline(worker, course, epoch, record)
+        return record
+
+    def guardian_deadline(self, worker, course, epoch, record):
+        """Recheck a freshly inspected lease after slow work, without I/O or renewal."""
         expected = {'authority_id': self.authority_id, 'worker_id': worker, 'course_id': course,
             'provider_id': self.config['workers'][worker]['provider_id'], 'boot_id': self.config['workers'][worker]['boot_id'], 'epoch': epoch}
         reason = None
@@ -674,11 +730,13 @@ class DockerBackend:
         elif type(record.get('checked_at')) not in (int, float) or not math.isfinite(record['checked_at']):
             reason = 'timestamp_invalid'
         else:
-            age = self.clock() - record['checked_at']
-            if age < 0: reason = 'heartbeat_future'
-            elif age > self.config['guardians'][worker]['heartbeat_seconds']: reason = 'heartbeat_expired'
-            elif self.guardian_identity(worker) != {key: record.get(key) for key in ('guardian_container_id', 'start_identity')}:
-                reason = 'container_identity_changed'
+            now = self.clock()
+            if type(now) not in (int, float) or not math.isfinite(now):
+                reason = 'timestamp_invalid'
+            else:
+                age = now - record['checked_at']
+                if age < 0: reason = 'heartbeat_future'
+                elif age > self.config['guardians'][worker]['heartbeat_seconds']: reason = 'heartbeat_expired'
         if reason is not None:
             logging.getLogger(__name__).warning('Guardian heartbeat refused: %s', reason)
             refuse('guardian_stale_or_changed')
@@ -785,6 +843,13 @@ class RuntimeDispatcher:
         self.monotonic = monotonic
         self.busy_since = {}
 
+    def _observe(self, principal, op, worker, course_id, payload):
+        with self.authority.admission(course_id, worker) as view:
+            principal['authorize']()
+            if op == 'guardian.observe':
+                self.backend.guardian_heartbeat(worker, course_id, view['epoch'], payload, principal['cert_sha256'])
+            return {'authorized': True, 'epoch': view['epoch'], 'worker_id': worker, 'course_id': course_id}
+
     def dispatch(self, principal, op, course_id, payload):
         worker = principal.get('worker_id')
         if (principal.get('course_id') != course_id or not callable(principal.get('authorize'))
@@ -798,11 +863,14 @@ class RuntimeDispatcher:
             if op == 'guardian.observe' and (set(payload) != {'guardian_container_id', 'start_identity'}
                     or any(not isinstance(value, str) or not HASH.fullmatch(value) for value in payload.values())):
                 refuse('runtime_payload_invalid')
-            with self.authority.admission(course_id, worker) as view:
-                principal['authorize']()
-                if op == 'guardian.observe':
-                    self.backend.guardian_heartbeat(worker, course_id, view['epoch'], payload, principal['cert_sha256'])
-                return {'authorized': True, 'epoch': view['epoch'], 'worker_id': worker, 'course_id': course_id}
+            if op == 'guardian.observe':
+                with self.backend.guardian_observation_budget() as token:
+                    try:
+                        return self._observe(principal, op, worker, course_id, payload)
+                    except _GuardianAcquisitionBusy as error:
+                        if error.token is not token or error.endpoint != (worker, course_id): raise
+                        return {'authorized': False, 'deferred': True, 'worker_id': worker, 'course_id': course_id}
+            return self._observe(principal, op, worker, course_id, payload)
         subject = payload.get('subject')
         self.backend.subject(worker, course_id, subject)
         if op == 'hub.spawn':
@@ -822,6 +890,8 @@ class RuntimeDispatcher:
                     heartbeat = self.backend.require_guardian(worker, course_id, epoch)
                     self.guardian_authorize(heartbeat['cert_sha256'], worker, course_id)
                     principal['authorize']()  # Guardian verification can itself perform slow inspection.
+                    self.backend.guardian_deadline(worker, course_id, epoch, heartbeat)
+                    return heartbeat
                 heartbeat = self.backend.require_guardian(worker, course_id, epoch)
                 self.guardian_authorize(heartbeat['cert_sha256'], worker, course_id)
                 item = self.backend.course(worker, course_id)
@@ -841,10 +911,9 @@ class RuntimeDispatcher:
                         compatible = {key: value for key, value in current_environment.items()
                             if key in ENV_KEYS or key in environment} == environment
                         if self.backend.running(container) and compatible:
-                            principal['authorize']()
-                            heartbeat = self.backend.require_guardian(worker, course_id, epoch)
-                            self.guardian_authorize(heartbeat['cert_sha256'], worker, course_id)
-                            return self.server(container, epoch)
+                            result = self.server(container, epoch)
+                            authorize_effect()
+                            return result
                         authorize_effect()
                         self.backend.remove(container, worker, course_id, authorize=authorize_effect)
                 values = self.backend.containers(worker, course_id)
@@ -863,10 +932,12 @@ class RuntimeDispatcher:
                     cpu_period=100000, cpu_quota=int(item['profile']['learner_cpu'] * 100000),
                     tmpfs={'/tmp': 'rw,nosuid,nodev,size=128m,mode=1777'}, restart_policy={'Name': 'no'}, detach=True)
                 try:
-                    authorize_effect()
+                    heartbeat = authorize_effect()
                     container.start()
                     self.backend.verified_container(container, worker, course_id, check_policy=True)
-                    return self.server(container, epoch)
+                    result = self.server(container, epoch)
+                    self.backend.guardian_deadline(worker, course_id, epoch, heartbeat)
+                    return result
                 except BaseException:
                     self.backend.remove(container, worker, course_id)
                     raise
@@ -912,8 +983,10 @@ class RuntimeDispatcher:
     def _supervise_endpoint(self, worker, course, *, wait_seconds=0.1):
         with self.backend.locks([(worker, course)], wait_seconds=wait_seconds):
             valid = False
+            containers = None
             reason = 'runtime_supervision_refused'
             try:
+                containers = self.backend.containers(worker, course)
                 # Fresh trusted SQL view under the already-held endpoint lock.
                 # No call to admission (which would reacquire the flock).
                 observed_worker = self.backend.inspect_worker(worker)
@@ -926,7 +999,7 @@ class RuntimeDispatcher:
                     record = self.backend.require_guardian(worker, course, current['epoch'])
                     if self.backend.barrier(worker, course)['denied_through_epoch'] < current['epoch']:
                         self.guardian_authorize(record['cert_sha256'], worker, course)
-                        for container in self.backend.containers(worker, course):
+                        for container in containers:
                             if self.backend.verified_container(container, worker, course, check_policy=True)[1] != current['epoch']:
                                 refuse('runtime_cached_epoch_invalid')
                         valid = True
@@ -937,9 +1010,11 @@ class RuntimeDispatcher:
                 elif code == 'runtime_container_policy_changed':
                     reason = 'runtime_container_policy_invalid'
             if not valid:
-                if self.backend.containers(worker, course):
+                if containers is None:
+                    containers = self.backend.containers(worker, course)
+                if containers:
                     logging.getLogger(__name__).warning('Runtime supervision stopping owned learners: %s', reason)
-                self.backend.stop_endpoint(worker, course)
+                self.backend._stop_observed(worker, course, containers)
 
     @staticmethod
     def server(container, epoch):

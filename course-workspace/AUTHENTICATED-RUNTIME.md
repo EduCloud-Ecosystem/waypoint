@@ -78,13 +78,18 @@ control paths.
 Use a disposable local Docker environment with at least 6,656 MiB and four CPUs
 available to the daemon. Static namespace reservations include all three Hubs
 and their possible learner slots, including the standby receiver. The control
-plane uses at most 512 MiB and 0.6 CPU; the remaining reserve covers host overhead.
+plane uses at most 512 MiB; its CPU limits are included in the selected reserve.
 Each synthetic learner gets 512 MiB; each Hub gets 1,024 MiB and one CPU.
 The fixture selects a fixed allocation from the daemon's freshly verified CPU
 count. With four CPUs (the disposable CI runner), each learner gets 0.1 CPU;
 the three namespaces reserve 3.3 CPUs and the control/host reserve is 0.7 CPU.
-With at least five CPUs, each learner gets 0.25 CPU; the three namespaces reserve
-3.75 CPUs and the control/host reserve is 0.75 CPU, totaling 4.5 CPUs. Memory
+With five CPUs, each learner gets 0.25 CPU; the three namespaces reserve
+3.75 CPUs and the control/host reserve is 0.75 CPU, totaling 4.5 CPUs.
+These four/five-CPU profiles use a 0.4-CPU controller and two 0.1-CPU Guardians.
+With six or more CPUs, the controller receives one CPU, the control/host reserve
+is 1.5 CPUs, and the total reservation is 5.25 CPUs. Desktop enrollment testing
+uses this larger profile after measured controller throttling. Actual controller
+and Guardian quotas are checked against the reported allocation. Memory
 requirements remain 6,656 MiB. These fixture allocations demonstrate enforcement;
 they do not establish class capacity or interactive performance. Runtime defaults
 outside this disposable fixture are unchanged. The larger local allocation is
@@ -104,9 +109,10 @@ python course-workspace/rehearsal/verify_authenticated_runtime.py \
 
 Run from a clean reviewed checkout. The harness refuses built Hub/controller
 modules whose bytes differ from the checkout and records immutable executed
-image IDs, source revision, all fifteen executed source hashes, recipe hashes,
+image IDs, source revision, fifteen protected source hashes, recipe hashes,
 host capacity, the selected allocation, controls, and verified cleanup. Version
-2 reports require the allocation; historical version 1 reports retain their
+3 reports require explicit controller, Guardian and host reserves; historical
+versions 1 and 2 retain their
 separate schema and cannot stand in for current acceptance.
 `--allow-dirty` is for development diagnostics only. Generated certificates,
 passwords, Hub tokens, private plans, and raw container logs are excluded from
@@ -153,7 +159,7 @@ Keep the default DockerSpawner deployment until an explicit hosted adoption
 decision. The controller/guardian image and test PKI are local rehearsal tools,
 not a turnkey production certificate/deployment system. A hosted adapter needs
 trusted real worker identities, physically independent endpoint fencing, worker
-enrollment, certificate issuance/rotation/revocation operations, institution OIDC
+enrollment, operated certificate issuance and CA/server rotation, institution OIDC
 and HTTPS verification, hard disk/inode quotas, encrypted off-host recovery,
 durable private state operations, and representative course-load testing.
 The 100,000-entry permanent replay ledger and bounded barrier/event histories
@@ -172,3 +178,7 @@ privileged client certificate revocation.
 Protocol references: [Python TLS verification](https://docs.python.org/3.12/library/ssl.html),
 [JupyterHub Spawner contract](https://jupyterhub.readthedocs.io/en/stable/reference/spawners.html),
 [Docker restart policy behavior](https://docs.docker.com/engine/containers/start-containers-automatically/).
+
+The opt-in [configured-worker enrollment and client rotation guide](WORKER-ENROLLMENT.md)
+adds reviewed local credentials and a separate actual runtime rehearsal. It does
+not establish provider onboarding or a hosted certificate service.

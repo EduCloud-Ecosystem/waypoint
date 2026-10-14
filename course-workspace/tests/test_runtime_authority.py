@@ -1,5 +1,7 @@
 """Runtime controls use real private SQLite authority/barriers and injected Docker."""
 import hashlib
+from contextlib import contextmanager
+import json
 import os
 from pathlib import Path
 import shutil
@@ -14,7 +16,8 @@ import uuid
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from ownership_contract import OwnershipError, digest
 from runtime_authority import (DockerBackend, RuntimeDispatcher, RuntimeRefusal, VERSION, bootstrap,
-                               tree_hash, file_hash, ADMISSION_UNUSED_SNAPSHOT, ADMISSION_UNUSED_RETAINED)
+                               tree_hash, file_hash, ADMISSION_UNUSED_SNAPSHOT, ADMISSION_UNUSED_RETAINED,
+                               _GuardianAcquisitionBusy)
 
 
 class Container:
@@ -335,6 +338,61 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual(f.backend.containers('worker-one', 'course-main'), [])
         self.assertEqual(len(f.client.volume_items), 6)
 
+    def test_heartbeat_expiry_during_final_hub_authorization_prevents_start(self):
+        f = self.fixture; calls = []
+        def authorize():
+            if any(item.attrs['Config']['Labels'].get('educloud.workspace.kind') == 'learner'
+                   for item in f.client.containers.items.values()):
+                calls.append(True)
+                if len(calls) == 2: f.now = 104
+        self.refuses('guardian_stale_or_changed', lambda: f.spawn(authorize=authorize))
+        created = f.client.containers.created[-1][0]
+        self.assertNotIn('start', created.actions)
+        self.assertNotIn(created.id, f.client.containers.items)
+        self.assertEqual(created.actions[-1], ('remove', False, False))
+
+    def test_heartbeat_expiry_during_final_authorization_prevents_network_creation(self):
+        f = self.fixture; calls = []; created = len(f.client.containers.created)
+        def authorize():
+            calls.append(True)
+            if len(calls) == 2: f.now = 104
+        self.refuses('guardian_stale_or_changed', lambda: f.spawn(authorize=authorize))
+        self.assertEqual(f.client.networks.items, {})
+        self.assertEqual(len(f.client.containers.created), created)
+
+    def test_existing_server_adoption_refuses_heartbeat_expired_by_slow_guardian_policy(self):
+        f = self.fixture; first = f.spawn(); container = f.client.containers.get(first['server_id'])
+        actions = list(container.actions); created = len(f.client.containers.created); calls = []
+        original = f.dispatcher.guardian_authorize
+        def authorize(*args):
+            original(*args); calls.append(True)
+            if len(calls) == 2: f.now = 104
+        with patch.object(f.dispatcher, 'guardian_authorize', side_effect=authorize):
+            self.refuses('guardian_stale_or_changed', f.spawn)
+        self.assertEqual(container.actions, actions)
+        self.assertEqual(len(f.client.containers.created), created)
+        self.assertTrue(container.attrs['State']['Running'])
+
+    def test_adoption_return_checks_lease_after_slow_server_inspection(self):
+        f = self.fixture; first = f.spawn(); container = f.client.containers.get(first['server_id'])
+        actions = list(container.actions); original = f.dispatcher.server
+        def observe(*args):
+            result = original(*args); f.now = 104; return result
+        with patch.object(f.dispatcher, 'server', side_effect=observe):
+            self.refuses('guardian_stale_or_changed', f.spawn)
+        self.assertEqual(container.actions, actions)
+
+    def test_new_server_return_expiry_cleans_only_its_newly_started_container(self):
+        f = self.fixture; peer = f.spawn(course='course-peer'); original = f.dispatcher.server
+        def observe(*args):
+            result = original(*args); f.now = 104; return result
+        with patch.object(f.dispatcher, 'server', side_effect=observe):
+            self.refuses('guardian_stale_or_changed', f.spawn)
+        created = f.client.containers.created[-1][0]
+        self.assertIn('start', created.actions)
+        self.assertNotIn(created.id, f.client.containers.items)
+        self.assertTrue(f.client.containers.get(peer['server_id']).attrs['State']['Running'])
+
     def test_guardian_revocation_during_create_refuses_start_and_cleans_owned_container(self):
         f = self.fixture; original = f.client.containers.create
         def create(*args, **kwargs):
@@ -360,6 +418,10 @@ class RuntimeTests(unittest.TestCase):
         inherited = {'com.docker.compose.project': 'old-fixture', 'com.docker.compose.service': 'course-image', 'org.opencontainers.image.title': 'course'}
         f.client.image_labels[f.image] = inherited
         for container in f.client.containers.items.values(): container.attrs['Config']['Labels'].update(inherited)
+        # A content ID's metadata cannot change after bootstrap in real Docker.
+        # Reopen after setting fixture provenance so it is validated on first read.
+        f.backend = DockerBackend(f.config, f.client, clock=lambda: f.now)
+        f.authority.backend = f.backend; f.dispatcher.backend = f.backend
         original = f.client.containers.create
         def create(image, name, labels, **kwargs): return original(image, name, dict(inherited, **labels), **kwargs)
         with patch.object(f.client.containers, 'create', side_effect=create):
@@ -378,6 +440,49 @@ class RuntimeTests(unittest.TestCase):
         f.client.image_labels[f.image] = {'educloud.runtime.worker': 'forged-worker'}
         self.refuses('runtime_image_labels_unsupported', lambda: DockerBackend(f.config, f.client))
         self.assertEqual(len(f.client.containers.created), count)
+
+    def test_configured_image_metadata_is_cached_without_live_authorization(self):
+        f = self.fixture
+        with patch.object(f.client.images, 'get', side_effect=AssertionError('metadata reread')), \
+                patch.object(f.client, 'info', side_effect=AssertionError('redundant daemon read')):
+            labels = f.backend.image_labels(f.image)
+            labels['untrusted-copy'] = 'changed'
+            self.assertEqual(f.backend.image_labels(f.image), {})
+        f.client.info_value['ID'] = 'changed-daemon'
+        self.refuses('runtime_daemon_changed', f.spawn)
+        self.refuses('runtime_daemon_changed', lambda: f.backend.guardian_identity('worker-one'))
+
+    def test_unconfigured_image_metadata_stays_live_and_rejects_tags(self):
+        f = self.fixture; other = 'sha256:' + 'd' * 64
+        f.client.image_labels[other] = {'public': 'first'}
+        with patch.object(f.client.images, 'get', wraps=f.client.images.get) as inspect, \
+                patch.object(f.client, 'info', wraps=f.client.info) as daemon:
+            self.assertEqual(f.backend.image_labels(other), {'public': 'first'})
+            f.client.image_labels[other] = {'public': 'second'}
+            self.assertEqual(f.backend.image_labels(other), {'public': 'second'})
+            self.assertEqual(inspect.call_count, 2); self.assertEqual(daemon.call_count, 2)
+            self.refuses('runtime_image_labels_unsupported', lambda: f.backend.image_labels('course:latest'))
+            self.assertEqual(inspect.call_count, 2)
+
+    def test_image_cache_first_read_rejects_wrong_actual_id_and_bad_labels(self):
+        f = self.fixture
+        cases = [({'Id': 'sha256:' + 'd' * 64, 'Config': {'Labels': {}}}),
+                 ({'Id': f.image, 'Config': {'Labels': {'educloud.runtime.worker': 'forged'}}}),
+                 ({'Id': f.image, 'Config': {'Labels': {'public': 1}}})]
+        for attrs in cases:
+            with self.subTest(attrs=attrs), patch.object(f.client.images, 'get',
+                    return_value=type('Image', (), {'attrs': attrs})()):
+                self.refuses('runtime_image_labels_unsupported', lambda: DockerBackend(f.config, f.client))
+
+    def test_image_cache_warms_each_exact_configured_id_once(self):
+        f = self.fixture
+        with patch.object(f.client.images, 'get', wraps=f.client.images.get) as inspect, \
+                patch.object(f.client, 'info', wraps=f.client.info) as daemon:
+            backend = DockerBackend(f.config, f.client)
+            self.assertEqual(inspect.call_args_list, [unittest.mock.call(f.image)])
+            self.assertEqual(daemon.call_count, 1)
+            for _ in range(3): self.assertEqual(backend.image_labels(f.image), {})
+            self.assertEqual(inspect.call_count, 1); self.assertEqual(daemon.call_count, 1)
 
     def test_dead_guardian_and_revoked_certificate_stop_running_and_refuse_spawn(self):
         f = self.fixture; result = f.spawn()
@@ -622,6 +727,151 @@ class RuntimeTests(unittest.TestCase):
             self.refuses('runtime_endpoint_enforcement_unavailable', f.dispatcher.supervision_tick)
             self.assertEqual(windows, [0.25, 0.1])
 
+    def test_guardian_actual_held_flock_defers_without_epoch_heartbeat_or_effect(self):
+        f = self.fixture; source = f.spawn(); peer = f.spawn(course='course-peer')
+        before = {item.id: list(item.actions) for item in f.client.containers.items.values()}
+        identity = f.backend.guardian_identity('worker-one'); held = threading.Event(); release = threading.Event(); authorized = []
+        with f.backend.connection() as conn:
+            history = [tuple(row) for row in conn.execute('SELECT * FROM guardians ORDER BY endpoint')]
+        def holder():
+            with f.backend.locks([('worker-one', 'course-main')]): held.set(); release.wait(5)
+        thread = threading.Thread(target=holder); thread.start()
+        try:
+            self.assertTrue(held.wait(2)); f.now += 1
+            result = f.dispatcher.dispatch(f.principal(role='guardian', authorize=lambda: authorized.append(True)),
+                'guardian.observe', 'course-main', identity)
+            self.assertEqual(result, {'authorized': False, 'deferred': True, 'worker_id': 'worker-one', 'course_id': 'course-main'})
+            self.assertEqual(authorized, [])
+            with f.backend.connection() as conn:
+                self.assertEqual([tuple(row) for row in conn.execute('SELECT * FROM guardians ORDER BY endpoint')], history)
+            self.assertEqual({item.id: item.actions for item in f.client.containers.items.values()}, before)
+            self.assertEqual(f.dispatcher.busy_since, {})
+        finally: release.set(); thread.join(5)
+        self.assertFalse(thread.is_alive())
+        self.assertIsNone(getattr(f.backend.observation_scope, 'token', None))
+        self.assertTrue(f.client.containers.get(source['server_id']).attrs['State']['Running'])
+        self.assertTrue(f.client.containers.get(peer['server_id']).attrs['State']['Running'])
+        self.assertTrue(f.heartbeat('worker-one', 'course-main')['authorized'])
+        self.assertEqual(f.backend.require_guardian('worker-one', 'course-main', 1)['checked_at'], 101)
+
+    def test_guardian_budget_is_thread_local_restored_and_hub_default_unchanged(self):
+        f = self.fixture; waits = []; entered = threading.Event(); release = threading.Event()
+        identity = f.backend.guardian_identity('worker-one')
+        @contextmanager
+        def unavailable(endpoints, *, wait_seconds=3):
+            waits.append((threading.current_thread().name, wait_seconds))
+            raise RuntimeRefusal('runtime_endpoint_lock_busy')
+            yield
+        def scoped():
+            with f.backend.guardian_observation_budget():
+                entered.set(); release.wait(3)
+            self.assertIsNone(getattr(f.backend.observation_scope, 'token', None))
+        thread = threading.Thread(target=scoped); thread.start()
+        try:
+            self.assertTrue(entered.wait(2))
+            with patch.object(f.backend, 'locks', side_effect=unavailable):
+                self.refuses('runtime_endpoint_lock_busy', lambda: f.dispatcher.dispatch(f.principal(), 'hub.authorize', 'course-main', {}))
+                self.assertTrue(f.dispatcher.dispatch(f.principal(role='guardian'), 'guardian.observe', 'course-main', identity)['deferred'])
+                self.refuses('runtime_endpoint_lock_busy', lambda: f.dispatcher.dispatch(f.principal(), 'hub.authorize', 'course-main', {}))
+            self.assertEqual([wait for _, wait in waits], [3, .1, 3])
+        finally: release.set(); thread.join(5)
+        self.assertFalse(thread.is_alive())
+
+    def test_nested_observation_context_is_refused_and_outer_scope_survives(self):
+        f = self.fixture
+        with f.backend.guardian_observation_budget() as token:
+            with self.assertRaisesRegex(RuntimeRefusal, '^runtime_observation_scope_nested$'):
+                with f.backend.guardian_observation_budget(): pass
+            self.assertIs(f.backend.observation_scope.token, token)
+        self.assertIsNone(f.backend.observation_scope.token)
+
+    def test_post_acquisition_busy_errors_never_become_deferred(self):
+        f = self.fixture; identity = f.backend.guardian_identity('worker-one')
+        for target in ('validate_request', 'guardian_heartbeat'):
+            with self.subTest(target=target), patch.object(f.backend, target, side_effect=RuntimeRefusal('runtime_endpoint_lock_busy')):
+                self.refuses('runtime_endpoint_lock_busy', lambda: f.dispatcher.dispatch(f.principal(role='guardian'), 'guardian.observe', 'course-main', identity))
+            self.assertIsNone(getattr(f.backend.observation_scope, 'token', None))
+            self.assertIsNone(getattr(f.backend.admission_scope, 'endpoint', None))
+        def deny(): raise RuntimeRefusal('runtime_endpoint_lock_busy')
+        self.refuses('runtime_endpoint_lock_busy', lambda: f.dispatcher.dispatch(f.principal(role='guardian', authorize=deny), 'guardian.observe', 'course-main', identity))
+        with patch.object(f.backend, 'inspect_worker', side_effect=RuntimeRefusal('runtime_endpoint_lock_busy')):
+            self.refuses('runtime_endpoint_lock_busy', lambda: f.dispatcher.dispatch(f.principal(role='guardian'), 'guardian.observe', 'course-main', identity))
+        self.assertIsNone(f.backend.observation_scope.token)
+
+    def test_deferred_marker_must_match_current_token_and_exact_endpoint(self):
+        f = self.fixture; identity = f.backend.guardian_identity('worker-one')
+        def wrong_token(*args): raise _GuardianAcquisitionBusy(object(), ('worker-one', 'course-main'))
+        def wrong_endpoint(*args): raise _GuardianAcquisitionBusy(f.backend.observation_scope.token, ('worker-one', 'course-peer'))
+        for callback in (wrong_token, wrong_endpoint):
+            with patch.object(f.dispatcher, '_observe', side_effect=callback):
+                with self.assertRaises(_GuardianAcquisitionBusy):
+                    f.dispatcher.dispatch(f.principal(role='guardian'), 'guardian.observe', 'course-main', identity)
+            self.assertIsNone(f.backend.observation_scope.token)
+
+    def test_nonowner_or_pending_sql_refusals_are_not_busy_deferrals(self):
+        f = self.fixture
+        identity = f.backend.guardian_identity('worker-two')
+        with self.assertRaisesRegex(OwnershipError, '^current_owner_required$'):
+            f.dispatcher.dispatch(f.principal('worker-two', role='guardian'), 'guardian.observe', 'course-main', identity)
+        with f.authority._connection() as conn:
+            conn.execute("UPDATE courses SET pending=? WHERE course_id='course-main'", ('f' * 32,))
+        with self.assertRaises(OwnershipError):
+            f.dispatcher.dispatch(f.principal(role='guardian'), 'guardian.observe', 'course-main', f.backend.guardian_identity('worker-one'))
+        self.assertIsNone(f.backend.observation_scope.token)
+
+    def test_deferred_observations_do_not_reset_prolonged_watchdog_inability(self):
+        f = self.fixture; held = threading.Event(); release = threading.Event(); f.dispatcher.monotonic = lambda: 10
+        f.dispatcher.busy_since[('worker-one', 'course-main')] = 0
+        identity = f.backend.guardian_identity('worker-one')
+        def holder():
+            with f.backend.locks([('worker-one', 'course-main')]): held.set(); release.wait(5)
+        thread = threading.Thread(target=holder); thread.start()
+        try:
+            self.assertTrue(held.wait(2))
+            self.assertTrue(f.dispatcher.dispatch(f.principal(role='guardian'), 'guardian.observe', 'course-main', identity)['deferred'])
+            self.assertEqual(f.dispatcher.busy_since[('worker-one', 'course-main')], 0)
+            self.refuses('runtime_endpoint_enforcement_unavailable', f.dispatcher.supervision_tick)
+        finally: release.set(); thread.join(5)
+        self.assertFalse(thread.is_alive())
+
+    def test_real_tls_busy_response_requires_guardian_scope_and_valid_body(self):
+        from authority_test_pki import TestPKI
+        from authority_access import AuthorityServer, ReplayStore
+        from hub.authority_client import AuthorityClient, AuthorityError, VERSION as ACCESS_VERSION
+        f = self.fixture; pki = TestPKI(f.directory / 'tls-pki')
+        guardian_cert, guardian_key = pki.issue('guardian'); hub_cert, hub_key = pki.issue('hub')
+        acl = f.directory / 'tls-acl.json'
+        acl.write_text(json.dumps({'version': ACCESS_VERSION, 'authority_id': f.authority.authority_id,
+            'clients': {pki.fingerprint(guardian_cert): {'role': 'guardian', 'workers': ['worker-one'], 'courses': ['course-main']},
+                        pki.fingerprint(hub_cert): {'role': 'hub', 'workers': ['worker-one'], 'courses': ['course-main']}}})); acl.chmod(0o600)
+        replay = ReplayStore.create(f.directory / 'tls-replay', f.authority.authority_id)
+        server = AuthorityServer(('127.0.0.1', 0), authority_id=f.authority.authority_id,
+            certfile=pki.server_cert, keyfile=pki.server_key, ca_file=pki.ca_cert, acl_file=acl,
+            replay_store=replay, dispatch=f.dispatcher.dispatch, timeout=.5)
+        serving = threading.Thread(target=server.serve_forever, kwargs={'poll_interval': .02}); serving.start()
+        held = threading.Event(); release = threading.Event()
+        def holder():
+            with f.backend.locks([('worker-one', 'course-main')]): held.set(); release.wait(5)
+        holding = threading.Thread(target=holder); holding.start()
+        def client(cert, key, course='course-main'):
+            return AuthorityClient('https://localhost:' + str(server.server_port), f.authority.authority_id,
+                pki.ca_cert, cert, key, 'worker-one', course, timeout=1)
+        try:
+            self.assertTrue(held.wait(2)); identity = f.backend.guardian_identity('worker-one')
+            for api, payload, code in [(client(hub_cert, hub_key), identity, 'authority_access_refused'),
+                                        (client(guardian_cert, guardian_key, 'course-peer'), identity, 'authority_access_refused'),
+                                        (client(guardian_cert, guardian_key), {}, 'authority_frame_invalid')]:
+                with self.assertRaises(AuthorityError) as caught: api.call('guardian.observe', payload)
+                self.assertEqual(caught.exception.code, code)
+            result = client(guardian_cert, guardian_key).call('guardian.observe', identity)
+            self.assertEqual(result, {'authorized': False, 'deferred': True, 'worker_id': 'worker-one', 'course_id': 'course-main'})
+            # The normal replay audit remains mandatory even for a no-grant reply.
+            with replay._connection() as conn: self.assertEqual(conn.execute('SELECT count(*) FROM requests').fetchone()[0], 1)
+            self.assertEqual(f.backend.require_guardian('worker-one', 'course-main', 1)['checked_at'], 100)
+        finally:
+            release.set(); holding.join(5); server.shutdown(); server.server_close(); serving.join(2)
+        self.assertFalse(holding.is_alive()); self.assertFalse(serving.is_alive())
+
     def test_supervisor_warning_is_fixed_only_when_owned_learners_exist(self):
         f = self.fixture
         with self.assertNoLogs('runtime_authority', level='WARNING'): f.dispatcher.supervision_tick()
@@ -632,6 +882,40 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual(captured.output, ['WARNING:runtime_authority:Runtime supervision stopping owned learners: runtime_supervision_refused'])
         self.assertNotIn('PRIVATE_TEST_CREDENTIAL', ''.join(captured.output))
         self.assertEqual(f.backend.containers('worker-one', 'course-main'), [])
+
+    def test_watchdog_reuses_owned_inventory_but_rescans_after_removal(self):
+        f = self.fixture; result = f.spawn(); peer = f.spawn(course='course-peer')
+        container = f.client.containers.get(result['server_id'])
+        f.revoked.add('e' * 64)
+        with patch.object(f.client.containers, 'list', wraps=f.client.containers.list) as inventory:
+            f.dispatcher._supervise_endpoint('worker-one', 'course-main')
+        self.assertEqual(inventory.call_count, 2)  # Observation, then post-effect proof.
+        self.assertNotIn(container.id, f.client.containers.items)
+        self.assertEqual(container.actions[-3:], [('update', {'restart_policy': {'Name': 'no'}}),
+                                                 ('stop', 5), ('remove', False, False)])
+        self.assertTrue(f.client.containers.get(peer['server_id']).attrs['State']['Running'])
+
+    def test_watchdog_post_effect_scan_refuses_remaining_owned_container(self):
+        f = self.fixture; result = f.spawn(); f.revoked.add('e' * 64)
+        container = f.client.containers.get(result['server_id']); remove = f.backend.remove
+        def remaining(*args, **kwargs):
+            remove(*args, **kwargs)
+            # An external Docker actor defeats removal: the final proof must
+            # observe remaining state rather than trust the pre-effect list.
+            f.client.containers.items[container.id] = container
+        with patch.object(f.backend, 'remove', side_effect=remaining):
+            self.refuses('runtime_quiescence_unverified',
+                lambda: f.dispatcher._supervise_endpoint('worker-one', 'course-main'))
+        self.assertIn(container.id, f.client.containers.items)
+
+    def test_watchdog_inventory_failure_cannot_become_empty_success(self):
+        f = self.fixture; result = f.spawn()
+        container = f.client.containers.get(result['server_id'])
+        container.attrs['Config']['Labels']['educloud.runtime.foreign'] = 'forged'
+        self.refuses('runtime_container_scope_invalid',
+            lambda: f.dispatcher._supervise_endpoint('worker-one', 'course-main'))
+        self.assertEqual(container.actions, ['start'])
+        self.assertTrue(container.attrs['State']['Running'])
 
     def test_guardian_failure_subtypes_are_fixed_and_public_code_unchanged(self):
         f = self.fixture

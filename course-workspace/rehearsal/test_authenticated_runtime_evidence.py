@@ -10,7 +10,7 @@ def example(cpu=4):
         'images':{'course':'sha256:'+'a'*64,'hub':'sha256:'+'b'*64,'controller':'sha256:'+'c'*64},
         'source':'a'*40,'source_dirty':False,'code_sha256':{path:'a'*64 for path in evidence.CODE_FILES},
         'recipe_sha256':{path:'b'*64 for path in evidence.RECIPE_FILES},'host':{'memory_bytes':6656*1024**2,'cpu':cpu},
-        'allocation':deepcopy(evidence.ALLOCATION_PRESETS['five-cpu-local' if cpu>=5 else 'four-cpu-ci']),
+        'allocation':evidence.allocation_for_cpu(cpu),
         'cleanup_verified':True,'acceptance_eligible':True}
 
 
@@ -56,21 +56,24 @@ class AuthenticatedEvidenceTests(unittest.TestCase):
             with self.subTest(field=field,bad=bad):self.refused(report)
 
     def test_verified_host_cpu_deterministically_selects_exact_allocation(self):
-        for cpu,name in ((4,'four-cpu-ci'),(5,'five-cpu-local'),(64,'five-cpu-local')):
+        for cpu,name in ((4,'four-cpu-ci'),(5,'five-cpu-local'),(6,'six-cpu-local'),(64,'six-cpu-local')):
             report=example(cpu);self.assertIsNone(evidence.validate_report(report))
             self.assertEqual(report['allocation']['name'],name)
             report['allocation']=deepcopy(evidence.ALLOCATION_PRESETS['five-cpu-local' if cpu==4 else 'four-cpu-ci'])
             with self.subTest(cpu=cpu):self.refused(report)
 
     def test_allocation_fields_limits_types_and_unknown_values_fail_closed(self):
-        for cpu in (4,5):
+        for cpu in (4,5,6):
             for field in example(cpu)['allocation']:
                 report=example(cpu);del report['allocation'][field]
                 with self.subTest(cpu=cpu,missing=field):self.refused(report)
             for field,bad in [('name','automatic'),('learner_cpu',.2),('hub_cpu',.5),('reserved_cpu',3.9),
-                              ('minimum_cpu',True),('minimum_cpu',4.0),('minimum_cpu',6),
+                              ('minimum_cpu',True),('minimum_cpu',4.0),('minimum_cpu',7),
                               ('learner_cpu',True),('hub_cpu',True),('reserved_cpu',True),
-                              ('learner_cpu',float('nan')),('reserved_cpu',float('inf'))]:
+                              ('controller_cpu',True),('guardian_cpu',True),('controller_cpu',.2),('guardian_cpu',.2),
+                              ('host_reserve_cpu',True),('host_reserve_cpu',.6),
+                              ('learner_cpu',float('nan')),('reserved_cpu',float('inf')),
+                              ('controller_cpu',float('nan')),('guardian_cpu',float('inf')),('host_reserve_cpu',float('nan'))]:
                 report=example(cpu);report['allocation'][field]=bad
                 with self.subTest(cpu=cpu,field=field,bad=bad):self.refused(report)
             report=example(cpu);report['allocation']['worker_id']='private';self.refused(report)
@@ -95,6 +98,36 @@ class AuthenticatedEvidenceTests(unittest.TestCase):
         self.assertIsNone(evidence.validate_report(report))
         report['version']=evidence.VERSION;self.refused(report)
         report['allocation']=deepcopy(evidence.ALLOCATION_PRESETS['four-cpu-ci']);self.refused(report)
+
+    def test_historical_v2_retains_old_allocation_and_cannot_be_promoted_to_v3(self):
+        for cpu in (4,5,6,64):
+            report=example(cpu);report['version']=evidence.PREVIOUS_VERSION
+            report['allocation']=deepcopy(evidence.LEGACY_ALLOCATION_PRESETS['four-cpu-ci' if cpu==4 else 'five-cpu-local'])
+            before=deepcopy(report);evidence.validate_report(report);self.assertEqual(report,before)
+            report['version']=evidence.VERSION;self.refused(report)
+            report=before;report['allocation']=evidence.allocation_for_cpu(cpu);self.refused(report)
+        report=example(6);report['version']=evidence.PREVIOUS_VERSION;self.refused(report)
+
+    def test_canonical_allocation_is_independent_typed_and_covers_control_plane(self):
+        for cpu in (4,5,6,8,4096):
+            allocation=evidence.allocation_for_cpu(cpu)
+            self.assertEqual(set(allocation),{'name','learner_cpu','hub_cpu','reserved_cpu','minimum_cpu','controller_cpu','guardian_cpu','host_reserve_cpu'})
+            self.assertEqual(3*(allocation['hub_cpu']+allocation['learner_cpu'])+allocation['host_reserve_cpu'],allocation['reserved_cpu'])
+            self.assertLessEqual(allocation['controller_cpu']+2*allocation['guardian_cpu'],allocation['host_reserve_cpu'])
+            self.assertLessEqual(allocation['reserved_cpu'],cpu)
+            allocation['controller_cpu']=999
+            self.assertNotEqual(evidence.allocation_for_cpu(cpu)['controller_cpu'],999)
+        for cpu in (True,False,4.0,3,-1,'6',None,4097):
+            with self.subTest(cpu=cpu),self.assertRaisesRegex(ValueError,'^authenticated_runtime_allocation_refused$'):
+                evidence.allocation_for_cpu(cpu)
+
+    def test_current_reservation_cannot_omit_or_understate_controller_or_guardians(self):
+        for cpu in (4,5,6):
+            for field in ('controller_cpu','guardian_cpu','host_reserve_cpu'):
+                report=example(cpu);report['allocation'][field]=0;self.refused(report)
+            report=example(cpu)
+            report['allocation']['reserved_cpu']=3*(report['allocation']['hub_cpu']+report['allocation']['learner_cpu'])
+            self.refused(report)
 
     def test_partial_v2_failure_validates_observed_allocation_without_acceptance(self):
         report=example(5);report['status']='FAIL';report['acceptance_eligible']=False

@@ -185,3 +185,8 @@ separate from the hosted requirements below.
 The local test does not close Cairn's separate grading-integrity findings.
 [JupyterHub security guidance](https://jupyterhub.readthedocs.io/en/stable/explanation/websecurity.html)
 explains the per-user-domain requirement and container trust boundary.
+
+Reviewed credentials for approved local workers and staged client certificate
+rotation are documented in [worker enrollment](WORKER-ENROLLMENT.md), with a
+separate actual Docker rehearsal. Hosted enrollment and independent-host acceptance
+remain separate.
