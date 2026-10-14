@@ -134,11 +134,13 @@ class ManagedAccessTests(unittest.TestCase):
             def serve_forever(self, **options): pass
             def server_close(self): pass
             def shutdown(self): pass
-        with patch.object(controller_service, 'DockerBackend'), patch.object(controller_service.Authority, 'open'), patch('worker_credentials.verify_binding', return_value=self.binding), patch('worker_credentials.verify_runtime_binding') as binding_check, patch.object(controller_service, 'RuntimeDispatcher', Runtime), patch.object(controller_service, 'OperatorDispatcher'), patch.object(controller_service, 'AuthorityServer', Server), patch.object(controller_service.ReplayStore, 'open'):
+        with patch.object(controller_service, 'DockerBackend'), patch.object(controller_service.Authority, 'open'), patch('worker_credentials.verify_binding', return_value=self.binding), patch('worker_credentials.make_runtime_binding_verifier') as factory, patch.object(controller_service, 'RuntimeDispatcher', Runtime), patch.object(controller_service, 'OperatorDispatcher'), patch.object(controller_service, 'AuthorityServer', Server), patch.object(controller_service.ReplayStore, 'open'):
             controller_service.serve(config, service)
+        binding_check = factory.return_value
         policy = captured['policy']; self.assertIsNotNone(policy.enrollment)
         fp = self.metadata['guardian']['fingerprint']; captured['guardian'](fp, 'one', 'course')
         self.assertEqual(binding_check.call_args.args[-2:], ('one', 'course'))
+        self.assertEqual(factory.call_count, 1)
         self.apply('revoke', target_fingerprint=fp)
         self.refused(lambda: captured['guardian'](fp, 'one', 'course'))
     def test_managed_live_map_bound_matches_registry_instead_of_legacy_128_cap(self):

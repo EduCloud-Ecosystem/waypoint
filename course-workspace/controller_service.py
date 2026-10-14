@@ -16,13 +16,13 @@ def serve(config, service):
     if 'enrollment_directory' in service:
         # Explicit configured mode; missing/corrupt managed state never falls
         # back to legacy runtime entries or creates a replacement registry.
-        from worker_credentials import verify_binding, verify_runtime_binding
+        from worker_credentials import verify_binding, make_runtime_binding_verifier
         from worker_enrollment import EnrollmentStore
         directory = service['enrollment_directory']
         if not isinstance(directory, str) or not directory: raise ValueError('managed_enrollment_required')
         binding = verify_binding(config, service, backend=backend, authority=authority)
         enrollment = EnrollmentStore.open(directory, config['authority_id'], binding)
-        binding_verifier = lambda worker, course: verify_runtime_binding(config, service, backend, enrollment.binding, worker, course)
+        binding_verifier = make_runtime_binding_verifier(config, service, backend, enrollment.binding)
     policy = AccessPolicy(service['acl_file'], config['authority_id'], enrollment=enrollment, binding_verifier=binding_verifier)
     runtime = RuntimeDispatcher(authority, backend,
         lambda fingerprint, worker, course: policy.authorize_fingerprint(fingerprint, 'guardian', worker, course))

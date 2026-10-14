@@ -20,8 +20,10 @@ state, consumed approval and linked history in one transaction. Binding observat
 occur before that transaction; this is not atomic attestation across databases or
 providers. Runtime admission retains its own fresh checks under endpoint exclusion.
 The managed policy also checks scoped worker/daemon, home-root, loaded configuration
-and pinned CA metadata on runtime lookups without nested ownership SQL or content-tree
-scans. Missing or changed managed state refuses runtime access rather than falling
+and fresh pinned public CA bytes on runtime lookups without nested ownership SQL or content-tree
+scans. A policy captures canonical public CA bytes at startup, then freshly reopens
+and proves the current file matches on each lookup; it caches no authorization or
+liveness decision. A PEM formatting change safely requires a service restart. Missing or changed managed state refuses runtime access rather than falling
 back to the legacy ACL. Static operator grants remain separately controlled.
 
 The lifecycle is explicit:

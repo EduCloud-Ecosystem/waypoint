@@ -1,6 +1,8 @@
 """Real public-certificate verification and private local approval boundaries."""
 import argparse
+import contextlib
 import hashlib
+import io
 import json
 import os
 from pathlib import Path
@@ -171,6 +173,111 @@ class CredentialTests(unittest.TestCase):
                 self.refuses(lambda: credentials.verify_runtime_binding(f.config, wrong_ca, f.backend, binding, 'worker-one', 'course-peer'))
                 f.client.info_value['ID'] = 'changed-daemon'
                 self.refuses(lambda: credentials.verify_runtime_binding(f.config, service, f.backend, binding, 'worker-one', 'course-peer'))
+
+    def test_public_ca_snapshot_reads_current_bytes_with_bounded_syscalls(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve(); root.chmod(0o700); f = RuntimeFixture(root)
+            ca = root / 'public-ca.pem'; shutil.copyfile(self.pki.ca_cert, ca); ca.chmod(0o600)
+            service = {'authority_directory': str(f.authority.directory), 'ca_file': str(ca)}
+            binding = credentials.verify_binding(f.config, service, backend=f.backend, authority=f.authority)
+            verify = credentials.make_runtime_binding_verifier(f.config, service, f.backend, binding)
+            original = os.read; counts = []; inode = ca.stat().st_ino
+            def read(fd, count):
+                if os.fstat(fd).st_ino == inode: counts.append(count)
+                return original(fd, count)
+            with patch.object(credentials.os, 'read', side_effect=read), patch.object(credentials, '_openssl', side_effect=AssertionError('no hot crypto')), patch.object(f.authority, '_connection', side_effect=AssertionError('no hot SQL')):
+                verify('worker-one', 'course-main')
+            self.assertLessEqual(len(counts), 40); self.assertIn(ca.stat().st_size - 28, counts)
+            raw = ca.read_bytes(); changed = bytearray(raw); changed[100] = ord('A') if changed[100] != ord('A') else ord('B')
+            ca.write_bytes(changed)
+            self.refuses(lambda: verify('worker-one', 'course-main'))
+            ca.write_bytes(raw); verify('worker-one', 'course-main')
+            path = Path(f.config['courses']['worker-one']['course-main']['home_root'])
+            path.rename(path.with_name(path.name + '-old')); path.mkdir(mode=0o700)
+            self.refuses(lambda: verify('worker-one', 'course-main'))
+            verify('worker-one', 'course-peer')
+            f.client.info_value['ID'] = 'changed-daemon'
+            self.refuses(lambda: verify('worker-one', 'course-peer'))
+
+    def test_public_ca_snapshots_are_policy_local_and_reformat_is_not_cached_success(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve(); root.chmod(0o700); f = RuntimeFixture(root)
+            ca = root / 'public-ca.pem'; raw = self.pki.ca_cert.read_bytes(); ca.write_bytes(raw); ca.chmod(0o600)
+            service = {'authority_directory': str(f.authority.directory), 'ca_file': str(ca)}
+            binding = credentials.verify_binding(f.config, service, backend=f.backend, authority=f.authority)
+            first = credentials.make_runtime_binding_verifier(f.config, service, f.backend, binding)
+            ca.write_bytes(raw.replace(b'\n', b'\r\n'))
+            self.refuses(lambda: first('worker-one', 'course-main'))
+            second = credentials.make_runtime_binding_verifier(f.config, service, f.backend, binding)
+            second('worker-one', 'course-main')
+            ca.write_bytes(raw)
+            first('worker-one', 'course-main'); self.refuses(lambda: second('worker-one', 'course-main'))
+            wrong = dict(binding, ca_sha256='0' * 64)
+            self.refuses(lambda: credentials.make_runtime_binding_verifier(f.config, service, f.backend, wrong))
+
+    def test_public_ca_hot_reader_refuses_bundle_key_mode_links_and_path_swap(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve(); root.chmod(0o700)
+            ca = root / 'ca.pem'; raw = self.pki.ca_cert.read_bytes(); ca.write_bytes(raw); ca.chmod(0o600)
+            fingerprint, approved, der = credentials._verified_public_ca(ca)
+            read = lambda: credentials._read_pinned_ca(ca, fingerprint, (approved, der))
+            original = os.read; captured = []
+            def tracked(fd, count):
+                result = original(fd, count); captured.append(result); return result
+            ca.write_bytes(raw + self.key.read_bytes())
+            with patch.object(credentials.os, 'read', side_effect=tracked): self.refuses(read)
+            self.assertEqual(captured, [])
+            key_header = b'-----BEGIN PRIVATE KEY-----\n'
+            ca.write_bytes(key_header + b'X' * (len(raw) - len(key_header)))
+            with patch.object(credentials.os, 'read', side_effect=tracked): self.refuses(read)
+            self.assertEqual(b''.join(captured), key_header)
+            ca.write_bytes(raw); ca.chmod(0o644); self.refuses(read); ca.chmod(0o600)
+            os.link(ca, root / 'alias'); self.refuses(read); (root / 'alias').unlink()
+            ca.rename(root / 'original'); ca.symlink_to(root / 'original'); self.refuses(read)
+            ca.unlink(); (root / 'original').rename(ca)
+            swapped = []
+            def swap(fd, count):
+                result = original(fd, count)
+                if count > 1 and not swapped:
+                    ca.rename(root / 'old'); ca.symlink_to(self.foreign.ca_cert); swapped.append(True)
+                return result
+            with patch.object(credentials.os, 'read', side_effect=swap): self.refuses(read)
+            self.assertTrue(swapped)
+
+    def test_public_ca_hot_reader_detects_same_inode_drift_and_handles_short_reads(self):
+        with tempfile.TemporaryDirectory() as directory:
+            ca = Path(directory).resolve() / 'ca.pem'; raw = self.pki.ca_cert.read_bytes(); ca.write_bytes(raw); ca.chmod(0o600)
+            fingerprint, approved, der = credentials._verified_public_ca(ca)
+            original = os.read; changed = []
+            def drift(fd, count):
+                result = original(fd, count)
+                if count > 1 and not changed:
+                    ca.write_bytes(raw); changed.append(True)
+                return result
+            with patch.object(credentials.os, 'read', side_effect=drift):
+                self.refuses(lambda: credentials._read_pinned_ca(ca, fingerprint, (approved, der)))
+            with patch.object(credentials.os, 'read', side_effect=lambda fd, count: original(fd, min(count, 7))):
+                self.assertEqual(credentials._read_pinned_ca(ca, fingerprint, (approved, der)), der)
+
+    def test_same_size_malformed_ca_key_bundle_never_returns_or_changes_approved_bytes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            ca = Path(directory).resolve() / 'ca.pem'; original = self.pki.ca_cert.read_bytes()
+            ca.write_bytes(original); ca.chmod(0o600)
+            fingerprint, approved, der = credentials._verified_public_ca(ca)
+            snapshot = (approved, der)
+            shorter = b'-----BEGIN CERTIFICATE-----\nQUJD\n-----END CERTIFICATE-----\n'
+            key = self.key.read_bytes(); canary = b'PRIVATE_BUNDLE_CANARY'
+            malformed = shorter + key + canary
+            self.assertLess(len(malformed), len(original))
+            ca.write_bytes(malformed + b' ' * (len(original) - len(malformed)))
+            self.assertEqual(ca.stat().st_size, len(approved))
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output), contextlib.redirect_stderr(output):
+                self.refuses(lambda: credentials._read_pinned_ca(ca, fingerprint, snapshot))
+            self.assertEqual(output.getvalue(), '')
+            self.assertEqual(snapshot, (original, der))
+            ca.write_bytes(original)
+            self.assertEqual(credentials._read_pinned_ca(ca, fingerprint, snapshot), der)
 
 
 

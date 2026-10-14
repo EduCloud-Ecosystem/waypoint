@@ -567,11 +567,11 @@ def main():
         service = read_record(root / 'service.json')
         enrollment = None
         if 'enrollment_directory' in service:
-            from worker_credentials import verify_binding, verify_runtime_binding
+            from worker_credentials import verify_binding, make_runtime_binding_verifier
             from worker_enrollment import EnrollmentStore
             enrollment = EnrollmentStore.open(service['enrollment_directory'], config['authority_id'],
                 verify_binding(config, service, backend=backend))
-        binding_verifier = None if enrollment is None else lambda worker, course: verify_runtime_binding(config, service, backend, enrollment.binding, worker, course)
+        binding_verifier = None if enrollment is None else make_runtime_binding_verifier(config, service, backend, enrollment.binding)
         policy = AccessPolicy(root / 'acl.json', config['authority_id'], enrollment=enrollment, binding_verifier=binding_verifier)
         authority = Authority.open(root / 'control' / 'authority', config['authority_id'], backend)
         result = {}

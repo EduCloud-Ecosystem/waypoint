@@ -314,11 +314,15 @@ def run(args, *, exercise=None, evidence=None):
     except BaseException as exc:
         # Public evidence intentionally contains no logs, URLs with credentials, or request bodies.
         report['failure'] = type(exc).__name__ if type(exc).__name__ in evidence.FAILURES else 'RuntimeError'
-        trace = exc.__traceback__; lines = []
+        trace = exc.__traceback__; lines = []; enrollment_lines = []
         while trace is not None:
             if trace.tb_frame.f_code.co_filename == __file__: lines.append(trace.tb_lineno)
+            if exercise is not None and trace.tb_frame.f_code.co_filename == exercise.__code__.co_filename:
+                enrollment_lines.append(trace.tb_lineno)
             trace = trace.tb_next
         print('fixture failure lines: ' + json.dumps(lines[-8:]), flush=True)
+        if enrollment_lines:
+            print('enrollment failure lines: ' + json.dumps(enrollment_lines[-8:]), flush=True)
         if (isinstance(exc, KeyError) and exc.args and isinstance(exc.args[0], str)
                 and exc.args[0] in {'result', 'epoch', 'pending', 'ok'}):
             print('fixture failure key: ' + exc.args[0], flush=True)

@@ -1,4 +1,4 @@
-"""Private local worker credential verification; never reads or signs keys."""
+"""Private local verification of public credentials; never signs private keys."""
 import argparse
 import base64
 import hashlib
@@ -71,6 +71,51 @@ def _read_certificate(path):
     return raw, der
 
 
+def _read_pinned_ca_bytes(path, fingerprint, approved):
+    """Fresh exact public-byte proof with bounded reads after startup validation."""
+    from runtime_authority import open_directory
+    expected, der = approved
+    path = Path(path)
+    if not path.is_absolute(): _refuse()
+    parent = open_directory(path.parent)
+    try:
+        fd = os.open(path.name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=parent)
+        try:
+            initial = os.fstat(fd)
+            if (not stat.S_ISREG(initial.st_mode) or initial.st_nlink != 1 or initial.st_uid != os.geteuid()
+                    or initial.st_mode & 0o077 or initial.st_size != len(expected)): _refuse()
+            # Reject a selected key header before reading any material body.
+            header = bytearray()
+            while len(header) < 128:
+                byte = os.read(fd, 1)
+                if not byte: break
+                header.extend(byte)
+                if byte == b'\n': break
+            if bytes(header).strip() != b'-----BEGIN CERTIFICATE-----': _refuse()
+            raw = bytearray(header)
+            while len(raw) < len(expected):
+                chunk = os.read(fd, len(expected) - len(raw))
+                if not chunk: _refuse()
+                raw.extend(chunk)
+            if os.read(fd, 1) or bytes(raw) != expected: _refuse()
+            after = os.fstat(fd); named = os.stat(path.name, dir_fd=parent, follow_symlinks=False)
+            def identity(info):
+                return (info.st_dev, info.st_ino, info.st_mode, info.st_uid, info.st_gid,
+                        info.st_nlink, info.st_size, info.st_mtime_ns, info.st_ctime_ns)
+            if identity(initial) != identity(after) or identity(initial) != identity(named): _refuse()
+        finally: os.close(fd)
+    finally: os.close(parent)
+    if hashlib.sha256(der).hexdigest() != fingerprint: _refuse()
+    return der
+
+
+def _read_pinned_ca(path, fingerprint, approved):
+    try:
+        return _read_pinned_ca_bytes(path, fingerprint, approved)
+    except CredentialError: raise
+    except Exception: raise CredentialError('worker_credentials_refused') from None
+
+
 def _openssl(*arguments, raw):
     executable = shutil.which('openssl')
     if executable is None: _refuse()
@@ -111,15 +156,19 @@ def _canonical_spki(public):
     return canonical
 
 
-def ca_fingerprint(ca_file):
+def _verified_public_ca(ca_file):
     try:
         raw, der = _read_certificate(ca_file)
         fingerprint = _canonical(raw, der)
         constraints = _openssl('x509', '-noout', '-ext', 'basicConstraints,keyUsage', raw=raw).decode('ascii')
         if not re.search(r'\bCA:TRUE\b', constraints) or 'Certificate Sign' not in constraints: _refuse()
-        return fingerprint
+        return fingerprint, raw, der
     except CredentialError: raise
     except Exception: raise CredentialError('worker_credentials_refused') from None
+
+
+def ca_fingerprint(ca_file):
+    return _verified_public_ca(ca_file)[0]
 
 
 def verify_certificate(cert_file, ca_file, *, clock=time.time):
@@ -192,7 +241,7 @@ def verify_binding(config, service, *, backend=None, authority=None):
     except Exception: raise CredentialError('worker_credentials_refused') from None
 
 
-def verify_runtime_binding(config, service, backend, binding, worker_id, course_id):
+def _verify_runtime_binding(config, service, backend, binding, worker_id, course_id, public_ca=None):
     """Fresh scoped metadata under runtime exclusion; never reads authority SQL."""
     try:
         from ownership_contract import digest
@@ -206,7 +255,10 @@ def verify_runtime_binding(config, service, backend, binding, worker_id, course_
                 or digest(current) != approved['evidence_sha256']): _refuse()
         # The pinned CA was cryptographically/canonically checked at startup.
         # Exact DER equality here needs no subprocess or alternate trust roots.
-        _, der = _read_certificate(service['ca_file'])
+        if public_ca is None:
+            _, der = _read_certificate(service['ca_file'])
+        else:
+            der = _read_pinned_ca(service['ca_file'], binding['ca_sha256'], public_ca)
         if hashlib.sha256(der).hexdigest() != binding['ca_sha256']: _refuse()
         root = open_directory(config['courses'][worker_id][course_id]['home_root'])
         try:
@@ -215,6 +267,22 @@ def verify_runtime_binding(config, service, backend, binding, worker_id, course_
         finally: os.close(root)
     except CredentialError: raise
     except Exception: raise CredentialError('worker_credentials_refused') from None
+
+
+def verify_runtime_binding(config, service, backend, binding, worker_id, course_id):
+    _verify_runtime_binding(config, service, backend, binding, worker_id, course_id)
+
+
+def make_runtime_binding_verifier(config, service, backend, binding):
+    """Pin immutable public CA bytes; every invocation re-proves current bytes.
+
+    This snapshot holds no registry/authorization/liveness state. PEM formatting
+    changes safely require a newly constructed policy, even with identical DER.
+    """
+    fingerprint, raw, der = _verified_public_ca(service['ca_file'])
+    if fingerprint != binding['ca_sha256']: _refuse()
+    public_ca = (raw, der)
+    return lambda worker, course: _verify_runtime_binding(config, service, backend, binding, worker, course, public_ca)
 
 
 def _certificate_sources(path, slots, config, service):
