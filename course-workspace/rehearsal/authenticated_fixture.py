@@ -378,6 +378,56 @@ STAGES = {'ownership': 'checking ownership', 'environment': 'preparing environme
           'create': 'creating runtime', 'created': 'runtime created'}
 
 
+EXCEPTION_TYPES = frozenset({'AuthorityError', 'RuntimeRefusal', 'HTTPError', 'TimeoutError', 'CancelledError',
+    'RuntimeError', 'ValueError', 'TypeError', 'KeyError', 'AttributeError', 'OSError', 'PermissionError',
+    'FileNotFoundError', 'ConnectionError', 'ConnectionRefusedError', 'SSLError', 'OperationalError', 'IntegrityError'})
+HUB_EVENTS = {
+    'hub_running': r'JupyterHub is now running(?: at |, internal Hub API at )',
+    'proxy_start_requested': r'Starting proxy @ ',
+    'proxy_start_failed': r'Failed to start proxy|Proxy failed to start with exit code ',
+    'proxy_connection_failed': r'api_request to (?:the )?proxy failed',
+    'proxy_retry_exhausted': r'Repeated api_request to proxy path ',
+    'auth_stale':r'has stale auth info\. Login is required to refresh\.',
+    'auth_refresh_denied':r'Auth expired for .+; cannot spawn until they login again',
+    'failed_login':r'Failed login for ',
+    'login_http_error':r'\b(?:401|403|500|502|503) POST /hub/login(?:[? ]|$)',
+    'spawn_http_error':r'\b(?:401|403|404|429|500|502|503) (?:GET|POST) /hub/spawn(?:[/ ?]|$)',
+    'spawn_pending':r' is pending spawn(?:\s|$)',
+    'spawn_start_called':r'Calling Spawner\.start for ',
+    'spawn_start_timeout':r'server failed to start in [0-9]+(?:\.[0-9]+)? seconds, giving up\.',
+    'spawn_start_refused':r'Not starting .+\x27s server ',
+    'spawn_start_error':r'Error starting .+\x27s server:',
+    'spawn_start_unhandled':r'Unhandled error starting .+\x27s server:',
+    'previous_spawn_failed':r'Previous spawn for .+ failed:',
+    'spawn_cleanup_error':r'Failed to cleanup .+\x27s server that failed to start',
+    'proxy_registration_failed':r'Failed to add .+ to proxy!',
+}
+TRACEBACK_MODULES = {
+    'jupyterhub_user':'/jupyterhub/user.py',
+    'jupyterhub_handlers_base':'/jupyterhub/handlers/base.py',
+    'jupyterhub_handlers_pages':'/jupyterhub/handlers/pages.py',
+    'jupyterhub_auth':'/jupyterhub/auth.py',
+    'authority_spawner':'/authority_spawner.py',
+    'authority_client':'/authority_client.py',
+    'jupyterhub_config':'/jupyterhub_config.py',
+}
+def _diagnostic_hub_counts(raw):
+    exceptions = {kind: 0 for kind in sorted(EXCEPTION_TYPES)}
+    events = {kind: 0 for kind in HUB_EVENTS}
+    modules = {kind: 0 for kind in TRACEBACK_MODULES}
+    exception = re.compile(r'^\s*(?:[A-Za-z_][A-Za-z0-9_]*\.)*(' + '|'.join(sorted(EXCEPTION_TYPES)) + r')(?=:|$)')
+    for line in raw.splitlines():
+        match = exception.match(line)
+        if match: exceptions[match[1]] = min(10000, exceptions[match[1]] + 1)
+        for kind, pattern in HUB_EVENTS.items():
+            if re.search(pattern, line): events[kind] = min(10000, events[kind] + 1)
+        if line.lstrip().startswith('File "'):
+            for kind, suffix in TRACEBACK_MODULES.items():
+                if suffix + '"' in line: modules[kind] = min(10000, modules[kind] + 1)
+    return {'exception_type_counts': exceptions, 'event_counts': events, 'traceback_module_counts': modules}
+
+
+
 def _diagnostic_counts(raw, prefix, codes):
     counts = {code: 0 for code in sorted(codes)}
     for line in raw.splitlines():
@@ -435,7 +485,7 @@ def failure_status(root, client=None):
     if client is None:
         import docker
         client = docker.DockerClient(base_url='unix:///var/run/docker.sock', version='auto', timeout=3)
-    result = {'version': 'educloud-authenticated-fixture-diagnostics-v1', 'authority_failure': 'none',
+    result = {'version': 'educloud-authenticated-fixture-diagnostics-v2', 'authority_failure': 'none',
         'supervisor': {'available': False, 'truncated': False, 'reason_counts': {code: 0 for code in sorted(SUPERVISOR_CODES)}},
         'hubs': {}, 'guardians': {}, 'learners': {}}
     try:
@@ -460,13 +510,14 @@ def failure_status(root, client=None):
         for course, item in courses.items():
             suffix = item['instance'].rsplit('-', 1)[1]
             hub = {'available': False, 'truncated': False, 'startup_stage_counts': {key: 0 for key in STAGES},
-                'authority_error_counts': {code: 0 for code in sorted(ERRORS)}, 'http_startup_timeout_count': 0}
+                'authority_error_counts': {code: 0 for code in sorted(ERRORS)}, 'http_startup_timeout_count': 0,
+                **_diagnostic_hub_counts('')}
             try:
                 container = client.containers.get(item['hub_container'])
                 _diagnostic_owned(container, item['hub_container'], request['hub_image'],
                     {'educloud.workspace.instance': item['instance'], 'educloud.workspace.kind': 'hub'})
                 raw, truncated = _diagnostic_logs(container)
-                hub.update(available=True, truncated=truncated)
+                hub.update(available=True, truncated=truncated, **_diagnostic_hub_counts(raw))
                 hub['startup_stage_counts'] = {key: min(10000, raw.count('Authority notebook startup: ' + value)) for key, value in STAGES.items()}
                 hub['authority_error_counts'] = _diagnostic_counts(raw, 'AuthorityError: ', ERRORS)
                 hub['http_startup_timeout_count'] = min(10000, sum('server never showed up at ' in line and '. Giving up.' in line for line in raw.splitlines()))

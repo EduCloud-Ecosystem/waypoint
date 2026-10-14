@@ -31,6 +31,22 @@ def await_hub_authorization(call, worker='worker-one', course='course-main', *, 
         sleep(0.2)
 
 
+def await_guardian_authorization(call, *, timeout=5, monotonic=time.monotonic, sleep=time.sleep):
+    """Retry only explicit authenticated acquisition deferrals, never failures."""
+    if type(timeout) not in (int, float) or not 0 < timeout <= 10:
+        raise ValueError('fixture_guardian_probe_timeout_invalid')
+    deadline = monotonic() + timeout
+    while True:
+        reply = call()
+        if isinstance(reply, dict) and set(reply) == {'authorized'} and reply['authorized'] is True:
+            return
+        if (not isinstance(reply, dict) or set(reply) != {'authorized', 'deferred'}
+                or reply['authorized'] is not False or reply['deferred'] is not True):
+            raise ValueError('fixture_guardian_probe_invalid')
+        if monotonic() >= deadline: raise RuntimeError('fixture_guardian_probe_busy')
+        sleep(min(.1, max(0, deadline - monotonic())))
+
+
 def exercise(ctx):
     helper, rpc, phase = ctx['helper'], ctx['rpc'], ctx['phase']
     wait, learners, notebook, read = ctx['wait'], ctx['learners'], ctx['notebook'], ctx['read']
@@ -124,13 +140,13 @@ def exercise(ctx):
     assert rpc('ownership.apply', reference)['ok'] is True
     receiver = notebook('receiver'); read(receiver, 'receiver')
     helper('enrollment-stage', {'identity': 'guardian-two'})
-    assert helper('enrollment-guardian-probe', {'identity': 'guardian-two-next'}) == {'authorized': False}
+    assert helper('enrollment-guardian-probe', {'identity': 'guardian-two-next'}) == {'authorized': False, 'denied': True}
     helper('enrollment-activate', {'identity': 'guardian-two', 'overlap_seconds': 5})
-    assert helper('enrollment-guardian-probe', {'identity': 'guardian-two-next'}) == {'authorized': True}
+    await_guardian_authorization(lambda: helper('enrollment-guardian-probe', {'identity': 'guardian-two-next'}))
     # Keep the old certificate installed: its bounded overlap must expire on
     # fresh request/watchdog checks even without an operator retirement call.
     wait(lambda: not learners('receiver'), 20)
-    assert helper('enrollment-guardian-probe', {'identity': 'guardian-two'}) == {'authorized': False}
+    assert helper('enrollment-guardian-probe', {'identity': 'guardian-two'}) == {'authorized': False, 'denied': True}
     assert learners('peer') == peer_id; read(sessions['peer'], 'peer')
     phase(evidence.PHASES[6])
     helper('enrollment-install', {'identity': 'guardian-two'})
@@ -138,7 +154,7 @@ def exercise(ctx):
     receiver = notebook('receiver'); read(receiver, 'receiver')
     kernel(receiver, bases['receiver'], 'alice', 'python3', "print('CONTINUITY_OK')")
     kernel(receiver, bases['receiver'], 'alice', 'ir', "cat('CONTINUITY_OK\\n')")
-    assert helper('enrollment-guardian-probe', {'identity': 'guardian-two-previous'}) == {'authorized': False}
+    assert helper('enrollment-guardian-probe', {'identity': 'guardian-two-previous'}) == {'authorized': False, 'denied': True}
     assert learners('peer') == peer_id
     phase(evidence.PHASES[7])
     helper('enrollment-revoke-worker', {'worker': 'worker-two'})
@@ -164,7 +180,7 @@ def exercise(ctx):
     helper('stop-service'); ctx['service']()
     assert helper('enrollment-checkpoint-proof', {}) == {'unchanged': True}
     assert rpc('hub.authorize', identity='receiver', worker='worker-two')['ok'] is False
-    assert helper('enrollment-guardian-probe', {'identity': 'guardian-two'}) == {'authorized': False}
+    assert helper('enrollment-guardian-probe', {'identity': 'guardian-two'}) == {'authorized': False, 'denied': True}
     # Preserve bytes/history across authority restart; process continuity is
     # required only for unaffected workers while authority stays available.
     sessions['peer'] = notebook('peer'); read(sessions['peer'], 'peer')

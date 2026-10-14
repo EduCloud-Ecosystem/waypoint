@@ -73,6 +73,21 @@ def _deferred(result, worker, course):
         and result['worker_id'] == worker and result['course_id'] == course)
 
 
+def _guardian_probe(api, identity, worker, course):
+    """Distinguish authenticated acquisition deferral from actual ACL denial."""
+    try:
+        result = api.call('guardian.observe', identity)
+    except AuthorityError as error:
+        if error.code == 'authority_access_refused': return {'authorized': False, 'denied': True}
+        raise
+    if _deferred(result, worker, course): return {'authorized': False, 'deferred': True}
+    if (not isinstance(result, dict) or set(result) != {'authorized', 'epoch', 'worker_id', 'course_id'}
+            or result['authorized'] is not True or type(result['epoch']) is not int or not 1 <= result['epoch'] <= 10**9
+            or result['worker_id'] != worker or result['course_id'] != course):
+        raise ValueError('fixture_guardian_probe_invalid')
+    return {'authorized': True}
+
+
 def _hold_endpoint(root, course, seconds):
     # Disposable holder only: fixed configured worker/course and finite duration.
     if course not in ('course-main', 'course-peer') or type(seconds) is not int or seconds not in (4, 13):
@@ -226,9 +241,7 @@ def _dispatch(root, action, payload):
         settings = read_record(root / identity / 'credentials' / 'client.json')
         settings['url'] = 'https://127.0.0.1:8443/v1/authority'
         api = AuthorityClient(worker_id=worker, course_id='course-main', **settings)
-        try: result = api.call('guardian.observe', backend.guardian_identity(worker))
-        except AuthorityError: return {'authorized': False}
-        return {'authorized': result.get('authorized') is True and 'deferred' not in result}
+        return _guardian_probe(api, backend.guardian_identity(worker), worker, 'course-main')
     if action == 'enrollment-revoke-worker':
         plan = store.preview('revoke_worker', payload['worker']); apply(root, store, plan, config, service)
         return {'revoked': True}

@@ -261,6 +261,11 @@ class DockerBackend:
             import docker
             client = docker.DockerClient(base_url='unix:///var/run/docker.sock', version='auto', timeout=5)
         self.client = client
+        self._pinned_images = frozenset(
+            [item['image_id'] for courses in config['courses'].values() for item in courses.values()]
+            + [item['image_id'] for item in config['guardians'].values()])
+        self._image_labels_cache = {}
+        self._image_labels_lock = threading.Lock()
         self.database = self.directory / 'runtime-barriers.sqlite'
         self.sentinel = self.directory / 'runtime-state.json'
         self.home_bindings = {}
@@ -371,8 +376,20 @@ class DockerBackend:
             refuse('runtime_shared_daemon_budget_exceeded')
 
     def image_labels(self, image_id):
-        """Only exact inherited labels of the pinned image are harmless provenance."""
+        """Cache public provenance only for configured immutable content IDs."""
+        if not isinstance(image_id, str) or not IMAGE.fullmatch(image_id):
+            refuse('runtime_image_labels_unsupported')
+        if image_id in self._pinned_images:
+            with self._image_labels_lock:
+                if image_id not in self._image_labels_cache:
+                    self._image_labels_cache[image_id] = self._inspect_image_labels(image_id)
+                return dict(self._image_labels_cache[image_id])
+        # Legacy Hub images have no configured image pin. Do not promote a
+        # container's mutable Image attribute into the approved metadata cache.
         self.daemon()
+        return self._inspect_image_labels(image_id)
+
+    def _inspect_image_labels(self, image_id):
         image = self.client.images.get(image_id)
         labels = image.attrs.get('Config', {}).get('Labels') or {}
         if (image.attrs.get('Id') != image_id or not isinstance(labels, dict) or len(labels) > 64
@@ -654,7 +671,11 @@ class DockerBackend:
         container.remove(v=False, force=False)  # NEVER volumes, NEVER unrelated resources.
 
     def stop_endpoint(self, worker, course):
-        for container in self.containers(worker, course): self.remove(container, worker, course)
+        self._stop_observed(worker, course, self.containers(worker, course))
+
+    def _stop_observed(self, worker, course, containers):
+        # Caller retains the endpoint lock; remove rechecks each exact identity.
+        for container in containers: self.remove(container, worker, course)
         if self.containers(worker, course): refuse('runtime_quiescence_unverified')
 
     def guardian_identity(self, worker):
@@ -962,8 +983,10 @@ class RuntimeDispatcher:
     def _supervise_endpoint(self, worker, course, *, wait_seconds=0.1):
         with self.backend.locks([(worker, course)], wait_seconds=wait_seconds):
             valid = False
+            containers = None
             reason = 'runtime_supervision_refused'
             try:
+                containers = self.backend.containers(worker, course)
                 # Fresh trusted SQL view under the already-held endpoint lock.
                 # No call to admission (which would reacquire the flock).
                 observed_worker = self.backend.inspect_worker(worker)
@@ -976,7 +999,7 @@ class RuntimeDispatcher:
                     record = self.backend.require_guardian(worker, course, current['epoch'])
                     if self.backend.barrier(worker, course)['denied_through_epoch'] < current['epoch']:
                         self.guardian_authorize(record['cert_sha256'], worker, course)
-                        for container in self.backend.containers(worker, course):
+                        for container in containers:
                             if self.backend.verified_container(container, worker, course, check_policy=True)[1] != current['epoch']:
                                 refuse('runtime_cached_epoch_invalid')
                         valid = True
@@ -987,9 +1010,11 @@ class RuntimeDispatcher:
                 elif code == 'runtime_container_policy_changed':
                     reason = 'runtime_container_policy_invalid'
             if not valid:
-                if self.backend.containers(worker, course):
+                if containers is None:
+                    containers = self.backend.containers(worker, course)
+                if containers:
                     logging.getLogger(__name__).warning('Runtime supervision stopping owned learners: %s', reason)
-                self.backend.stop_endpoint(worker, course)
+                self.backend._stop_observed(worker, course, containers)
 
     @staticmethod
     def server(container, epoch):

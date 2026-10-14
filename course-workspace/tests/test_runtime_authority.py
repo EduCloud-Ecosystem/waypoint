@@ -418,6 +418,10 @@ class RuntimeTests(unittest.TestCase):
         inherited = {'com.docker.compose.project': 'old-fixture', 'com.docker.compose.service': 'course-image', 'org.opencontainers.image.title': 'course'}
         f.client.image_labels[f.image] = inherited
         for container in f.client.containers.items.values(): container.attrs['Config']['Labels'].update(inherited)
+        # A content ID's metadata cannot change after bootstrap in real Docker.
+        # Reopen after setting fixture provenance so it is validated on first read.
+        f.backend = DockerBackend(f.config, f.client, clock=lambda: f.now)
+        f.authority.backend = f.backend; f.dispatcher.backend = f.backend
         original = f.client.containers.create
         def create(image, name, labels, **kwargs): return original(image, name, dict(inherited, **labels), **kwargs)
         with patch.object(f.client.containers, 'create', side_effect=create):
@@ -436,6 +440,49 @@ class RuntimeTests(unittest.TestCase):
         f.client.image_labels[f.image] = {'educloud.runtime.worker': 'forged-worker'}
         self.refuses('runtime_image_labels_unsupported', lambda: DockerBackend(f.config, f.client))
         self.assertEqual(len(f.client.containers.created), count)
+
+    def test_configured_image_metadata_is_cached_without_live_authorization(self):
+        f = self.fixture
+        with patch.object(f.client.images, 'get', side_effect=AssertionError('metadata reread')), \
+                patch.object(f.client, 'info', side_effect=AssertionError('redundant daemon read')):
+            labels = f.backend.image_labels(f.image)
+            labels['untrusted-copy'] = 'changed'
+            self.assertEqual(f.backend.image_labels(f.image), {})
+        f.client.info_value['ID'] = 'changed-daemon'
+        self.refuses('runtime_daemon_changed', f.spawn)
+        self.refuses('runtime_daemon_changed', lambda: f.backend.guardian_identity('worker-one'))
+
+    def test_unconfigured_image_metadata_stays_live_and_rejects_tags(self):
+        f = self.fixture; other = 'sha256:' + 'd' * 64
+        f.client.image_labels[other] = {'public': 'first'}
+        with patch.object(f.client.images, 'get', wraps=f.client.images.get) as inspect, \
+                patch.object(f.client, 'info', wraps=f.client.info) as daemon:
+            self.assertEqual(f.backend.image_labels(other), {'public': 'first'})
+            f.client.image_labels[other] = {'public': 'second'}
+            self.assertEqual(f.backend.image_labels(other), {'public': 'second'})
+            self.assertEqual(inspect.call_count, 2); self.assertEqual(daemon.call_count, 2)
+            self.refuses('runtime_image_labels_unsupported', lambda: f.backend.image_labels('course:latest'))
+            self.assertEqual(inspect.call_count, 2)
+
+    def test_image_cache_first_read_rejects_wrong_actual_id_and_bad_labels(self):
+        f = self.fixture
+        cases = [({'Id': 'sha256:' + 'd' * 64, 'Config': {'Labels': {}}}),
+                 ({'Id': f.image, 'Config': {'Labels': {'educloud.runtime.worker': 'forged'}}}),
+                 ({'Id': f.image, 'Config': {'Labels': {'public': 1}}})]
+        for attrs in cases:
+            with self.subTest(attrs=attrs), patch.object(f.client.images, 'get',
+                    return_value=type('Image', (), {'attrs': attrs})()):
+                self.refuses('runtime_image_labels_unsupported', lambda: DockerBackend(f.config, f.client))
+
+    def test_image_cache_warms_each_exact_configured_id_once(self):
+        f = self.fixture
+        with patch.object(f.client.images, 'get', wraps=f.client.images.get) as inspect, \
+                patch.object(f.client, 'info', wraps=f.client.info) as daemon:
+            backend = DockerBackend(f.config, f.client)
+            self.assertEqual(inspect.call_args_list, [unittest.mock.call(f.image)])
+            self.assertEqual(daemon.call_count, 1)
+            for _ in range(3): self.assertEqual(backend.image_labels(f.image), {})
+            self.assertEqual(inspect.call_count, 1); self.assertEqual(daemon.call_count, 1)
 
     def test_dead_guardian_and_revoked_certificate_stop_running_and_refuse_spawn(self):
         f = self.fixture; result = f.spawn()
@@ -835,6 +882,40 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual(captured.output, ['WARNING:runtime_authority:Runtime supervision stopping owned learners: runtime_supervision_refused'])
         self.assertNotIn('PRIVATE_TEST_CREDENTIAL', ''.join(captured.output))
         self.assertEqual(f.backend.containers('worker-one', 'course-main'), [])
+
+    def test_watchdog_reuses_owned_inventory_but_rescans_after_removal(self):
+        f = self.fixture; result = f.spawn(); peer = f.spawn(course='course-peer')
+        container = f.client.containers.get(result['server_id'])
+        f.revoked.add('e' * 64)
+        with patch.object(f.client.containers, 'list', wraps=f.client.containers.list) as inventory:
+            f.dispatcher._supervise_endpoint('worker-one', 'course-main')
+        self.assertEqual(inventory.call_count, 2)  # Observation, then post-effect proof.
+        self.assertNotIn(container.id, f.client.containers.items)
+        self.assertEqual(container.actions[-3:], [('update', {'restart_policy': {'Name': 'no'}}),
+                                                 ('stop', 5), ('remove', False, False)])
+        self.assertTrue(f.client.containers.get(peer['server_id']).attrs['State']['Running'])
+
+    def test_watchdog_post_effect_scan_refuses_remaining_owned_container(self):
+        f = self.fixture; result = f.spawn(); f.revoked.add('e' * 64)
+        container = f.client.containers.get(result['server_id']); remove = f.backend.remove
+        def remaining(*args, **kwargs):
+            remove(*args, **kwargs)
+            # An external Docker actor defeats removal: the final proof must
+            # observe remaining state rather than trust the pre-effect list.
+            f.client.containers.items[container.id] = container
+        with patch.object(f.backend, 'remove', side_effect=remaining):
+            self.refuses('runtime_quiescence_unverified',
+                lambda: f.dispatcher._supervise_endpoint('worker-one', 'course-main'))
+        self.assertIn(container.id, f.client.containers.items)
+
+    def test_watchdog_inventory_failure_cannot_become_empty_success(self):
+        f = self.fixture; result = f.spawn()
+        container = f.client.containers.get(result['server_id'])
+        container.attrs['Config']['Labels']['educloud.runtime.foreign'] = 'forged'
+        self.refuses('runtime_container_scope_invalid',
+            lambda: f.dispatcher._supervise_endpoint('worker-one', 'course-main'))
+        self.assertEqual(container.actions, ['start'])
+        self.assertTrue(container.attrs['State']['Running'])
 
     def test_guardian_failure_subtypes_are_fixed_and_public_code_unchanged(self):
         f = self.fixture

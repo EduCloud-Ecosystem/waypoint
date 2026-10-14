@@ -10,9 +10,40 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tests'))
 import enrollment_fixture as fixture
+from hub.authority_client import AuthorityError
 
 
 class EnrollmentInstallTests(unittest.TestCase):
+    def test_guardian_probe_distinguishes_valid_grant_busy_and_actual_access_denial(self):
+        class Client:
+            def __init__(self, response): self.response = response
+            def call(self, op, payload):
+                self_outer.assertEqual(op, 'guardian.observe'); self_outer.assertEqual(payload, {'identity': 'synthetic'})
+                if isinstance(self.response, Exception): raise self.response
+                return self.response
+        self_outer = self
+        grant = {'authorized': True, 'epoch': 1, 'worker_id': 'worker-two', 'course_id': 'course-main'}
+        busy = {'authorized': False, 'deferred': True, 'worker_id': 'worker-two', 'course_id': 'course-main'}
+        for response, expected in ((grant, {'authorized': True}), (busy, {'authorized': False, 'deferred': True}),
+                                   (AuthorityError('authority_access_refused'), {'authorized': False, 'denied': True})):
+            self.assertEqual(fixture._guardian_probe(Client(response), {'identity': 'synthetic'}, 'worker-two', 'course-main'), expected)
+        malformed = [dict(grant, authorized=1), dict(grant, epoch=True), dict(grant, worker_id='worker-one'),
+            dict(grant, course_id='course-peer'), dict(grant, extra='private'), dict(busy, deferred=1),
+            dict(busy, authorized=0), dict(busy, epoch=1), dict(busy, worker_id='worker-one'),
+            {'authorized': False}, None]
+        for response in malformed:
+            with self.subTest(response=response), self.assertRaisesRegex(ValueError, '^fixture_guardian_probe_invalid$'):
+                fixture._guardian_probe(Client(response), {'identity': 'synthetic'}, 'worker-two', 'course-main')
+
+    def test_guardian_probe_never_converts_transport_unexpected_or_operation_failures_to_denial(self):
+        for error in (AuthorityError('authority_transport_unavailable'), AuthorityError('authority_operation_refused'),
+                      AuthorityError('authority_response_invalid'), RuntimeError('PRIVATE_PROBE_CANARY')):
+            class Failed:
+                def call(self, op, payload): raise error
+            with self.subTest(error=type(error).__name__), self.assertRaises(type(error)) as caught:
+                fixture._guardian_probe(Failed(), {}, 'worker-two', 'course-main')
+            self.assertIs(caught.exception, error)
+
     def test_contention_probe_requires_exact_authenticated_no_grant_shape(self):
         result = {'authorized': False, 'deferred': True, 'worker_id': 'worker-one', 'course_id': 'course-main'}
         self.assertTrue(fixture._deferred(result, 'worker-one', 'course-main'))

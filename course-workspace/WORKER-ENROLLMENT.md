@@ -26,6 +26,11 @@ and proves the current file matches on each lookup; it caches no authorization o
 liveness decision. A PEM formatting change safely requires a service restart. Missing or changed managed state refuses runtime access rather than falling
 back to the legacy ACL. Static operator grants remain separately controlled.
 
+The backend retains public image-label metadata only for configured learner and
+Guardian content IDs, after checking the returned image ID at startup. Unconfigured
+Hub image metadata remains freshly inspected. Container identity, daemon identity,
+permissions and heartbeat eligibility are checked independently of that metadata.
+
 The lifecycle is explicit:
 
 | Action | Result |
@@ -124,7 +129,10 @@ fixture reserves 1.5 CPUs for the controller, both Guardians and overhead;
 the complete reservation is 5.25 CPUs. The four/five-CPU Linux profiles retain
 their 0.4-CPU controller. Reports record these selected limits and compare them
 with actual Docker quotas. These describe disposable component tests; representative
-class capacity requires its own rehearsal. Build the Hub/course/controller images
+class capacity requires its own rehearsal. Capacity preflight checks installed
+daemon resources and fixture limits; it does not reserve idle resources against
+other containers or host processes. Run acceptance without competing local builds
+or test suites. Build the Hub/course/controller images
 using that guide, then:
 
 ```sh

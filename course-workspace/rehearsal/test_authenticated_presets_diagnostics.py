@@ -164,6 +164,45 @@ class PresetDiagnosticsTests(unittest.TestCase):
         self.assertEqual(client.hubs, []); self.assertEqual(client.guards, [])
         self.assertTrue(all(stream.closed for container in client.items.values() for stream in container.streams))
 
+    def test_hub_exception_startup_events_and_traceback_modules_are_fixed_private_counters(self):
+        client = self.populate(); source = client.items[NAME + '-source-hub']
+        source.raw = ('TypeError: ' + CANARY + '\nsqlalchemy.exc.OperationalError: ' + CANARY
+            + '\nUnknownPrivateError: ' + CANARY + '\nTypeErrorExtra: ' + CANARY
+            + '\nPRIVATE=ValueError: ' + CANARY
+            + '\n[E JupyterHub user:1] Unhandled error starting ' + CANARY + "'s server: " + CANARY
+            + '\n[E JupyterHub pages:1] Previous spawn for ' + CANARY + ' failed: ' + CANARY
+            + '\n[W JupyterHub log:1] 403 POST /hub/login?token=' + CANARY
+            + '\n[I JupyterHub proxy:1] Starting proxy @ http://' + CANARY
+            + '\n[C JupyterHub app:1] Failed to start proxy ' + CANARY
+            + '\n[I JupyterHub app:1] JupyterHub is now running at http://' + CANARY
+            + '\n  File "' + CANARY + '/jupyterhub/user.py", line 1, in ' + CANARY).encode()
+        result = fixture.failure_status(self.root, client); hub = result['hubs']['source']
+        self.assertEqual(set(hub['exception_type_counts']), fixture.EXCEPTION_TYPES)
+        self.assertEqual(set(hub['event_counts']), set(fixture.HUB_EVENTS))
+        self.assertEqual(set(hub['traceback_module_counts']), set(fixture.TRACEBACK_MODULES))
+        self.assertEqual(hub['exception_type_counts']['TypeError'], 1)
+        self.assertEqual(hub['exception_type_counts']['OperationalError'], 1)
+        self.assertEqual(hub['exception_type_counts']['ValueError'], 0)
+        for event in ('spawn_start_unhandled', 'previous_spawn_failed', 'login_http_error',
+                      'proxy_start_requested', 'proxy_start_failed', 'hub_running'):
+            self.assertEqual(hub['event_counts'][event], 1)
+        self.assertEqual(hub['traceback_module_counts']['jupyterhub_user'], 1)
+        encoded = json.dumps(result)
+        for private in (CANARY, NAME, str(self.root), IMAGE, 'UnknownPrivateError', 'http://'):
+            self.assertNotIn(private, encoded)
+        self.assertEqual(client.hubs, []); self.assertEqual(client.guards, [])
+
+    def test_hub_diagnostic_counters_saturate_and_unavailable_roles_keep_exact_zero_maps(self):
+        raw = 'TypeError: private\n' * 10001
+        result = fixture._diagnostic_hub_counts(raw)
+        self.assertEqual(result['exception_type_counts']['TypeError'], 10000)
+        self.assertTrue(all(type(count) is int and 0 <= count <= 10000 for group in result.values() for count in group.values()))
+        client = self.populate(); source = client.items[NAME + '-source-hub']; source.attrs['Image'] = IMAGE
+        hub = fixture.failure_status(self.root, client)['hubs']['source']
+        self.assertFalse(hub['available']); self.assertEqual(source.reads, 0)
+        for key in ('exception_type_counts', 'event_counts', 'traceback_module_counts'):
+            self.assertEqual(set(hub[key]), set(result[key])); self.assertEqual(set(hub[key].values()), {0})
+
     def test_foreign_identity_never_read_and_malformed_state_never_published(self):
         client = self.populate()
         source = client.items[NAME + '-source-hub']; source.attrs['Image'] = CONTROLLER_IMAGE
