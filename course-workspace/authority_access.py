@@ -71,10 +71,13 @@ def publish(path,value):
 
 
 class AccessPolicy:
-    def __init__(self,acl_file,authority_id):
+    def __init__(self,acl_file,authority_id,*,enrollment=None,binding_verifier=None):
         if not isinstance(authority_id,str) or not HEX32.fullmatch(authority_id):raise AuthorityError('authority_access_refused')
-        self.path=Path(acl_file);self.authority_id=authority_id
+        self.path=Path(acl_file);self.authority_id=authority_id;self.enrollment=enrollment;self.binding_verifier=binding_verifier
+        if enrollment is not None and (getattr(enrollment,'authority_id',None)!=authority_id or not callable(getattr(enrollment,'entries',None))):raise AuthorityError('authority_access_refused')
+        if binding_verifier is not None and (enrollment is None or not callable(binding_verifier)):raise AuthorityError('authority_access_refused')
         self._read()
+        if enrollment is not None:self._managed()
 
     def _read(self):
         try:
@@ -91,8 +94,32 @@ class AccessPolicy:
         except AuthorityError:raise
         except Exception:raise AuthorityError('authority_access_refused') from None
 
+    def _managed(self):
+        try:
+            from worker_enrollment import MAX_CERTIFICATES
+            entries=self.enrollment.entries()
+            if not isinstance(entries,dict) or len(entries)>MAX_CERTIFICATES:raise ValueError()
+            for fingerprint,entry in entries.items():
+                if (not isinstance(fingerprint,str) or not HEX64.fullmatch(fingerprint) or not isinstance(entry,dict)
+                        or set(entry)!={'role','workers','courses'} or entry['role'] not in ('hub','guardian')):raise ValueError()
+                for key in ('workers','courses'):
+                    scopes=entry[key]
+                    if not isinstance(scopes,list) or not 1<=len(scopes)<=128 or len(set(scopes))!=len(scopes) or any(not isinstance(scope,str) or not SLUG.fullmatch(scope) for scope in scopes):raise ValueError()
+            return entries
+        except Exception:raise AuthorityError('authority_access_refused') from None
+
     def _entry(self,fingerprint,role,worker,course):
-        entry=self._read().get(fingerprint)
+        static=self._read()
+        if self.enrollment is not None and role!='operator':
+            if self.binding_verifier is not None:
+                try:self.binding_verifier(worker,course)
+                except Exception:raise AuthorityError('authority_access_refused') from None
+            managed=self._managed()
+            # Managed runtime roles never fall back to static entries. An
+            # operator leaf cannot gain a runtime role through enrollment.
+            if fingerprint in static and static[fingerprint]['role']=='operator':raise AuthorityError('authority_access_refused')
+            entry=managed.get(fingerprint)
+        else:entry=static.get(fingerprint)
         if entry is None or entry['role']!=role or worker not in entry['workers'] or course not in entry['courses']:raise AuthorityError('authority_access_refused')
         return entry
 
@@ -223,10 +250,10 @@ class AuthorityServer(HTTPServer):
     # SO_REUSEPORT or allow a second live listener on the same address/port.
     allow_reuse_address=True
     @fixed
-    def __init__(self,address,*,authority_id,certfile,keyfile,ca_file,acl_file,replay_store,dispatch,timeout=3,max_threads=8):
+    def __init__(self,address,*,authority_id,certfile,keyfile,ca_file,acl_file,replay_store,dispatch,timeout=3,max_threads=8,access_policy=None):
         if type(timeout) not in (int,float) or not 0<timeout<=10 or type(max_threads) is not int or not 1<=max_threads<=32:raise AuthorityError('authority_access_refused')
-        self.authority_id=authority_id;self.policy=AccessPolicy(acl_file,authority_id);self.replay=replay_store;self.dispatch=dispatch;self.request_timeout=timeout
-        if self.replay.authority_id!=authority_id:raise AuthorityError('authority_access_refused')
+        self.authority_id=authority_id;self.policy=access_policy if access_policy is not None else AccessPolicy(acl_file,authority_id);self.replay=replay_store;self.dispatch=dispatch;self.request_timeout=timeout
+        if self.replay.authority_id!=authority_id or not isinstance(self.policy,AccessPolicy) or self.policy.authority_id!=authority_id or self.policy.path!=Path(acl_file):raise AuthorityError('authority_access_refused')
         self.tls=ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER);self.tls.minimum_version=ssl.TLSVersion.TLSv1_2;self.tls.verify_mode=ssl.CERT_REQUIRED
         self.tls.load_verify_locations(cafile=material(ca_file));self.tls.load_cert_chain(material(certfile),material(keyfile,True))
         self.slots=threading.BoundedSemaphore(max_threads);self.threads=set();self.threads_lock=threading.Lock()

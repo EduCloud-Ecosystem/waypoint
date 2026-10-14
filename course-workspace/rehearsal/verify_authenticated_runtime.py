@@ -68,7 +68,9 @@ def result_matches(reply, field, expected):
             and type(result[field]) is type(expected) and result[field] == expected)
 
 
-def run(args):
+def run(args, *, exercise=None, evidence=None):
+    if evidence is None:
+        import authenticated_evidence as evidence
     name = 'wa' + uuid.uuid4().hex[:10]
     root = Path(tempfile.mkdtemp(prefix='waypoint-authority-')).resolve()
     for child in ('control', 'backend'):
@@ -76,8 +78,8 @@ def run(args):
     network, controller = name + '-control', name + '-authority'
     phases = []
     cleanup_authorized = False
-    report = {'version': VERSION, 'status': 'FAIL',
-        'scope': 'actual-local-docker-one-daemon-two-logical-workers-synthetic-learners', 'phases': phases}
+    report = {'version': evidence.VERSION, 'status': 'FAIL',
+        'scope': evidence.SCOPE, 'phases': phases}
     def phase(value):
         phases.append(value); print(value + ': PASS', flush=True)
     def helper(action, payload=None):
@@ -145,6 +147,10 @@ def run(args):
         controller_files.update({workspace / 'hub/authority_client.py': '/srv/authority/hub/authority_client.py',
             workspace / 'tests/authority_test_pki.py': '/srv/authority/authority_test_pki.py',
             workspace / 'rehearsal/authenticated_fixture.py': '/srv/authority/authenticated_fixture.py'})
+        if exercise is not None:
+            for path in ('worker_enrollment.py', 'worker_credentials.py'):
+                controller_files[workspace / path] = '/srv/authority/' + path
+            controller_files[workspace / 'rehearsal/enrollment_fixture.py'] = '/srv/authority/enrollment_fixture.py'
         for image, files in [(hub_image, hub_files), (controller_image, controller_files)]:
             current = {target: hashlib.sha256(source.read_bytes()).hexdigest() for source, target in files.items()}
             probe = 'import sys,json,hashlib; from pathlib import Path; paths=json.loads(sys.argv[1]); print(json.dumps({p:hashlib.sha256(Path(p).read_bytes()).hexdigest() for p in paths}))'
@@ -153,8 +159,9 @@ def run(args):
             assert observed == current, 'built_image_source_mismatch'
             expected.update({str(source.relative_to(workspace)): current[target] for source, target in files.items()})
         report['code_sha256'] = expected
-        for path in ('rehearsal/verify_authenticated_runtime.py', 'rehearsal/authenticated_evidence.py'):
+        for path in evidence.CODE_FILES - set(expected):
             expected[path] = hashlib.sha256((workspace / path).read_bytes()).hexdigest()
+        assert set(expected) == evidence.CODE_FILES
         report['recipe_sha256'] = {path: hashlib.sha256((workspace / path).read_bytes()).hexdigest()
             for path in ('.dockerignore', 'hub/Dockerfile', 'controller.Dockerfile', 'course/Dockerfile')}
         ports = {suffix: port() for suffix in ('source', 'receiver', 'peer')}
@@ -190,109 +197,114 @@ def run(args):
             course_image=course_image, hub_image=hub_image, controller_image=controller_image))
         report['host'] = {key: observed[key] for key in ('memory_bytes', 'cpu')}
         report['allocation'] = observed['allocation']
-        service(); helper('launch')
-        for base in bases.values(): wait(lambda: requests.get(base + '/hub/login', timeout=3).status_code == 200, 60)
-        try:
+        if exercise is not None:
+            exercise(dict(helper=helper, service=service, rpc=rpc, learners=learners,
+                notebook=notebook, read=read, stop=stop, bases=bases, name=name,
+                phase=phase, password=password, wait=wait, command=command, allocation=report['allocation']))
+        else:
+            service(); helper('launch')
+            for base in bases.values(): wait(lambda: requests.get(base + '/hub/login', timeout=3).status_code == 200, 60)
+            try:
+                wait(lambda: all(item['ready'] for item in helper('guardian-status').values()), 30)
+            except RuntimeError:
+                print('guardian diagnostic: ' + json.dumps(helper('guardian-status'), sort_keys=True), flush=True)
+                raise
+            wait(lambda: rpc('hub.authorize', identity='source')['ok'])
+            assert not rpc('ownership.inventory', identity='source')['ok']
+            assert not rpc('hub.authorize', identity='peer', course='course-main')['ok']
+            assert not rpc('hub.authorize', identity='receiver', worker='worker-two')['ok']
+            phase('mtls_role_course_and_nonowner_refusal')
+            sessions = {suffix: notebook(suffix) for suffix in ('source', 'peer')}
+            for suffix, session in sessions.items():
+                kernel(session, bases[suffix], 'alice', 'python3', "print('CONTINUITY_OK')")
+                kernel(session, bases[suffix], 'alice', 'ir', "cat('CONTINUITY_OK\\n')")
+                response = change(session, 'PUT', bases[suffix] + '/user/alice/api/contents/coursework.txt',
+                    json={'type': 'file', 'format': 'text', 'content': 'synthetic coursework retained\n'})
+                response.raise_for_status(); read(session, suffix)
+                hub = json.loads(command('inspect', name + '-' + suffix + '-hub'))[0]
+                assert all(mount['Destination'] != '/var/run/docker.sock' for mount in hub['Mounts'])
+                cid = learners(suffix)[0]; learner = json.loads(command('inspect', cid))[0]
+                host = learner['HostConfig']; mounts = learner['Mounts']
+                assert host['ReadonlyRootfs'] and not host['Privileged'] and host['PidsLimit'] == 128
+                assert host['Memory'] == host['MemorySwap'] == 512 * 1024**2
+                assert host['CpuQuota'] / host['CpuPeriod'] == report['allocation']['learner_cpu']
+                assert host['RestartPolicy']['Name'] == 'no' and learner['Config']['User'] == '1000:1000'
+                assert len(mounts) == 1 and mounts[0]['Destination'] == '/home/learner'
+                assert len(learner['NetworkSettings']['Networks']) == 1
+                env = learner['Config']['Env']; assert not any('AUTHORITY' in item for item in env)
+                phase(suffix + '_real_python_r_saved_home_and_socketless_hub')
+            helper('stop-service')
+            # Bound the observation generously: RPC failure and Docker stops need
+            # time to complete even though course monitoring runs independently.
+            wait(lambda: not learners('source') and not learners('peer'), 20)
+            phase('authority_outage_stops_actual_notebooks')
+            service()
+            sessions = {suffix: notebook(suffix) for suffix in ('source', 'peer')}
+            for suffix, session in sessions.items(): read(session, suffix)
+            stop(sessions['source'], 'source'); helper('copy-home')
+            plan = rpc('ownership.preview', {'receiver_worker_id': 'worker-two'})
+            assert plan['ok']; reference = {key: plan['result'][key] for key in ('plan_id', 'plan_sha256')}
+            helper('stop-service'); service('serve-prepared-fault')
+            sessions['peer'] = notebook('peer')
+            assert not rpc('ownership.apply', reference)['ok']
+            assert rpc('ownership.inventory')['result']['pending'] is True
+            assert not rpc('hub.authorize', identity='source')['ok']
+            assert not rpc('hub.authorize', identity='receiver', worker='worker-two')['ok']
+            phase('interrupted_transfer_durable_pending_denies_both_endpoints')
+            helper('drift-snapshot'); helper('stop-service'); service()
+            sessions['peer'] = notebook('peer')
+            recovery = rpc('ownership.reconcile_preview', {'selected_worker_id': 'worker-two'})
+            assert recovery['ok']; reference = {key: recovery['result'][key] for key in ('plan_id', 'plan_sha256')}
+            peer_id = learners('peer')
+            assert rpc('ownership.reconcile_apply', reference)['ok']
+            assert rpc('ownership.inventory')['result']['pending'] is False
+            assert helper('history-proof') == {'transfer_records': 2, 'statuses': ['COMPLETE', 'PREPARED']}
+            assert learners('peer') == peer_id
+            assert not rpc('hub.authorize', identity='source')['ok']
+            assert rpc('hub.authorize', identity='receiver', worker='worker-two')['result']['epoch'] == 2
             wait(lambda: all(item['ready'] for item in helper('guardian-status').values()), 30)
-        except RuntimeError:
-            print('guardian diagnostic: ' + json.dumps(helper('guardian-status'), sort_keys=True), flush=True)
-            raise
-        wait(lambda: rpc('hub.authorize', identity='source')['ok'])
-        assert not rpc('ownership.inventory', identity='source')['ok']
-        assert not rpc('hub.authorize', identity='peer', course='course-main')['ok']
-        assert not rpc('hub.authorize', identity='receiver', worker='worker-two')['ok']
-        phase('mtls_role_course_and_nonowner_refusal')
-        sessions = {suffix: notebook(suffix) for suffix in ('source', 'peer')}
-        for suffix, session in sessions.items():
-            kernel(session, bases[suffix], 'alice', 'python3', "print('CONTINUITY_OK')")
-            kernel(session, bases[suffix], 'alice', 'ir', "cat('CONTINUITY_OK\\n')")
-            response = change(session, 'PUT', bases[suffix] + '/user/alice/api/contents/coursework.txt',
-                json={'type': 'file', 'format': 'text', 'content': 'synthetic coursework retained\n'})
-            response.raise_for_status(); read(session, suffix)
-            hub = json.loads(command('inspect', name + '-' + suffix + '-hub'))[0]
-            assert all(mount['Destination'] != '/var/run/docker.sock' for mount in hub['Mounts'])
-            cid = learners(suffix)[0]; learner = json.loads(command('inspect', cid))[0]
-            host = learner['HostConfig']; mounts = learner['Mounts']
-            assert host['ReadonlyRootfs'] and not host['Privileged'] and host['PidsLimit'] == 128
-            assert host['Memory'] == host['MemorySwap'] == 512 * 1024**2
-            assert host['CpuQuota'] / host['CpuPeriod'] == report['allocation']['learner_cpu']
-            assert host['RestartPolicy']['Name'] == 'no' and learner['Config']['User'] == '1000:1000'
-            assert len(mounts) == 1 and mounts[0]['Destination'] == '/home/learner'
-            assert len(learner['NetworkSettings']['Networks']) == 1
-            env = learner['Config']['Env']; assert not any('AUTHORITY' in item for item in env)
-            phase(suffix + '_real_python_r_saved_home_and_socketless_hub')
-        helper('stop-service')
-        # Bound the observation generously: RPC failure and Docker stops need
-        # time to complete even though course monitoring runs independently.
-        wait(lambda: not learners('source') and not learners('peer'), 20)
-        phase('authority_outage_stops_actual_notebooks')
-        service()
-        sessions = {suffix: notebook(suffix) for suffix in ('source', 'peer')}
-        for suffix, session in sessions.items(): read(session, suffix)
-        stop(sessions['source'], 'source'); helper('copy-home')
-        plan = rpc('ownership.preview', {'receiver_worker_id': 'worker-two'})
-        assert plan['ok']; reference = {key: plan['result'][key] for key in ('plan_id', 'plan_sha256')}
-        helper('stop-service'); service('serve-prepared-fault')
-        sessions['peer'] = notebook('peer')
-        assert not rpc('ownership.apply', reference)['ok']
-        assert rpc('ownership.inventory')['result']['pending'] is True
-        assert not rpc('hub.authorize', identity='source')['ok']
-        assert not rpc('hub.authorize', identity='receiver', worker='worker-two')['ok']
-        phase('interrupted_transfer_durable_pending_denies_both_endpoints')
-        helper('drift-snapshot'); helper('stop-service'); service()
-        sessions['peer'] = notebook('peer')
-        recovery = rpc('ownership.reconcile_preview', {'selected_worker_id': 'worker-two'})
-        assert recovery['ok']; reference = {key: recovery['result'][key] for key in ('plan_id', 'plan_sha256')}
-        peer_id = learners('peer')
-        assert rpc('ownership.reconcile_apply', reference)['ok']
-        assert rpc('ownership.inventory')['result']['pending'] is False
-        assert helper('history-proof') == {'transfer_records': 2, 'statuses': ['COMPLETE', 'PREPARED']}
-        assert learners('peer') == peer_id
-        assert not rpc('hub.authorize', identity='source')['ok']
-        assert rpc('hub.authorize', identity='receiver', worker='worker-two')['result']['epoch'] == 2
-        wait(lambda: all(item['ready'] for item in helper('guardian-status').values()), 30)
-        phase('authenticated_reconciliation_retains_history_and_peer_runtime')
-        command('restart', name + '-source-hub')
-        wait(lambda: requests.get(bases['source'] + '/hub/login', timeout=3).status_code == 200)
-        # Real restarted source Hub rejects fresh authentication and cannot spawn.
-        source = requests.Session(); page = source.get(bases['source'] + '/hub/login', timeout=5)
-        rejected = source.post(bases['source'] + '/hub/login', data={'username': 'alice', 'password': password,
-            '_xsrf': xsrf(source, bases['source'] + '/hub/login')}, timeout=20)
-        assert rejected.status_code == 403
-        denied = source.get(bases['source'] + '/hub/spawn/alice', timeout=20)
-        assert '/hub/login' in denied.url
-        assert not learners('source')
-        phase('restarted_source_hub_cannot_revive_fenced_epoch')
-        receiver = notebook('receiver'); read(receiver, 'receiver')
-        kernel(receiver, bases['receiver'], 'alice', 'python3', "print('CONTINUITY_OK')")
-        kernel(receiver, bases['receiver'], 'alice', 'ir', "cat('CONTINUITY_OK\\n')")
-        read(sessions['peer'], 'peer')
-        phase('receiver_real_python_r_and_coursework_continuity')
-        command('kill', name + '-worker-two-guardian')
-        wait(lambda: not learners('receiver'), 12)
-        assert learners('peer') == peer_id
-        phase('guardian_loss_authority_watchdog_stops_receiver_preserves_peer')
-        command('start', name + '-worker-two-guardian')
-        wait(lambda: rpc('hub.authorize', identity='receiver', worker='worker-two')['ok'])
-        wait(lambda: all(item['ready'] for item in helper('guardian-status').values()), 30)
-        receiver = notebook('receiver'); read(receiver, 'receiver')
-        helper('revoke', {'identity': 'guardian-two'})
-        wait(lambda: not learners('receiver'), 12)
-        assert learners('peer') == peer_id
-        phase('guardian_certificate_revocation_stops_only_its_worker')
-        helper('restore-acl')
-        wait(lambda: all(item['ready'] for item in helper('guardian-status').values()), 30)
-        receiver = notebook('receiver'); read(receiver, 'receiver')
-        helper('revoke', {'identity': 'receiver'})
-        assert not rpc('hub.authorize', identity='receiver', worker='worker-two')['ok']
-        helper('restore-acl')
-        phase('hub_certificate_revocation_refuses_fresh_access')
-        helper('stop-service'); service()
-        wait(lambda: result_matches(rpc('hub.authorize', identity='receiver', worker='worker-two'), 'epoch', 2))
-        wait(lambda: result_matches(rpc('ownership.inventory'), 'pending', False))
-        source_denial = rpc('hub.authorize', identity='source')
-        assert source_denial.get('ok') is False and source_denial.get('code') == 'authority_operation_refused'
-        phase('service_restart_retains_authority_incarnation_epoch_and_barriers')
+            phase('authenticated_reconciliation_retains_history_and_peer_runtime')
+            command('restart', name + '-source-hub')
+            wait(lambda: requests.get(bases['source'] + '/hub/login', timeout=3).status_code == 200)
+            # Real restarted source Hub rejects fresh authentication and cannot spawn.
+            source = requests.Session(); page = source.get(bases['source'] + '/hub/login', timeout=5)
+            rejected = source.post(bases['source'] + '/hub/login', data={'username': 'alice', 'password': password,
+                '_xsrf': xsrf(source, bases['source'] + '/hub/login')}, timeout=20)
+            assert rejected.status_code == 403
+            denied = source.get(bases['source'] + '/hub/spawn/alice', timeout=20)
+            assert '/hub/login' in denied.url
+            assert not learners('source')
+            phase('restarted_source_hub_cannot_revive_fenced_epoch')
+            receiver = notebook('receiver'); read(receiver, 'receiver')
+            kernel(receiver, bases['receiver'], 'alice', 'python3', "print('CONTINUITY_OK')")
+            kernel(receiver, bases['receiver'], 'alice', 'ir', "cat('CONTINUITY_OK\\n')")
+            read(sessions['peer'], 'peer')
+            phase('receiver_real_python_r_and_coursework_continuity')
+            command('kill', name + '-worker-two-guardian')
+            wait(lambda: not learners('receiver'), 12)
+            assert learners('peer') == peer_id
+            phase('guardian_loss_authority_watchdog_stops_receiver_preserves_peer')
+            command('start', name + '-worker-two-guardian')
+            wait(lambda: rpc('hub.authorize', identity='receiver', worker='worker-two')['ok'])
+            wait(lambda: all(item['ready'] for item in helper('guardian-status').values()), 30)
+            receiver = notebook('receiver'); read(receiver, 'receiver')
+            helper('revoke', {'identity': 'guardian-two'})
+            wait(lambda: not learners('receiver'), 12)
+            assert learners('peer') == peer_id
+            phase('guardian_certificate_revocation_stops_only_its_worker')
+            helper('restore-acl')
+            wait(lambda: all(item['ready'] for item in helper('guardian-status').values()), 30)
+            receiver = notebook('receiver'); read(receiver, 'receiver')
+            helper('revoke', {'identity': 'receiver'})
+            assert not rpc('hub.authorize', identity='receiver', worker='worker-two')['ok']
+            helper('restore-acl')
+            phase('hub_certificate_revocation_refuses_fresh_access')
+            helper('stop-service'); service()
+            wait(lambda: result_matches(rpc('hub.authorize', identity='receiver', worker='worker-two'), 'epoch', 2))
+            wait(lambda: result_matches(rpc('ownership.inventory'), 'pending', False))
+            source_denial = rpc('hub.authorize', identity='source')
+            assert source_denial.get('ok') is False and source_denial.get('code') == 'authority_operation_refused'
+            phase('service_restart_retains_authority_incarnation_epoch_and_barriers')
         assert all(hashlib.sha256((workspace / path).read_bytes()).hexdigest() == value for path, value in expected.items())
         assert all(hashlib.sha256((workspace / path).read_bytes()).hexdigest() == value for path, value in report['recipe_sha256'].items())
         assert report['source'] == subprocess.check_output(['git', '-C', str(workspace.parent), 'rev-parse', 'HEAD'], text=True).strip()
@@ -301,8 +313,7 @@ def run(args):
         report['status'] = 'PASS'
     except BaseException as exc:
         # Public evidence intentionally contains no logs, URLs with credentials, or request bodies.
-        from authenticated_evidence import FAILURES
-        report['failure'] = type(exc).__name__ if type(exc).__name__ in FAILURES else 'RuntimeError'
+        report['failure'] = type(exc).__name__ if type(exc).__name__ in evidence.FAILURES else 'RuntimeError'
         trace = exc.__traceback__; lines = []
         while trace is not None:
             if trace.tb_frame.f_code.co_filename == __file__: lines.append(trace.tb_lineno)
@@ -319,6 +330,9 @@ def run(args):
             if report['status'] != 'PASS':
                 try: print('failure diagnostic: ' + json.dumps(helper('failure-status'), sort_keys=True), flush=True)
                 except Exception: pass
+                if exercise is not None:
+                    try: print('enrollment diagnostic: ' + json.dumps(helper('enrollment-failure-status', {}), sort_keys=True), flush=True)
+                    except Exception: pass
                 if args.diagnostic_pause:
                     print('diagnostic window active', flush=True)
                     time.sleep(45)
@@ -363,8 +377,7 @@ def run(args):
         except Exception: report['cleanup_verified'] = False
         if not report['cleanup_verified']: report['status'] = 'FAIL'
         report['acceptance_eligible'] = report['status'] == 'PASS' and report.get('source_dirty') is False
-        from authenticated_evidence import validate_report
-        validate_report(report, require_clean=not args.allow_dirty if report['status'] == 'PASS' else False)
+        evidence.validate_report(report, require_clean=not args.allow_dirty if report['status'] == 'PASS' else False)
         args.output.parent.mkdir(parents=True, exist_ok=True)
         descriptor = os.open(args.output, os.O_CREAT | os.O_EXCL | os.O_WRONLY | os.O_NOFOLLOW, 0o600)
         with os.fdopen(descriptor, 'w') as stream:

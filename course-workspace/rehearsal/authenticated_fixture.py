@@ -509,8 +509,11 @@ def failure_status(root, client=None):
 
 def main():
     action, directory = sys.argv[1:3]; root = Path(directory)
-    payload = json.load(sys.stdin) if action in {'bootstrap', 'rpc', 'revoke'} else {}
-    if action == 'bootstrap': result = initialize(root, payload)
+    payload = json.load(sys.stdin) if action in {'bootstrap', 'rpc', 'revoke'} or action.startswith('enrollment-') else {}
+    if action.startswith('enrollment-'):
+        from enrollment_fixture import dispatch
+        result = dispatch(root, action, payload)
+    elif action == 'bootstrap': result = initialize(root, payload)
     elif action == 'launch': result = launch(root)
     elif action in {'serve', 'serve-prepared-fault'}:
         import logging
@@ -561,7 +564,15 @@ def main():
         from authority_access import AccessPolicy
         from ownership_contract import Authority
         config = read_record(root / 'runtime.json'); backend = DockerBackend(config)
-        policy = AccessPolicy(root / 'acl.json', config['authority_id'])
+        service = read_record(root / 'service.json')
+        enrollment = None
+        if 'enrollment_directory' in service:
+            from worker_credentials import verify_binding, verify_runtime_binding
+            from worker_enrollment import EnrollmentStore
+            enrollment = EnrollmentStore.open(service['enrollment_directory'], config['authority_id'],
+                verify_binding(config, service, backend=backend))
+        binding_verifier = None if enrollment is None else lambda worker, course: verify_runtime_binding(config, service, backend, enrollment.binding, worker, course)
+        policy = AccessPolicy(root / 'acl.json', config['authority_id'], enrollment=enrollment, binding_verifier=binding_verifier)
         authority = Authority.open(root / 'control' / 'authority', config['authority_id'], backend)
         result = {}
         for course in ('course-main', 'course-peer'):

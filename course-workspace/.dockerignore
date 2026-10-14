@@ -7,9 +7,12 @@
 !runtime_authority.py
 !runtime_guardian.py
 !controller_service.py
+!worker_enrollment.py
+!worker_credentials.py
 !hub/
 !hub/authority_client.py
 !tests/
 !tests/authority_test_pki.py
 !rehearsal/
 !rehearsal/authenticated_fixture.py
+!rehearsal/enrollment_fixture.py

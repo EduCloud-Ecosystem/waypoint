@@ -153,7 +153,7 @@ Keep the default DockerSpawner deployment until an explicit hosted adoption
 decision. The controller/guardian image and test PKI are local rehearsal tools,
 not a turnkey production certificate/deployment system. A hosted adapter needs
 trusted real worker identities, physically independent endpoint fencing, worker
-enrollment, certificate issuance/rotation/revocation operations, institution OIDC
+enrollment, operated certificate issuance and CA/server rotation, institution OIDC
 and HTTPS verification, hard disk/inode quotas, encrypted off-host recovery,
 durable private state operations, and representative course-load testing.
 The 100,000-entry permanent replay ledger and bounded barrier/event histories
@@ -172,3 +172,7 @@ privileged client certificate revocation.
 Protocol references: [Python TLS verification](https://docs.python.org/3.12/library/ssl.html),
 [JupyterHub Spawner contract](https://jupyterhub.readthedocs.io/en/stable/reference/spawners.html),
 [Docker restart policy behavior](https://docs.docker.com/engine/containers/start-containers-automatically/).
+
+The opt-in [configured-worker enrollment and client rotation guide](WORKER-ENROLLMENT.md)
+adds reviewed local credentials and a separate actual runtime rehearsal. It does
+not establish provider onboarding or a hosted certificate service.
