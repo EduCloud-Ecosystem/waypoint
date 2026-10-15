@@ -28,7 +28,7 @@ from runtime_guardian import OBSERVATION_CODES
 from verify_authenticated_runtime import command, port, wait, configured_cpu_limit, request_notebook_start
 from remote_notebook_fixture import allocation_for_host, mount_plan, WORKERS, ENDPOINTS
 
-VERSION = 'waypoint-remote-notebook-rehearsal-v2'
+VERSION = 'waypoint-remote-notebook-rehearsal-v3'
 SCOPE = 'actual-local-docker-one-daemon-two-worker-services-synthetic-notebooks'
 PHASES = (
     'central_has_no_socket_homes_or_worker_state',
@@ -315,6 +315,17 @@ def same_running_enforcer(before, after):
         and before['State']['StartedAt'] == after['State']['StartedAt'] and after['State']['Running'] is True)
 
 
+def assert_hub_cpu_caps(name, images, authority_id, allocation, inspect_container):
+    """Freshly observe every Hub cap before claiming the topology budget."""
+    for _, _, suffix in ENDPOINTS:
+        expected = name + '-' + suffix + '-hub'
+        value = inspect_container(expected)
+        require_owned_container(value, name, images, authority_id)
+        if (value.get('Name', '').lstrip('/') != expected
+                or configured_cpu_limit(value['HostConfig']) != allocation['hub_cpu']):
+            raise ValueError('fixture_hub_cpu_unverified')
+
+
 def wait_for_learner_removal(name, suffix, invoke=command, wait_for=wait):
     """Explicit Hub stop is complete only after stopped containers are removed."""
     wait_for(lambda: not invoke('ps', '-aq', '--filter',
@@ -567,6 +578,7 @@ def run(args):
             guardian = inspect(name + '-' + worker + '-guardian')
             assert configured_cpu_limit(guardian['HostConfig']) == allocation['guardian_cpu']
             assert all('/homes' not in mount['Destination'] and 'control' not in mount['Destination'] for mount in guardian['Mounts'])
+        assert_hub_cpu_caps(name, images, authority_id, allocation, inspect)
         phase(PHASES[1])
         assert rpc('hub.authorize', identity='source')['ok'] is True
         assert all(value == {'quarantined': False} for value in central_helper('worker-quarantine').values())

@@ -31,23 +31,27 @@ ENDPOINTS = (('worker-one', 'course-main', 'source'), ('worker-one', 'course-pee
 
 
 def allocation_for_host(cpu, memory):
-    """Preserve lower presets; budget this topology's actual control services."""
-    value = course_allocation(cpu)
-    # That preset's single-controller cap is not used by this distributed
-    # topology; expose only the actual central/worker/Guardian caps below.
-    value.pop('controller_cpu')
+    """Budget all three course endpoints and this topology's five controls."""
+    if type(cpu) is not int or not 4 <= cpu <= 4096:
+        raise ValueError('remote_fixture_cpu_refused')
     if type(memory) is not int or memory < 6656 * 1024**2:
         raise ValueError('remote_fixture_memory_refused')
     if cpu >= 8:
-        value.update(name='eight-cpu-remote', learner_cpu=.25, hub_cpu=1.0,
-            host_reserve_cpu=3.0, reserved_cpu=6.75, minimum_cpu=8, guardian_cpu=.25)
-        central = 1.0
+        name, minimum, hub, learner, central, worker = 'eight-cpu-remote', 8, 1.0, .25, 1.0, .75
+    elif cpu >= 6:
+        name, minimum, hub, learner, central, worker = 'six-cpu-remote', 6, 1.0, .25, .5, .5
+    elif cpu == 5:
+        name, minimum, hub, learner, central, worker = 'five-cpu-remote', 5, .75, .2, .5, .5
     else:
-        central = .5 if cpu >= 6 else (.25 if cpu == 5 else .2)
-    worker = round((value['host_reserve_cpu'] - central - 2 * value['guardian_cpu']) / 2, 6)
-    if worker <= 0 or 3 * (value['hub_cpu'] + value['learner_cpu']) + value['host_reserve_cpu'] > cpu:
+        name, minimum, hub, learner, central, worker = 'four-cpu-remote', 4, .5, .1, .5, .5
+    guardian = .25
+    controls = round(central + 2 * worker + 2 * guardian, 6)
+    total = round(3 * (hub + learner) + controls, 6)
+    if total > cpu or controls < 2 or central < .5 or worker < .5 or guardian < .25:
         raise ValueError('remote_fixture_cpu_refused')
-    return dict(value, central_cpu=central, worker_service_cpu=worker)
+    return dict(name=name, minimum_cpu=minimum, hub_cpu=hub, learner_cpu=learner,
+        host_reserve_cpu=controls, reserved_cpu=total, central_cpu=central,
+        worker_service_cpu=worker, guardian_cpu=guardian)
 
 
 def validate_request(request):
@@ -95,8 +99,10 @@ def initialize(root, request):
     authority_id = authority.authority_id; name = request['name']
     pki = TestPKI(root / 'pki'); workers = {}; bindings = {}; channels = {}; identities = {}
     profile = dict(active_limit=1, learner_memory_mb=512, learner_cpu=allocation['learner_cpu'],
-        memory_mb=1536, cpu=allocation['hub_cpu'] + allocation['learner_cpu'])
-    # The global check above counts ALL three configured Hub/learner profiles,
+        memory_mb=1536, cpu=1 + allocation['learner_cpu'])
+    # The core keeps its conservative fixed1CPU Hub reservation. Actual lower
+    # Hub caps are separately included in the complete daemon budget above.
+    # The global check above counts ALL three actual Hub/learner cap pairs,
     # even though the two independently loaded worker configs share one daemon.
     for worker in WORKERS:
         endpoints = [(course, suffix) for w, course, suffix in ENDPOINTS if w == worker]
@@ -121,8 +127,14 @@ def initialize(root, request):
                 home_root=str(homes), snapshot_path=str(metadata / 'snapshot.json'), runtime_path=str(metadata / 'runtime.json'))
             client.volumes.create(name=leaf.name, driver_opts={'type': 'none', 'o': 'bind', 'device': str(leaf)},
                 labels={'educloud.workspace.instance': instance, 'educloud.workspace.kind': 'home'})
+        # Lower profiles split the global controls between worker views; each
+        # owns its service/Guardian and half the central reserve. Higher hosts
+        # retain the existing conservative per-view reserve unchanged.
+        local_controls = allocation['host_reserve_cpu']
+        if info['NCPU'] < 8:
+            local_controls = allocation['worker_service_cpu'] + allocation['guardian_cpu'] + allocation['central_cpu'] / len(WORKERS)
         config = dict(version='educloud-local-runtime-v1', authority_id=authority_id, daemon_id=info['ID'],
-            backend_directory=str(worker_root / 'state'), host_reserve_mb=2048, host_reserve_cpu=allocation['host_reserve_cpu'],
+            backend_directory=str(worker_root / 'state'), host_reserve_mb=2048, host_reserve_cpu=local_controls,
             workers={worker: worker_config}, courses={worker: courses},
             guardians={worker: dict(container_name=name + '-' + worker + '-guardian',
                 image_id=request['controller_image'], heartbeat_seconds=10)})

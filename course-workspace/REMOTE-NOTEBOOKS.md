@@ -85,12 +85,37 @@ service itself has neither a Docker socket nor course-home mounts. Synthetic
 coursework is copied once to an empty stopped receiver using the existing archive
 validation helper; this is local staging, not a network backup transport.
 
-On hosts with at least eight CPUs, the fixture caps the central service at one
-CPU, each worker service at 0.75 and each Guardian at 0.25. With the three Hub and
-learner pairs, these caps sum to 6.75 CPUs. This explicit profile gives control
-checks more CPU without extending heartbeat or failure-detection deadlines.
-Lower-CPU profiles remain separately reported; a passing run does not establish
-capacity for another profile or for a classroom. Cleanup verifies immutable
+The v3 rehearsal selects a fixed fixture profile from the verified daemon CPU
+count. The total below counts all three Hub/learner pairs and all five control
+services, including the stopped replacement endpoint's full allowance.
+
+| Daemon CPUs | Profile | Each Hub | Each learner | Central | Each worker | Each Guardian | Total caps |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 4 | four-cpu-remote | 0.5 | 0.1 | 0.5 | 0.5 | 0.25 | 3.8 |
+| 5 | five-cpu-remote | 0.75 | 0.2 | 0.5 | 0.5 | 0.25 | 4.85 |
+| 6–7 | six-cpu-remote | 1 | 0.25 | 0.5 | 0.5 | 0.25 | 5.75 |
+| 8+ | eight-cpu-remote | 1 | 0.25 | 1 | 0.75 | 0.25 | 6.75 |
+
+These are complete shared-daemon **actual container cap budgets**. The public
+allocation field `reserved_cpu` records that total; it is not an aggregate
+immutable ownership reservation proof. The ownership core still conservatively
+reserves one CPU per Hub. On four- and five-CPU hosts, that logical Hub reservation
+exceeds the actual Hub cap. Each worker configuration separately reserves its own worker
+service and Guardian plus half the central service (one CPU per worker), while
+the fixture checks the complete actual cap total against the daemon before
+bootstrap. These local views must not be added together and presented as a
+shared-host ownership capacity proof: for example, four-CPU logical course
+reservations plus the global controls would total 5.3 CPUs, despite actual caps
+totaling 3.8. At eight CPUs and above, the existing per-worker conservative
+control reserve and actual caps remain unchanged.
+
+This bounded one-daemon experiment changes neither production allocation nor
+heartbeat, RPC, or failure-detection deadlines. It tests a control-service
+resource hypothesis; it does not establish the cause of earlier kernel 403s or
+claim that the prior failures are resolved. Older v2 reports retain their
+historical profiles and are not relabeled as v3 evidence. Other rehearsals keep
+their existing presets. A passing run does not establish capacity for another
+profile or for a classroom. Cleanup verifies immutable
 container identities and removes control processes before learners, so active
 enforcers cannot compete with fixture teardown.
 

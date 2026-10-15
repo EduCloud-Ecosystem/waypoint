@@ -51,14 +51,15 @@ class FixtureTests(unittest.TestCase):
             path.mkdir(mode=0o700, exist_ok=True)
         self.client = FakeClient(); self.docker = SimpleNamespace(DockerClient=lambda **_: self.client)
 
-    def bootstrap(self):
+    def bootstrap(self, cpu=8):
         import worker_transport
         from runtime_authority import validate_config
         # Preserve the real identity/profile/config contract even though the
         # Docker I/O itself is deliberately replaced in these host unit tests.
         with patch.dict(sys.modules, docker=self.docker), patch.object(fixture, 'DockerBackend', side_effect=lambda config, *a, **kw: SimpleNamespace(config=validate_config(config))), \
                 patch.object(worker_transport, 'worker_binding', side_effect=lambda backend, worker: 'b' * 64), \
-                patch.object(worker_transport, 'linux_boot_id', return_value='c' * 32), patch.object(fixture.os, 'chown'):
+                patch.object(worker_transport, 'linux_boot_id', return_value='c' * 32), patch.object(fixture.os, 'chown'), \
+                patch.object(self.client, 'info', return_value={'NCPU': cpu, 'MemTotal': 8 * 1024**3, 'ID': 'synthetic-fixed-daemon'}):
             return fixture.initialize(self.root, request())
 
     def test_presets_reserve_all_control_services_and_refuse_inflated_inputs(self):
@@ -69,21 +70,61 @@ class FixtureTests(unittest.TestCase):
             self.assertAlmostEqual(controls, value['host_reserve_cpu'])
             self.assertAlmostEqual(3 * (value['hub_cpu'] + value['learner_cpu']) + controls, value['reserved_cpu'])
             self.assertLessEqual(value['reserved_cpu'], cpu)
-        for cpu, memory in [(True, 8 * 1024**3), (3, 8 * 1024**3), (4, True), (4, 6656 * 1024**2 - 1)]:
+        for cpu, memory in [(True, 8 * 1024**3), (3, 8 * 1024**3), (4.0, 8 * 1024**3),
+                (float('nan'), 8 * 1024**3), (float('inf'), 8 * 1024**3), (4097, 8 * 1024**3),
+                (4, True), (4, 6656 * 1024**2 - 1)]:
             with self.assertRaises(ValueError): fixture.allocation_for_host(cpu, memory)
 
-    def test_eight_cpu_remote_profile_is_explicit_and_lower_presets_unchanged(self):
+    def test_eight_cpu_remote_profile_remains_unchanged(self):
         expected = {'name': 'eight-cpu-remote', 'learner_cpu': .25, 'hub_cpu': 1.0,
             'reserved_cpu': 6.75, 'minimum_cpu': 8, 'host_reserve_cpu': 3.0,
             'central_cpu': 1.0, 'worker_service_cpu': .75, 'guardian_cpu': .25}
         for cpu in (8, 9, 16):
             self.assertEqual(fixture.allocation_for_host(cpu, 8 * 1024**3), expected)
+
+    def test_lower_remote_profiles_keep_two_cpus_for_controls_without_changing_legacy(self):
+        expected = {4: ('four-cpu-remote', 4, .5, .1, 3.8), 5: ('five-cpu-remote', 5, .75, .2, 4.85),
+            6: ('six-cpu-remote', 6, 1.0, .25, 5.75), 7: ('six-cpu-remote', 6, 1.0, .25, 5.75)}
+        for cpu, (name, minimum, hub, learner, total) in expected.items():
+            with self.subTest(cpu=cpu):
+                self.assertEqual(fixture.allocation_for_host(cpu, 8 * 1024**3), {
+                    'name': name, 'minimum_cpu': minimum, 'hub_cpu': hub, 'learner_cpu': learner,
+                    'reserved_cpu': total, 'host_reserve_cpu': 2.0, 'central_cpu': .5,
+                    'worker_service_cpu': .5, 'guardian_cpu': .25})
+        previous = [fixture.course_allocation(cpu) for cpu in (4, 5, 6)]
+        self.assertEqual([value['name'] for value in previous], ['four-cpu-ci', 'five-cpu-local', 'six-cpu-local'])
+        self.assertEqual([value['hub_cpu'] for value in previous], [1.0, 1.0, 1.0])
+        self.assertEqual([value['host_reserve_cpu'] for value in previous], [.7, .75, 1.5])
+        controls = [fixture.allocation_for_host(cpu, 8 * 1024**3)['host_reserve_cpu'] for cpu in range(4, 10)]
+        self.assertEqual(controls, sorted(controls))
+
+    def test_lower_profile_bootstrap_keeps_core_claims_and_applies_real_container_caps(self):
+        from runtime_authority import DockerBackend
+        parent = self.root
         for cpu in (4, 5, 6, 7):
-            previous = fixture.course_allocation(cpu); previous.pop('controller_cpu')
-            central = .5 if cpu >= 6 else (.25 if cpu == 5 else .2)
-            worker = round((previous['host_reserve_cpu'] - central - 2 * previous['guardian_cpu']) / 2, 6)
-            self.assertEqual(fixture.allocation_for_host(cpu, 8 * 1024**3),
-                dict(previous, central_cpu=central, worker_service_cpu=worker))
+            with self.subTest(cpu=cpu):
+                self.root = parent / str(cpu); self.root.mkdir(mode=0o700)
+                for path in (self.root / 'control', self.root / 'backend', *(self.root / 'backend' / worker for worker in fixture.WORKERS)):
+                    path.mkdir(mode=0o700, exist_ok=True)
+                self.client = FakeClient(); self.docker = SimpleNamespace(DockerClient=lambda **_: self.client)
+                allocation = self.bootstrap(cpu)['allocation']; reserves = []
+                with patch.object(self.client, 'info', return_value={'NCPU': cpu, 'MemTotal': 8 * 1024**3, 'ID': 'synthetic-fixed-daemon'}):
+                    for worker in fixture.WORKERS:
+                        config = json.loads((self.root / worker / 'credentials/runtime.json').read_bytes())
+                        reserves.append(config['host_reserve_cpu'])
+                        self.assertEqual(config['host_reserve_cpu'], 1.0)
+                        for item in config['courses'][worker].values():
+                            self.assertEqual(item['profile']['cpu'], 1 + allocation['learner_cpu'])
+                        backend = DockerBackend.__new__(DockerBackend); backend.config = config; backend.client = self.client
+                        backend.daemon()  # Actual conservative local proof must fit the verified daemon.
+                self.assertEqual(sum(reserves), allocation['host_reserve_cpu'])
+                with patch.dict(sys.modules, docker=self.docker): fixture.launch_workers(self.root); fixture.launch_users(self.root)
+                for _, item in self.client.created:
+                    cap = item.get('cpu_quota', 0) / item.get('cpu_period', 100000)
+                    if item['name'].endswith('-service'): self.assertEqual(cap, allocation['worker_service_cpu'])
+                    elif item['name'].endswith('-guardian'): self.assertEqual(cap, allocation['guardian_cpu'])
+                    elif item['name'].endswith('-hub'): self.assertEqual(cap, allocation['hub_cpu'])
+        self.root = parent
 
     def test_mount_plan_excludes_central_socket_homes_and_other_worker_state(self):
         plan = fixture.mount_plan(self.root, request())
@@ -315,6 +356,29 @@ class FixtureTests(unittest.TestCase):
 
 
 class ReportTests(unittest.TestCase):
+    def test_actual_hub_cpu_proof_observes_all_three_owned_hubs_and_rejects_changed_caps(self):
+        name = request()['name']; images = {'hub': request()['hub_image']}
+        records = {}; observed = []; allocation = fixture.allocation_for_host(4, 8 * 1024**3)
+        for index, (_, _, suffix) in enumerate(fixture.ENDPOINTS):
+            expected = name + '-' + suffix + '-hub'
+            records[expected] = {'Name': '/' + expected, 'Id': format(index + 1, '064x'), 'Image': images['hub'],
+                'Config': {'Labels': {'educloud.workspace.instance': name + '-' + suffix, 'educloud.workspace.kind': 'hub'}},
+                'HostConfig': {'NanoCpus': 0, 'CpuPeriod': 100000, 'CpuQuota': 50000}}
+        def inspect(expected): observed.append(expected); return records[expected]
+        verifier.assert_hub_cpu_caps(name, images, 'b' * 32, allocation, inspect)
+        self.assertEqual(observed, list(records))
+        for expected in records:
+            with self.subTest(expected=expected):
+                records[expected]['HostConfig']['CpuQuota'] = 100000
+                with self.assertRaisesRegex(ValueError, 'fixture_hub_cpu_unverified'):
+                    verifier.assert_hub_cpu_caps(name, images, 'b' * 32, allocation, inspect)
+                records[expected]['HostConfig']['CpuQuota'] = 50000
+        with self.assertRaisesRegex(ValueError, 'fixture_hub_cpu_unverified'):
+            verifier.assert_hub_cpu_caps(name, images, 'b' * 32, allocation, lambda expected: records[next(reversed(records))])
+        records[next(iter(records))]['Image'] = 'sha256:' + 'f' * 64
+        with self.assertRaisesRegex(ValueError, 'fixture_container_ownership_unverified'):
+            verifier.assert_hub_cpu_caps(name, images, 'b' * 32, allocation, inspect)
+
     def test_hub_readiness_waits_for_http_startup_but_refuses_denial(self):
         from unittest.mock import Mock
         def response(status):
@@ -422,6 +486,21 @@ class ReportTests(unittest.TestCase):
             with self.assertRaises(ValueError): verifier.validate_report(value)
         early['flags']['actual_python_r'] = True
         with self.assertRaises(ValueError): verifier.validate_report(early)
+
+    def test_v3_resource_reports_cannot_relabel_old_versions_or_lower_profiles(self):
+        self.assertEqual(verifier.VERSION, 'waypoint-remote-notebook-rehearsal-v3')
+        for cpu in (4, 5, 6, 7, 8):
+            current = self.report(); current['host']['cpu'] = cpu
+            current['allocation'] = fixture.allocation_for_host(cpu, current['host']['memory_bytes'])
+            verifier.validate_report(current)
+            historical = copy.deepcopy(current); historical['version'] = 'waypoint-remote-notebook-rehearsal-v2'
+            with self.assertRaises(ValueError): verifier.validate_report(historical)
+            if cpu < 8:
+                legacy = fixture.course_allocation(cpu); legacy.pop('controller_cpu')
+                central = .5 if cpu >= 6 else (.25 if cpu == 5 else .2)
+                worker = round((legacy['host_reserve_cpu'] - central - 2 * legacy['guardian_cpu']) / 2, 6)
+                current['allocation'] = dict(legacy, central_cpu=central, worker_service_cpu=worker)
+                with self.assertRaises(ValueError): verifier.validate_report(current)
 
     def test_namespace_collision_checks_are_readonly_and_fail_before_creation(self):
         calls = []
