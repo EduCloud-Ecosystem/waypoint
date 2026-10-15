@@ -328,6 +328,11 @@ class ReportTests(unittest.TestCase):
         except verifier.requests.exceptions.HTTPError as error:
             value = verifier.failure_context(error, list(verifier.PHASES[:14]))
         self.assertEqual(value, {'phase': verifier.PHASES[14], 'exception': 'HTTPError', 'lines': [], 'http_status': 403})
+        response._content = b'_xsrf private-cookie-canary'
+        response.request = verifier.requests.Request('POST', 'https://private.invalid/secret').prepare()
+        value = verifier.failure_context(verifier.requests.exceptions.HTTPError('private-message', response=response), [])
+        self.assertEqual(value['request_verification'], 'xsrf'); self.assertEqual(value['http_method'], 'POST')
+        self.assertNotIn('private', json.dumps(value))
         private_type = type('private-class-canary', (Exception,), {})
         self.assertEqual(verifier.failure_context(private_type('private-message'), [])['exception'], 'OtherFailure')
 

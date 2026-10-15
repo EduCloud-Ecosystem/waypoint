@@ -180,11 +180,18 @@ def failure_context(error, phases):
     while trace is not None:
         if trace.tb_frame.f_code.co_filename == __file__:
             result['lines'].append(trace.tb_lineno)
+        elif trace.tb_frame.f_code.co_filename == str(ROOT / 'smoke.py'):
+            result['notebook_line'] = trace.tb_lineno
         trace = trace.tb_next
     result['lines'] = result['lines'][-8:]
     if isinstance(error, requests.exceptions.HTTPError):
         status = getattr(error.response, 'status_code', None)
         if type(status) is int and 100 <= status <= 599: result['http_status'] = status
+        request = getattr(error.response, 'request', None)
+        method = getattr(request, 'method', None)
+        if method in ('GET', 'POST', 'PUT', 'DELETE'): result['http_method'] = method
+        body = getattr(error.response, 'text', '')[:4096].lower()
+        if 'xsrf' in body: result['request_verification'] = 'xsrf'
     return result
 
 
