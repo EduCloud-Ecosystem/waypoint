@@ -575,4 +575,119 @@ class ReportTests(unittest.TestCase):
         self.assertEqual(failures, [True])
 
 
+class RuntimeDiagnosticsTests(unittest.TestCase):
+    def model(self):
+        name = request()['name']; authority = 'b' * 32
+        images = {key: request()[key + '_image'] for key in ('controller', 'hub', 'course')}
+        records = {}; events = []; subject = __import__('hashlib').sha256(b'alice').hexdigest()[:24]
+        for index, (worker, kind) in enumerate(((worker, kind) for worker in fixture.WORKERS for kind in ('service', 'guardian')), 1):
+            actual = name + '-' + worker + '-' + kind
+            labels = {'educloud.fixture': name} if kind == 'service' else {'educloud.runtime.authority': authority,
+                'educloud.runtime.worker': worker, 'educloud.runtime.kind': 'guardian'}
+            records[actual] = {'Id': format(index, '064x'), 'Name': '/' + actual, 'Image': images['controller'],
+                'Config': {'Labels': labels}, 'State': {'Running': True, 'OOMKilled': False, 'ExitCode': 0}}
+        for index, suffix in enumerate(('source', 'peer'), 10):
+            actual = name + '-' + suffix + '-learner-' + subject
+            labels = {'educloud.workspace.instance': name + '-' + suffix, 'educloud.workspace.kind': 'learner',
+                'educloud.runtime.authority': authority, 'educloud.runtime.worker': 'worker-one',
+                'educloud.runtime.course': 'course-main' if suffix == 'source' else 'course-peer',
+                'educloud.runtime.subject': subject, 'educloud.runtime.epoch': '1'}
+            records[actual] = {'Id': format(index, '064x'), 'Name': '/' + actual, 'Image': images['course'],
+                'Config': {'Labels': labels}, 'State': {'Running': suffix == 'peer', 'OOMKilled': False, 'ExitCode': 137 if suffix == 'source' else 0}}
+        def invoke(*args, **kwargs):
+            events.append(('docker', args)); self.assertEqual(kwargs, {'timeout': 3})
+            if args[0] == 'inspect':
+                value = next(value for actual, value in records.items() if args[1] in (actual, value['Id']))
+                return json.dumps([value])
+            self.assertEqual(args[:3], ('ps', '-aq', '--no-trunc'))
+            instance = args[4].split('=', 2)[-1]
+            return '\n'.join(value['Id'] for value in records.values() if value['Config']['Labels'].get('educloud.workspace.instance') == instance)
+        def logs(identifier):
+            events.append(('logs', identifier))
+            return ('private-token-cert-path-canary\nWorker runtime stopping owned learners: stale_or_changed\n'
+                'Guardian observation refused: authority_transport_unavailable\n'
+                'authority_transport_failure stage=response_headers category=timeout\n', False)
+        return name, authority, images, records, events, invoke, logs
+
+    def test_runtime_diagnostics_capture_owned_state_first_and_never_raw_material(self):
+        name, authority, images, _, events, invoke, logs = self.model()
+        result = verifier.runtime_diagnostics(RuntimeError('private-exception'), name, images, authority, invoke=invoke, read_logs=logs)
+        self.assertEqual(result['learners']['source']['states'], [{'running': False, 'oom_killed': False, 'exit_code': 137}])
+        self.assertEqual(result['learners']['source']['running_count'], 0)
+        self.assertEqual(result['learners']['peer']['running_count'], 1)
+        self.assertEqual(result['learners']['receiver']['container_count'], 0)
+        self.assertEqual(len(result['enforcers']), 4)
+        self.assertTrue(all(value['available'] and value['logs_available'] for value in result['enforcers'].values()))
+        first_log = next(index for index, event in enumerate(events) if event[0] == 'logs')
+        self.assertEqual(sum(event[0] == 'docker' and event[1][0] == 'ps' for event in events[:first_log]), 3)
+        raw = json.dumps(result)
+        for secret in ('private-exception', 'private-token-cert-path-canary', name, authority, images['course'], format(10, '064x')): self.assertNotIn(secret, raw)
+        self.assertTrue(all(event[0] == 'logs' or event[1][0] in ('ps', 'inspect') for event in events))
+
+    def test_foreign_control_is_unavailable_without_log_read_and_peer_collection_continues(self):
+        name, authority, images, records, events, invoke, logs = self.model()
+        value = records[name + '-worker-one-service']; value['Config']['Labels']['educloud.fixture'] = 'foreign'
+        result = verifier.runtime_diagnostics(ValueError('private'), name, images, authority, invoke=invoke, read_logs=logs)
+        self.assertIs(result['enforcers']['worker-one-service']['available'], False)
+        self.assertNotIn(('logs', value['Id']), events)
+        self.assertIs(result['enforcers']['worker-two-service']['available'], True)
+
+    def test_log_categories_reject_unknown_suffixes_and_private_messages(self):
+        raw = ('Worker runtime supervisor failed: supervision/runtime_endpoint_enforcement_unavailable\n'
+            'Guardian snapshot deferred: endpoint_busy\nGuardian stop deferred: endpoint_busy\n'
+            'Guardian observation refused: private-token-canary\n'
+            'Worker runtime stopping owned learners: private-path-canary\n'
+            'authority_transport_failure stage=private_path category=timeout\n'
+            'authority_transport_failure stage=response_headers category=private_key\n'
+            'authority_transport_failure stage=response_headers category=timeout\n')
+        result = verifier.diagnostic_log_counts(raw)
+        self.assertEqual(result['supervisor']['runtime_endpoint_enforcement_unavailable'], 1)
+        self.assertEqual(result['snapshot_busy'], 1); self.assertEqual(result['stop_busy'], 1)
+        self.assertEqual(sum(result['guardian'].values()), 0)
+        self.assertEqual(sum(result['transport'].values()), 1)
+        for secret in ('private-token-canary', 'private-path-canary', 'private_path', 'private_key'):
+            self.assertNotIn(secret, json.dumps(result))
+
+    def test_http_diagnostics_use_only_path_content_and_json_message_categories(self):
+        response = verifier.requests.Response(); response.status_code = 403
+        response.headers['Content-Type'] = 'application/json; charset=utf-8'
+        response._content = json.dumps({'message': 'Forbidden', 'private': 'private-token-canary'}).encode()
+        for path, category in [('/user/alice/api/kernels', 'notebookkernel'), ('/hub/user/alice/api/kernels', 'hubfallback'),
+                ('/hub/login', 'hublogin'), ('/user/alice/oauth_callback', 'oauth'), ('/private-secret', 'other')]:
+            response.url = 'https://private.invalid' + path
+            result = verifier.diagnostic_http_context(verifier.requests.exceptions.HTTPError('private-message', response=response))
+            self.assertEqual(result['final_path_category'], category); self.assertEqual(result['content_type_category'], 'json')
+            self.assertEqual(result['json403_message_class'], 'forbidden'); self.assertNotIn('private', json.dumps(result))
+        response._content = b'{"message":"private-arbitrary-secret"}'
+        self.assertEqual(verifier.diagnostic_http_context(verifier.requests.exceptions.HTTPError(response=response))['json403_message_class'], 'other')
+        response.headers['Content-Type'] = 'text/html'; response._content = b'<input name="_xsrf" value="private">'
+        self.assertEqual(verifier.diagnostic_http_context(verifier.requests.exceptions.HTTPError(response=response))['json403_message_class'], 'not_applicable')
+
+    def test_actual_log_subprocess_is_byte_bounded_and_owned_process_is_reaped(self):
+        processes = []
+        def launch(args, **kwargs):
+            self.assertEqual(args[:4], ['docker', 'logs', '--tail', '2000'])
+            process = verifier.subprocess.Popen([sys.executable, '-c', 'import os;os.write(1,b"x"*262144)'], **kwargs)
+            processes.append(process); return process
+        raw, truncated = verifier.bounded_container_logs('a' * 64, popen=launch)
+        self.assertEqual(len(raw.encode()), 131072); self.assertIs(truncated, True)
+        self.assertIsNotNone(processes[0].poll()); self.assertTrue(processes[0].stdout.closed)
+        def waiting(args, **kwargs):
+            process = verifier.subprocess.Popen([sys.executable, '-c', 'import time;time.sleep(60)'], **kwargs)
+            processes.append(process); return process
+        clock = iter([0, 4])
+        with self.assertRaisesRegex(RuntimeError, 'fixture_diagnostic_unavailable'):
+            verifier.bounded_container_logs('a' * 64, popen=waiting, monotonic=lambda: next(clock))
+        self.assertIsNotNone(processes[-1].poll()); self.assertTrue(processes[-1].stdout.closed)
+
+    def test_capture_failures_publish_only_unavailable_and_never_escape_to_cleanup(self):
+        from unittest.mock import Mock
+        collect = Mock(side_effect=ValueError('private-diagnostic-canary')); publish = Mock()
+        verifier.capture_runtime_diagnostics(Path('/unused'), RuntimeError('private-original'), 'unused', {}, None, collect=collect, publish=publish)
+        self.assertEqual(publish.call_args.args[1], {'version': 'waypoint-remote-runtime-diagnostics-v1',
+            'scope': 'post-failure-nonatomic-readonly', 'available': False})
+        publish.side_effect = RuntimeError('private-publication-canary')
+        verifier.capture_runtime_diagnostics(Path('/unused'), RuntimeError('private-original'), 'unused', {}, None, collect=collect, publish=publish)
+
+
 if __name__ == '__main__': unittest.main()

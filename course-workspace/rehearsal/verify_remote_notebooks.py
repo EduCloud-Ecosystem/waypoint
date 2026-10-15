@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import re
 import secrets
+import selectors
 import shutil
 import subprocess
 import sys
@@ -21,6 +22,9 @@ sys.path[:0] = [str(ROOT), str(Path(__file__).resolve().parent)]
 import evidence
 from smoke import kernel, change, xsrf
 from hub.authority_client import OPERATIONS, ERRORS
+from worker_runtime import SUPERVISOR_RUNTIME_CODES
+from worker_transport import ERRORS as WORKER_ERRORS
+from runtime_guardian import OBSERVATION_CODES
 from verify_authenticated_runtime import command, port, wait, configured_cpu_limit, request_notebook_start
 from remote_notebook_fixture import allocation_for_host, mount_plan, WORKERS, ENDPOINTS
 
@@ -75,6 +79,148 @@ def rpc_refusal_context(operation, reply):
     code = reply.get('code') if isinstance(reply, dict) else None
     return {'operation': operation if isinstance(operation, str) and operation in OPERATIONS else 'other',
         'code': code if isinstance(code, str) and code in ERRORS else 'other'}
+
+
+DIAGNOSTIC_SUPERVISOR_CODES = SUPERVISOR_RUNTIME_CODES | WORKER_ERRORS | frozenset({
+    'stale_or_changed', 'worker_error', 'runtime_refusal', 'worker_journal_refused', 'sqlite_error',
+    'timeout_error', 'os_error', 'key_error', 'type_error', 'value_error', 'docker_not_found',
+    'docker_api_error', 'docker_error', 'docker_transport_timeout', 'docker_connection_error', 'other_exception'})
+DIAGNOSTIC_TRANSPORT_STAGES = frozenset({'frame', 'connection', 'request', 'response_headers', 'response_body', 'response_decode', 'response_validate'})
+DIAGNOSTIC_TRANSPORT_CATEGORIES = frozenset({'timeout', 'connection', 'tls', 'http', 'other'})
+DIAGNOSTIC_GUARDIAN_CODES = OBSERVATION_CODES | frozenset({'guardian_observation_failed'})
+
+
+def bounded_container_logs(identifier, *, popen=subprocess.Popen, monotonic=time.monotonic):
+    """At most128KiB/256reads/3seconds; raw bytes never leave diagnostics."""
+    if not isinstance(identifier, str) or not re.fullmatch(r'[0-9a-f]{64}', identifier):
+        raise ValueError('fixture_diagnostic_scope_invalid')
+    process = popen(['docker', 'logs', '--tail', '2000', identifier], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    raw = bytearray(); truncated = False; deadline = monotonic() + 3
+    try:
+        with selectors.DefaultSelector() as selector:
+            selector.register(process.stdout, selectors.EVENT_READ)
+            for _ in range(256):
+                remaining = deadline - monotonic()
+                if remaining <= 0 or not selector.select(remaining):
+                    raise RuntimeError('fixture_diagnostic_unavailable')
+                chunk = os.read(process.stdout.fileno(), min(16384, 131073 - len(raw)))
+                if not chunk: break
+                raw.extend(chunk)
+                if len(raw) > 131072:
+                    truncated = True; break
+            else: truncated = True
+        if not truncated and process.wait(timeout=max(.001, deadline - monotonic())) != 0:
+            raise RuntimeError('fixture_diagnostic_unavailable')
+        return bytes(raw[:131072]).decode('utf-8', errors='replace'), truncated
+    finally:
+        if process.poll() is None: process.kill()
+        process.wait(timeout=2)
+        process.stdout.close()
+
+
+def diagnostic_log_counts(raw):
+    result = {'supervisor': {code: 0 for code in sorted(DIAGNOSTIC_SUPERVISOR_CODES)},
+        'guardian': {code: 0 for code in sorted(DIAGNOSTIC_GUARDIAN_CODES)}, 'snapshot_busy': 0, 'stop_busy': 0,
+        'transport': {stage + '/' + category: 0 for stage in sorted(DIAGNOSTIC_TRANSPORT_STAGES)
+            for category in sorted(DIAGNOSTIC_TRANSPORT_CATEGORIES)}}
+    for line in raw[:131072].splitlines():
+        for field, prefix in (('supervisor', 'Worker runtime supervisor failed: supervision/'),
+                ('supervisor', 'Worker runtime stopping owned learners: '), ('guardian', 'Guardian observation refused: ')):
+            if prefix in line:
+                code = line.partition(prefix)[2].strip()
+                if code in result[field]: result[field][code] = min(10000, result[field][code] + 1)
+        for field, phrase in (('snapshot_busy', 'Guardian snapshot deferred: endpoint_busy'), ('stop_busy', 'Guardian stop deferred: endpoint_busy')):
+            if line.endswith(phrase): result[field] = min(10000, result[field] + 1)
+        match = re.search(r'authority_transport_failure stage=([a-z_]+) category=([a-z_]+)$', line)
+        if match:
+            key = match[1] + '/' + match[2]
+            if key in result['transport']: result['transport'][key] = min(10000, result['transport'][key] + 1)
+    return result
+
+
+def diagnostic_http_context(error):
+    result = {'available': False, 'status': None, 'final_path_category': 'other',
+        'content_type_category': 'other', 'json403_message_class': 'not_applicable'}
+    if not isinstance(error, requests.exceptions.HTTPError) or error.response is None: return result
+    response = error.response; result['available'] = True
+    if type(response.status_code) is int and 100 <= response.status_code <= 599: result['status'] = response.status_code
+    try: path = urlsplit(response.url[:4096]).path
+    except Exception: path = ''
+    if re.fullmatch(r'/user/alice/api/kernels(?:/[A-Za-z0-9-]+(?:/channels)?)?/?', path): result['final_path_category'] = 'notebookkernel'
+    elif path.startswith('/hub/user/'): result['final_path_category'] = 'hubfallback'
+    elif path == '/hub/login': result['final_path_category'] = 'hublogin'
+    elif path in ('/hub/oauth_callback', '/user/alice/oauth_callback', '/hub/api/oauth2/authorize'): result['final_path_category'] = 'oauth'
+    media_type = response.headers.get('Content-Type', '')[:128].partition(';')[0].strip().lower()
+    result['content_type_category'] = {'application/json': 'json', 'text/html': 'html', 'text/plain': 'text', '': 'missing'}.get(media_type, 'other')
+    if result['status'] == 403 and media_type == 'application/json':
+        result['json403_message_class'] = 'other'
+        try:
+            raw = response.content
+            if len(raw) > 4096: return result
+            value = json.loads(raw); message = value.get('message') if isinstance(value, dict) else None
+            if not isinstance(message, str) or len(message) > 1024: return result
+            message = message.lower().strip()
+            if message in ('forbidden', 'forbidden.'): result['json403_message_class'] = 'forbidden'
+            elif message == 'authentication required': result['json403_message_class'] = 'authentication_required'
+            elif "'_xsrf' argument missing from " in message: result['json403_message_class'] = 'xsrf_missing'
+            elif "'_xsrf' argument invalid" in message: result['json403_message_class'] = 'xsrf_invalid'
+            elif 'xsrf cookie does not match ' in message and ' argument' in message: result['json403_message_class'] = 'xsrf_mismatch'
+        except Exception: pass
+    return result
+
+
+def runtime_diagnostics(error, name, images, authority_id, *, invoke=command, read_logs=bounded_container_logs):
+    def state(value):
+        source = value['State']; result = {key: source[field] for key, field in
+            (('running', 'Running'), ('oom_killed', 'OOMKilled'), ('exit_code', 'ExitCode'))}
+        if (type(result['running']) is not bool or type(result['oom_killed']) is not bool
+                or type(result['exit_code']) is not int or not -255 <= result['exit_code'] <= 255):
+            raise ValueError('fixture_diagnostic_state_invalid')
+        return result
+    def owned(identifier, expected_name=None):
+        value = json.loads(invoke('inspect', identifier, timeout=3))[0]
+        actual = require_owned_container(value, name, images, authority_id)
+        if (not re.fullmatch(r'[0-9a-f]{64}', actual) or (re.fullmatch(r'[0-9a-f]{64}', identifier) and actual != identifier)
+                or (expected_name is not None and value.get('Name') != '/' + expected_name)):
+            raise ValueError('fixture_diagnostic_scope_invalid')
+        return value
+    result = {'version': 'waypoint-remote-runtime-diagnostics-v1', 'scope': 'post-failure-nonatomic-readonly', 'available': True,
+        'http': diagnostic_http_context(error), 'learners': {}, 'enforcers': {}}
+    # Capture learner state before any potentially slow log reads.
+    for _, _, suffix in ENDPOINTS:
+        item = {'available': False, 'container_count': None, 'running_count': None, 'states': []}
+        try:
+            identifiers = invoke('ps', '-aq', '--no-trunc', '--filter', 'label=educloud.workspace.instance=' + name + '-' + suffix,
+                '--filter', 'label=educloud.workspace.kind=learner', timeout=3).split()
+            if len(identifiers) > 1 or any(not re.fullmatch(r'[0-9a-f]{64}', identifier) for identifier in identifiers):
+                raise ValueError('fixture_diagnostic_bounds')
+            states = [state(owned(identifier, name + '-' + suffix + '-learner-' + hashlib.sha256(b'alice').hexdigest()[:24])) for identifier in identifiers]
+            item.update(available=True, container_count=len(states), running_count=sum(value['running'] for value in states), states=states)
+        except Exception: pass
+        result['learners'][suffix] = item
+    for worker in WORKERS:
+        for kind in ('service', 'guardian'):
+            item = {'available': False, 'state': None, 'logs_available': False, 'truncated': False, 'counts': diagnostic_log_counts('')}
+            try:
+                value = owned(name + '-' + worker + '-' + kind, name + '-' + worker + '-' + kind)
+                item.update(available=True, state=state(value))
+                raw, truncated = read_logs(value['Id'])
+                if not isinstance(raw, str) or type(truncated) is not bool: raise ValueError('fixture_diagnostic_log_invalid')
+                item.update(logs_available=True, truncated=truncated, counts=diagnostic_log_counts(raw))
+            except Exception: pass
+            result['enforcers'][worker + '-' + kind] = item
+    return result
+
+
+def capture_runtime_diagnostics(path, error, name, images, authority_id, *, collect=runtime_diagnostics, publish=None):
+    """Best effort only; diagnostic failure never blocks cleanup or refusal."""
+    try:
+        if publish is None:
+            from authority_access import publish
+        try: value = collect(error, name, images, authority_id)
+        except Exception: value = {'version': 'waypoint-remote-runtime-diagnostics-v1', 'scope': 'post-failure-nonatomic-readonly', 'available': False}
+        publish(path, value)
+    except Exception: pass
 
 
 def exercise_kernels(session, base, invoke=kernel):
@@ -506,6 +652,8 @@ def run(args):
         wait(lambda: not learners('receiver'), 25); assert learners('peer') == peer_ids; kernels(sessions['peer'], 'peer'); read(sessions['peer'], 'peer'); phase(PHASES[15])
     except BaseException as exc:
         print('FAILURE_CONTEXT ' + json.dumps(failure_context(exc, phases), sort_keys=True), flush=True)
+        try: capture_runtime_diagnostics(output.resolve() / 'RUNTIME-DIAGNOSTICS.json', exc, name, images, authority_id)
+        except Exception: pass
         failure = type(exc).__name__ if type(exc).__name__ in {'RuntimeError', 'AssertionError', 'ValueError', 'OSError', 'KeyError', 'TypeError',
             'TimeoutExpired', 'CalledProcessError', 'KeyboardInterrupt'} else 'OtherFailure'
     finally:
