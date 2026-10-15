@@ -121,6 +121,11 @@ class ManagedAccessTests(unittest.TestCase):
         self.assertEqual(self.call('operator'), {'observed': True})
     def test_controller_injects_identical_managed_policy_into_server_and_guardian_callback(self):
         self.enroll(); captured = {}
+        # Reopening the real registry must use the same clock as this fixture.
+        # Wall-clock advancement otherwise makes the frozen writer look rolled back.
+        open_store = EnrollmentStore.open
+        def reopen(*args, **kwargs):
+            return open_store(*args, **kwargs, clock=lambda: self.now)
         config = {'authority_id': self.authority}
         service = {'authority_directory': 'private', 'enrollment_directory': str(self.store.directory), 'acl_file': str(self.acl),
             'replay_directory': 'private', 'plan_directory': 'private', 'bind': '127.0.0.1', 'port': 0,
@@ -134,13 +139,14 @@ class ManagedAccessTests(unittest.TestCase):
             def serve_forever(self, **options): pass
             def server_close(self): pass
             def shutdown(self): pass
-        with patch.object(controller_service, 'DockerBackend'), patch.object(controller_service.Authority, 'open'), patch('worker_credentials.verify_binding', return_value=self.binding), patch('worker_credentials.make_runtime_binding_verifier') as factory, patch.object(controller_service, 'RuntimeDispatcher', Runtime), patch.object(controller_service, 'OperatorDispatcher'), patch.object(controller_service, 'AuthorityServer', Server), patch.object(controller_service.ReplayStore, 'open'):
+        with patch.object(EnrollmentStore, 'open', side_effect=reopen), patch.object(controller_service, 'DockerBackend'), patch.object(controller_service.Authority, 'open'), patch('worker_credentials.verify_binding', return_value=self.binding), patch('worker_credentials.make_runtime_binding_verifier') as factory, patch.object(controller_service, 'RuntimeDispatcher', Runtime), patch.object(controller_service, 'OperatorDispatcher'), patch.object(controller_service, 'AuthorityServer', Server), patch.object(controller_service.ReplayStore, 'open'):
             controller_service.serve(config, service)
         binding_check = factory.return_value
         policy = captured['policy']; self.assertIsNotNone(policy.enrollment)
         fp = self.metadata['guardian']['fingerprint']; captured['guardian'](fp, 'one', 'course')
         self.assertEqual(binding_check.call_args.args[-2:], ('one', 'course'))
         self.assertEqual(factory.call_count, 1)
+        self.now += 1
         self.apply('revoke', target_fingerprint=fp)
         self.refused(lambda: captured['guardian'](fp, 'one', 'course'))
     def test_managed_live_map_bound_matches_registry_instead_of_legacy_128_cap(self):

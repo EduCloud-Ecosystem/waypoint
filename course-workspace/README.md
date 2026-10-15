@@ -190,3 +190,9 @@ Reviewed credentials for approved local workers and staged client certificate
 rotation are documented in [worker enrollment](WORKER-ENROLLMENT.md), with a
 separate actual Docker rehearsal. Hosted enrollment and independent-host acceptance
 remain separate.
+
+The opt-in [independent worker control adapter](INDEPENDENT-WORKERS.md) adds
+authenticated worker-local locks, persistent quarantine and reviewed transfer
+recovery. Its separate-process local rehearsal preserves coursework and ownership
+history through connection loss and service restart. Production remote notebook
+integration and actual two-host acceptance remain separate work.
