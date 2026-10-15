@@ -110,7 +110,7 @@ def initialize(root, request):
             for key in ('snapshot', 'runtime'): write(metadata / (key + '.json'), {'synthetic': key, 'course': course})
             hostname = course + '.remote-notebook.invalid'
             courses[course] = dict(instance=instance, logical_identity=dict(origin='https://' + hostname,
-                dns_subtree=hostname, issuer='https://identity.remote-notebook.invalid/fixture', client_id=course),
+                dns_subtree=hostname, issuer='https://identity.remote-notebook.invalid/realms/fixture', client_id=course),
                 profile=dict(profile), image_id=request['course_image'], hub_container=instance + '-hub', subjects=['alice'],
                 home_root=str(homes), snapshot_path=str(metadata / 'snapshot.json'), runtime_path=str(metadata / 'runtime.json'))
             client.volumes.create(name=leaf.name, driver_opts={'type': 'none', 'o': 'bind', 'device': str(leaf)},

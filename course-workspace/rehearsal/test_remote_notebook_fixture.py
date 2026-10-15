@@ -51,7 +51,10 @@ class FixtureTests(unittest.TestCase):
 
     def bootstrap(self):
         import worker_transport
-        with patch.dict(sys.modules, docker=self.docker), patch.object(fixture, 'DockerBackend', side_effect=lambda config, *a, **kw: SimpleNamespace(config=config)), \
+        from runtime_authority import validate_config
+        # Preserve the real identity/profile/config contract even though the
+        # Docker I/O itself is deliberately replaced in these host unit tests.
+        with patch.dict(sys.modules, docker=self.docker), patch.object(fixture, 'DockerBackend', side_effect=lambda config, *a, **kw: SimpleNamespace(config=validate_config(config))), \
                 patch.object(worker_transport, 'worker_binding', side_effect=lambda backend, worker: 'b' * 64), \
                 patch.object(worker_transport, 'linux_boot_id', return_value='c' * 32), patch.object(fixture.os, 'chown'):
             return fixture.initialize(self.root, request())
@@ -91,6 +94,10 @@ class FixtureTests(unittest.TestCase):
             config = json.loads((self.root / worker / 'credentials/runtime.json').read_bytes())
             self.assertEqual(set(config['workers']), {worker}); self.assertEqual(set(config['courses']), {worker})
             self.assertEqual(config['workers'][worker]['boot_id'], 'c' * 32)
+            for item in config['courses'][worker].values():
+                from ownership_contract import logical_identity
+                logical_identity(item['logical_identity'])
+                self.assertEqual(item['logical_identity']['issuer'], 'https://identity.remote-notebook.invalid/realms/fixture')
             self.assertTrue((self.root / 'backend' / worker / 'journal/journal.sqlite').is_file())
         for identity, worker in [('guardian-one', 'worker-one'), ('guardian-two', 'worker-two')]:
             config = json.loads((self.root / identity / 'credentials/runtime.json').read_bytes())
