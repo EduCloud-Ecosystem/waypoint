@@ -104,6 +104,28 @@ def verify_source_login_refused(session, base, password):
         raise ValueError('source_spawn_was_not_denied')
 
 
+def await_hub_readiness(session, base, *, timeout=60, monotonic=time.monotonic, sleep=time.sleep):
+    """Wait for the Hub process itself before one login/spawn attempt."""
+    if type(timeout) not in (int, float) or not 0 < timeout <= 60:
+        raise ValueError('hub_readiness_timeout_invalid')
+    deadline = monotonic() + timeout
+    while True:
+        remaining = deadline - monotonic()
+        if remaining <= 0: raise RuntimeError('hub_not_ready')
+        try:
+            response = session.get(base + '/hub/login', timeout=min(3, remaining), allow_redirects=False)
+        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
+            response = None
+        if response is not None:
+            if response.status_code == 200: return
+            if response.status_code != 503:
+                response.raise_for_status()
+                raise ValueError('hub_readiness_unexpected_response')
+        remaining = deadline - monotonic()
+        if remaining <= 0: raise RuntimeError('hub_not_ready')
+        sleep(min(.25, remaining))
+
+
 def require_owned_container(value, name, images, authority_id):
     actual = value.get('Name', '').lstrip('/'); labels = value.get('Config', {}).get('Labels', {})
     image = value.get('Image'); matched = False
@@ -269,6 +291,7 @@ def run(args):
         wait(lambda: rpc('ownership.inventory')['ok'], 45)
     def notebook(suffix):
         wait(lambda: ready(suffix), 30); base = bases[suffix]; session = requests.Session(); session.max_redirects = 8
+        await_hub_readiness(session, base)
         session.get(base + '/hub/login', timeout=10).raise_for_status()
         session.post(base + '/hub/login', data={'username': 'alice', 'password': request['password'], '_xsrf': xsrf(session, base + '/hub/login')},
             timeout=30, allow_redirects=False).raise_for_status()

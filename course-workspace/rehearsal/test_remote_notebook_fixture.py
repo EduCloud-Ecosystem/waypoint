@@ -302,6 +302,24 @@ class FixtureTests(unittest.TestCase):
 
 
 class ReportTests(unittest.TestCase):
+    def test_hub_readiness_waits_for_http_startup_but_refuses_denial(self):
+        from unittest.mock import Mock
+        def response(status):
+            value = verifier.requests.Response(); value.status_code = status; return value
+        session = Mock(); session.get.side_effect = [verifier.requests.exceptions.ConnectionError(), response(503), response(200)]
+        verifier.await_hub_readiness(session, 'http://127.0.0.1:1234', sleep=lambda _: None)
+        self.assertEqual(session.get.call_count, 3)
+        session.post.assert_not_called()
+        session.get.assert_called_with('http://127.0.0.1:1234/hub/login', timeout=3, allow_redirects=False)
+        session = Mock(); session.get.return_value = response(403)
+        with self.assertRaises(verifier.requests.exceptions.HTTPError):
+            verifier.await_hub_readiness(session, 'http://127.0.0.1:1234')
+        self.assertEqual(session.get.call_count, 1)
+        session.get.return_value = response(503)
+        times = iter([0, 2])
+        with self.assertRaisesRegex(RuntimeError, 'hub_not_ready'):
+            verifier.await_hub_readiness(session, 'http://127.0.0.1:1234', timeout=1, monotonic=lambda: next(times))
+
     def test_failure_context_excludes_messages_urls_bodies_and_external_frames(self):
         response = verifier.requests.Response(); response.status_code = 403
         response.url = 'https://private.invalid/secret'; response._content = b'private-body-canary'
