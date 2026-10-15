@@ -86,11 +86,13 @@ WantedBy=timers.target
 
 
 def cloud_config(public_key, cidr, release, mode='local-test'):
-    if mode not in ('local-test', 'institutional'):
-        raise ValueError('worker mode must be local-test or institutional')
+    if mode not in ('local-test', 'institutional', 'worker-channel-test'):
+        raise ValueError('unsupported worker mode')
     if not re.fullmatch(r'[0-9a-f]{40}', release):
         raise ValueError('release must be a full immutable Git commit SHA')
     network = str(ipaddress.ip_network(cidr, strict=False))
+    if mode == 'worker-channel-test' and ipaddress.ip_network(network).prefixlen == 0:
+        raise ValueError('worker-channel pilot requires a restricted operator SSH network')
     if not re.fullmatch(r'(ssh-ed25519|ssh-rsa|ecdsa-sha2-nistp256) [A-Za-z0-9+/=]+(?: [^\r\n]+)?', public_key):
         raise ValueError('provide one SSH public key, never a private key')
     files = [{'path': '/etc/systemd/system/' + name, 'permissions': '0644', 'content': content}
@@ -121,6 +123,14 @@ def cloud_config(public_key, cidr, release, mode='local-test'):
         # A synthetic pilot.env here would make the institutional .env ambiguous.
         # Real identity, roster, storage and TLS are configured by the operator.
         config['runcmd'].insert(-1, ['install', '-d', '-m', '700', PILOT])
+    if mode == 'worker-channel-test':
+        # Legacy recovery units target pilot.env/Compose, not managed channels.
+        # Install no misleading backup timers and create no course or credentials.
+        config['write_files'] = []
+        config['packages'] += ['python3-venv', 'openssl']
+        config['final_message'] = ('Worker-channel test host prepared. Review cloud-init status, '
+            'cloud firewall and pilot_host.py checks before building the synthetic rehearsal. '
+            'No course, managed credentials or backup timers were initialized.')
     return config
 
 
@@ -142,7 +152,7 @@ def main():
     parser.add_argument('--public-key', type=Path)
     parser.add_argument('--ssh-cidr')
     parser.add_argument('--release')
-    parser.add_argument('--mode', choices=['local-test', 'institutional'], default='local-test')
+    parser.add_argument('--mode', choices=['local-test', 'institutional', 'worker-channel-test'], default='local-test')
     parser.add_argument('--directory', type=Path, required=True)
     args = parser.parse_args()
     try:
@@ -156,9 +166,10 @@ def main():
             subprocess.run(['ssh-keygen', '-l', '-f', str(args.public_key)], check=True, stdout=subprocess.DEVNULL)
             args.directory.mkdir(parents=True, exist_ok=False, mode=0o700)
             (args.directory / 'cloud-init.yaml').write_text('#cloud-config\n' + json.dumps(config, indent=2) + '\n')
-            for name, content in units().items():
+            for name, content in (units().items() if args.mode != 'worker-channel-test' else ()):
                 (args.directory / name).write_text(content)
-            print('Rendered cloud-init and systemd units. No cloud resource was created or timer enabled.')
+            rendered = 'cloud-init' if args.mode == 'worker-channel-test' else 'cloud-init and systemd units'
+            print(f'Rendered {rendered}. No cloud resource was created or timer enabled.')
     except (ValueError, OSError, subprocess.CalledProcessError) as exc:
         parser.exit(1, f'Worker setup refused or failed: {exc}\n')
 
