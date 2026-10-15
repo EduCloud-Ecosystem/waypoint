@@ -106,6 +106,68 @@ class WorkerRuntimeTests(unittest.TestCase):
         self.assertFalse((self.root / 'authority').exists())
         self.assertFalse(hasattr(self.runtime, 'authority'))
 
+    def test_local_proof_uses_one_fresh_worker_observation(self):
+        with patch.object(self.backend, 'inspect_worker', wraps=self.backend.inspect_worker) as inspect:
+            self.runtime._local(self.request())
+            self.assertEqual(inspect.call_count, 1)
+            self.runtime._local(self.request())
+            self.assertEqual(inspect.call_count, 2)  # No reuse across proofs.
+
+    def test_local_proof_still_binds_request_incarnation(self):
+        for key in ('provider_id', 'boot_id'):
+            request = self.request(); request[key] = uuid.uuid4().hex
+            with self.subTest(key=key), self.assertRaises(RuntimeRefusal) as denied:
+                self.runtime._local(request)
+            self.assertEqual(denied.exception.code, 'runtime_worker_incarnation_changed')
+
+    def test_changed_fresh_worker_proof_after_callback_prevents_start(self):
+        self.heartbeat(); changed = []; inspect = self.backend.inspect_worker
+        def observation(worker):
+            value = inspect(worker)
+            if changed: value['boot_id'] = 'f' * 32
+            return value
+        def authorize(principal, observation):
+            if observation['kind'] == 'principal' and any(
+                    c.attrs['Config']['Labels'].get('educloud.workspace.kind') == 'learner'
+                    for c in self.fixture.client.containers.items.values()):
+                changed.append(True)
+        self.callback = authorize
+        with patch.object(self.backend, 'inspect_worker', side_effect=observation):
+            self.refuses(self.spawn)
+        self.assertTrue(changed)
+        created = self.fixture.client.containers.created[-1][0]
+        self.assertNotIn('start', created.actions)
+        self.assertEqual(self.backend.containers(self.worker, 'course-main'), [])
+
+    def test_local_observation_reuse_preserves_outer_guardian_three_second_budget(self):
+        from authority_access import AuthorityServer, ReplayStore, publish
+        from hub.authority_client import AuthorityClient, VERSION as ACL_VERSION
+        directory = self.root / 'central'; directory.mkdir(mode=0o700)
+        acl = directory / 'acl.json'
+        publish(acl, {'version': ACL_VERSION, 'authority_id': self.backend.authority_id, 'clients': {
+            self.pki.fingerprint(self.cert): {'role': 'guardian', 'workers': [self.worker], 'courses': ['course-main']}}})
+        completed = threading.Event()
+        def dispatch(principal, operation, course, payload):
+            try: return self.rpc(operation, payload, course)
+            finally: completed.set()
+        central = AuthorityServer(('127.0.0.1', 0), authority_id=self.backend.authority_id,
+            certfile=self.pki.server_cert, keyfile=self.pki.server_key, ca_file=self.pki.ca_cert,
+            acl_file=acl, replay_store=ReplayStore.create(directory / 'replay', self.backend.authority_id), dispatch=dispatch)
+        serving = threading.Thread(target=central.serve_forever, kwargs={'poll_interval': .02}, daemon=True); serving.start()
+        def close(): central.shutdown(); central.server_close(); serving.join(2)
+        self.addCleanup(close)
+        client = AuthorityClient('https://localhost:' + str(central.server_port) + '/v1/authority',
+            self.backend.authority_id, self.pki.ca_cert, self.cert, self.key, self.worker, 'course-main')
+        self.assertEqual(client.timeout, 3)
+        identity = self.backend.guardian_identity(self.worker); inspect = self.fixture.client.info; calls = []
+        def bounded_info():
+            calls.append(True); time.sleep(.14); return inspect()
+        with patch.object(self.fixture.client, 'info', side_effect=bounded_info):
+            try: result = client.call('guardian.observe', identity)
+            finally: self.assertTrue(completed.wait(4))
+        self.assertIs(result['authorized'], True)
+        self.assertEqual(len(calls), 19)  # Previously24 calls: outer timeout while inner completed.
+
     def test_legal_slow_docker_stop_completes_on_same_authenticated_channel(self):
         self.heartbeat(); result = self.spawn()
         container = self.fixture.client.containers.get(result['server_id'])
@@ -379,6 +441,7 @@ class WorkerRuntimeTests(unittest.TestCase):
             self.refuses(lambda: self.rpc('guardian.observe', identity), 'worker_channel_refused')
 
     def test_binding_refuses_replaced_home_root_and_runtime_drift(self):
+        created = list(self.fixture.client.containers.created)
         with self.client().session('course-main', 'inspect') as channel:
             self.assertEqual(channel.call('binding'), {'binding_sha256': self.journal.binding_sha256})
         root = Path(self.config['courses'][self.worker]['course-main']['home_root']); retained = root.with_name(root.name + '-retained')
@@ -386,6 +449,8 @@ class WorkerRuntimeTests(unittest.TestCase):
         try:
             with self.client().session('course-main', 'inspect') as channel:
                 self.refuses(lambda: channel.call('binding'), 'worker_identity_changed')
+            self.refuses(self.spawn, 'worker_identity_changed')
+            self.assertEqual(self.fixture.client.containers.created, created)
         finally: root.rmdir(); retained.rename(root)
         self.heartbeat()
         Path(self.config['courses'][self.worker]['course-main']['runtime_path']).write_bytes(b'changed immutable runtime')

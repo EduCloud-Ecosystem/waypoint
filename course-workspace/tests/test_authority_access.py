@@ -15,7 +15,7 @@ import tempfile
 import threading
 import time
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock,patch
 import uuid
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
@@ -327,6 +327,79 @@ class AuthorityAccessTests(unittest.TestCase):
         with patch.object(ownership,'fault_hook',side_effect=revoke):
             self.refused('authority_operation_refused',lambda:client.call('ownership.apply',{'plan_id':preview['plan_id'],'plan_sha256':preview['plan_sha256']}))
         self.assertFalse(backend.barriers);self.assertEqual(authority.inventory()['pending_transfers'],1)
+
+
+class AuthorityClientDiagnosticsTests(unittest.TestCase):
+    def client(self):
+        client=AuthorityClient.__new__(AuthorityClient)
+        client.host='private-host-canary.invalid';client.port=8443;client.context=object();client.timeout=3
+        client.authority_id='a'*32;client.worker_id='worker-private';client.course_id='course-private'
+        return client
+
+    def test_transport_logs_only_fixed_stage_and_exception_category_and_closes_once(self):
+        import hub.authority_client as module
+        cases=[('request',TimeoutError('private-timeout-canary'),'timeout'),
+            ('request',ConnectionResetError('private-connection-canary'),'connection'),
+            ('request',ssl.SSLError('private-cert-key-canary'),'tls'),
+            ('response_headers',http.client.BadStatusLine('private-header-canary'),'http'),
+            ('response_body',OSError('private-body-canary'),'connection'),
+            ('response_decode',ValueError('private-payload-canary'),'other')]
+        for stage,error,category in cases:
+            with self.subTest(stage=stage,category=category):
+                connection=Mock();response=Mock();connection.getresponse.return_value=response
+                response.status=200;response.headers.get_all.return_value=['2']
+                response.getheader.side_effect=lambda name:{'Content-Type':'application/json'}.get(name)
+                response.read.return_value=b'{}'
+                if stage=='request':connection.request.side_effect=error
+                elif stage=='response_headers':connection.getresponse.side_effect=error
+                elif stage=='response_body':response.read.side_effect=error
+                with patch.object(module.http.client,'HTTPSConnection',return_value=connection) as constructor, \
+                        patch.object(module,'parsed',side_effect=error if stage=='response_decode' else module.parsed), \
+                        self.assertLogs(module.log,level='WARNING') as captured:
+                    with self.assertRaises(AuthorityError) as raised:self.client().call('hub.authorize',{'secret':'private-payload-canary'})
+                self.assertEqual(raised.exception.code,'authority_transport_unavailable')
+                self.assertEqual([record.getMessage() for record in captured.records],
+                    ['authority_transport_failure stage='+stage+' category='+category])
+                self.assertNotIn('private',str(captured.output));connection.close.assert_called_once_with()
+                constructor.assert_called_once();self.assertEqual(constructor.call_args.kwargs['timeout'],3)
+                self.assertEqual(connection.request.call_count,1)
+
+    def test_constructor_failure_has_fixed_category_and_no_connection_to_close(self):
+        import hub.authority_client as module
+        with patch.object(module.http.client,'HTTPSConnection',side_effect=TimeoutError('private-url-cert-canary')) as constructor, \
+                self.assertLogs(module.log,level='WARNING') as captured:
+            with self.assertRaises(AuthorityError) as raised:self.client().call('hub.authorize',{})
+        self.assertEqual(raised.exception.code,'authority_transport_unavailable');constructor.assert_called_once()
+        self.assertEqual(captured.records[0].getMessage(),'authority_transport_failure stage=connection category=timeout')
+
+    def test_broken_logging_cannot_replace_terminal_error_or_skip_connection_close(self):
+        import hub.authority_client as module
+        class SecretError(OSError):
+            def __str__(self):raise AssertionError('private-exception-str-never-called')
+            def __repr__(self):raise AssertionError('private-exception-repr-never-called')
+        connection=Mock();connection.request.side_effect=SecretError('private-secret-args')
+        with patch.object(module.http.client,'HTTPSConnection',return_value=connection), \
+                patch.object(module.log,'warning',side_effect=RuntimeError('private-logger-canary')) as warning:
+            with self.assertRaises(AuthorityError) as raised:self.client().call('hub.authorize',{})
+        self.assertEqual(raised.exception.code,'authority_transport_unavailable');connection.close.assert_called_once_with()
+        warning.assert_called_once_with('authority_transport_failure stage=%s category=%s','request','connection')
+
+    def test_known_authority_errors_remain_unlogged_and_response_validation_unchanged(self):
+        import hub.authority_client as module
+        connection=Mock();response=Mock();connection.getresponse.return_value=response;response.status=302
+        with patch.object(module.http.client,'HTTPSConnection',return_value=connection), patch.object(module.log,'warning') as warning:
+            with self.assertRaises(AuthorityError) as raised:self.client().call('hub.authorize',{})
+        self.assertEqual(raised.exception.code,'authority_response_invalid');warning.assert_not_called();connection.close.assert_called_once_with()
+
+    def test_failed_diagnostic_itself_cannot_replace_transport_error_or_skip_close(self):
+        import hub.authority_client as module
+        connection=Mock();connection.request.side_effect=TimeoutError('private-transport-canary')
+        with patch.object(module.http.client,'HTTPSConnection',return_value=connection), \
+                patch.object(module,'transport_diagnostic',side_effect=ValueError('private-diagnostic-canary')) as diagnostic:
+            with self.assertRaises(AuthorityError) as raised:self.client().call('hub.authorize',{})
+        self.assertEqual(raised.exception.code,'authority_transport_unavailable')
+        self.assertEqual(str(raised.exception),'authority_transport_unavailable')
+        diagnostic.assert_called_once();connection.close.assert_called_once_with()
 
 
 if __name__=='__main__':unittest.main()

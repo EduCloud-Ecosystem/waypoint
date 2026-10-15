@@ -100,7 +100,7 @@ class LinuxWorkerBackend(DockerBackend):
         return evidence
 
 
-def journal_binding(backend, worker):
+def _binding_observation(backend, worker):
     courses = backend.config['courses'][worker]
     for course, item in courses.items():
         fd = open_directory(item['home_root'])
@@ -108,8 +108,13 @@ def journal_binding(backend, worker):
             info = os.fstat(fd)
             if [info.st_dev, info.st_ino] != backend.home_bindings[worker + '/' + course]: refuse('worker_identity_changed')
         finally: os.close(fd)
+    observed = backend.inspect_worker(worker)
     return digest({'config': backend.config, 'home_bindings': backend.home_bindings,
-                   'worker': backend.inspect_worker(worker)})
+                   'worker': observed}), observed
+
+
+def journal_binding(backend, worker):
+    return _binding_observation(backend, worker)[0]
 
 
 worker_binding = journal_binding

@@ -1,6 +1,7 @@
 """Bounded synchronous mTLS client; each call is fresh, no reusable grants."""
 import http.client
 import json
+import logging
 from pathlib import Path
 import re
 import ssl
@@ -18,6 +19,19 @@ OPERATIONS=frozenset({'ownership.preview','ownership.apply','ownership.reconcile
                       'hub.authorize','hub.spawn','hub.poll','hub.stop','guardian.observe'})
 ERRORS=frozenset({'authority_access_refused','authority_frame_invalid','authority_replay_refused','authority_identity_or_version_mismatch',
                  'authority_operation_refused','authority_replay_state_unavailable','authority_response_invalid','authority_transport_unavailable'})
+TRANSPORT_STAGES=frozenset({'frame','connection','request','response_headers','response_body','response_decode','response_validate'})
+log=logging.getLogger(__name__)
+
+
+def transport_diagnostic(stage,error):
+    """Fixed enums only; never format an exception or request material."""
+    if isinstance(error,TimeoutError):category='timeout'
+    elif isinstance(error,ssl.SSLError):category='tls'
+    elif isinstance(error,http.client.HTTPException):category='http'
+    elif isinstance(error,OSError):category='connection'
+    else:category='other'
+    try:log.warning('authority_transport_failure stage=%s category=%s',stage if stage in TRANSPORT_STAGES else 'other',category)
+    except Exception:pass
 
 
 class AuthorityError(RuntimeError):
@@ -67,22 +81,25 @@ class AuthorityClient:
         except Exception:raise AuthorityError('authority_access_refused') from None
 
     def call(self,operation,payload):
-        connection=None
+        connection=None;stage='frame'
         try:
             if not isinstance(operation,str) or operation not in OPERATIONS or not isinstance(payload,dict):raise AuthorityError('authority_frame_invalid')
             frame={'version':VERSION,'authority_id':self.authority_id,'nonce':uuid.uuid4().hex,'issued_at':int(time.time()),
                    'operation':operation,'worker_id':self.worker_id,'course_id':self.course_id,'payload':payload}
             raw=encoded(frame)
             if len(raw)>MAX_FRAME:raise AuthorityError('authority_frame_invalid')
-            connection=http.client.HTTPSConnection(self.host,self.port,context=self.context,timeout=self.timeout)
+            stage='connection';connection=http.client.HTTPSConnection(self.host,self.port,context=self.context,timeout=self.timeout)
+            stage='request'
             connection.request('POST',PATH,body=raw,headers={'Content-Type':'application/json','Content-Length':str(len(raw)),'Connection':'close'})
+            stage='response_headers'
             response=connection.getresponse();lengths=response.headers.get_all('Content-Length') or []
             if (response.status not in (200,400,403,409,503) or response.getheader('Content-Type')!='application/json'
                     or response.getheader('Transfer-Encoding') is not None or response.getheader('Content-Encoding') is not None or len(lengths)!=1 or not re.fullmatch(r'[0-9]{1,6}',lengths[0])
                     or not 0<int(lengths[0])<=MAX_FRAME):raise AuthorityError('authority_response_invalid')
-            raw=response.read(MAX_FRAME+1)
+            stage='response_body';raw=response.read(MAX_FRAME+1)
             if len(raw)!=int(lengths[0]):raise AuthorityError('authority_response_invalid')
-            value=parsed(raw);expected={'version','authority_id','nonce','operation','worker_id','course_id','ok','result','error'}
+            stage='response_decode';value=parsed(raw);expected={'version','authority_id','nonce','operation','worker_id','course_id','ok','result','error'}
+            stage='response_validate'
             if (not isinstance(value,dict) or set(value)!=expected or any(value[key]!=frame[key] for key in ('version','authority_id','nonce','operation','worker_id','course_id'))
                     or type(value['ok']) is not bool):raise AuthorityError('authority_response_invalid')
             if value['ok']:
@@ -91,6 +108,9 @@ class AuthorityClient:
             if response.status==200 or value['result'] is not None or value['error'] not in ERRORS:raise AuthorityError('authority_response_invalid')
             raise AuthorityError(value['error'])
         except AuthorityError:raise
-        except Exception:raise AuthorityError('authority_transport_unavailable') from None
+        except Exception as error:
+            try:transport_diagnostic(stage,error)
+            except Exception:pass
+            raise AuthorityError('authority_transport_unavailable') from None
         finally:
             if connection is not None:connection.close()

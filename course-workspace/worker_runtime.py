@@ -12,7 +12,7 @@ import time
 
 from runtime_authority import RuntimeDispatcher, RuntimeRefusal, HASH, file_hash, read_record
 from worker_transport import (WorkerServer, WorkerJournal, LinuxWorkerBackend, WorkerError,
-                              runtime_capability, worker_binding, encoded, ERRORS as WORKER_ERRORS)
+                              runtime_capability, worker_binding, encoded, ERRORS as WORKER_ERRORS, _binding_observation)
 from worker_channel_state import JournalError
 
 
@@ -90,10 +90,14 @@ class WorkerRuntime:
 
     def _local(self, request):
         if self.failed.is_set(): raise WorkerError('worker_session_closed')
-        if (request['worker_id'] != self.worker or request['authority_id'] != self.backend.authority_id
-                or self.journal.binding_sha256 != worker_binding(self.backend, self.worker)):
+        if request['worker_id'] != self.worker or request['authority_id'] != self.backend.authority_id:
             raise WorkerError('worker_identity_changed')
-        course = request['course_id']; self.backend.validate_request(request, [self.worker])
+        binding, observed = _binding_observation(self.backend, self.worker)
+        if self.journal.binding_sha256 != binding:
+            raise WorkerError('worker_identity_changed')
+        if any(request[key] != observed[key] for key in ('provider_id', 'boot_id')):
+            raise RuntimeRefusal('runtime_worker_incarnation_changed')
+        course = request['course_id']
         if self.journal.state(course)['quarantined']: raise WorkerError('worker_quarantined')
         if self.backend.barrier(self.worker, course)['denied_through_epoch'] >= request['epoch']:
             raise RuntimeRefusal('runtime_epoch_fenced')
