@@ -190,6 +190,12 @@ def failure_context(error, phases):
         request = getattr(error.response, 'request', None)
         method = getattr(request, 'method', None)
         if method in ('GET', 'POST', 'PUT', 'DELETE'): result['http_method'] = method
+        if request is not None:
+            headers = request.headers
+            result['xsrf_cookie_count'] = sum(part.strip().startswith('_xsrf=') for part in headers.get('Cookie', '')[:65536].split(';'))
+            token = headers.get('X-XSRFToken', '')
+            result['xsrf_header_present'] = bool(token)
+            result['xsrf_header_quoted'] = token.startswith(('"', "'"))
         body = getattr(error.response, 'text', '')[:4096].lower()
         if 'xsrf' in body: result['request_verification'] = 'xsrf'
     return result
