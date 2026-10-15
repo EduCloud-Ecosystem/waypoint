@@ -302,6 +302,17 @@ class FixtureTests(unittest.TestCase):
 
 
 class ReportTests(unittest.TestCase):
+    def test_failure_context_excludes_messages_urls_bodies_and_external_frames(self):
+        response = verifier.requests.Response(); response.status_code = 403
+        response.url = 'https://private.invalid/secret'; response._content = b'private-body-canary'
+        try:
+            raise verifier.requests.exceptions.HTTPError('private-message-canary', response=response)
+        except verifier.requests.exceptions.HTTPError as error:
+            value = verifier.failure_context(error, list(verifier.PHASES[:14]))
+        self.assertEqual(value, {'phase': verifier.PHASES[14], 'exception': 'HTTPError', 'lines': [], 'http_status': 403})
+        private_type = type('private-class-canary', (Exception,), {})
+        self.assertEqual(verifier.failure_context(private_type('private-message'), [])['exception'], 'OtherFailure')
+
     def test_explicit_hub_stop_waits_for_stopped_owned_learner_removal(self):
         calls = []; remaining = ['stopped-owned-container', '']
         def command(*args):

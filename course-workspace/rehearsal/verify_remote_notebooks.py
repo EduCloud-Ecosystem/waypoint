@@ -145,6 +145,27 @@ def wait_for_learner_removal(name, suffix, invoke=command, wait_for=wait):
         '--filter', 'label=educloud.workspace.kind=learner').split(), 30)
 
 
+def failure_context(error, phases):
+    """Bounded diagnostic identifiers only; never messages, URLs or replies."""
+    known = (AssertionError, RuntimeError, ValueError, OSError, KeyError, TypeError,
+        subprocess.TimeoutExpired, subprocess.CalledProcessError, KeyboardInterrupt,
+        requests.exceptions.HTTPError, requests.exceptions.ConnectionError,
+        requests.exceptions.ReadTimeout, requests.exceptions.ConnectTimeout,
+        requests.exceptions.TooManyRedirects)
+    result = {'phase': PHASES[len(phases)] if len(phases) < len(PHASES) else 'finalization',
+        'exception': type(error).__name__ if type(error) in known else 'OtherFailure', 'lines': []}
+    trace = error.__traceback__
+    while trace is not None:
+        if trace.tb_frame.f_code.co_filename == __file__:
+            result['lines'].append(trace.tb_lineno)
+        trace = trace.tb_next
+    result['lines'] = result['lines'][-8:]
+    if isinstance(error, requests.exceptions.HTTPError):
+        status = getattr(error.response, 'status_code', None)
+        if type(status) is int and 100 <= status <= 599: result['http_status'] = status
+    return result
+
+
 def validate_report(value):
     required = {'version', 'status', 'scope', 'phases', 'cleanup_verified', 'acceptance_eligible',
         'flags', 'source', 'code_sha256', 'images', 'host', 'allocation'}
@@ -392,6 +413,7 @@ def run(args):
         credential({'action': 'revoke', 'worker': 'worker-two', 'target_identity': 'guardian-two'})
         wait(lambda: not learners('receiver'), 25); assert learners('peer') == peer_ids; kernels(sessions['peer'], 'peer'); read(sessions['peer'], 'peer'); phase(PHASES[15])
     except BaseException as exc:
+        print('FAILURE_CONTEXT ' + json.dumps(failure_context(exc, phases), sort_keys=True), flush=True)
         failure = type(exc).__name__ if type(exc).__name__ in {'RuntimeError', 'AssertionError', 'ValueError', 'OSError', 'KeyError', 'TypeError',
             'TimeoutExpired', 'CalledProcessError', 'KeyboardInterrupt'} else 'OtherFailure'
     finally:
