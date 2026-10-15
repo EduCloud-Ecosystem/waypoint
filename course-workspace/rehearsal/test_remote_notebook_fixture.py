@@ -160,6 +160,27 @@ class FixtureTests(unittest.TestCase):
         with patch('remote_runtime_service.serve', side_effect=service): fixture.serve(self.root, interrupt=True)
         self.assertEqual(stages, ['interrupted', 'normal']); self.assertIs(ownership_contract.fault_hook, previous)
 
+    def test_worker_ready_is_authenticated_readonly_and_only_transport_can_defer(self):
+        from worker_transport import WorkerError
+        from unittest.mock import Mock
+        config = {'control': {}, 'runtime_bindings': {worker: 'a' * 64 for worker in fixture.WORKERS}}
+        fixture.write(self.root / 'control/remote.json', config)
+        backend = SimpleNamespace(workers={worker: {'worker_id': worker} for worker in fixture.WORKERS},
+            courses={worker: ['course-main'] for worker in fixture.WORKERS},
+            inspect_worker=Mock(side_effect=lambda worker: {'worker_id': worker}), binding=Mock(return_value='a' * 64))
+        with patch('remote_control.load_backend', return_value=backend), patch.object(fixture.Authority, 'open') as authority:
+            self.assertEqual(fixture.worker_ready(self.root), {'ready': True, 'verified_workers': 2})
+            self.assertEqual(backend.inspect_worker.call_count, 2); self.assertEqual(backend.binding.call_count, 2)
+            authority.assert_not_called()
+            backend.inspect_worker.side_effect = lambda worker: (_ for _ in ()).throw(WorkerError('worker_transport_unavailable'))
+            self.assertEqual(fixture.worker_ready(self.root), {'ready': False, 'verified_workers': 0})
+            for code in ('worker_server_pin_changed', 'worker_channel_refused'):
+                backend.inspect_worker.side_effect = WorkerError(code)
+                with self.assertRaises(WorkerError): fixture.worker_ready(self.root)
+            backend.inspect_worker.side_effect = lambda worker: {'worker_id': worker}
+            backend.binding.return_value = 'b' * 64
+            with self.assertRaisesRegex(ValueError, 'remote_fixture_worker_binding_changed'): fixture.worker_ready(self.root)
+
 
 class ReportTests(unittest.TestCase):
     def report(self, status='PASS', phases=None):
@@ -243,6 +264,25 @@ class ReportTests(unittest.TestCase):
             with self.assertRaises(ValueError): verifier.require_owned_container(changed, name, images, 'b' * 32)
         for mutate in (lambda v: v.update(Id='c' * 64), lambda v: v['State'].update(StartedAt='replaced'), lambda v: v['State'].update(Running=False)):
             changed = copy.deepcopy(value); mutate(changed); self.assertFalse(verifier.same_running_enforcer(value, changed))
+
+    def test_readiness_wait_has_no_mutation_retries_or_malformed_success(self):
+        calls = []; clock = [0.0]
+        def sleep(seconds): clock[0] += seconds
+        def probe():
+            calls.append('readonly')
+            return {'ready': len(calls) == 3, 'verified_workers': 2 if len(calls) == 3 else 1}
+        verifier.await_worker_readiness(probe, monotonic=lambda: clock[0], sleep=sleep)
+        self.assertEqual(calls, ['readonly'] * 3)
+        for value in ({'ready': True, 'verified_workers': True}, {'ready': True, 'verified_workers': 1},
+                      {'ready': False, 'verified_workers': 2}, {'ready': True, 'verified_workers': 2, 'extra': 'private-canary'}):
+            with self.assertRaises(ValueError): verifier.await_worker_readiness(lambda: value)
+        with self.assertRaisesRegex(RuntimeError, 'authenticated_workers_not_ready'):
+            verifier.await_worker_readiness(lambda: {'ready': False, 'verified_workers': 0}, timeout=.5,
+                monotonic=lambda: clock[0], sleep=sleep)
+        failures = []
+        def invalid(): failures.append(True); raise RuntimeError('fixed-helper-failure')
+        with self.assertRaisesRegex(RuntimeError, 'fixed-helper-failure'): verifier.await_worker_readiness(invalid)
+        self.assertEqual(failures, [True])
 
 
 if __name__ == '__main__': unittest.main()

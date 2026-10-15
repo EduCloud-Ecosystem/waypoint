@@ -182,6 +182,25 @@ def register(root):
     return {'registered': True}
 
 
+def worker_ready(root):
+    """Authenticate exact worker evidence/bindings without ownership writes."""
+    from remote_control import load_backend
+    from worker_transport import WorkerError
+    config = read_record(Path(root) / 'control' / 'remote.json')
+    backend = load_backend(config['control']); verified = 0
+    for worker in WORKERS:
+        try:
+            observed = backend.inspect_worker(worker)
+            binding = backend.binding(worker, backend.courses[worker][0])
+        except WorkerError as exc:
+            if exc.code != 'worker_transport_unavailable': raise
+            continue
+        if observed != backend.workers[worker] or binding != config['runtime_bindings'][worker]:
+            raise ValueError('remote_fixture_worker_binding_changed')
+        verified += 1
+    return {'ready': verified == len(WORKERS), 'verified_workers': verified}
+
+
 def launch_workers(root):
     import docker
     root = Path(root); fixture = read_record(root / 'remote-fixture.json'); request = fixture['request']; name = request['name']
@@ -379,6 +398,7 @@ def main():
     payload = json.loads(raw) if raw else {}
     if action == 'bootstrap': result = initialize(root, payload)
     elif action == 'register' and payload == {}: result = register(root)
+    elif action == 'worker-ready' and payload == {}: result = worker_ready(root)
     elif action == 'worker-quarantine' and payload == {}:
         from remote_control import load_backend
         config = read_record(root / 'control' / 'remote.json'); backend = load_backend(config['control'])

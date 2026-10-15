@@ -75,6 +75,24 @@ def exercise_kernels(session, base, invoke=kernel):
     invoke(session, base, 'alice', 'ir', "cat('CONTINUITY_OK\\n')")
 
 
+def await_worker_readiness(probe, *, timeout=45, monotonic=time.monotonic, sleep=time.sleep):
+    """Only explicit transport-startup unavailability can become a retry."""
+    if type(timeout) not in (int, float) or not 0 < timeout <= 45:
+        raise ValueError('worker_readiness_timeout_invalid')
+    deadline = monotonic() + timeout
+    while True:
+        value = probe()
+        if (not isinstance(value, dict) or set(value) != {'ready', 'verified_workers'}
+                or type(value['ready']) is not bool or type(value['verified_workers']) is not int
+                or not 0 <= value['verified_workers'] <= len(WORKERS)
+                or value['ready'] != (value['verified_workers'] == len(WORKERS))):
+            raise ValueError('worker_readiness_reply_invalid')
+        if value['ready']: return
+        remaining = deadline - monotonic()
+        if remaining <= 0: raise RuntimeError('authenticated_workers_not_ready')
+        sleep(min(.25, remaining))
+
+
 def verify_source_login_refused(session, base, password):
     session.get(base + '/hub/login', timeout=10).raise_for_status()
     rejected = session.post(base + '/hub/login', data={'username': 'alice', 'password': password,
@@ -274,6 +292,7 @@ def run(args):
             assert configured_cpu_limit(service['HostConfig']) == allocation['worker_service_cpu']
             assert service['HostConfig']['Memory'] == 256 * 1024**2
         assert configured_cpu_limit(inspect(central)['HostConfig']) == allocation['central_cpu']
+        await_worker_readiness(lambda: central_helper('worker-ready'))
         central_helper('register'); central_helper('enrollment-create')
         for worker in WORKERS: assert credential({'action': 'enroll', 'worker': worker})['status'] == 'COMPLETE'
         start_service(); helper('launch-users')
