@@ -173,8 +173,12 @@ def initialize(root, request):
         fingerprint = pki.fingerprint(cert); identities[identity] = fingerprint
         # Runtime identities are managed-only. The operator remains static.
         if role == 'operator': acl[fingerprint] = {'role': role, 'workers': scopes, 'courses': courses}
-        write(credentials / 'client.json', dict(url='https://authority.local.test:8443/v1/authority', authority_id=authority_id,
-            ca_file=str(credentials / 'ca.crt'), certfile=str(credentials / 'client.crt'), keyfile=str(credentials / 'client.key')))
+        client_config = dict(url='https://authority.local.test:8443/v1/authority', authority_id=authority_id,
+            ca_file=str(credentials / 'ca.crt'), certfile=str(credentials / 'client.crt'), keyfile=str(credentials / 'client.key'))
+        # Reviewed operator operations coordinate two worker channels. This is
+        # an explicit fixture wait budget, not a mutation retry or a grant.
+        if role == 'operator': client_config['timeout'] = 10
+        write(credentials / 'client.json', client_config)
         if role == 'guardian': write(credentials / 'runtime.json', workers[scopes[0]])
     write(root / 'control' / 'acl.json', {'version': VERSION, 'authority_id': authority_id, 'clients': acl})
     ReplayStore.create(root / 'control' / 'replay', authority_id); (root / 'control' / 'plans').mkdir(mode=0o700)

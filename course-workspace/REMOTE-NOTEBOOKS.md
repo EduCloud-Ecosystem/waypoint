@@ -40,10 +40,15 @@ still govern every effect. Explicit stop completion requires removal of the owne
 container before coursework staging begins.
 
 The rehearsal's direct Hub probes use the same ten-second HTTP client timeout as
-the real Hub spawner for authorize, spawn, poll and stop. Guardian and operator
-probes retain their existing three-second default. This aligns fixture behavior;
-it does not increase a production timeout or retry a failed operation. HTTP socket
-timeouts bound individual waits, not the total duration of a nested operation.
+the real Hub spawner for authorize, spawn, poll and stop. The generated fixture
+operator credential configuration separately selects a ten-second client wait
+for reviewed operations that coordinate both workers. This is a new fixture
+budget, not an existing production operator CLI default. Guardian probes retain
+their three-second default. No failed mutation is retried: an unavailable reply
+remains a failed or uncertain outcome that requires inspection and an explicit
+reviewed resume. These settings do not change production timeouts or worker
+expiry/fencing. HTTP socket timeouts bound individual waits, not the total
+duration of a nested operation.
 
 ## Private configuration and credentials
 

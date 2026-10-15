@@ -372,6 +372,38 @@ class FixtureTests(unittest.TestCase):
         self.assertEqual(constructor.call_count,1); self.assertEqual(constructor.call_args.kwargs['timeout'],10)
         api.call.assert_called_once_with('hub.spawn',payload['payload']); self.assertEqual(payload,original)
 
+    def test_operator_budget_is_explicit_only_in_its_config_and_never_retries_a_mutation(self):
+        from hub.authority_client import AuthorityError
+        from unittest.mock import Mock
+        self.bootstrap()
+        settings = json.loads((self.root/'operator/credentials/client.json').read_bytes())
+        self.assertEqual(settings['timeout'],10)
+        for identity in ('source','peer','receiver','receiver-rotated','guardian-one','guardian-two'):
+            config = json.loads((self.root/identity/'credentials/client.json').read_bytes())
+            self.assertNotIn('timeout',config)
+        api=Mock(); api.call.return_value={'synthetic_result':True}
+        credentials=self.root/'operator/credentials'
+        operations={'ownership.preview':{'receiver_worker_id':'worker-two'},
+            'ownership.reconcile_preview':{'selected_worker_id':'worker-two'},
+            'ownership.apply':{'plan_id':'a'*32,'plan_sha256':'b'*64},
+            'ownership.reconcile_apply':{'plan_id':'a'*32,'plan_sha256':'b'*64},'ownership.inventory':{}}
+        with patch('hub.authority_client.AuthorityClient',return_value=api) as constructor:
+            for operation,body in operations.items():
+                api.reset_mock(); constructor.reset_mock()
+                payload={'operation':operation,'payload':body,'worker':'worker-one','course':'course-main'}
+                original=copy.deepcopy(payload)
+                self.assertEqual(fixture.rpc(credentials,payload),{'ok':True,'result':{'synthetic_result':True}})
+                constructor.assert_called_once_with(worker_id='worker-one',course_id='course-main',**settings)
+                api.call.assert_called_once_with(operation,body); self.assertIs(api.call.call_args.args[1],body)
+                self.assertEqual(payload,original)
+            api.reset_mock(); constructor.reset_mock()
+            api.call.side_effect=AuthorityError('authority_transport_unavailable')
+            payload={'operation':'ownership.reconcile_apply','payload':operations['ownership.reconcile_apply'],
+                'worker':'worker-one','course':'course-main'}
+            self.assertEqual(fixture.rpc(credentials,payload),{'ok':False,'refused':True,'code':'authority_transport_unavailable'})
+            constructor.assert_called_once_with(worker_id='worker-one',course_id='course-main',**settings)
+            api.call.assert_called_once_with('ownership.reconcile_apply',payload['payload'])
+
 
 class ReportTests(unittest.TestCase):
     def test_actual_hub_cpu_proof_observes_all_three_owned_hubs_and_rejects_changed_caps(self):
