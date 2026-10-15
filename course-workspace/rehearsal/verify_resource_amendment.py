@@ -8,9 +8,11 @@ import math
 import os
 from pathlib import Path
 import re
+import selectors
 import sys
 import subprocess
 import tempfile
+import time
 from unittest.mock import patch
 import uuid
 
@@ -117,8 +119,96 @@ def publish_pass(root, report, cleanup_verified):
         os.unlink(temporary)
 
 
+def _stopped_diagnostic_command(args, deadline, *, popen=subprocess.Popen, monotonic=time.monotonic):
+    """Read only a bounded Docker CLI reply; never publish stderr or raw output."""
+    if monotonic()>=deadline: raise ValueError('stopped_diagnostic_unavailable')
+    process = popen(['docker', *args], stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT if args[0]=='logs' else subprocess.DEVNULL)
+    data = bytearray()
+    try:
+        with selectors.DefaultSelector() as selector:
+            selector.register(process.stdout, selectors.EVENT_READ)
+            for _ in range(128):
+                remaining = deadline - monotonic()
+                if remaining <= 0: raise ValueError('stopped_diagnostic_unavailable')
+                if not selector.select(remaining): raise ValueError('stopped_diagnostic_unavailable')
+                chunk = os.read(process.stdout.fileno(), min(4096, 65537-len(data)))
+                if not chunk: break
+                data.extend(chunk)
+                if len(data) > 65536: raise ValueError('stopped_diagnostic_unavailable')
+            else: raise ValueError('stopped_diagnostic_unavailable')
+        remaining = deadline - monotonic()
+        if remaining <= 0 or process.wait(timeout=remaining) != 0:
+            raise ValueError('stopped_diagnostic_unavailable')
+        return data.decode('utf-8', errors='replace')
+    finally:
+        if process.poll() is None:
+            process.kill(); process.wait(timeout=1)
+        process.stdout.close()
+
+
+def stopped_state_diagnostic(fixture, *, invoke=None, monotonic=time.monotonic):
+    """Failure-only, non-atomic observations; never substitute for stopped proof."""
+    report = {'scope':'synthetic-owned-stopped-assertion', 'available':False}
+    instance = fixture.instance
+    if (not isinstance(instance,str) or not re.fullmatch(r'rehearsal-[0-9a-f]{10}|recovered-[0-9a-f]{12}',instance)
+            or any(not isinstance(value,str) or not re.fullmatch(r'sha256:[0-9a-f]{64}',value)
+                   for value in (fixture.image,fixture.hub_image))):
+        return report
+    deadline = monotonic()+6
+    if invoke is None: invoke = lambda args: _stopped_diagnostic_command(args,deadline)
+    # DockerSpawner may encode the UUID's hyphens as -2d in its pinned
+    # username-based name. Both forms still bind one known synthetic subject.
+    learner_names = {instance+'-learner-'+name for subject in SUBJECTS.values()
+                     for name in (subject,subject.replace('-','-2d'))}
+    roles = {role:{'count':0,'running_count':0,'states':[]} for role in ('hub','learner')}
+    report.update(roles=roles,unverified_count=0,truncated=False,
+                  hub_shutdown={'available':False,'cleanup_requested':0,'cleanup_completed':0,
+                                'stop_user_failed':0,'cleanup_disabled':0})
+    try:
+        identities = invoke(('ps','-aq','--no-trunc','--filter','label=educloud.workspace.instance='+instance)).split()
+        if (len(identities)>64 or len(set(identities))!=len(identities)
+                or any(not re.fullmatch(r'[0-9a-f]{64}',identity) for identity in identities)):
+            return report
+        report['truncated'] = len(identities)>8
+        for identity in identities[:8]:
+            try:
+                records = json.loads(invoke(('inspect',identity)))
+                if not isinstance(records,list) or len(records)!=1: raise ValueError('unverified')
+                value = records[0]; labels = value['Config']['Labels']; role = labels.get('educloud.workspace.kind')
+                actual = value['Name'].removeprefix('/')
+                if (value['Id']!=identity or labels.get('educloud.workspace.instance')!=instance
+                        or role not in roles or value['Image']!=(fixture.hub_image if role=='hub' else fixture.image)
+                        or (role=='hub' and actual!=instance+'-hub')
+                        or (role=='learner' and actual not in learner_names)):
+                    raise ValueError('unverified')
+                state = value['State']
+                if (type(state['Running']) is not bool or type(state['OOMKilled']) is not bool
+                        or type(state['ExitCode']) is not int or not 0<=state['ExitCode']<=255):
+                    raise ValueError('unverified')
+                roles[role]['count']+=1; roles[role]['running_count']+=int(state['Running'])
+                roles[role]['states'].append({'running':state['Running'],'oom_killed':state['OOMKilled'],'exit_code':state['ExitCode']})
+                if role=='hub':
+                    try:
+                        raw = invoke(('logs','--tail','200',identity))
+                        categories = {'cleanup_requested':'Cleaning up single-user servers...',
+                            'cleanup_completed':'...done','stop_user_failed':'Failed to stop user:',
+                            'cleanup_disabled':'Leaving single-user servers running'}
+                        report['hub_shutdown'] = dict(available=True, **{key:min(raw.count(text),200) for key,text in categories.items()})
+                    except Exception: pass
+            except Exception: report['unverified_count']+=1
+        report['available']=True
+    except Exception: pass
+    return report
+
+
 def assert_stopped(fixture):
-    assert not docker('ps','-q','--filter','label=educloud.workspace.instance='+fixture.instance), 'amendment started owned services'
+    running = docker('ps','-q','--filter','label=educloud.workspace.instance='+fixture.instance)
+    if running:
+        try:
+            print('STOPPED_ASSERTION_CONTEXT '+json.dumps(stopped_state_diagnostic(fixture),sort_keys=True),flush=True)
+        except Exception: pass
+    assert not running, 'amendment started owned services'
 
 
 def effective_cpu(host):

@@ -194,5 +194,7 @@ remain separate.
 The opt-in [independent worker control adapter](INDEPENDENT-WORKERS.md) adds
 authenticated worker-local locks, persistent quarantine and reviewed transfer
 recovery. Its separate-process local rehearsal preserves coursework and ownership
-history through connection loss and service restart. Production remote notebook
-integration and actual two-host acceptance remain separate work.
+history through connection loss and service restart. The opt-in
+[worker-channel notebook runtime](REMOTE-NOTEBOOKS.md) connects real Python/R
+notebooks and Guardian enforcement to those channels. Its local acceptance is
+separate from actual two-host and production acceptance.

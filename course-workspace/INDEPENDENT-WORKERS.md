@@ -8,9 +8,10 @@ mount remote homes or expose Docker over the network.
 
 The first acceptance target is **two separate local worker processes**, real
 mutual TLS and disjoint private state, with supervised synthetic learner processes.
-This establishes the control protocol and interruption/recovery behavior. Actual
-two-host isolation, Python/R notebook traffic, cloud identity attestation, encrypted
-off-host backup transfer and representative course capacity need later acceptance.
+This establishes the control protocol and interruption/recovery behavior.
+[Worker-channel notebook integration](REMOTE-NOTEBOOKS.md) adds a separate real
+Python/R runtime rehearsal. Actual two-host isolation, cloud identity attestation,
+encrypted off-host backup transfer and representative course capacity need later acceptance.
 
 ## Safety and recovery contract
 

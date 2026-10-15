@@ -6,6 +6,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import time
 import types
 import unittest
 from unittest.mock import Mock, patch
@@ -188,6 +189,99 @@ class ResourceRuntimeProofTests(unittest.TestCase):
                         with self.assertRaises(AssertionError): r.verify_history_bundle({},'a'*64,root,expected)
                     else: r.verify_history_bundle({},'a'*64,root,expected)
                 self.assertFalse(list(root.glob('.resource-history-proof-*')))
+
+
+class StoppedStateDiagnosticsTests(unittest.TestCase):
+    def model(self):
+        fixture=types.SimpleNamespace(instance='recovered-'+'a'*12,image='sha256:'+'b'*64,hub_image='sha256:'+'c'*64)
+        records={}; calls=[]
+        for index,role in enumerate(('hub','learner'),1):
+            identity=format(index,'064x')
+            records[identity]={'Id':identity,'Name':'/'+fixture.instance+('-hub' if role=='hub' else '-learner-'+r.SUBJECTS['alice']),
+                'Image':fixture.hub_image if role=='hub' else fixture.image,
+                'Config':{'Labels':{'educloud.workspace.instance':fixture.instance,'educloud.workspace.kind':role}},
+                'State':{'Running':role=='learner','OOMKilled':False,'ExitCode':0}}
+        def invoke(args):
+            calls.append(args)
+            if args[0]=='ps': return '\n'.join(records)
+            if args[0]=='inspect': return json.dumps([records[args[1]]])
+            if args[0]=='logs':
+                return 'private-token-path-cookie-canary\nCleaning up single-user servers...\nFailed to stop user: private-subject\n...done\n'
+            raise AssertionError('unexpected command')
+        return fixture,records,calls,invoke
+
+    def test_fixed_roles_states_and_shutdown_categories_exclude_private_material(self):
+        fixture,records,calls,invoke=self.model()
+        result=r.stopped_state_diagnostic(fixture,invoke=invoke)
+        self.assertTrue(result['available']); self.assertEqual(result['unverified_count'],0)
+        self.assertEqual(result['roles']['hub']['running_count'],0)
+        self.assertEqual(result['roles']['learner']['states'],[{'running':True,'oom_killed':False,'exit_code':0}])
+        self.assertEqual(result['hub_shutdown'],{'available':True,'cleanup_requested':1,'cleanup_completed':1,
+            'stop_user_failed':1,'cleanup_disabled':0})
+        public=json.dumps(result)
+        for private in ('private',fixture.instance,fixture.image,*records): self.assertNotIn(private,public)
+        self.assertTrue(all(args[0] in ('ps','inspect','logs') for args in calls))
+
+    def test_foreign_or_malformed_container_is_never_used_for_logs_or_state(self):
+        for mutate in (lambda v:v['Config']['Labels'].update({'educloud.workspace.instance':'foreign'}),
+                lambda v:v.update(Image='sha256:'+'d'*64),lambda v:v['State'].update(Running=1)):
+            fixture,records,calls,invoke=self.model(); identity=next(iter(records)); mutate(records[identity])
+            result=r.stopped_state_diagnostic(fixture,invoke=invoke)
+            self.assertEqual(result['roles']['hub']['count'],0); self.assertEqual(result['unverified_count'],1)
+            self.assertFalse(result['hub_shutdown']['available'])
+            self.assertFalse(any(args[0]=='logs' for args in calls))
+
+    def test_inventory_and_inspection_counts_are_bounded(self):
+        fixture,records,calls,invoke=self.model()
+        def inventory(args):
+            if args[0]=='ps': return '\n'.join(format(i,'064x') for i in range(10))
+            return invoke(args)
+        result=r.stopped_state_diagnostic(fixture,invoke=inventory)
+        self.assertTrue(result['truncated']); self.assertEqual(sum(args[0]=='inspect' for args in calls),8)
+        result=r.stopped_state_diagnostic(fixture,invoke=lambda args:'\n'.join(format(i,'064x') for i in range(65)))
+        self.assertFalse(result['available'])
+
+    def test_existing_assertion_is_unchanged_and_diagnostic_failure_cannot_mask_it(self):
+        fixture,_,_,_=self.model()
+        with patch.object(r,'docker',return_value=''),patch.object(r,'stopped_state_diagnostic') as diagnostic:
+            r.assert_stopped(fixture); diagnostic.assert_not_called()
+        with patch.object(r,'docker',return_value='private-container'), \
+                patch.object(r,'stopped_state_diagnostic',side_effect=ValueError('private-diagnostic')), \
+                patch('builtins.print') as output:
+            with self.assertRaisesRegex(AssertionError,'amendment started owned services'):r.assert_stopped(fixture)
+        output.assert_not_called()
+
+    def test_cli_reader_bounds_bytes_time_and_reaps_only_its_own_process(self):
+        processes=[]
+        def launch(args,**kwargs):
+            self.assertEqual(args,['docker','logs','id'])
+            process=subprocess.Popen([sys.executable,'-c','import os;os.write(1,b"x"*131072)'],**kwargs)
+            processes.append(process); return process
+        with self.assertRaisesRegex(ValueError,'stopped_diagnostic_unavailable'):
+            r._stopped_diagnostic_command(('logs','id'),time.monotonic()+3,popen=launch)
+        self.assertIsNotNone(processes[0].poll()); self.assertTrue(processes[0].stdout.closed)
+        def waiting(args,**kwargs):
+            process=subprocess.Popen([sys.executable,'-c','import time;time.sleep(60)'],**kwargs)
+            processes.append(process); return process
+        with self.assertRaisesRegex(ValueError,'stopped_diagnostic_unavailable'):
+            r._stopped_diagnostic_command(('logs','id'),time.monotonic()+.05,popen=waiting)
+        self.assertIsNotNone(processes[-1].poll()); self.assertTrue(processes[-1].stdout.closed)
+
+    def test_log_reader_includes_bounded_stderr_and_other_commands_discard_it(self):
+        streams=[]
+        def launch(args,**kwargs):
+            streams.append(kwargs['stderr'])
+            return subprocess.Popen([sys.executable,'-c','import os;os.write(2,b"Cleaning up single-user servers...\\n")'],**kwargs)
+        raw=r._stopped_diagnostic_command(('logs','id'),time.monotonic()+3,popen=launch)
+        self.assertIn('Cleaning up single-user servers...',raw)
+        raw=r._stopped_diagnostic_command(('inspect','id'),time.monotonic()+3,popen=launch)
+        self.assertEqual(raw,''); self.assertEqual(streams,[subprocess.STDOUT,subprocess.DEVNULL])
+
+    def test_unknown_learner_subject_is_not_counted(self):
+        fixture,records,_,invoke=self.model()
+        records[format(2,'064x')]['Name']='/'+fixture.instance+'-learner-unknown-subject'
+        result=r.stopped_state_diagnostic(fixture,invoke=invoke)
+        self.assertEqual(result['unverified_count'],1); self.assertEqual(result['roles']['learner']['count'],0)
 
 
 if __name__=='__main__': unittest.main()

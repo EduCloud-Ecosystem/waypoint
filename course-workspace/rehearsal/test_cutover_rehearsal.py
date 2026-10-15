@@ -96,6 +96,53 @@ class CutoverEvidenceTests(unittest.TestCase):
 
 
 class CutoverFixtureTests(unittest.TestCase):
+    def test_intentional_stop_wait_polls_only_own_services_and_keeps_no_start_assertions_immediate(self):
+        fixture=types.SimpleNamespace(instance='recovered-'+'a'*12)
+        calls=[]; replies=iter(['running-owned-id',''])
+        def query(args):calls.append(args);return next(replies)
+        with patch.object(r,'compose') as compose,patch.object(r,'docker') as docker, \
+                patch.object(r,'stopped_state_diagnostic') as diagnostic:
+            r.await_owned_services_stopped(fixture,invoke=query,sleep=lambda _:None)
+        self.assertEqual(calls,[('ps','-q','--filter','label=educloud.workspace.instance='+fixture.instance)]*2)
+        compose.assert_not_called();docker.assert_not_called();diagnostic.assert_not_called()
+        # The shared negative-control assertion retains its immediate behavior.
+        import verify_resource_amendment as shared
+        with patch.object(shared,'docker',return_value='running-owned-id') as immediate, \
+                patch.object(shared,'stopped_state_diagnostic',return_value={'available':False}), \
+                patch.object(r,'await_owned_services_stopped') as wait,patch('builtins.print'):
+            with self.assertRaisesRegex(AssertionError,'amendment started owned services'):r.assert_stopped(fixture)
+        immediate.assert_called_once();wait.assert_not_called()
+
+    def test_permanently_active_stop_wait_fails_at_deadline_with_bounded_diagnostic(self):
+        fixture=types.SimpleNamespace(instance='recovered-'+'a'*12); clock=[0.0]; calls=[]
+        def query(args):calls.append(args);return 'still-running-owned-id'
+        def sleep(seconds):clock[0]+=seconds
+        with patch.object(r,'stopped_state_diagnostic',return_value={'available':False}) as diagnostic, \
+                patch('builtins.print') as output,patch.object(r,'compose') as compose:
+            with self.assertRaisesRegex(AssertionError,'amendment started owned services'):
+                r.await_owned_services_stopped(fixture,invoke=query,monotonic=lambda:clock[0],sleep=sleep)
+        self.assertEqual(clock[0],30);self.assertEqual(len(calls),120)
+        diagnostic.assert_called_once_with(fixture);output.assert_called_once();compose.assert_not_called()
+        clock[0]=0
+        def late_empty(args):clock[0]=31;return ''
+        with patch.object(r,'stopped_state_diagnostic',return_value={'available':False}),patch('builtins.print'):
+            with self.assertRaisesRegex(AssertionError,'amendment started owned services'):
+                r.await_owned_services_stopped(fixture,invoke=late_empty,monotonic=lambda:clock[0],sleep=sleep)
+        clock[0]=0
+        with patch.object(r,'stopped_state_diagnostic',side_effect=ValueError('private-diagnostic')),patch('builtins.print') as output:
+            with self.assertRaisesRegex(AssertionError,'amendment started owned services'):
+                r.await_owned_services_stopped(fixture,timeout=.25,invoke=query,monotonic=lambda:clock[0],sleep=sleep)
+        self.assertEqual(clock[0],.25);output.assert_not_called()
+
+    def test_stop_wait_never_retries_query_errors_or_changes_foreign_resources(self):
+        fixture=types.SimpleNamespace(instance='recovered-'+'a'*12)
+        query=Mock(side_effect=OSError('private-daemon-error'))
+        with self.assertRaises(OSError):r.await_owned_services_stopped(fixture,invoke=query)
+        query.assert_called_once()
+        with self.assertRaisesRegex(ValueError,'cutover_stop_wait_invalid'):
+            r.await_owned_services_stopped(types.SimpleNamespace(instance='foreign'),invoke=query)
+        self.assertEqual(query.call_count,1)
+
     def test_fence_loss_proves_exact_transferred_lease_refusals_and_restores_fence_on_failure(self):
         import allocation
         for failed in (False,True):

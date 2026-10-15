@@ -11,6 +11,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import time
 from unittest.mock import patch
 import uuid
 
@@ -24,7 +25,8 @@ from recovery import load_config, backup_repository, restic, restore_repository
 from verify import port
 from verify_multiple_courses import (AUTHORITY, cleanup_worker, active_learners,
     login_with_current_quotas, login_and_ready_with_current_quotas, save_coursework)
-from verify_resource_amendment import expect_refusal, assert_stopped, same_peer, preserved_work, verify_runtime_policy
+from verify_resource_amendment import (expect_refusal, assert_stopped, same_peer, preserved_work, verify_runtime_policy,
+    _stopped_diagnostic_command, stopped_state_diagnostic)
 from verify_institutional_recovery import wait_proxy, browser_after_cutover
 from smoke import change
 import maintenance
@@ -66,6 +68,26 @@ REPORT_HASHES = {'fixture_sha256','cutover_sha256','allocator_sha256','policy_sh
 
 def bounded_allocation(value):
     return {key:value[key] for key in ALLOCATION_FIELDS}
+
+
+def await_owned_services_stopped(fixture, *, timeout=30, monotonic=time.monotonic, sleep=time.sleep, invoke=None):
+    """Only after intentional stop: await shutdown, never retry a mutation."""
+    if (type(timeout) not in (int,float) or not 0<timeout<=30 or not isinstance(fixture.instance,str)
+            or not re.fullmatch(r'rehearsal-[0-9a-f]{10}|recovered-[0-9a-f]{12}',fixture.instance)):
+        raise ValueError('cutover_stop_wait_invalid')
+    deadline=monotonic()+timeout
+    while True:
+        remaining=deadline-monotonic()
+        if remaining<=0:
+            # Expiry still fails if diagnostics observe a later shutdown.
+            try: print('STOPPED_ASSERTION_CONTEXT '+json.dumps(stopped_state_diagnostic(fixture),sort_keys=True),flush=True)
+            except Exception: pass
+            raise AssertionError('amendment started owned services')
+        args=('ps','-q','--filter','label=educloud.workspace.instance='+fixture.instance)
+        running=invoke(args) if invoke is not None else _stopped_diagnostic_command(args,min(deadline,monotonic()+3))
+        if not isinstance(running,str): raise ValueError('cutover_stop_reply_invalid')
+        if not running.strip() and monotonic()<deadline: return
+        sleep(min(.25,max(0,deadline-monotonic())))
 
 
 def publish_pass(root, report, cleanup_verified):
@@ -377,7 +399,7 @@ def main():
                 peer_work=save_coursework(peer,two,two_url,'cutover independent peer alice')
                 peer_learners=active_learners(peer); peer_hub=json.loads(docker('inspect',peer.instance+'-hub'))[0]['Id']
                 checks.append('fresh-quota-python-r-saved-work')
-                first.compose('stop','hub'); assert_stopped(first)
+                first.compose('stop','hub'); await_owned_services_stopped(first); assert_stopped(first)
                 cfg=load_config(first.deployment/'recovery.json')
                 assert cfg['local_test'] is True and Path(cfg['repository']).is_relative_to(root)
                 restic(cfg,'init'); initial_snapshot=backup_repository(first.deployment,cfg)
@@ -491,7 +513,7 @@ def main():
                 added='receiver-only work after explicit activation\n'
                 response=change(new,'PUT',new_url+'/api/contents/receiver-only.txt',json={'type':'file','format':'text','content':added})
                 assert response.status_code in (200,201), 'authenticated receiver-only write HTTP status='+str(response.status_code)
-                compose(destination,'stop','hub'); assert_stopped(receiver)
+                compose(destination,'stop','hub'); await_owned_services_stopped(receiver); assert_stopped(receiver)
                 expected['alice']['receiver-only.txt']=added; preserved_work(receiver,expected)
                 checks.append('receiver-only-work-preserved')
                 protected={path:path.read_bytes() for path in protected_paths}

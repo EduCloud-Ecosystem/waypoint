@@ -34,6 +34,7 @@ HEX = re.compile(r'[0-9a-f]{32}\Z')
 SLUG = re.compile(r'[a-z][a-z0-9-]{0,63}\Z')
 IMAGE = re.compile(r'sha256:[0-9a-f]{64}\Z')
 MAX_RECORD = 256 * 1024
+DOCKER_STOP_SECONDS = 5
 ADMISSION_UNUSED_SNAPSHOT = digest({'purpose': 'unused-runtime-admission-snapshot-v1'})
 ADMISSION_UNUSED_RETAINED = digest({'purpose': 'unused-runtime-admission-retained-v1'})
 
@@ -666,7 +667,7 @@ class DockerBackend:
             authorize()
         container.update(restart_policy={'Name': 'no'})
         if authorize is not None: authorize()
-        container.stop(timeout=5)
+        container.stop(timeout=DOCKER_STOP_SECONDS)
         if authorize is not None: authorize()
         container.remove(v=False, force=False)  # NEVER volumes, NEVER unrelated resources.
 
@@ -692,15 +693,27 @@ class DockerBackend:
         return {'guardian_container_id': container.id, 'start_identity': digest({'container_id': container.id,
             'started_at': container.attrs['State']['StartedAt'], 'authority_id': self.authority_id, 'worker_id': worker})}
 
-    def guardian_heartbeat(self, worker, course, epoch, identity, cert_sha256):
-        # Caller holds admission's endpoint lock; no nested locks or reciprocal RPC.
+    def guardian_heartbeat(self, worker, course, epoch, identity, cert_sha256, *, authorize=None, effect_guard=None):
+        # Caller holds admission's endpoint lock. Reverse authorization, when
+        # configured, completes before acquiring the shared SQLite writer.
+        if ((authorize is None) != (effect_guard is None) or authorize is not None
+                and (not callable(authorize) or not callable(effect_guard))):
+            refuse('guardian_identity_or_epoch_invalid')
         if self.guardian_identity(worker) != identity or self.barrier(worker, course)['denied_through_epoch'] >= epoch:
             refuse('guardian_identity_or_epoch_invalid')
-        record = {'authority_id': self.authority_id, 'worker_id': worker, 'course_id': course,
-            'provider_id': self.config['workers'][worker]['provider_id'], 'boot_id': self.config['workers'][worker]['boot_id'],
-            'epoch': epoch, **identity, 'cert_sha256': cert_sha256, 'checked_at': self.clock()}
+        if authorize is not None:
+            if not callable(authorize): refuse('guardian_identity_or_epoch_invalid')
+            authorize()  # Reverse authorization NEVER holds the shared SQLite writer.
+        checked = time.monotonic()
         with self.connection() as conn:
+            if authorize is not None: conn.execute('PRAGMA busy_timeout=100')
             conn.execute('BEGIN IMMEDIATE'); self._validate(conn)
+            if authorize is not None and time.monotonic() - checked > .1:
+                refuse('guardian_heartbeat_write_busy')
+            if effect_guard is not None: effect_guard()  # Scalar only: never reverse RPC or filesystem/Docker I/O.
+            record = {'authority_id': self.authority_id, 'worker_id': worker, 'course_id': course,
+                'provider_id': self.config['workers'][worker]['provider_id'], 'boot_id': self.config['workers'][worker]['boot_id'],
+                'epoch': epoch, **identity, 'cert_sha256': cert_sha256, 'checked_at': self.clock()}
             conn.execute('INSERT OR REPLACE INTO guardians VALUES(?,?)', (self.endpoint(worker, course), encoded(record).decode()))
             conn.execute('COMMIT')
 

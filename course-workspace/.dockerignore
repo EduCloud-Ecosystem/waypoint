@@ -17,3 +17,12 @@
 !rehearsal/authenticated_fixture.py
 !rehearsal/authenticated_evidence.py
 !rehearsal/enrollment_fixture.py
+!remote_backend.py
+!remote_control.py
+!remote_runtime_service.py
+!remote_credentials.py
+!worker_transport.py
+!worker_runtime.py
+!worker_channel_state.py
+!volume_archive.py
+!rehearsal/remote_notebook_fixture.py

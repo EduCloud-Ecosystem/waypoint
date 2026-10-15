@@ -17,6 +17,12 @@ class RemoteError(OwnershipError):
     pass
 
 
+class RemoteObservationBusy(RemoteError):
+    def __init__(self, token, endpoint):
+        self.token, self.endpoint = token, endpoint
+        super().__init__('remote_observation_busy')
+
+
 class RemoteBackend:
     fixture_only = True
     scope = 'course'
@@ -80,6 +86,26 @@ class RemoteBackend:
             raise RemoteError('remote_quarantine_observation_invalid')
         return value['quarantined']
 
+    def binding(self, worker, course):
+        with self._channel(worker, course) as channel:
+            value = channel.call('binding')
+        if (not isinstance(value, dict) or set(value) != {'binding_sha256'}
+                or not isinstance(value['binding_sha256'], str)
+                or not HEX64.fullmatch(value['binding_sha256'])):
+            raise RemoteError('remote_runtime_binding_invalid')
+        return value['binding_sha256']
+
+    @contextmanager
+    def guardian_observation_budget(self):
+        if self._sessions() or getattr(self.local, 'observation', None) is not None:
+            raise RemoteError('remote_observation_scope_nested')
+        token = object()
+        self.local.observation = token
+        try:
+            yield token
+        finally:
+            self.local.observation = None
+
     def _request(self, request):
         if not isinstance(request, dict) or request.get('authority_id') != self.authority_id:
             raise RemoteError('remote_authority_binding_changed')
@@ -106,14 +132,25 @@ class RemoteBackend:
         if len(workers) != 1 or self._sessions():
             raise RemoteError('remote_activation_context_invalid')
         worker, course = workers[0], request['course_id']
-        with self.clients[worker].session(course, 'activate', request) as channel:
+        token = getattr(self.local, 'observation', None)
+        mode = 'observe' if token is not None else 'activate'
+        with ExitStack() as stack:
+            try:
+                channel = stack.enter_context(self.clients[worker].session(course, mode, request))
+            except Exception as error:
+                from worker_transport import WorkerError
+                if token is not None and isinstance(error, WorkerError) and error.code == 'worker_observation_busy':
+                    raise RemoteObservationBusy(token, (worker, course)) from None
+                raise
             self.local.sessions = {(worker, course): channel}
             self.local.activation = (worker, course)
+            self.local.activation_mode = mode
             try:
                 self.inspect_worker(worker)
                 yield
             finally:
                 self.local.activation = None
+                self.local.activation_mode = None
                 self.local.sessions = {}
 
     def runtime(self, worker, course, operation, payload):
@@ -123,6 +160,17 @@ class RemoteBackend:
                 or not isinstance(payload, dict)):
             raise RemoteError('remote_runtime_requires_live_admission')
         return self._sessions()[(worker, course)].call('runtime', {'operation': operation, 'payload': payload})
+
+    def runtime_v2(self, worker, course, operation, payload, principal, authorize):
+        self._scope(worker, course)
+        expected_mode = 'observe' if operation == 'guardian.observe' else 'activate'
+        if (getattr(self.local, 'activation', None) != (worker, course)
+                or getattr(self.local, 'activation_mode', None) != expected_mode
+                or operation not in {'hub.authorize', 'hub.spawn', 'hub.poll', 'hub.stop', 'guardian.observe'}
+                or not callable(authorize)):
+            raise RemoteError('remote_runtime_requires_live_admission')
+        return self._sessions()[(worker, course)].call('runtime_v2',
+            {'operation': operation, 'payload': payload, 'principal': principal}, authorize=authorize)
 
     @contextmanager
     def _fencing(self, request, authorize, reconciliation):
