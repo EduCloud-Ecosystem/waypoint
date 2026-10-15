@@ -6,12 +6,47 @@ Every effect uses fresh controller authorization; local safety cleanup does not.
 from contextlib import contextmanager
 import json
 import logging
+import sqlite3
 import threading
 import time
 
 from runtime_authority import RuntimeDispatcher, RuntimeRefusal, HASH, file_hash, read_record
 from worker_transport import (WorkerServer, WorkerJournal, LinuxWorkerBackend, WorkerError,
-                              runtime_capability, worker_binding, encoded)
+                              runtime_capability, worker_binding, encoded, ERRORS as WORKER_ERRORS)
+from worker_channel_state import JournalError
+
+
+SUPERVISOR_RUNTIME_CODES = frozenset({
+    'runtime_endpoint_enforcement_unavailable', 'runtime_endpoint_lock_busy',
+    'runtime_daemon_changed', 'runtime_database_binding_changed',
+    'runtime_database_durability_invalid', 'runtime_database_journal_changed',
+    'runtime_private_state_invalid', 'runtime_record_bounds',
+    'runtime_record_duplicate', 'runtime_record_nonfinite',
+    'runtime_container_bounds', 'runtime_container_scope_invalid',
+    'runtime_worker_incarnation_changed', 'runtime_worker_unknown',
+    'runtime_home_root_changed', 'runtime_home_root_binding_invalid',
+    'runtime_quiescence_unverified', 'runtime_lock_invalid'})
+
+
+def supervisor_failure_code(error):
+    """Fixed diagnostics only: exception messages/arguments are never observed."""
+    if isinstance(error, WorkerError):
+        code = getattr(error, 'code', None)
+        return code if type(code) is str and code in WORKER_ERRORS else 'worker_error'
+    if isinstance(error, RuntimeRefusal):
+        code = getattr(error, 'code', None)
+        return code if type(code) is str and code in SUPERVISOR_RUNTIME_CODES else 'runtime_refusal'
+    for kind, category in ((JournalError, 'worker_journal_refused'), (sqlite3.Error, 'sqlite_error'),
+            (TimeoutError, 'timeout_error'), (OSError, 'os_error'), (KeyError, 'key_error'),
+            (TypeError, 'type_error'), (ValueError, 'value_error')):
+        if isinstance(error, kind): return category
+    # SDK exception names are compared, never emitted from untrusted classes.
+    return {('docker.errors', 'NotFound'): 'docker_not_found',
+            ('docker.errors', 'APIError'): 'docker_api_error',
+            ('docker.errors', 'DockerException'): 'docker_error',
+            ('requests.exceptions', 'ReadTimeout'): 'docker_transport_timeout',
+            ('requests.exceptions', 'ConnectionError'): 'docker_connection_error'}.get(
+                (type(error).__module__, type(error).__name__), 'other_exception')
 
 
 class _HeldAuthority:
@@ -165,8 +200,14 @@ def serve(config, journal_directory, *, address, certfile, keyfile, ca_file, acl
     def supervise():
         while not stopped.is_set():
             try: runtime.supervision_tick()
-            except Exception:
-                failures.append(True); runtime.failed.set(); server.shutdown(); return
+            except Exception as error:
+                failures.append(True); runtime.failed.set()
+                try:
+                    logging.getLogger(__name__).error('Worker runtime supervisor failed: supervision/%s', supervisor_failure_code(error))
+                except Exception:
+                    pass  # Diagnostic failures never bypass shutdown or cleanup.
+                finally: server.shutdown()
+                return
             stopped.wait(.5)
     monitor = threading.Thread(target=supervise, daemon=True)
     try:

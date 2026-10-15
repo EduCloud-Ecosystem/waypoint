@@ -7,6 +7,7 @@ import sys
 import tempfile
 import threading
 import time
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 import uuid
@@ -18,6 +19,7 @@ from runtime_authority import DockerBackend, RuntimeRefusal, RuntimeDispatcher
 from worker_channel_state import WorkerJournal, encoded
 from worker_transport import WorkerServer, WorkerClient, WorkerError, worker_binding, VERSION
 from worker_runtime import WorkerRuntime
+import worker_runtime
 
 
 class WorkerRuntimeTests(unittest.TestCase):
@@ -438,6 +440,71 @@ class WorkerRuntimeTests(unittest.TestCase):
             self.assertTrue(self.fixture.client.containers.get(source['server_id']).attrs['State']['Running'])
             self.assertTrue(self.fixture.client.containers.get(peer['server_id']).attrs['State']['Running'])
         finally: stop.set(); thread.join(2)
+
+
+class WorkerSupervisorDiagnosticsTests(unittest.TestCase):
+    def drive_failure(self, error):
+        actions = []; shutdown = threading.Event(); failed = threading.Event()
+        def tick():
+            actions.append('tick')
+            raise error
+        def close_server(): actions.append('close')
+        def request_shutdown(): actions.append('shutdown'); shutdown.set()
+        def serving(**kwargs): self.assertTrue(shutdown.wait(2))
+        def stop_owned():
+            self.assertTrue(failed.is_set())
+            actions.append('stop_owned')
+        runtime = SimpleNamespace(failed=failed, supervision_tick=tick, dispatch=None, stop_owned=stop_owned)
+        server = SimpleNamespace(shutdown=request_shutdown, serve_forever=serving, server_close=close_server)
+        config = {'workers': {'worker-one': {}}, 'courses': {'worker-one': {'course-main': {}}}}
+        backend = SimpleNamespace(authority_id='a' * 32)
+        with patch.object(worker_runtime, 'LinuxWorkerBackend', return_value=backend), \
+                patch.object(worker_runtime.WorkerJournal, 'open', return_value=object()), \
+                patch.object(worker_runtime, 'worker_binding', return_value='b' * 64), \
+                patch.object(worker_runtime, 'WorkerRuntime', return_value=runtime), \
+                patch.object(worker_runtime, 'WorkerServer', return_value=server):
+            with self.assertRaises(WorkerError) as refused:
+                worker_runtime.serve(config, 'PRIVATE_JOURNAL', address=('127.0.0.1', 1),
+                    certfile='PRIVATE_CERT', keyfile='PRIVATE_KEY', ca_file='PRIVATE_CA', acl_file='PRIVATE_ACL')
+        self.assertEqual(refused.exception.code, 'worker_channel_refused')
+        self.assertEqual(actions, ['tick', 'shutdown', 'close', 'stop_owned'])
+        self.assertTrue(failed.is_set())
+
+    def run_failure(self, error, expected):
+        with self.assertLogs('worker_runtime', level='ERROR') as captured:
+            self.drive_failure(error)
+        self.assertEqual(captured.output,
+            ['ERROR:worker_runtime:Worker runtime supervisor failed: supervision/' + expected])
+        self.assertNotIn('PRIVATE', ''.join(captured.output))
+
+    def test_supervisor_reports_only_known_codes_and_still_closes_and_stops(self):
+        for error, code in [(RuntimeRefusal('runtime_endpoint_enforcement_unavailable'), 'runtime_endpoint_enforcement_unavailable'),
+                (WorkerError('worker_identity_changed'), 'worker_identity_changed')]:
+            with self.subTest(code=code): self.run_failure(error, code)
+
+    def test_supervisor_never_logs_unknown_codes_or_secret_exception_data(self):
+        unknown_worker = WorkerError('worker_channel_refused'); unknown_worker.code = 'PRIVATE_WORKER_CODE'
+        private_type = type('PRIVATE_EXCEPTION_CLASS', (Exception,), {})
+        for error, code in [(RuntimeRefusal('PRIVATE_RUNTIME_CODE'), 'runtime_refusal'),
+                (unknown_worker, 'worker_error'), (ValueError('PRIVATE_VALUE', {'PRIVATE_KEY': 'PRIVATE_TOKEN'}), 'value_error'),
+                (private_type('PRIVATE_ARGUMENT'), 'other_exception')]:
+            with self.subTest(category=code): self.run_failure(error, code)
+
+    def test_unknown_exception_code_property_is_never_read(self):
+        class PrivateException(Exception):
+            @property
+            def code(self): raise AssertionError('PRIVATE_PROPERTY_MUST_NOT_BE_READ')
+        self.run_failure(PrivateException('PRIVATE_ARGUMENT'), 'other_exception')
+
+    def test_diagnostic_classifier_or_logging_failure_cannot_prevent_shutdown(self):
+        for target in ('supervisor_failure_code', 'logging'):
+            with self.subTest(target=target):
+                if target == 'supervisor_failure_code':
+                    with patch.object(worker_runtime, target, side_effect=RuntimeError('PRIVATE_CLASSIFIER')):
+                        self.drive_failure(RuntimeError('PRIVATE_ORIGINAL'))
+                else:
+                    with patch.object(worker_runtime.logging.Logger, 'error', side_effect=RuntimeError('PRIVATE_HANDLER')):
+                        self.drive_failure(RuntimeError('PRIVATE_ORIGINAL'))
 
 
 if __name__ == '__main__': unittest.main()
