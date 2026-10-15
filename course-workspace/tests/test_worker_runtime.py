@@ -139,16 +139,23 @@ class WorkerRuntimeTests(unittest.TestCase):
         self.assertNotIn('start', created.actions)
         self.assertEqual(self.backend.containers(self.worker, 'course-main'), [])
 
-    def test_local_observation_reuse_preserves_outer_guardian_three_second_budget(self):
+    def test_composed_central_sql_worker_tls_and_outer_guardian_three_second_budget(self):
         from authority_access import AuthorityServer, ReplayStore, publish
         from hub.authority_client import AuthorityClient, VERSION as ACL_VERSION
+        from remote_backend import RemoteBackend
+        from remote_runtime_service import RemoteRuntimeDispatcher
         directory = self.root / 'central'; directory.mkdir(mode=0o700)
         acl = directory / 'acl.json'
         publish(acl, {'version': ACL_VERSION, 'authority_id': self.backend.authority_id, 'clients': {
             self.pki.fingerprint(self.cert): {'role': 'guardian', 'workers': [self.worker], 'courses': ['course-main']}}})
         completed = threading.Event()
+        remote = RemoteBackend(self.backend.authority_id, {self.worker: self.config['workers'][self.worker]},
+            {self.worker: self.client()}, {self.worker: ['course-main', 'course-peer']})
+        authority = self.fixture.authority; authority.backend = remote
+        dispatcher = RemoteRuntimeDispatcher(authority, remote, lambda *args: None,
+            {self.worker: self.journal.binding_sha256})
         def dispatch(principal, operation, course, payload):
-            try: return self.rpc(operation, payload, course)
+            try: return dispatcher.dispatch(principal, operation, course, payload)
             finally: completed.set()
         central = AuthorityServer(('127.0.0.1', 0), authority_id=self.backend.authority_id,
             certfile=self.pki.server_cert, keyfile=self.pki.server_key, ca_file=self.pki.ca_cert,
@@ -161,12 +168,12 @@ class WorkerRuntimeTests(unittest.TestCase):
         self.assertEqual(client.timeout, 3)
         identity = self.backend.guardian_identity(self.worker); inspect = self.fixture.client.info; calls = []
         def bounded_info():
-            calls.append(True); time.sleep(.17); return inspect()
+            calls.append(True); time.sleep(.1); return inspect()
         with patch.object(self.fixture.client, 'info', side_effect=bounded_info):
             try: result = client.call('guardian.observe', identity)
             finally: self.assertTrue(completed.wait(4))
         self.assertIs(result['authorized'], True)
-        self.assertEqual(len(calls), 15)  # Previously19 calls: outer timeout while inner completed.
+        self.assertEqual(len(calls), 25)  # Previously32 calls: outer timeout while inner completed.
 
     def test_legal_slow_docker_stop_completes_on_same_authenticated_channel(self):
         self.heartbeat(); result = self.spawn()
@@ -345,12 +352,63 @@ class WorkerRuntimeTests(unittest.TestCase):
             self.refuses(lambda: self.rpc('guardian.observe', identity))
         self.assertIsNone(self.guardian_row())
 
+    def guardian_identity_window_failure(self, kind):
+        self.heartbeat(); self.heartbeat('course-peer'); peer = self.spawn('course-peer')
+        previous = self.guardian_row(); peer_row = self.guardian_row('course-peer')
+        created = list(self.fixture.client.containers.created); self.fixture.now = 101
+        identity = self.backend.guardian_identity(self.worker); original = self.backend.guardian_identity
+        boot = self.backend.config['workers'][self.worker]['boot_id']
+        root = Path(self.config['courses'][self.worker]['course-main']['home_root'])
+        retained = root.with_name(root.name + '-retained'); changed = []
+        wall = time.time(); monotonic = time.monotonic(); controller = threading.get_ident()
+        barrier = self.backend.barrier
+        def inspect(worker):
+            value = original(worker); changed.append(True)
+            if kind == 'revocation': self.revoked.add('e' * 64)
+            elif kind == 'boot': self.backend.config['workers'][worker]['boot_id'] = 'f' * 32
+            elif kind == 'root': root.rename(retained); root.mkdir(mode=0o700)
+            elif kind == 'runtime': Path(self.config['courses'][worker]['course-main']['runtime_path']).write_bytes(b'changed')
+            elif kind == 'closing': self.server._closing.set()
+            elif kind == 'failed': self.runtime.failed.set()
+            return value
+        def floor(worker, course):
+            value = barrier(worker, course)
+            if changed and kind == 'floor' and course == 'course-main': value['denied_through_epoch'] = 1
+            return value
+        def clock():
+            return wall + 3 * 86400 if changed and kind == 'expiry' and threading.get_ident() != controller else wall
+        def elapsed():
+            return monotonic + 30 if changed and kind == 'session' and threading.get_ident() != controller else monotonic
+        try:
+            with patch.object(self.backend, 'guardian_identity', side_effect=inspect), \
+                    patch.object(self.backend, 'barrier', side_effect=floor), \
+                    patch('worker_transport.time.time', side_effect=clock), \
+                    patch('worker_transport.time.monotonic', side_effect=elapsed):
+                self.refuses(lambda: self.rpc('guardian.observe', identity))
+        finally:
+            if retained.exists(): root.rmdir(); retained.rename(root)
+            self.backend.config['workers'][self.worker]['boot_id'] = boot
+        self.assertEqual(changed, [True])
+        self.assertEqual(self.guardian_row(), previous); self.assertEqual(self.guardian_row('course-peer'), peer_row)
+        self.assertEqual(self.fixture.client.containers.created, created)
+        self.assertTrue(self.fixture.client.containers.get(peer['server_id']).attrs['State']['Running'])
+
+    def test_guardian_revocation_during_identity_read_does_not_renew(self): self.guardian_identity_window_failure('revocation')
+    def test_guardian_boot_drift_during_identity_read_does_not_renew(self): self.guardian_identity_window_failure('boot')
+    def test_guardian_root_drift_during_identity_read_does_not_renew(self): self.guardian_identity_window_failure('root')
+    def test_guardian_runtime_drift_during_identity_read_does_not_renew(self): self.guardian_identity_window_failure('runtime')
+    def test_guardian_floor_drift_during_identity_read_does_not_renew(self): self.guardian_identity_window_failure('floor')
+    def test_guardian_tls_expiry_during_identity_read_does_not_renew(self): self.guardian_identity_window_failure('expiry')
+    def test_guardian_session_expiry_during_identity_read_does_not_renew(self): self.guardian_identity_window_failure('session')
+    def test_guardian_shutdown_during_identity_read_does_not_renew(self): self.guardian_identity_window_failure('closing')
+    def test_guardian_failure_during_identity_read_does_not_renew(self): self.guardian_identity_window_failure('failed')
+
     def test_reverse_authorization_never_holds_worker_sqlite_writer(self):
         entered = threading.Event(); release = threading.Event(); rounds = []; outcomes = []
         def delay(principal, observation):
             if principal['course_id'] == 'course-main' and observation['kind'] == 'principal':
                 rounds.append(True)
-                if len(rounds) == 2: entered.set(); release.wait(3)
+                if len(rounds) == 1: entered.set(); release.wait(3)  # Retained mandatory pre-writer callback.
         self.callback = delay
         def source():
             try: outcomes.append(self.heartbeat())
@@ -368,7 +426,7 @@ class WorkerRuntimeTests(unittest.TestCase):
             try: self.refuses(self.heartbeat, 'worker_channel_refused')
             finally: conn.execute('ROLLBACK')
         self.assertIsNone(self.guardian_row())
-        self.assertGreaterEqual(sum(item['kind'] == 'principal' for item in self.observations), 2)
+        self.assertEqual(sum(item['kind'] == 'principal' for item in self.observations), 1)
 
     def heartbeat_write_window_failure(self, kind):
         self.heartbeat(); previous = self.guardian_row(); self.fixture.now = 101

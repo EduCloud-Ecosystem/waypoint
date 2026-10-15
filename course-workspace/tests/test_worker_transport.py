@@ -166,6 +166,46 @@ class WorkerTransportTests(unittest.TestCase):
         with self.client('rotated').session('course', 'inspect') as channel: channel.call('worker')
         self.assertEqual(self.backend.effects, [])
 
+    def test_worker_response_reuses_only_this_frames_copied_proof(self):
+        original = self.backend.inspect_worker; calls = []; alias = self.backend.worker.copy()
+        def inspect(worker):
+            calls.append(True)
+            if len(calls) == 1: return alias
+            if len(calls) == 2: alias['cpu_budget'] = True
+            return original(worker)
+        with self.client().session('course', 'inspect') as channel:
+            with patch.object(self.backend, 'inspect_worker', side_effect=inspect):
+                first = channel.call('worker')
+                self.assertEqual(len(calls), 2)
+                self.assertEqual(first, self.backend.worker); self.assertIs(type(first['cpu_budget']), int)
+                self.assertEqual(channel.call('worker'), self.backend.worker)
+                self.assertEqual(len(calls), 4)  # Next frame must independently observe twice.
+        self.assertEqual(self.backend.effects, [])
+
+    def worker_postproof_failure(self, kind):
+        original = self.backend.inspect_worker; calls = []; controller = threading.get_ident(); now = [0]
+        def inspect(worker):
+            value = original(worker); calls.append(True)
+            if kind == 'acl' and len(calls) == 1: self.controllers = {}; self.write_acl()
+            if len(calls) == 2:
+                if kind == 'worker': value['cpu_budget'] = True
+                elif kind == 'closing': self.server._closing.set()
+            return value
+        def clock():
+            return now[0] + 3 * 86400 if kind == 'expiry' and len(calls) >= 2 and threading.get_ident() != controller else now[0]
+        code = {'acl': 'worker_channel_refused', 'worker': 'worker_identity_changed',
+                'closing': 'worker_session_closed', 'expiry': 'worker_peer_validity_refused'}[kind]
+        with self.client().session('course', 'inspect') as channel:
+            now[0] = time.time()  # Freeze only after the authenticated opening's clock floor.
+            with patch.object(self.backend, 'inspect_worker', side_effect=inspect), patch('worker_transport.time.time', side_effect=clock):
+                self.refused(code, lambda: channel.call('worker'))
+        self.assertEqual(len(calls), 1 if kind == 'acl' else 2); self.assertEqual(self.backend.effects, [])
+
+    def test_worker_final_proof_refuses_canonical_worker_drift(self): self.worker_postproof_failure('worker')
+    def test_worker_final_proof_refuses_revoked_acl(self): self.worker_postproof_failure('acl')
+    def test_worker_final_proof_refuses_expired_tls(self): self.worker_postproof_failure('expiry')
+    def test_worker_final_proof_refuses_shutdown(self): self.worker_postproof_failure('closing')
+
     def test_scopes_unknown_certificate_pins_and_authority_refuse(self):
         for client, course in ((self.client('unknown'), 'course'), (self.client(), 'other'),
                               (self.client(pin='0' * 64), 'course'), (self.client(authority='0' * 32), 'course'),

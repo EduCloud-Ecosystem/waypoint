@@ -125,7 +125,9 @@ class WorkerRuntime:
             # WorkerServer already acquired the short observation context and
             # the physical activation lock. Skip ONLY reacquiring that budget.
             with dispatcher.authority.admission(request['course_id'], self.worker):
-                fresh_principal()
+                # Identity/floor preparation is read-only. The heartbeat's
+                # mandatory callback still checks fresh local proof on both
+                # sides of central authorization immediately before writing.
                 def heartbeat_effect_guard():
                     capability.check(self.backend)
                     if self.failed.is_set(): raise WorkerError('worker_session_closed')

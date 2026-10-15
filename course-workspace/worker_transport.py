@@ -352,12 +352,16 @@ class _Handler(socketserver.BaseRequestHandler):
                 scalar_guard()
                 if course not in server._acl().get(fingerprint, []): refuse()
                 observed_worker = server.backend.inspect_worker(server.worker_id)
-                try: identical = encoded(observed_worker) == encoded(server._worker)
+                try:
+                    observed_raw = encoded(observed_worker)
+                    identical = observed_raw == encoded(server._worker)
                 except Exception: identical = False
                 if not identical: refuse('worker_identity_changed')
                 quarantined = server.journal.state(course)['quarantined']
                 if mode in ('activate', 'observe') and quarantined: refuse('worker_quarantined')
+                snapshot = parsed(observed_raw)  # Never retain a mutable backend alias.
                 scalar_guard()  # Fresh deadlines after potentially slow observations.
+                return snapshot
             authorize()
             fenced = False; finished = False
             with ExitStack() as stack:
@@ -381,10 +385,10 @@ class _Handler(socketserver.BaseRequestHandler):
                             or not isinstance(frame['operation'], str) or not isinstance(frame['payload'], dict)):
                         refuse('worker_frame_invalid')
                     sequence = expected; op, payload = frame['operation'], frame['payload']
-                    authorize()
+                    observed_worker = authorize()
                     if finished: refuse('worker_session_finished')
                     if op in ('worker', 'course', 'binding', 'state', 'check', 'proof', 'finish') and payload: refuse('worker_frame_invalid')
-                    if op == 'worker': result = server.backend.inspect_worker(server.worker_id)
+                    if op == 'worker': result = observed_worker
                     elif op == 'course': result = server.backend.inspect_course(course, server.worker_id)
                     elif op == 'binding': result = {'binding_sha256': worker_binding(server.backend, server.worker_id)}
                     elif op == 'state': result = server.journal.state(course)
