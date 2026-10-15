@@ -382,6 +382,9 @@ def rpc(credentials, payload):
             or not isinstance(payload['payload'], dict)):
         raise ValueError('remote_fixture_rpc_invalid')
     settings = read_record(Path(credentials) / 'client.json')
+    # Match the real Hub client's bounded wait for a legal Docker stop(5).
+    # This is one request, never a replay/retry of a state-changing operation.
+    if payload['operation'] == 'hub.stop': settings = dict(settings, timeout=10)
     api = AuthorityClient(worker_id=payload['worker'], course_id=payload['course'], **settings)
     try: return {'ok': True, 'result': api.call(payload['operation'], payload['payload'])}
     except AuthorityError as exc: return {'ok': False, 'refused': True, 'code': exc.code}

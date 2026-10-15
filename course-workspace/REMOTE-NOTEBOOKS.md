@@ -34,6 +34,11 @@ not renew a heartbeat or ownership epoch. Quarantine, corruption, authentication
 failure and an error after acquisition do not become deferred success. No network
 wait holds a shared runtime SQLite writer transaction.
 
+Worker response waits for notebook stop and replacement spawn include the existing
+five-second Docker shutdown allowance. Certificate and absolute session deadlines
+still govern every effect. Explicit stop completion requires removal of the owned
+container before coursework staging begins.
+
 ## Private configuration and credentials
 
 The central configuration has exactly `version`, `control`, `runtime_bindings`

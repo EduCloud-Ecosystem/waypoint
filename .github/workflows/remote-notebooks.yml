@@ -21,6 +21,8 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install -r course-workspace/requirements-test.txt
+      - name: Verify recovery metadata and confinement with real Linux ownership
+        run: sudo "$(command -v python)" -m unittest discover -s course-workspace/rehearsal -p 'test_remote_notebook_fixture.py' -v
       - name: Build reviewed local images
         run: |
           docker build -t waypoint-authority-hub:local course-workspace/hub

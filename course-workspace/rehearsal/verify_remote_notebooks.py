@@ -138,6 +138,13 @@ def same_running_enforcer(before, after):
         and before['State']['StartedAt'] == after['State']['StartedAt'] and after['State']['Running'] is True)
 
 
+def wait_for_learner_removal(name, suffix, invoke=command, wait_for=wait):
+    """Explicit Hub stop is complete only after stopped containers are removed."""
+    wait_for(lambda: not invoke('ps', '-aq', '--filter',
+        'label=educloud.workspace.instance=' + name + '-' + suffix,
+        '--filter', 'label=educloud.workspace.kind=learner').split(), 30)
+
+
 def validate_report(value):
     required = {'version', 'status', 'scope', 'phases', 'cleanup_verified', 'acceptance_eligible',
         'flags', 'source', 'code_sha256', 'images', 'host', 'allocation'}
@@ -256,7 +263,8 @@ def run(args):
     def kernels(session, suffix):
         exercise_kernels(session, bases[suffix])
     def stop(session, suffix):
-        change(session, 'DELETE', bases[suffix] + '/hub/api/users/alice/server').raise_for_status(); wait(lambda: not learners(suffix), 30)
+        change(session, 'DELETE', bases[suffix] + '/hub/api/users/alice/server').raise_for_status()
+        wait_for_learner_removal(name, suffix)
     def credential(payload):
         review = central_helper('credential-preview', payload)
         return central_helper('credential-apply', {key: review[key] for key in ('review_id', 'review_sha256')})
@@ -378,7 +386,7 @@ def run(args):
         learner = inspect(learners('receiver')[0])
         assert rpc('hub.stop', {'subject': 'alice', 'server_id': learner['Id'], 'epoch': completed['result']['epoch']},
             identity='receiver-rotated', worker='worker-two')['ok'] is True
-        wait(lambda: not learners('receiver'), 30); command('stop', name + '-receiver-hub')
+        wait_for_learner_removal(name, 'receiver'); command('stop', name + '-receiver-hub')
         helper('install-rotated-hub'); command('start', name + '-receiver-hub')
         receiver = notebook('receiver'); kernels(receiver, 'receiver'); read(receiver, 'receiver'); assert learners('peer') == peer_ids; phase(PHASES[14])
         credential({'action': 'revoke', 'worker': 'worker-two', 'target_identity': 'guardian-two'})

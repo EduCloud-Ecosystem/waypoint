@@ -283,8 +283,40 @@ class FixtureTests(unittest.TestCase):
             backend.binding.return_value = 'b' * 64
             with self.assertRaisesRegex(ValueError, 'remote_fixture_worker_binding_changed'): fixture.worker_ready(self.root)
 
+    def test_rpc_stop_uses_real_hub_bounded_wait_without_retries_or_other_timeout_changes(self):
+        from unittest.mock import Mock
+        credentials = self.root / 'credentials'; credentials.mkdir()
+        settings = {'url': 'https://authority.invalid:8443', 'authority_id': 'a' * 32,
+            'ca_file': '/synthetic/ca.crt', 'certfile': '/synthetic/client.crt', 'keyfile': '/synthetic/client.key'}
+        fixture.write(credentials / 'client.json', settings)
+        api = Mock(); api.call.return_value = {'stopped': True}
+        with patch('hub.authority_client.AuthorityClient', return_value=api) as constructor:
+            for operation in ('hub.stop', 'hub.authorize'):
+                payload = {'operation': operation, 'payload': {}, 'worker': 'worker-one', 'course': 'course-main'}
+                self.assertEqual(fixture.rpc(credentials, payload), {'ok': True, 'result': {'stopped': True}})
+                expected = dict(settings, worker_id='worker-one', course_id='course-main')
+                if operation == 'hub.stop': expected['timeout'] = 10
+                constructor.assert_called_with(**expected)
+                api.call.assert_called_with(operation, {})
+            self.assertEqual(api.call.call_count, 2)
+
 
 class ReportTests(unittest.TestCase):
+    def test_explicit_hub_stop_waits_for_stopped_owned_learner_removal(self):
+        calls = []; remaining = ['stopped-owned-container', '']
+        def command(*args):
+            calls.append(args)
+            self.assertEqual(args, ('ps', '-aq', '--filter',
+                'label=educloud.workspace.instance=' + request()['name'] + '-source',
+                '--filter', 'label=educloud.workspace.kind=learner'))
+            return remaining.pop(0)
+        def wait_for(predicate, timeout):
+            self.assertEqual(timeout, 30)
+            self.assertIs(predicate(), False)  # Running-only ps would incorrectly pass here.
+            self.assertIs(predicate(), True)
+        verifier.wait_for_learner_removal(request()['name'], 'source', command, wait_for)
+        self.assertEqual(len(calls), 2); self.assertEqual(remaining, [])
+
     def report(self, status='PASS', phases=None):
         phases = list(verifier.PHASES) if phases is None else phases
         value = {'version': verifier.VERSION, 'status': status, 'scope': verifier.SCOPE, 'phases': phases,

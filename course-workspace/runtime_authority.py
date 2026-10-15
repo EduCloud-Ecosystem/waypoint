@@ -34,6 +34,7 @@ HEX = re.compile(r'[0-9a-f]{32}\Z')
 SLUG = re.compile(r'[a-z][a-z0-9-]{0,63}\Z')
 IMAGE = re.compile(r'sha256:[0-9a-f]{64}\Z')
 MAX_RECORD = 256 * 1024
+DOCKER_STOP_SECONDS = 5
 ADMISSION_UNUSED_SNAPSHOT = digest({'purpose': 'unused-runtime-admission-snapshot-v1'})
 ADMISSION_UNUSED_RETAINED = digest({'purpose': 'unused-runtime-admission-retained-v1'})
 
@@ -666,7 +667,7 @@ class DockerBackend:
             authorize()
         container.update(restart_policy={'Name': 'no'})
         if authorize is not None: authorize()
-        container.stop(timeout=5)
+        container.stop(timeout=DOCKER_STOP_SECONDS)
         if authorize is not None: authorize()
         container.remove(v=False, force=False)  # NEVER volumes, NEVER unrelated resources.
 

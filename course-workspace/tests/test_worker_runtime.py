@@ -104,6 +104,82 @@ class WorkerRuntimeTests(unittest.TestCase):
         self.assertFalse((self.root / 'authority').exists())
         self.assertFalse(hasattr(self.runtime, 'authority'))
 
+    def test_legal_slow_docker_stop_completes_on_same_authenticated_channel(self):
+        self.heartbeat(); result = self.spawn()
+        container = self.fixture.client.containers.get(result['server_id'])
+        original = container.stop
+        def slow_stop(timeout):
+            self.assertEqual(timeout, 5)
+            time.sleep(3.2)
+            original(timeout)
+        container.stop = slow_stop
+        self.assertEqual(self.rpc('hub.stop', dict(subject='alice', server_id=result['server_id'], epoch=1)),
+            {'stopped': True})
+        self.assertNotIn(result['server_id'], self.fixture.client.containers.items)
+
+    def test_peer_expiry_during_legal_slow_stop_refuses_removal(self):
+        self.heartbeat(); result = self.spawn()
+        container = self.fixture.client.containers.get(result['server_id'])
+        original = container.stop; wall = [time.time()]
+        def slow_stop(timeout):
+            self.assertEqual(timeout, 5)
+            time.sleep(3.2)
+            original(timeout)
+            wall[0] += 3 * 86400
+        container.stop = slow_stop
+        with patch('worker_transport.time.time', side_effect=lambda: wall[0]):
+            self.refuses(lambda: self.rpc('hub.stop', dict(subject='alice', server_id=result['server_id'], epoch=1)),
+                'worker_peer_validity_refused')
+        self.assertIs(self.fixture.client.containers.items[result['server_id']], container)
+        self.assertFalse(container.attrs['State']['Running'])
+        self.assertNotIn(('remove', False, False), container.actions)
+        self.assertEqual(container.actions.count(('stop', 5)), 1)
+
+    def test_stop_response_grace_never_extends_absolute_session_deadline(self):
+        self.heartbeat(); result = self.spawn()
+        container = self.fixture.client.containers.get(result['server_id'])
+        original = container.stop
+        def slow_stop(timeout):
+            time.sleep(.35)
+            original(timeout)
+        container.stop = slow_stop
+        self.server.session_seconds = .15
+        self.refuses(lambda: self.rpc('hub.stop', dict(subject='alice', server_id=result['server_id'], epoch=1)),
+            'worker_session_expired')
+        self.assertIs(self.fixture.client.containers.items[result['server_id']], container)
+        self.assertFalse(container.attrs['State']['Running'])
+        self.assertNotIn(('remove', False, False), container.actions)
+        self.assertEqual(container.actions.count(('stop', 5)), 1)
+
+    def test_non_stop_runtime_retains_ordinary_response_timeout(self):
+        original = self.server.runtime_v2_dispatch
+        def delayed(request, operation, payload, principal, authorize, guardian_authorize):
+            self.assertEqual(operation, 'hub.authorize')
+            time.sleep(3.2)
+            return original(request, operation, payload, principal, authorize, guardian_authorize)
+        self.server.runtime_v2_dispatch = delayed
+        self.refuses(lambda: self.rpc('hub.authorize'), 'worker_transport_unavailable')
+        self.assertEqual(self.observations, [])
+        self.assertEqual(self.backend.containers(self.worker, 'course-main'), [])
+
+    def test_replacement_spawn_allows_existing_legal_docker_stop_grace(self):
+        self.heartbeat(); first = self.spawn()
+        container = self.fixture.client.containers.get(first['server_id'])
+        original = container.stop
+        def slow_stop(timeout):
+            self.assertEqual(timeout, 5)
+            time.sleep(3.2)
+            original(timeout)
+        container.stop = slow_stop
+        environment = self.fixture.env('alice'); environment['JUPYTERHUB_API_TOKEN'] = 'replacement-token'
+        result = self.rpc('hub.spawn', {'subject': 'alice', 'environment': environment, 'expected_epoch': 1})
+        self.assertNotEqual(first['server_id'], result['server_id'])
+        self.assertNotIn(first['server_id'], self.fixture.client.containers.items)
+        self.assertEqual(container.actions.count(('stop', 5)), 1)
+        replacement = self.fixture.client.containers.get(result['server_id'])
+        self.assertTrue(replacement.attrs['State']['Running'])
+        self.assertEqual(replacement.actions.count('start'), 1)
+
     def test_revocation_between_create_and_start_compensates_only_new_container(self):
         self.heartbeat(); self.heartbeat('course-peer'); peer = self.spawn('course-peer')
         def revoke(principal, observation):

@@ -22,7 +22,7 @@ import uuid
 
 from worker_channel_state import WorkerJournal, JournalError, private, parsed, encoded, digest
 from hub.authority_client import material
-from runtime_authority import DockerBackend, open_directory, _GuardianAcquisitionBusy
+from runtime_authority import DockerBackend, open_directory, _GuardianAcquisitionBusy, DOCKER_STOP_SECONDS
 
 VERSION = 'educloud-worker-channel-v1'
 MAX_FRAME = 65536
@@ -512,8 +512,17 @@ class _Channel:
 
     def _response(self, sequence, operation=None, payload=None, authorize=None):
         rounds = 0; nonces = set()
+        # A legal Docker stop (including replacement spawn) can consume its
+        # full grace period before the next principal challenge. Only these
+        # two operations add that fixed grace
+        # to the ordinary response gap; receive still clips to the unchanged
+        # absolute session deadline and validity is checked on every frame.
+        response_timeout = self.timeout
+        if (self.mode == 'activate' and operation == 'runtime_v2' and isinstance(payload, dict)
+                and payload.get('operation') in {'hub.stop', 'hub.spawn'}):
+            response_timeout += DOCKER_STOP_SECONDS
         while True:
-            frame = receive(self.stream, self.deadline, self.timeout)
+            frame = receive(self.stream, self.deadline, response_timeout)
             self.validity.check()
             if 'authorization' not in frame: break
             rounds += 1
