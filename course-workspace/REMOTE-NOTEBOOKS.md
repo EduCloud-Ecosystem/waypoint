@@ -39,6 +39,12 @@ five-second Docker shutdown allowance. Certificate and absolute session deadline
 still govern every effect. Explicit stop completion requires removal of the owned
 container before coursework staging begins.
 
+The rehearsal's direct Hub probes use the same ten-second HTTP client timeout as
+the real Hub spawner for authorize, spawn, poll and stop. Guardian and operator
+probes retain their existing three-second default. This aligns fixture behavior;
+it does not increase a production timeout or retry a failed operation. HTTP socket
+timeouts bound individual waits, not the total duration of a nested operation.
+
 ## Private configuration and credentials
 
 The central configuration has exactly `version`, `control`, `runtime_bindings`

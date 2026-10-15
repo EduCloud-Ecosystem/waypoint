@@ -337,22 +337,40 @@ class FixtureTests(unittest.TestCase):
             backend.binding.return_value = 'b' * 64
             with self.assertRaisesRegex(ValueError, 'remote_fixture_worker_binding_changed'): fixture.worker_ready(self.root)
 
-    def test_rpc_stop_uses_real_hub_bounded_wait_without_retries_or_other_timeout_changes(self):
+    def test_rpc_hub_operations_match_real_client_wait_and_preserve_other_defaults(self):
         from unittest.mock import Mock
         credentials = self.root / 'credentials'; credentials.mkdir()
         settings = {'url': 'https://authority.invalid:8443', 'authority_id': 'a' * 32,
             'ca_file': '/synthetic/ca.crt', 'certfile': '/synthetic/client.crt', 'keyfile': '/synthetic/client.key'}
         fixture.write(credentials / 'client.json', settings)
-        api = Mock(); api.call.return_value = {'stopped': True}
+        api = Mock(); api.call.return_value = {'synthetic_result': True}
         with patch('hub.authority_client.AuthorityClient', return_value=api) as constructor:
-            for operation in ('hub.stop', 'hub.authorize'):
-                payload = {'operation': operation, 'payload': {}, 'worker': 'worker-one', 'course': 'course-main'}
-                self.assertEqual(fixture.rpc(credentials, payload), {'ok': True, 'result': {'stopped': True}})
+            for operation in ('hub.authorize','hub.spawn','hub.poll','hub.stop','guardian.observe','ownership.inventory'):
+                api.reset_mock(); constructor.reset_mock()
+                payload = {'operation': operation, 'payload': {'unchanged': ['synthetic', 1]},
+                    'worker': 'worker-one', 'course': 'course-main'}
+                original = copy.deepcopy(payload)
+                self.assertEqual(fixture.rpc(credentials, payload), {'ok': True, 'result': {'synthetic_result': True}})
                 expected = dict(settings, worker_id='worker-one', course_id='course-main')
-                if operation == 'hub.stop': expected['timeout'] = 10
-                constructor.assert_called_with(**expected)
-                api.call.assert_called_with(operation, {})
-            self.assertEqual(api.call.call_count, 2)
+                if operation in ('hub.authorize','hub.spawn','hub.poll','hub.stop'): expected['timeout'] = 10
+                constructor.assert_called_once_with(**expected)
+                api.call.assert_called_once_with(operation, payload['payload'])
+                self.assertIs(api.call.call_args.args[1], payload['payload'])
+                self.assertEqual(payload, original)
+
+    def test_hub_transport_failure_is_not_retried_or_converted_to_success(self):
+        from hub.authority_client import AuthorityError
+        from unittest.mock import Mock
+        credentials = self.root / 'credentials'; credentials.mkdir()
+        fixture.write(credentials / 'client.json', {'url': 'https://authority.invalid:8443'})
+        api = Mock(); api.call.side_effect = AuthorityError('authority_transport_unavailable')
+        payload = {'operation':'hub.spawn','payload':{'expected_epoch':1},'worker':'worker-one','course':'course-main'}
+        original = copy.deepcopy(payload)
+        with patch('hub.authority_client.AuthorityClient', return_value=api) as constructor:
+            self.assertEqual(fixture.rpc(credentials,payload),
+                {'ok':False,'refused':True,'code':'authority_transport_unavailable'})
+        self.assertEqual(constructor.call_count,1); self.assertEqual(constructor.call_args.kwargs['timeout'],10)
+        api.call.assert_called_once_with('hub.spawn',payload['payload']); self.assertEqual(payload,original)
 
 
 class ReportTests(unittest.TestCase):
