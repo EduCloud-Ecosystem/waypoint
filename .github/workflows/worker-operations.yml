@@ -9,6 +9,25 @@ on:
 permissions:
   contents: read
 jobs:
+  independent-worker-recovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Rehearse authenticated independent worker control locally
+        run: python course-workspace/rehearsal/verify_remote_workers.py --output /tmp/educloud-independent-workers
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: local-independent-worker-evidence
+          path: /tmp/educloud-independent-workers/REMOTE-WORKERS-*.json
+          if-no-files-found: error
+          retention-days: 7
   maintenance:
     runs-on: ubuntu-latest
     timeout-minutes: 15

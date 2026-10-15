@@ -183,3 +183,14 @@ Only bounded `PENDING-RECONCILIATION-PASS.json` may be uploaded after every requ
 control and exact-owned cleanup. Private authority, plans, ledgers and raw logs
 are excluded. Existing ordinary ownership controls run separately; hosted
 runtime/provider enforcement and actual two-host acceptance remain open.
+
+## Independent worker control rehearsal
+
+The [independent worker adapter](../INDEPENDENT-WORKERS.md) runs two worker-server
+processes with real mutual TLS, disjoint private state and supervised synthetic
+services. It checks durable quarantine, interrupted transfer, exact resume,
+divergent-copy reconciliation and saved-file recovery. A listener reconnect
+preserves the running peer; an agent restart is tested after explicitly stopping
+that peer. The bounded `REMOTE-WORKERS-PASS.json` requires clean unchanged source
+and verified owned cleanup. This does not exercise Docker, Python/R notebooks,
+encrypted backup transfer, production activation or actual host isolation.
