@@ -399,7 +399,7 @@ def main():
                 peer_work=save_coursework(peer,two,two_url,'cutover independent peer alice')
                 peer_learners=active_learners(peer); peer_hub=json.loads(docker('inspect',peer.instance+'-hub'))[0]['Id']
                 checks.append('fresh-quota-python-r-saved-work')
-                first.compose('stop','hub'); assert_stopped(first)
+                first.compose('stop','hub'); await_owned_services_stopped(first); assert_stopped(first)
                 cfg=load_config(first.deployment/'recovery.json')
                 assert cfg['local_test'] is True and Path(cfg['repository']).is_relative_to(root)
                 restic(cfg,'init'); initial_snapshot=backup_repository(first.deployment,cfg)
