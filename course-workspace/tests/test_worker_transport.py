@@ -285,6 +285,39 @@ class WorkerTransportTests(unittest.TestCase):
         self.assertEqual(observations, [{'kind': 'principal'}, {'kind': 'guardian', 'cert_sha256': 'b' * 64}, {'kind': 'principal'}])
         self.assertEqual(effects, ['hub.authorize'])
 
+    def v2_controller_window(self, change, code, *, guardian=False):
+        self.close(); effects = []; callbacks = []
+        def runtime(request, op, payload, principal, authorize, guardian_authorize):
+            if guardian: guardian_authorize('b' * 64, 'one', 'course')
+            else: authorize()
+            effects.append(op)
+            return {}
+        self.start(runtime_v2=runtime)
+        def controller(observation):
+            callbacks.append(observation)
+            change()
+        with self.client().session('course', 'activate', self.activate()) as channel:
+            self.refused(code, lambda: channel.call('runtime_v2', self.v2(), authorize=controller))
+        self.assertEqual(callbacks, [{'kind': 'guardian', 'cert_sha256': 'b' * 64}] if guardian else [{'kind': 'principal'}])
+        self.assertEqual(effects, []); self.assertEqual(self.backend.effects, [])
+
+    def test_runtime_v2_fresh_post_reply_acl_blocks_revoked_principal_and_guardian(self):
+        def revoke(): self.controllers = {}; self.write_acl()
+        for guardian in (False, True):
+            self.controllers = {self.pki.fingerprint(self.credentials['controller'][0]): ['course', 'peer']}; self.write_acl()
+            with self.subTest(guardian=guardian):
+                self.v2_controller_window(revoke, 'worker_channel_refused', guardian=guardian)
+
+    def test_runtime_v2_fresh_post_reply_worker_proof_blocks_drift(self):
+        self.v2_controller_window(lambda: self.backend.worker.update(boot_id='f' * 32), 'worker_identity_changed')
+
+    def test_runtime_v2_post_reply_server_certificate_deadline_blocks_effect(self):
+        original_clock = time.time(); wall = [original_clock]; controller_thread = threading.get_ident()
+        def clock():
+            return original_clock if threading.get_ident() == controller_thread else wall[0]
+        with patch('worker_transport.time.time', side_effect=clock):
+            self.v2_controller_window(lambda: wall.__setitem__(0, original_clock + 3 * 86400), 'worker_peer_validity_refused')
+
     def test_runtime_v2_malformed_challenge_never_reaches_controller_callback(self):
         import worker_transport
         self.close(); effects = []

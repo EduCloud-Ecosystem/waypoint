@@ -161,12 +161,12 @@ class WorkerRuntimeTests(unittest.TestCase):
         self.assertEqual(client.timeout, 3)
         identity = self.backend.guardian_identity(self.worker); inspect = self.fixture.client.info; calls = []
         def bounded_info():
-            calls.append(True); time.sleep(.14); return inspect()
+            calls.append(True); time.sleep(.17); return inspect()
         with patch.object(self.fixture.client, 'info', side_effect=bounded_info):
             try: result = client.call('guardian.observe', identity)
             finally: self.assertTrue(completed.wait(4))
         self.assertIs(result['authorized'], True)
-        self.assertEqual(len(calls), 19)  # Previously24 calls: outer timeout while inner completed.
+        self.assertEqual(len(calls), 15)  # Previously19 calls: outer timeout while inner completed.
 
     def test_legal_slow_docker_stop_completes_on_same_authenticated_channel(self):
         self.heartbeat(); result = self.spawn()

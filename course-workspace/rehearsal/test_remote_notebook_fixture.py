@@ -446,6 +446,19 @@ class ReportTests(unittest.TestCase):
         for reply in invalid:
             with self.assertRaises(ValueError): verifier.require_refusal(reply, 'authority_access_refused')
 
+    def test_rpc_refusal_diagnostic_emits_only_protocol_enums(self):
+        from hub.authority_client import OPERATIONS, ERRORS
+        for operation in OPERATIONS:
+            for code in ERRORS:
+                reply = {'ok': False, 'refused': True, 'code': code, 'result': {'private': 'private-payload-canary'},
+                    'message': 'private-token-path-cert-canary'}
+                self.assertEqual(verifier.rpc_refusal_context(operation, reply), {'operation': operation, 'code': code})
+        for operation in ('private-operation-canary', None, [], {}):
+            for reply in ({'code': 'private-code-canary', 'result': 'private-result-canary'}, {'code': []}, None, []):
+                observed = verifier.rpc_refusal_context(operation, reply)
+                self.assertEqual(observed, {'operation': 'other', 'code': 'other'})
+                self.assertNotIn('private', json.dumps(observed))
+
     def test_kernel_calls_preserve_actual_smoke_execution_sentinel(self):
         executed = []
         def actual_contract(session, base, user, language, code):

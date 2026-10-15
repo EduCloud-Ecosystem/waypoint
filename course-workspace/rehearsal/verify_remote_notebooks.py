@@ -20,6 +20,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT), str(Path(__file__).resolve().parent)]
 import evidence
 from smoke import kernel, change, xsrf
+from hub.authority_client import OPERATIONS, ERRORS
 from verify_authenticated_runtime import command, port, wait, configured_cpu_limit, request_notebook_start
 from remote_notebook_fixture import allocation_for_host, mount_plan, WORKERS, ENDPOINTS
 
@@ -67,6 +68,13 @@ def require_refusal(reply, expected):
     if (not isinstance(reply, dict) or set(reply) != {'ok', 'refused', 'code'}
             or reply['ok'] is not False or reply['refused'] is not True or reply['code'] != expected):
         raise ValueError('remote_notebook_expected_refusal_missing')
+
+
+def rpc_refusal_context(operation, reply):
+    """Only fixed protocol enums; never include a result or private payload."""
+    code = reply.get('code') if isinstance(reply, dict) else None
+    return {'operation': operation if isinstance(operation, str) and operation in OPERATIONS else 'other',
+        'code': code if isinstance(code, str) and code in ERRORS else 'other'}
 
 
 def exercise_kernels(session, base, invoke=kernel):
@@ -332,10 +340,13 @@ def run(args):
         return json.loads(command('exec', '-i', central, 'python', 'remote_notebook_fixture.py', action, str(root), data=json.dumps(payload or {})))
     def rpc(operation, payload=None, identity='operator', worker='worker-one', course='course-main'):
         directory = root / identity / 'credentials'
-        return json.loads(command('run', '--rm', '-i', '--network', request['network'], '--memory', '128m',
+        reply = json.loads(command('run', '--rm', '-i', '--network', request['network'], '--memory', '128m',
             '--cpus', str(allocation['learner_cpu']), '--mount', 'type=bind,src=' + str(directory) + ',dst=' + str(directory) + ',readonly',
             images['controller'], 'python', 'remote_notebook_fixture.py', 'rpc', str(directory),
             data=json.dumps({'operation': operation, 'payload': payload or {}, 'worker': worker, 'course': course})))
+        if not isinstance(reply, dict) or reply.get('ok') is not True:
+            print('RPC_REFUSAL_CONTEXT ' + json.dumps(rpc_refusal_context(operation, reply), sort_keys=True), flush=True)
+        return reply
     def learners(suffix): return command('ps', '-q', '--filter', 'label=educloud.workspace.instance=' + name + '-' + suffix,
         '--filter', 'label=educloud.workspace.kind=learner').split()
     def ready(suffix):

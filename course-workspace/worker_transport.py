@@ -292,13 +292,16 @@ class _RuntimeAuthorization:
         self.scalar()
 
     def authorize(self):
-        self.check(); self.local(); self.central({'kind': 'principal'}); self.local(); self.check()
+        # The sole server-created central closure freshly authorizes locally
+        # before sending the challenge and after receiving its exact reply.
+        # Retain final scalar checks without repeating those adjacent proofs.
+        self.check(); self.central({'kind': 'principal'}); self.check()
 
     def guardian_authorize(self, fingerprint, worker, course):
         self.check()
         if worker != self.request['worker_id'] or course != self.request['course_id'] or not isinstance(fingerprint, str) or not HASH.fullmatch(fingerprint):
             refuse('worker_authorization_refused')
-        self.local(); self.central({'kind': 'guardian', 'cert_sha256': fingerprint}); self.local(); self.check()
+        self.central({'kind': 'guardian', 'cert_sha256': fingerprint}); self.check()
 
 
 def runtime_capability(authorize, guardian_authorize, backend, request, principal):
