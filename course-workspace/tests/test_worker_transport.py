@@ -188,6 +188,28 @@ class WorkerTransportTests(unittest.TestCase):
             channel.call('worker'); self.backend.worker['boot_id'] = 'f' * 32
             self.refused('worker_identity_changed', lambda: channel.call('worker'))
 
+    def test_worker_integer_to_boolean_drift_refuses_runtime_and_fence(self):
+        effects = []
+        def runtime(request, operation, payload, authorize):
+            authorize(); effects.append(operation); return {}
+        for mode in ('activate', 'exclusive'):
+            self.close(); self.backend.worker['cpu_budget'] = 1; self.start(runtime=runtime)
+            request = self.activate() if mode == 'activate' else self.transfer()
+            with self.subTest(mode=mode), self.client().session('course', mode, request) as channel:
+                self.backend.worker['cpu_budget'] = True  # Python equality would accept this as 1.
+                operation = 'runtime' if mode == 'activate' else 'fence'
+                payload = {'operation': 'start', 'payload': {}} if mode == 'activate' else {'request': request, 'reconciliation': False}
+                self.refused('worker_identity_changed', lambda: channel.call(operation, payload))
+        self.assertEqual(effects, []); self.assertEqual(self.backend.effects, [])
+        self.assertFalse(self.journal.state('course')['quarantined'])
+
+    def test_fence_request_boolean_epoch_is_not_an_exact_reviewed_echo(self):
+        request = self.transfer()
+        with self.client().session('course', 'exclusive', request) as channel:
+            self.refused('worker_request_invalid', lambda: channel.call('fence',
+                {'request': dict(request, old_epoch=True), 'reconciliation': False}))
+        self.assertEqual(self.backend.effects, []); self.assertFalse(self.journal.state('course')['quarantined'])
+
     def test_inspection_cannot_fence_activate_or_run_runtime(self):
         for op, payload in (('fence', {'request': self.transfer(), 'reconciliation': False}), ('runtime', {'operation': 'start', 'payload': {}}), ('finish', {}), ('check', {})):
             with self.subTest(op=op), self.client().session('course', 'inspect') as channel:

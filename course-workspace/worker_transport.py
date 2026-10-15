@@ -287,7 +287,10 @@ class _Handler(socketserver.BaseRequestHandler):
                 if time.monotonic() >= deadline: refuse('worker_session_expired')
                 validity.check()
                 if course not in server._acl().get(fingerprint, []): refuse()
-                if server.backend.inspect_worker(server.worker_id) != server._worker: refuse('worker_identity_changed')
+                observed_worker = server.backend.inspect_worker(server.worker_id)
+                try: identical = encoded(observed_worker) == encoded(server._worker)
+                except Exception: identical = False
+                if not identical: refuse('worker_identity_changed')
                 quarantined = server.journal.state(course)['quarantined']
                 if mode == 'activate' and quarantined: refuse('worker_quarantined')
                 validity.check()  # Fresh deadline after potentially slow observations, immediately before effects.
@@ -319,7 +322,8 @@ class _Handler(socketserver.BaseRequestHandler):
                     elif op == 'check' and mode != 'inspect': result = {'locked': True}
                     elif op == 'fence' and mode == 'exclusive':
                         if (set(payload) != {'request', 'reconciliation'} or type(payload['reconciliation']) is not bool
-                                or payload['request'] != request or payload['reconciliation'] != (RECOVERY <= set(request))): refuse('worker_request_invalid')
+                                or encoded(payload['request']) != encoded(request)
+                                or payload['reconciliation'] != (RECOVERY <= set(request))): refuse('worker_request_invalid')
                         server.backend.validate_request(request, [server.worker_id]); authorize()
                         server.journal.begin(course, session)
                         authorize()
