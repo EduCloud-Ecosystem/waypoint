@@ -32,6 +32,8 @@ Actual hosted class capacity remains an acceptance task.
 For the smallest manual test, start with the [one-learner trial](MINIMAL-PILOT.md).
 It runs locally without a cloud account and can also use a private SSH tunnel to
 a small dedicated worker. It retains files between sessions.
+For the managed worker-channel runtime, use the separate
+[independent host pilot preparation](INDEPENDENT-HOST-PILOT.md).
 Continue with [encrypted recovery and dedicated worker setup](RECOVERY.md) for
 preserved images, Restic transfer, replacement-worker restore and maintenance timers.
 [Hosted pilot preparation](HOSTED-PILOT.md) covers hard home quotas, monitoring and

@@ -146,3 +146,5 @@ institutional authentication, cloud attestation, independent-kernel isolation,
 encrypted off-host restore, resource-exhaustion safety or classroom capacity.
 After local acceptance, the next gate is a synthetic Droplet rehearsal, followed
 by a second independent host for loss/transfer/restore acceptance before students.
+Use the [independent host pilot preparation](INDEPENDENT-HOST-PILOT.md) for the
+dedicated bootstrap, read-only host checks and remaining cross-host build gates.

@@ -40,6 +40,18 @@ class WorkerTests(unittest.TestCase):
         self.assertIn('TimeoutStartSec=2min', health)
         self.assertNotIn('ConditionPathExists', health)
 
+    def test_channel_setup_keeps_legacy_courses_and_timers_out(self):
+        config = cloud_config('ssh-ed25519 c3ludGhldGlj', '192.0.2.5/32', 'a' * 40, 'worker-channel-test')
+        self.assertEqual(config['write_files'], [])
+        self.assertIn('python3-venv', config['packages'])
+        self.assertIn('openssl', config['packages'])
+        self.assertFalse(any('pilot.py' in str(command) for command in config['runcmd']))
+        self.assertFalse(any('timer' in str(command) for command in config['runcmd']))
+        with self.assertRaises(ValueError):
+            cloud_config('ssh-ed25519 c3ludGhldGlj', '0.0.0.0/0', 'a' * 40, 'worker-channel-test')
+        with self.assertRaises(ValueError):
+            cloud_config('ssh-ed25519 c3ludGhldGlj', '::/0', 'a' * 40, 'worker-channel-test')
+
 
 if __name__ == '__main__':
     unittest.main()
