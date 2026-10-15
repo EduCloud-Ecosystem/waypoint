@@ -213,8 +213,8 @@ def launch_workers(root):
                 str(root / 'backend' / worker / 'journal'), '--certfile', str(credentials / 'server.crt'),
                 '--keyfile', str(credentials / 'server.key'), '--ca-file', str(credentials / 'ca.crt'),
                 '--acl-file', str(credentials / 'acl.json'), '--host', '0.0.0.0', '--port', '8444'],
-            network=request['worker_networks'][worker], networking_config=client.api.create_networking_config({
-                request['worker_networks'][worker]: client.api.create_endpoint_config(aliases=[worker + '.local.test'])}), volumes=mounts[worker],
+            network=request['worker_networks'][worker], networking_config={
+                request['worker_networks'][worker]: client.api.create_endpoint_config(aliases=[worker + '.local.test'])}, volumes=mounts[worker],
             labels={'educloud.fixture': name, 'educloud.remote.worker': worker, 'educloud.remote.kind': 'service'},
             mem_limit=256 * 1024**2, cpu_period=100000, cpu_quota=int(fixture['allocation']['worker_service_cpu'] * 100000),
             restart_policy={'Name': 'no'})

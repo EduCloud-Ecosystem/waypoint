@@ -32,7 +32,8 @@ class FakeClient:
         self.volumes = SimpleNamespace(create=self.volume)
         self.containers = SimpleNamespace(create=self.create, run=self.run, get=lambda name: self.items[name])
         self.networks = SimpleNamespace(get=lambda name: SimpleNamespace(connect=lambda hub: self.connected.append((name, hub.name))))
-        self.api = SimpleNamespace(create_networking_config=lambda value: value, create_endpoint_config=lambda **kw: kw)
+        self.api = SimpleNamespace(create_networking_config=lambda value: {'EndpointsConfig': value},
+            create_endpoint_config=lambda aliases: {'Aliases': aliases})
     def info(self): return {'NCPU': 8, 'MemTotal': 8 * 1024**3, 'ID': 'synthetic-fixed-daemon'}
     def volume(self, **kwargs): self.volume_records.append(kwargs); return SimpleNamespace(name=kwargs['name'])
     def create(self, image, **kwargs):
@@ -120,6 +121,7 @@ class FixtureTests(unittest.TestCase):
             self.assertEqual(item['command'][:2], ['python', 'worker_runtime.py'])
             worker = item['labels']['educloud.remote.worker']
             self.assertEqual(item['volumes'], fixture.mount_plan(self.root, request())[worker])
+            self.assertEqual(item['networking_config'], {request()['worker_networks'][worker]: {'Aliases': [worker + '.local.test']}})
             self.assertEqual(item['cpu_quota'], 40000)
         hubs = [item for _, item in self.client.created if item['name'].endswith('-hub')]
         self.assertEqual(len(hubs), 3)
@@ -135,6 +137,24 @@ class FixtureTests(unittest.TestCase):
             worker = item['labels']['educloud.runtime.worker']; destinations = {m['bind'] for m in item['volumes'].values()}
             self.assertIn(str(self.root / 'backend' / worker), destinations)
             self.assertFalse(any('/homes' in value or '/control' in value for value in destinations))
+
+    def test_actual_docker_sdk_preserves_worker_dns_aliases_when_available(self):
+        try:
+            from docker.models.containers import _create_container_args
+        except ImportError:
+            self.skipTest('Docker SDK optional in host test requirements; exact fixture shape is always tested')
+        self.bootstrap()
+        with patch.dict(sys.modules, docker=self.docker): fixture.launch_workers(self.root)
+        for image, item in self.client.created:
+            worker = item['labels']['educloud.remote.worker']; network = request()['worker_networks'][worker]
+            converted = _create_container_args({'image': image, 'version': '1.47', 'network': network,
+                'networking_config': item['networking_config']})
+            self.assertEqual(converted['networking_config']['EndpointsConfig'][network]['Aliases'], [worker + '.local.test'])
+            # Reproduce the prior accidental second wrapper: the real SDK
+            # drops its endpoint aliases because the outer key is not network.
+            broken = _create_container_args({'image': image, 'version': '1.47', 'network': network,
+                'networking_config': self.client.api.create_networking_config(item['networking_config'])})
+            self.assertEqual(broken['networking_config'], {network: None})
 
     def test_copy_refuses_live_or_nonfresh_receiver_before_archive_or_deletion(self):
         self.bootstrap()
