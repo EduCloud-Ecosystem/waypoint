@@ -23,7 +23,7 @@ from smoke import kernel, change, xsrf
 from verify_authenticated_runtime import command, port, wait, configured_cpu_limit, request_notebook_start
 from remote_notebook_fixture import allocation_for_host, mount_plan, WORKERS, ENDPOINTS
 
-VERSION = 'waypoint-remote-notebook-rehearsal-v1'
+VERSION = 'waypoint-remote-notebook-rehearsal-v2'
 SCOPE = 'actual-local-docker-one-daemon-two-worker-services-synthetic-notebooks'
 PHASES = (
     'central_has_no_socket_homes_or_worker_state',
@@ -165,6 +165,46 @@ def wait_for_learner_removal(name, suffix, invoke=command, wait_for=wait):
     wait_for(lambda: not invoke('ps', '-aq', '--filter',
         'label=educloud.workspace.instance=' + name + '-' + suffix,
         '--filter', 'label=educloud.workspace.kind=learner').split(), 30)
+
+
+def cleanup_participant_containers(name, images, authority_id, invoke=command):
+    """Remove verified control writers first; tolerate only exact-ID absence."""
+    def snapshot():
+        result = {}
+        for line in invoke('ps', '-a', '--no-trunc', '--format', '{{.ID}} {{.Names}}').splitlines():
+            parts = line.split()
+            if (len(parts) != 2 or not re.fullmatch(r'[0-9a-f]{64}', parts[0])
+                    or not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]*', parts[1]) or parts[0] in result
+                    or parts[1] in result.values()):
+                raise ValueError('fixture_cleanup_snapshot_invalid')
+            result[parts[0]] = parts[1]
+        return result
+    def remove(container):
+        if not re.fullmatch(r'[0-9a-f]{64}', container): raise ValueError('fixture_cleanup_id_invalid')
+        try: value = json.loads(invoke('inspect', container))[0]
+        except RuntimeError as error:
+            if str(error) != 'docker_fixture_command_failed:inspect' or container in snapshot(): raise
+            return
+        # Ownership refusal is never converted into an already-gone result.
+        if require_owned_container(value, name, images, authority_id) != container:
+            raise ValueError('fixture_cleanup_id_changed')
+        try: invoke('rm', '-f', container)
+        except RuntimeError as error:
+            if str(error) != 'docker_fixture_command_failed:rm' or container in snapshot(): raise
+        if container in snapshot(): raise ValueError('fixture_cleanup_container_remains')
+    controls = [name + '-' + suffix + '-hub' for _, _, suffix in ENDPOINTS]
+    controls += [name + '-authority', *(name + '-' + worker + '-guardian' for worker in WORKERS),
+        *(name + '-' + worker + '-service' for worker in WORKERS)]
+    initial = snapshot()
+    for expected in controls:
+        for container, actual in initial.items():
+            if actual == expected: remove(container)
+    if set(snapshot().values()) & set(controls):
+        raise ValueError('fixture_cleanup_control_replaced_or_remaining')
+    for _, _, suffix in ENDPOINTS:
+        for container in invoke('ps', '-aq', '--no-trunc', '--filter',
+                'label=educloud.workspace.instance=' + name + '-' + suffix).split():
+            remove(container)
 
 
 def failure_context(error, phases):
@@ -457,13 +497,7 @@ def run(args):
             if resources:
                 # Invocation-owned participant containers only; the privileged
                 # cleanup helper runs AFTER every runtime participant is gone.
-                for suffix in ('source', 'peer', 'receiver'):
-                    for container in command('ps', '-aq', '--filter', 'label=educloud.workspace.instance=' + name + '-' + suffix).split():
-                        command('rm', '-f', require_owned_container(inspect(container), name, images, authority_id))
-                for container in [central, *(name + '-' + worker + '-service' for worker in WORKERS),
-                        *(name + '-' + worker + '-guardian' for worker in WORKERS)]:
-                    if container in command('ps', '-a', '--format', '{{.Names}}').split():
-                        command('rm', '-f', require_owned_container(inspect(container), name, images, authority_id))
+                cleanup_participant_containers(name, images, authority_id)
                 if (root / 'fixture-owner.json').exists(): helper('cleanup-permissions')
                 for kind, flag in [('network', 'label=educloud.fixture=' + name), ('volume', 'label=educloud.fixture=' + name)]:
                     for item in command(kind, 'ls', '-q', '--filter', flag).split(): command(kind, 'rm', item)

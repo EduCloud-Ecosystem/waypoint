@@ -62,7 +62,7 @@ class FixtureTests(unittest.TestCase):
             return fixture.initialize(self.root, request())
 
     def test_presets_reserve_all_control_services_and_refuse_inflated_inputs(self):
-        for cpu in (4, 5, 6, 8):
+        for cpu in (4, 5, 6, 7, 8, 12):
             value = fixture.allocation_for_host(cpu, 8 * 1024**3)
             self.assertNotIn('controller_cpu', value)
             controls = value['central_cpu'] + 2 * value['worker_service_cpu'] + 2 * value['guardian_cpu']
@@ -71,6 +71,19 @@ class FixtureTests(unittest.TestCase):
             self.assertLessEqual(value['reserved_cpu'], cpu)
         for cpu, memory in [(True, 8 * 1024**3), (3, 8 * 1024**3), (4, True), (4, 6656 * 1024**2 - 1)]:
             with self.assertRaises(ValueError): fixture.allocation_for_host(cpu, memory)
+
+    def test_eight_cpu_remote_profile_is_explicit_and_lower_presets_unchanged(self):
+        expected = {'name': 'eight-cpu-remote', 'learner_cpu': .25, 'hub_cpu': 1.0,
+            'reserved_cpu': 6.75, 'minimum_cpu': 8, 'host_reserve_cpu': 3.0,
+            'central_cpu': 1.0, 'worker_service_cpu': .75, 'guardian_cpu': .25}
+        for cpu in (8, 9, 16):
+            self.assertEqual(fixture.allocation_for_host(cpu, 8 * 1024**3), expected)
+        for cpu in (4, 5, 6, 7):
+            previous = fixture.course_allocation(cpu); previous.pop('controller_cpu')
+            central = .5 if cpu >= 6 else (.25 if cpu == 5 else .2)
+            worker = round((previous['host_reserve_cpu'] - central - 2 * previous['guardian_cpu']) / 2, 6)
+            self.assertEqual(fixture.allocation_for_host(cpu, 8 * 1024**3),
+                dict(previous, central_cpu=central, worker_service_cpu=worker))
 
     def test_mount_plan_excludes_central_socket_homes_and_other_worker_state(self):
         plan = fixture.mount_plan(self.root, request())
@@ -123,7 +136,7 @@ class FixtureTests(unittest.TestCase):
             worker = item['labels']['educloud.remote.worker']
             self.assertEqual(item['volumes'], fixture.mount_plan(self.root, request())[worker])
             self.assertEqual(item['networking_config'], {request()['worker_networks'][worker]: {'Aliases': [worker + '.local.test']}})
-            self.assertEqual(item['cpu_quota'], 40000)
+            self.assertEqual(item['cpu_quota'], 75000)
         hubs = [item for _, item in self.client.created if item['name'].endswith('-hub')]
         self.assertEqual(len(hubs), 3)
         for item in hubs:
@@ -432,6 +445,68 @@ class ReportTests(unittest.TestCase):
             with self.assertRaises(ValueError): verifier.require_owned_container(changed, name, images, 'b' * 32)
         for mutate in (lambda v: v.update(Id='c' * 64), lambda v: v['State'].update(StartedAt='replaced'), lambda v: v['State'].update(Running=False)):
             changed = copy.deepcopy(value); mutate(changed); self.assertFalse(verifier.same_running_enforcer(value, changed))
+
+    def _cleanup_model(self, *, vanish=None, failed_remove=False, foreign=False, replace=False):
+        name = request()['name']; images = {key: request()[key + '_image'] for key in ('controller', 'hub', 'course')}
+        authority = 'b' * 32; records = {}; events = []; subject = __import__('hashlib').sha256(b'alice').hexdigest()[:24]
+        names = [name + '-source-hub', name + '-authority', name + '-worker-one-guardian', name + '-worker-one-service',
+            name + '-source-learner-' + subject]
+        for index, actual in enumerate(names, 1):
+            identifier = format(index, '064x'); kind = 'learner' if '-learner-' in actual else ('hub' if actual.endswith('-hub') else 'control')
+            labels = {'educloud.fixture': name}
+            if kind in ('learner', 'hub'):
+                labels = {'educloud.workspace.instance': name + '-source', 'educloud.workspace.kind': kind}
+            if kind == 'learner': labels.update({'educloud.runtime.authority': authority, 'educloud.runtime.worker': 'worker-one',
+                'educloud.runtime.course': 'course-main', 'educloud.runtime.subject': subject, 'educloud.runtime.epoch': '1'})
+            if actual.endswith('-guardian'): labels = {'educloud.runtime.authority': authority,
+                'educloud.runtime.worker': 'worker-one', 'educloud.runtime.kind': 'guardian'}
+            records[identifier] = {'Id': identifier, 'Name': '/' + actual,
+                'Image': images['course' if kind == 'learner' else ('hub' if kind == 'hub' else 'controller')],
+                'Config': {'Labels': labels}}
+        victim = format(2, '064x')
+        if foreign: records[victim]['Config']['Labels']['educloud.fixture'] = 'foreign'
+        def invoke(*args):
+            events.append(args)
+            if args == ('ps', '-a', '--no-trunc', '--format', '{{.ID}} {{.Names}}'):
+                return '\n'.join(identifier + ' ' + value['Name'].lstrip('/') for identifier, value in records.items())
+            if args[:3] == ('ps', '-aq', '--no-trunc'):
+                expected = args[-1].split('=', 2)[-1]
+                return '\n'.join(identifier for identifier, value in records.items()
+                    if value['Config']['Labels'].get('educloud.workspace.instance') == expected)
+            if args[0] == 'inspect':
+                if args[1] == victim and vanish == 'inspect':
+                    records.pop(victim); raise RuntimeError('docker_fixture_command_failed:inspect')
+                return json.dumps([records[args[1]]])
+            if args[:2] == ('rm', '-f'):
+                if args[2] == victim and failed_remove: raise RuntimeError('docker_fixture_command_failed:rm')
+                value = records.pop(args[2])
+                if args[2] == victim and replace:
+                    replacement = 'f' * 64; value['Id'] = replacement; records[replacement] = value
+                if args[2] == victim and vanish == 'rm': raise RuntimeError('docker_fixture_command_failed:rm')
+                return ''
+            raise AssertionError('unexpected cleanup operation')
+        return name, images, authority, records, events, invoke
+
+    def test_cleanup_controls_are_removed_before_learner_inspection(self):
+        name, images, authority, records, events, invoke = self._cleanup_model()
+        verifier.cleanup_participant_containers(name, images, authority, invoke)
+        self.assertEqual(records, {})
+        removed = [event[-1] for event in events if event[:2] == ('rm', '-f')]
+        self.assertEqual(removed[-1], format(5, '064x'))
+        first_learner_list = next(i for i, event in enumerate(events) if event[:3] == ('ps', '-aq', '--no-trunc'))
+        self.assertTrue(all(events.index(('rm', '-f', format(index, '064x'))) < first_learner_list for index in range(1, 5)))
+
+    def test_cleanup_tolerates_only_exact_id_disappearance(self):
+        for operation in ('inspect', 'rm'):
+            name, images, authority, records, _, invoke = self._cleanup_model(vanish=operation)
+            verifier.cleanup_participant_containers(name, images, authority, invoke)
+            self.assertEqual(records, {})
+        for options, error in (({'failed_remove': True}, RuntimeError), ({'foreign': True}, ValueError), ({'replace': True}, ValueError)):
+            name, images, authority, records, events, invoke = self._cleanup_model(**options)
+            with self.assertRaises(error): verifier.cleanup_participant_containers(name, images, authority, invoke)
+            self.assertTrue(records)
+            if options.get('foreign'): self.assertNotIn(('rm', '-f', format(2, '064x')), events)
+            if options.get('replace'): self.assertNotIn(('rm', '-f', 'f' * 64), events)
 
     def test_readiness_wait_has_no_mutation_retries_or_malformed_success(self):
         calls = []; clock = [0.0]

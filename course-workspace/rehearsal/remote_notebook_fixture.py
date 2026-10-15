@@ -31,14 +31,19 @@ ENDPOINTS = (('worker-one', 'course-main', 'source'), ('worker-one', 'course-pee
 
 
 def allocation_for_host(cpu, memory):
-    """Keep existing course presets; divide their explicit control reserve."""
+    """Preserve lower presets; budget this topology's actual control services."""
     value = course_allocation(cpu)
     # That preset's single-controller cap is not used by this distributed
     # topology; expose only the actual central/worker/Guardian caps below.
     value.pop('controller_cpu')
     if type(memory) is not int or memory < 6656 * 1024**2:
         raise ValueError('remote_fixture_memory_refused')
-    central = .5 if cpu >= 6 else (.25 if cpu == 5 else .2)
+    if cpu >= 8:
+        value.update(name='eight-cpu-remote', learner_cpu=.25, hub_cpu=1.0,
+            host_reserve_cpu=3.0, reserved_cpu=6.75, minimum_cpu=8, guardian_cpu=.25)
+        central = 1.0
+    else:
+        central = .5 if cpu >= 6 else (.25 if cpu == 5 else .2)
     worker = round((value['host_reserve_cpu'] - central - 2 * value['guardian_cpu']) / 2, 6)
     if worker <= 0 or 3 * (value['hub_cpu'] + value['learner_cpu']) + value['host_reserve_cpu'] > cpu:
         raise ValueError('remote_fixture_cpu_refused')

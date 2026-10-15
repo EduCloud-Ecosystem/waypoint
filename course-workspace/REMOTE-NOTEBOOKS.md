@@ -85,6 +85,15 @@ service itself has neither a Docker socket nor course-home mounts. Synthetic
 coursework is copied once to an empty stopped receiver using the existing archive
 validation helper; this is local staging, not a network backup transport.
 
+On hosts with at least eight CPUs, the fixture caps the central service at one
+CPU, each worker service at 0.75 and each Guardian at 0.25. With the three Hub and
+learner pairs, these caps sum to 6.75 CPUs. This explicit profile gives control
+checks more CPU without extending heartbeat or failure-detection deadlines.
+Lower-CPU profiles remain separately reported; a passing run does not establish
+capacity for another profile or for a classroom. Cleanup verifies immutable
+container identities and removes control processes before learners, so active
+enforcers cannot compete with fixture teardown.
+
 ```sh
 docker build -t waypoint-authority-hub:local course-workspace/hub
 docker build -t waypoint-authority-course:local course-workspace/course
