@@ -333,6 +333,27 @@ class ReportTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, 'hub_not_ready'):
             verifier.await_hub_readiness(session, 'http://127.0.0.1:1234', timeout=1, monotonic=lambda: next(times))
 
+    def test_hub_readiness_404_startup_is_bounded_and_never_accepts_redirect_or_denial(self):
+        from unittest.mock import Mock
+        def response(status):
+            value = verifier.requests.Response(); value.status_code = status; return value
+        session = Mock(); session.get.side_effect = [response(404), response(200)]
+        verifier.await_hub_readiness(session, 'http://127.0.0.1:1234', sleep=lambda _: None)
+        self.assertEqual(session.get.call_count, 2); session.post.assert_not_called()
+        self.assertTrue(all(call.kwargs['allow_redirects'] is False for call in session.get.call_args_list))
+        clock = [0.0]
+        session = Mock(); session.get.return_value = response(404)
+        def sleep(seconds): clock[0] += seconds
+        with self.assertRaisesRegex(RuntimeError, 'hub_not_ready'):
+            verifier.await_hub_readiness(session, 'http://127.0.0.1:1234', timeout=1,
+                monotonic=lambda: clock[0], sleep=sleep)
+        self.assertEqual(clock[0], 1); self.assertEqual(session.get.call_count, 4); session.post.assert_not_called()
+        for status in (301, 302, 307, 308, 401, 403, 500):
+            session = Mock(); session.get.return_value = response(status)
+            with self.assertRaises((verifier.requests.exceptions.HTTPError, ValueError)):
+                verifier.await_hub_readiness(session, 'http://127.0.0.1:1234')
+            self.assertEqual(session.get.call_count, 1); session.post.assert_not_called()
+
     def test_failure_context_excludes_messages_urls_bodies_and_external_frames(self):
         response = verifier.requests.Response(); response.status_code = 403
         response.url = 'https://private.invalid/secret'; response._content = b'private-body-canary'
@@ -341,13 +362,26 @@ class ReportTests(unittest.TestCase):
         except verifier.requests.exceptions.HTTPError as error:
             value = verifier.failure_context(error, list(verifier.PHASES[:14]))
         self.assertEqual(value, {'phase': verifier.PHASES[14], 'exception': 'HTTPError', 'lines': [], 'http_status': 403})
-        response._content = b'_xsrf private-cookie-canary'
+        response._content = b'XSRF cookie does not match POST argument; private-cookie-canary'
         response.request = verifier.requests.Request('POST', 'https://private.invalid/secret').prepare()
         value = verifier.failure_context(verifier.requests.exceptions.HTTPError('private-message', response=response), [])
         self.assertEqual(value['request_verification'], 'xsrf'); self.assertEqual(value['http_method'], 'POST')
         self.assertNotIn('private', json.dumps(value))
         private_type = type('private-class-canary', (Exception,), {})
         self.assertEqual(verifier.failure_context(private_type('private-message'), [])['exception'], 'OtherFailure')
+
+    def test_xsrf_diagnostic_requires_403_and_a_fixed_runtime_denial_phrase(self):
+        cases = [(503, '<form><input name="_xsrf" value="private-cookie-canary"></form>', False),
+            (403, '<form><input name="_xsrf" value="private-cookie-canary"></form>', False),
+            (503, 'XSRF cookie does not match POST argument', False),
+            (403, "'_xsrf' argument missing from POST", True),
+            (403, "'_xsrf' argument invalid", True),
+            (403, 'XSRF cookie does not match POST argument', True)]
+        for status, body, classified in cases:
+            response = verifier.requests.Response(); response.status_code = status; response._content = body.encode()
+            value = verifier.failure_context(verifier.requests.exceptions.HTTPError('private-message', response=response), [])
+            self.assertEqual(value.get('request_verification') == 'xsrf', classified)
+            self.assertNotIn('private', json.dumps(value))
 
     def test_explicit_hub_stop_waits_for_stopped_owned_learner_removal(self):
         calls = []; remaining = ['stopped-owned-container', '']

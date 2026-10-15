@@ -118,7 +118,8 @@ def await_hub_readiness(session, base, *, timeout=60, monotonic=time.monotonic, 
             response = None
         if response is not None:
             if response.status_code == 200: return
-            if response.status_code != 503:
+            # The proxy may listen before JupyterHub installs its routes.
+            if response.status_code not in (404, 503):
                 response.raise_for_status()
                 raise ValueError('hub_readiness_unexpected_response')
         remaining = deadline - monotonic()
@@ -237,7 +238,11 @@ def failure_context(error, phases):
             result['xsrf_header_present'] = bool(token)
             result['xsrf_header_quoted'] = token.startswith(('"', "'"))
         body = getattr(error.response, 'text', '')[:4096].lower()
-        if 'xsrf' in body: result['request_verification'] = 'xsrf'
+        denial_phrases = ("'_xsrf' argument invalid", *("'_xsrf' argument missing from " + verb
+            for verb in ('get', 'post', 'put', 'delete')), *("xsrf cookie does not match " + verb + ' argument'
+            for verb in ('get', 'post', 'put', 'delete')))
+        if status == 403 and any(phrase in body for phrase in denial_phrases):
+            result['request_verification'] = 'xsrf'
     return result
 
 
