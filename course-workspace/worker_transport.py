@@ -22,11 +22,12 @@ import uuid
 
 from worker_channel_state import WorkerJournal, JournalError, private, parsed, encoded, digest
 from hub.authority_client import material
-from runtime_authority import DockerBackend
+from runtime_authority import DockerBackend, open_directory, _GuardianAcquisitionBusy
 
 VERSION = 'educloud-worker-channel-v1'
 MAX_FRAME = 65536
 MAX_CALLS = 128
+MAX_AUTHORIZATIONS = 64
 HEX = re.compile(r'[0-9a-f]{32}\Z')
 HASH = re.compile(r'[0-9a-f]{64}\Z')
 SLUG = re.compile(r'[a-z][a-z0-9-]{0,63}\Z')
@@ -38,7 +39,8 @@ ERRORS = frozenset({'worker_channel_refused', 'worker_frame_invalid', 'worker_re
     'worker_identity_changed', 'worker_quarantined', 'worker_session_expired', 'worker_session_finished',
     'worker_operation_refused', 'worker_fence_unverified', 'worker_connection_closed', 'worker_session_closed',
     'worker_transport_unavailable', 'worker_server_pin_changed', 'worker_peer_validity_refused',
-    'worker_host_identity_refused', 'worker_shutdown_incomplete'})
+    'worker_host_identity_refused', 'worker_shutdown_incomplete', 'worker_authorization_refused',
+    'worker_observation_busy'})
 
 
 class WorkerError(ValueError):
@@ -99,8 +101,18 @@ class LinuxWorkerBackend(DockerBackend):
 
 
 def journal_binding(backend, worker):
+    courses = backend.config['courses'][worker]
+    for course, item in courses.items():
+        fd = open_directory(item['home_root'])
+        try:
+            info = os.fstat(fd)
+            if [info.st_dev, info.st_ino] != backend.home_bindings[worker + '/' + course]: refuse('worker_identity_changed')
+        finally: os.close(fd)
     return digest({'config': backend.config, 'home_bindings': backend.home_bindings,
                    'worker': backend.inspect_worker(worker)})
+
+
+worker_binding = journal_binding
 
 
 class _PeerValidity:
@@ -145,7 +157,7 @@ def send(stream, value):
 
 def request_record(request, authority, worker, course, mode):
     if not isinstance(request, dict): refuse('worker_request_invalid')
-    if mode == 'activate':
+    if mode in ('activate', 'observe'):
         if (set(request) != ACTIVATE or request.get('worker_id') != worker
                 or type(request.get('epoch')) is not int or not 1 <= request['epoch'] <= 10**9
                 or not isinstance(request.get('provider_id'), str) or not 1 <= len(request['provider_id']) <= 256
@@ -175,15 +187,17 @@ class WorkerServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     block_on_close = False
 
     def __init__(self, address, backend, worker_id, certfile, keyfile, ca_file, acl_file, *, journal,
-                 runtime_dispatch=None, timeout=3, session_seconds=20, max_threads=8):
+                 runtime_dispatch=None, runtime_v2_dispatch=None, timeout=3, session_seconds=20, max_threads=8):
         if (not slug(worker_id) or not number(timeout, .05, 10) or not number(session_seconds, .1, 60)
                 or type(max_threads) is not int or not 1 <= max_threads <= 32
                 or not isinstance(journal, WorkerJournal) or journal.worker_id != worker_id
                 or getattr(backend, 'authority_id', None) != journal.authority_id
-                or runtime_dispatch is not None and not callable(runtime_dispatch)): refuse()
+                or runtime_dispatch is not None and not callable(runtime_dispatch)
+                or runtime_v2_dispatch is not None and not callable(runtime_v2_dispatch)): refuse()
         self.backend, self.worker_id, self.journal = backend, worker_id, journal
         self.authority_id, self.acl_file = journal.authority_id, Path(acl_file)
         self.runtime_dispatch, self.timeout, self.session_seconds = runtime_dispatch, timeout, session_seconds
+        self.runtime_v2_dispatch = runtime_v2_dispatch; self._runtime_scope = threading.local()
         self._worker = json.loads(encoded(backend.inspect_worker(worker_id)))
         if self._worker.get('worker_id') != worker_id: refuse('worker_identity_changed')
         self._acl()
@@ -253,6 +267,46 @@ class WorkerServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
                 thread.join(min(remaining, .05))
 
 
+class _RuntimeAuthorization:
+    """Opaque, thread-bound capability created only inside an active channel."""
+    def __init__(self, server, request, principal, local, central, scalar):
+        self.server, self.request, self.principal = server, parsed(encoded(request)), parsed(encoded(principal))
+        self.local, self.central = local, central
+        self.scalar = scalar
+        self.thread, self.active = threading.get_ident(), True
+
+    def check(self, backend=None, request=None, principal=None):
+        if (not self.active or threading.get_ident() != self.thread
+                or getattr(self.server._runtime_scope, 'token', None) is not self
+                or backend is not None and self.server.backend is not backend
+                or request is not None and encoded(request) != encoded(self.request)
+                or principal is not None and encoded(principal) != encoded(self.principal)
+                or getattr(self.server.backend.admission_scope, 'endpoint', None)
+                    != (self.request['worker_id'], self.request['course_id'], self.request['epoch'])):
+            refuse('worker_authorization_refused')
+        self.scalar()
+
+    def authorize(self):
+        self.check(); self.local(); self.central({'kind': 'principal'}); self.local(); self.check()
+
+    def guardian_authorize(self, fingerprint, worker, course):
+        self.check()
+        if worker != self.request['worker_id'] or course != self.request['course_id'] or not isinstance(fingerprint, str) or not HASH.fullmatch(fingerprint):
+            refuse('worker_authorization_refused')
+        self.local(); self.central({'kind': 'guardian', 'cert_sha256': fingerprint}); self.local(); self.check()
+
+
+def runtime_capability(authorize, guardian_authorize, backend, request, principal):
+    capability = getattr(authorize, '__self__', None)
+    if (not isinstance(capability, _RuntimeAuthorization)
+            or getattr(guardian_authorize, '__self__', None) is not capability
+            or getattr(authorize, '__func__', None) is not _RuntimeAuthorization.authorize
+            or getattr(guardian_authorize, '__func__', None) is not _RuntimeAuthorization.guardian_authorize):
+        refuse('worker_authorization_refused')
+    capability.check(backend, request, principal)
+    return capability
+
+
 class _Handler(socketserver.BaseRequestHandler):
     def handle(self):
         server = self.server; stream = None; sequence = 0; session = uuid.uuid4().hex; challenge = uuid.uuid4().hex + uuid.uuid4().hex
@@ -276,30 +330,36 @@ class _Handler(socketserver.BaseRequestHandler):
             if (set(opening) != {'version', 'authority_id', 'worker_id', 'course_id', 'session_id', 'challenge', 'mode', 'request'}
                     or opening['version'] != VERSION or opening['authority_id'] != server.authority_id
                     or opening['worker_id'] != server.worker_id or opening['session_id'] != session or opening['challenge'] != challenge
-                    or not slug(opening['course_id']) or opening['mode'] not in ('inspect', 'activate', 'exclusive')):
+                    or not slug(opening['course_id']) or opening['mode'] not in ('inspect', 'activate', 'observe', 'exclusive')):
                 refuse('worker_frame_invalid')
             course, mode, request = opening['course_id'], opening['mode'], opening['request']
             if mode == 'inspect':
                 if request is not None: refuse('worker_request_invalid')
             else: request_record(request, server.authority_id, server.worker_id, course, mode)
-            def authorize():
+            def scalar_guard():
                 if server._closing.is_set(): refuse('worker_session_closed')
                 if time.monotonic() >= deadline: refuse('worker_session_expired')
                 validity.check()
+            def authorize():
+                scalar_guard()
                 if course not in server._acl().get(fingerprint, []): refuse()
                 observed_worker = server.backend.inspect_worker(server.worker_id)
                 try: identical = encoded(observed_worker) == encoded(server._worker)
                 except Exception: identical = False
                 if not identical: refuse('worker_identity_changed')
                 quarantined = server.journal.state(course)['quarantined']
-                if mode == 'activate' and quarantined: refuse('worker_quarantined')
-                validity.check()  # Fresh deadline after potentially slow observations, immediately before effects.
-                if server._closing.is_set(): refuse('worker_session_closed')
-                if time.monotonic() >= deadline: refuse('worker_session_expired')
+                if mode in ('activate', 'observe') and quarantined: refuse('worker_quarantined')
+                scalar_guard()  # Fresh deadlines after potentially slow observations.
             authorize()
             fenced = False; finished = False
             with ExitStack() as stack:
                 if mode == 'activate': stack.enter_context(server.backend.activation_context(request))
+                elif mode == 'observe':
+                    token = stack.enter_context(server.backend.guardian_observation_budget())
+                    try: stack.enter_context(server.backend.activation_context(request))
+                    except _GuardianAcquisitionBusy as error:
+                        if error.token is not token or error.endpoint != (server.worker_id, course): raise
+                        refuse('worker_observation_busy')
                 elif mode == 'exclusive':
                     stack.enter_context(server.backend.locks([(server.worker_id, course)]))
                     server.backend.validate_request(request, [server.worker_id])
@@ -315,9 +375,10 @@ class _Handler(socketserver.BaseRequestHandler):
                     sequence = expected; op, payload = frame['operation'], frame['payload']
                     authorize()
                     if finished: refuse('worker_session_finished')
-                    if op in ('worker', 'course', 'state', 'check', 'proof', 'finish') and payload: refuse('worker_frame_invalid')
+                    if op in ('worker', 'course', 'binding', 'state', 'check', 'proof', 'finish') and payload: refuse('worker_frame_invalid')
                     if op == 'worker': result = server.backend.inspect_worker(server.worker_id)
                     elif op == 'course': result = server.backend.inspect_course(course, server.worker_id)
+                    elif op == 'binding': result = {'binding_sha256': worker_binding(server.backend, server.worker_id)}
                     elif op == 'state': result = server.journal.state(course)
                     elif op == 'check' and mode != 'inspect': result = {'locked': True}
                     elif op == 'fence' and mode == 'exclusive':
@@ -340,6 +401,37 @@ class _Handler(socketserver.BaseRequestHandler):
                                 or not 1 <= len(payload['operation']) <= 128 or not isinstance(payload['payload'], dict)):
                             refuse('worker_frame_invalid')
                         result = server.runtime_dispatch(request, payload['operation'], payload['payload'], authorize)
+                    elif op == 'runtime_v2' and mode in ('activate', 'observe') and server.runtime_v2_dispatch is not None:
+                        if (set(payload) != {'operation', 'payload', 'principal'} or not isinstance(payload['payload'], dict)
+                                or payload['operation'] not in {'hub.authorize', 'hub.spawn', 'hub.poll', 'hub.stop', 'guardian.observe'}
+                                or (payload['operation'] == 'guardian.observe') != (mode == 'observe')): refuse('worker_frame_invalid')
+                        principal = payload['principal']; role = 'guardian' if mode == 'observe' else 'hub'
+                        if (not isinstance(principal, dict) or set(principal) != {'role', 'cert_sha256', 'worker_id', 'course_id'}
+                                or principal['role'] != role or principal['worker_id'] != server.worker_id or principal['course_id'] != course
+                                or not isinstance(principal['cert_sha256'], str) or not HASH.fullmatch(principal['cert_sha256'])):
+                            refuse('worker_frame_invalid')
+                        rounds = 0
+                        def central_authorize(observation):
+                            nonlocal rounds
+                            authorize(); rounds += 1
+                            if rounds > MAX_AUTHORIZATIONS: refuse('worker_authorization_refused')
+                            question = {'version': VERSION, 'session_id': session, 'challenge': challenge, 'sequence': sequence,
+                                'authorization': observation, 'round': rounds, 'nonce': uuid.uuid4().hex,
+                                'request_sha256': digest(request), 'command_sha256': digest(payload),
+                                'principal_sha256': digest(principal), 'worker_id': server.worker_id, 'course_id': course, 'epoch': request['epoch']}
+                            send(stream, question)
+                            reply = receive(stream, deadline, server.timeout)
+                            if (set(reply) != set(question) | {'authorized'} or any(encoded(reply.get(key)) != encoded(value) for key, value in question.items())
+                                    or reply['authorized'] is not True): refuse('worker_authorization_refused')
+                            authorize()
+                        if getattr(server._runtime_scope, 'token', None) is not None: refuse('worker_authorization_refused')
+                        capability = _RuntimeAuthorization(server, request, principal, authorize, central_authorize, scalar_guard)
+                        server._runtime_scope.token = capability
+                        try:
+                            result = server.runtime_v2_dispatch(request, payload['operation'], payload['payload'], principal,
+                                capability.authorize, capability.guardian_authorize)
+                        finally:
+                            capability.active = False; server._runtime_scope.token = None
                     else: refuse('worker_operation_refused')
                     authorize()
                     if not isinstance(result, dict): refuse('worker_backend_refused')
@@ -395,7 +487,7 @@ class WorkerClient:
                     or not HEX.fullmatch(challenge['session_id']) or not isinstance(challenge['challenge'], str)
                     or not HASH.fullmatch(challenge['challenge'])): refuse('worker_frame_invalid')
             send(stream, dict(challenge, course_id=course_id, mode=mode, request=request))
-            channel = _Channel(stream, challenge, deadline, self.timeout, validity)
+            channel = _Channel(stream, challenge, deadline, self.timeout, validity, course_id, mode, request)
             acknowledgement = channel._response(0)
             if (not isinstance(acknowledgement, dict) or set(acknowledgement) != {'opened'}
                     or acknowledgement['opened'] is not True): refuse('worker_frame_invalid')
@@ -411,14 +503,49 @@ class WorkerClient:
 
 
 class _Channel:
-    def __init__(self, stream, challenge, deadline, timeout, validity):
+    def __init__(self, stream, challenge, deadline, timeout, validity, course=None, mode=None, request=None):
         self.stream, self.challenge, self.deadline, self.timeout = stream, challenge, deadline, timeout
         self.validity = validity
-        self.sequence, self.closed = 0, False; self.lock = threading.Lock()
+        self.course, self.mode = course, mode
+        self.request = parsed(encoded(request))
+        self.sequence, self.closed = 0, False; self.lock = threading.Lock(); self.authorizing_thread = None
 
-    def _response(self, sequence):
-        frame = receive(self.stream, self.deadline, self.timeout)
-        self.validity.check()
+    def _response(self, sequence, operation=None, payload=None, authorize=None):
+        rounds = 0; nonces = set()
+        while True:
+            frame = receive(self.stream, self.deadline, self.timeout)
+            self.validity.check()
+            if 'authorization' not in frame: break
+            rounds += 1
+            required = {'version', 'session_id', 'challenge', 'sequence', 'authorization', 'round', 'nonce',
+                'request_sha256', 'command_sha256', 'principal_sha256', 'worker_id', 'course_id', 'epoch'}
+            observation = frame.get('authorization')
+            if (operation != 'runtime_v2' or not callable(authorize) or self.mode not in ('activate', 'observe')
+                    or not isinstance(self.request, dict) or not isinstance(payload, dict) or set(frame) != required
+                    or any(frame.get(key) != self.challenge[key] for key in ('version', 'session_id', 'challenge'))
+                    or type(frame.get('sequence')) is not int or frame['sequence'] != sequence
+                    or type(frame.get('round')) is not int or frame['round'] != rounds or rounds > MAX_AUTHORIZATIONS
+                    or not isinstance(frame.get('nonce'), str) or not HEX.fullmatch(frame['nonce']) or frame['nonce'] in nonces
+                    or frame['request_sha256'] != digest(self.request) or frame['command_sha256'] != digest(payload)
+                    or frame['principal_sha256'] != digest(payload.get('principal')) or frame['worker_id'] != self.challenge['worker_id']
+                    or frame['course_id'] != self.course or type(frame['epoch']) is not int or frame['epoch'] != self.request['epoch']
+                    or not isinstance(observation, dict)
+                    or not (observation == {'kind': 'principal'} or set(observation) == {'kind', 'cert_sha256'}
+                        and observation['kind'] == 'guardian' and isinstance(observation['cert_sha256'], str) and HASH.fullmatch(observation['cert_sha256']))):
+                refuse('worker_authorization_refused')
+            nonces.add(frame['nonce'])
+            try:
+                self.authorizing_thread = threading.get_ident()
+                try: decision = authorize(observation)
+                finally: self.authorizing_thread = None
+                if decision is not None: refuse('worker_authorization_refused')
+                self.validity.check()
+                if time.monotonic() >= self.deadline: refuse('worker_session_expired')
+            except Exception:
+                try: send(self.stream, dict(frame, authorized=False))
+                except Exception: pass
+                refuse('worker_authorization_refused')
+            send(self.stream, dict(frame, authorized=True))
         if (set(frame) != {'version', 'session_id', 'challenge', 'sequence', 'ok', 'result' if frame.get('ok') is True else 'error'}
                 or any(frame.get(k) != self.challenge[k] for k in ('version', 'session_id', 'challenge'))
                 or type(frame.get('sequence')) is not int or frame['sequence'] != sequence or type(frame.get('ok')) is not bool): refuse('worker_frame_invalid')
@@ -428,15 +555,17 @@ class _Channel:
         if not isinstance(frame['result'], dict): refuse('worker_frame_invalid')
         return frame['result']
 
-    def call(self, operation, payload=None):
+    def call(self, operation, payload=None, *, authorize=None):
+        if self.authorizing_thread == threading.get_ident(): refuse('worker_authorization_refused')
         with self.lock:
             if self.closed or self.sequence >= MAX_CALLS: refuse('worker_session_closed')
             self.sequence += 1
             try:
                 self.validity.check()
+                payload = parsed(encoded({} if payload is None else payload))
                 send(self.stream, {k: self.challenge[k] for k in ('version', 'session_id', 'challenge')} |
-                    {'sequence': self.sequence, 'operation': operation, 'payload': {} if payload is None else payload})
-                return self._response(self.sequence)
+                    {'sequence': self.sequence, 'operation': operation, 'payload': payload})
+                return self._response(self.sequence, operation, payload, authorize)
             except WorkerError: self.closed = True; raise
             except Exception: self.closed = True; refuse('worker_transport_unavailable')
 

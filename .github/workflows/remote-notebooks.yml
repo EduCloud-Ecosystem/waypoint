@@ -1,0 +1,37 @@
+name: Worker-channel notebooks
+on:
+  pull_request:
+    paths: ['course-workspace/**', '.github/workflows/remote-notebooks.yml']
+  push:
+    branches: [main]
+    paths: ['course-workspace/**', '.github/workflows/remote-notebooks.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  remote-notebooks:
+    name: Actual worker-channel Python R and Guardian recovery
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r course-workspace/requirements-test.txt
+      - name: Build reviewed local images
+        run: |
+          docker build -t waypoint-authority-hub:local course-workspace/hub
+          docker build -t waypoint-authority-course:local course-workspace/course
+          docker build --build-arg HUB_IMAGE=waypoint-authority-hub:local -t waypoint-authority-controller:local -f course-workspace/controller.Dockerfile course-workspace
+      - name: Exercise actual notebooks and independent local enforcement
+        run: python course-workspace/rehearsal/verify_remote_notebooks.py --output /tmp/waypoint-remote-notebooks
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: local-worker-channel-notebook-evidence
+          path: /tmp/waypoint-remote-notebooks/*.json
+          if-no-files-found: error
+          retention-days: 7

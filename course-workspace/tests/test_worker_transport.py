@@ -27,6 +27,7 @@ from runtime_authority import DockerBackend
 class Backend:
     def __init__(self, root, authority):
         self.authority_id = authority; self.root = root; self.local = threading.local()
+        self.admission_scope = threading.local()
         self.worker = {'worker_id': 'one', 'provider_id': 'provider-one', 'boot_id': 'b' * 32,
             'policy_sha256': 'c' * 64, 'memory_budget_mb': 4096, 'cpu_budget': 2,
             'capacity_memory_mb': 8192, 'capacity_cpu': 4}
@@ -64,7 +65,9 @@ class Backend:
         with self.locks([('one', request['course_id'])]):
             self.validate_request(request, ['one'])
             if request['epoch'] <= self.barriers[request['course_id']]['denied_through_epoch']: raise ValueError()
-            yield
+            self.admission_scope.endpoint = ('one', request['course_id'], request['epoch'])
+            try: yield
+            finally: self.admission_scope.endpoint = None
 
     def fence(self, request, workers):
         assert self.local.held
@@ -97,9 +100,10 @@ class WorkerTransportTests(unittest.TestCase):
     def write_acl(self):
         self.acl.write_bytes(encoded({'version': VERSION, 'authority_id': self.authority, 'worker_id': 'one', 'controllers': self.controllers})); self.acl.chmod(0o600)
 
-    def start(self, runtime=None, lifetime=5):
+    def start(self, runtime=None, lifetime=5, runtime_v2=None):
         self.server = WorkerServer(('127.0.0.1', 0), self.backend, 'one', self.pki.server_cert, self.pki.server_key,
-            self.pki.ca_cert, self.acl, journal=self.journal, runtime_dispatch=runtime, timeout=1, session_seconds=lifetime)
+            self.pki.ca_cert, self.acl, journal=self.journal, runtime_dispatch=runtime, runtime_v2_dispatch=runtime_v2,
+            timeout=1, session_seconds=lifetime)
         thread = threading.Thread(target=self.server.serve_forever, kwargs={'poll_interval': .02}, daemon=True)
         thread.start(); self.servers.append((self.server, thread))
 
@@ -265,6 +269,74 @@ class WorkerTransportTests(unittest.TestCase):
         self.start(runtime=runtime)
         with self.client().session('course', 'activate', self.activate()) as channel:
             self.assertEqual(channel.call('runtime', {'operation': 'start', 'payload': {}}), {'running': True})
+
+    def v2(self):
+        return {'operation': 'hub.authorize', 'payload': {}, 'principal': {'role': 'hub', 'cert_sha256': 'a' * 64,
+            'worker_id': 'one', 'course_id': 'course'}}
+
+    def test_runtime_v2_challenges_bind_actual_held_command_without_grants(self):
+        self.close(); observations = []; effects = []
+        def runtime(request, op, payload, principal, authorize, guardian_authorize):
+            authorize(); guardian_authorize('b' * 64, 'one', 'course'); authorize()
+            self.assertFalse(self.lock_available()); effects.append(op); return {'observed': True}
+        self.start(runtime_v2=runtime)
+        with self.client().session('course', 'activate', self.activate()) as channel:
+            self.assertEqual(channel.call('runtime_v2', self.v2(), authorize=lambda value: observations.append(value)), {'observed': True})
+        self.assertEqual(observations, [{'kind': 'principal'}, {'kind': 'guardian', 'cert_sha256': 'b' * 64}, {'kind': 'principal'}])
+        self.assertEqual(effects, ['hub.authorize'])
+
+    def test_runtime_v2_malformed_challenge_never_reaches_controller_callback(self):
+        import worker_transport
+        self.close(); effects = []
+        def runtime(request, op, payload, principal, authorize, guardian_authorize):
+            authorize(); effects.append(op); return {}
+        self.start(runtime_v2=runtime)
+        sending = worker_transport.send
+        for field, value in (('round', True), ('round', 2), ('sequence', 2), ('command_sha256', '0' * 64),
+                ('request_sha256', '0' * 64), ('principal_sha256', '0' * 64), ('epoch', True),
+                ('authorization', {'kind': 'principal', 'cert_sha256': 'f' * 64})):
+            callbacks = []
+            def malformed(stream, frame):
+                if 'authorization' in frame and 'authorized' not in frame: frame = dict(frame, **{field: value})
+                return sending(stream, frame)
+            with self.subTest(field=field, value=value), self.client().session('course', 'activate', self.activate()) as channel:
+                with patch('worker_transport.send', side_effect=malformed):
+                    self.refused('worker_authorization_refused', lambda: channel.call('runtime_v2', self.v2(),
+                        authorize=lambda observation: callbacks.append(observation)))
+            self.assertEqual(callbacks, [])
+        self.assertEqual(effects, [])
+
+    def test_runtime_v2_reply_requires_exact_true_and_callbacks_cannot_return_grants(self):
+        import worker_transport
+        self.close(); effects = []
+        def runtime(request, op, payload, principal, authorize, guardian_authorize):
+            authorize(); effects.append(op); return {}
+        self.start(runtime_v2=runtime)
+        sending = worker_transport.send
+        def malformed(stream, frame):
+            if 'authorized' in frame: frame = dict(frame, authorized=1)
+            return sending(stream, frame)
+        with self.client().session('course', 'activate', self.activate()) as channel:
+            with patch('worker_transport.send', side_effect=malformed):
+                self.refused('worker_authorization_refused', lambda: channel.call('runtime_v2', self.v2(), authorize=lambda _: None))
+        with self.client().session('course', 'activate', self.activate()) as channel:
+            self.refused('worker_authorization_refused', lambda: channel.call('runtime_v2', self.v2(), authorize=lambda _: {'grant': True}))
+        self.assertEqual(effects, [])
+
+    def test_runtime_v2_authorization_rounds_and_recursive_rpc_are_bounded(self):
+        self.close(); callbacks = []; effects = []
+        def runtime(request, op, payload, principal, authorize, guardian_authorize):
+            for _ in range(65): authorize()
+            effects.append(op); return {}
+        self.start(runtime_v2=runtime, lifetime=20)
+        with self.client().session('course', 'activate', self.activate()) as channel:
+            self.refused('worker_authorization_refused', lambda: channel.call('runtime_v2', self.v2(),
+                authorize=lambda observation: callbacks.append(observation)))
+        self.assertEqual(len(callbacks), 64); self.assertEqual(effects, [])
+        with self.client().session('course', 'activate', self.activate()) as channel:
+            self.refused('worker_authorization_refused', lambda: channel.call('runtime_v2', self.v2(),
+                authorize=lambda _: channel.call('worker')))
+        self.assertEqual(effects, [])
 
     def test_timeout_releases_lock_but_never_clears_fenced_quarantine(self):
         request = self.transfer(); now = [time.monotonic()]
@@ -499,12 +571,14 @@ class LinuxWorkerIdentityTests(unittest.TestCase):
             self.assertEqual(inspect.call_count, 2)
 
     def test_journal_binding_derived_from_config_roots_and_fresh_worker(self):
-        backend = type('Backend', (), {'config': {'approved': True}, 'home_bindings': {'one/course': [1, 2]},
+        home = self.root / 'home'; home.mkdir(mode=0o700); info = home.stat()
+        backend = type('Backend', (), {'config': {'approved': True, 'courses': {'one': {'course': {'home_root': str(home)}}}},
+            'home_bindings': {'one/course': [info.st_dev, info.st_ino]},
             'inspect_worker': lambda _, worker: {'worker_id': worker, 'boot_id': self.value.hex}})()
         expected = digest({'config': backend.config, 'home_bindings': backend.home_bindings, 'worker': backend.inspect_worker('one')})
         self.assertEqual(journal_binding(backend, 'one'), expected)
-        backend.home_bindings['one/course'] = [1, 3]
-        self.assertNotEqual(journal_binding(backend, 'one'), expected)
+        backend.home_bindings['one/course'] = [info.st_dev, info.st_ino + 1]
+        with self.assertRaises(WorkerError): journal_binding(backend, 'one')
 
 
 class WorkerJournalTests(unittest.TestCase):
