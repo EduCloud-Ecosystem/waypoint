@@ -10,6 +10,7 @@ import os
 from pathlib import Path
 import re
 import shutil
+import stat
 import sys
 import tempfile
 from types import SimpleNamespace
@@ -22,7 +23,7 @@ from authenticated_fixture import (capture_cleanup_owner, cleanup_permissions,
 from authority_access import ReplayStore, VERSION
 from authority_test_pki import TestPKI
 from ownership_contract import Authority, digest
-from runtime_authority import DockerBackend, read_record
+from runtime_authority import DockerBackend, read_record, open_directory, bounded_names, metadata
 
 WORKERS = ('worker-one', 'worker-two')
 ENDPOINTS = (('worker-one', 'course-main', 'source'), ('worker-one', 'course-peer', 'peer'),
@@ -257,6 +258,90 @@ def launch_users(root):
     return {'launched': True}
 
 
+_COPY_OWNERS = {(0, 0), (1000, 1000)}
+
+
+def _home_owners(root):
+    """Bounded, stable, no-follow metadata for this stopped synthetic home."""
+    result = {}; total = 0; fd = open_directory(root); initial = os.fstat(fd)
+    def visit(directory, parts):
+        before = os.fstat(directory)
+        if len(parts) > 64 or before.st_dev != initial.st_dev:
+            raise ValueError('remote_copy_tree_bounds')
+        def record(parts, info):
+            nonlocal total
+            if len(result) >= 10000 or (info.st_uid, info.st_gid) not in _COPY_OWNERS:
+                raise ValueError('remote_copy_owner_or_bounds_invalid')
+            if info.st_mode & 0o6000 or (info.st_mode & stat.S_ISVTX and not stat.S_ISDIR(info.st_mode)):
+                raise ValueError('remote_copy_special_permissions')
+            if stat.S_ISREG(info.st_mode):
+                if info.st_nlink != 1: raise ValueError('remote_copy_hardlink_refused')
+                total += info.st_size
+                if total > 64 * 1024**2: raise ValueError('remote_copy_tree_bounds')
+            result[parts] = (stat.S_IFMT(info.st_mode), info.st_uid, info.st_gid)
+        record(parts, before)
+        for name in bounded_names(directory, 10000 - len(result)):
+            info = os.stat(name, dir_fd=directory, follow_symlinks=False)
+            if info.st_dev != initial.st_dev:
+                raise ValueError('remote_copy_tree_bounds')
+            if stat.S_ISDIR(info.st_mode):
+                child = os.open(name, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=directory)
+                try:
+                    if metadata(os.fstat(child)) != metadata(info): raise ValueError('remote_copy_tree_changed')
+                    visit(child, parts + (name,))
+                finally: os.close(child)
+            elif stat.S_ISREG(info.st_mode) or stat.S_ISLNK(info.st_mode):
+                record(parts + (name,), info)
+            else: raise ValueError('remote_copy_special_entry')
+            if metadata(os.stat(name, dir_fd=directory, follow_symlinks=False)) != metadata(info):
+                raise ValueError('remote_copy_tree_changed')
+        if metadata(os.fstat(directory)) != metadata(before): raise ValueError('remote_copy_tree_changed')
+    try:
+        visit(fd, ())
+        current = open_directory(root)
+        try:
+            if metadata(os.fstat(current)) != metadata(initial): raise ValueError('remote_copy_tree_changed')
+        finally: os.close(current)
+        return result
+    finally: os.close(fd)
+
+
+def _restore_home_owners(root, owners):
+    """Preserve mixed fixture ownership without changing production unpack."""
+    observed = _home_owners(root)
+    if {parts: value[0] for parts, value in observed.items()} != {parts: value[0] for parts, value in owners.items()}:
+        raise ValueError('remote_copy_membership_changed')
+    root_fd = open_directory(root); root_info = os.fstat(root_fd)
+    try:
+        for parts, (kind, uid, gid) in sorted(owners.items(), key=lambda item: len(item[0]), reverse=True):
+            if (uid, gid) not in _COPY_OWNERS: raise ValueError('remote_copy_owner_or_bounds_invalid')
+            parent = os.dup(root_fd)
+            try:
+                for part in parts[:-1]:
+                    child = os.open(part, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=parent)
+                    os.close(parent); parent = child
+                    if os.fstat(parent).st_dev != root_info.st_dev: raise ValueError('remote_copy_tree_bounds')
+                info = os.stat(parts[-1], dir_fd=parent, follow_symlinks=False) if parts else os.fstat(parent)
+                if info.st_dev != root_info.st_dev or stat.S_IFMT(info.st_mode) != kind:
+                    raise ValueError('remote_copy_tree_changed')
+                if stat.S_ISLNK(info.st_mode):
+                    os.chown(parts[-1], uid, gid, dir_fd=parent, follow_symlinks=False)
+                    after = os.stat(parts[-1], dir_fd=parent, follow_symlinks=False)
+                else:
+                    item = os.open(parts[-1], os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=parent) if parts else os.dup(parent)
+                    try:
+                        opened = os.fstat(item)
+                        if metadata(opened) != metadata(info) or (stat.S_ISREG(opened.st_mode) and opened.st_nlink != 1):
+                            raise ValueError('remote_copy_tree_changed')
+                        os.fchown(item, uid, gid); after = os.fstat(item)
+                    finally: os.close(item)
+                if (after.st_dev, after.st_ino, after.st_uid, after.st_gid) != (info.st_dev, info.st_ino, uid, gid):
+                    raise ValueError('remote_copy_tree_changed')
+            finally: os.close(parent)
+        if _home_owners(root) != owners: raise ValueError('remote_copy_owners_unverified')
+    finally: os.close(root_fd)
+
+
 def copy_home(root):
     """One-shot LOCAL recovery staging, not a worker-channel file transfer."""
     from volume_archive import pack, unpack
@@ -277,11 +362,15 @@ def copy_home(root):
     if (target.is_symlink() or sorted(path.name for path in target.iterdir()) != ['work']
             or (target / 'work').is_symlink() or not (target / 'work').is_dir() or any((target / 'work').iterdir())):
         raise ValueError('remote_copy_receiver_not_fresh')
+    owners = _home_owners(source)
     with tempfile.TemporaryDirectory(prefix='remote-notebook-local-snapshot-') as temporary:
         archive = Path(temporary) / 'snapshot.tar.gz'; pack(source, archive, 0, 0)
         os.rmdir(target / 'work'); unpack(target, archive, 1000, 1000)
+        _restore_home_owners(target, owners)
     after = {worker: backends[worker].inspect_course('course-main', worker) for worker in WORKERS}
-    if after['worker-one'] != before['worker-one'] or after['worker-one']['retained_tree_sha256'] != after['worker-two']['retained_tree_sha256']:
+    if after['worker-one'] != before['worker-one']:
+        raise ValueError('remote_copy_source_changed')
+    if after['worker-one']['retained_tree_sha256'] != after['worker-two']['retained_tree_sha256']:
         raise ValueError('remote_copy_equality_unverified')
     return {'copied': True, 'local_recovery_staging': True, 'network_file_transfer': False}
 

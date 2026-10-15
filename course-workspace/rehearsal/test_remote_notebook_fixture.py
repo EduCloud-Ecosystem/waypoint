@@ -4,6 +4,7 @@ import copy
 import io
 import json
 import os
+import stat
 from pathlib import Path
 import sys
 import tempfile
@@ -168,6 +169,87 @@ class FixtureTests(unittest.TestCase):
         with patch.object(fixture, 'DockerBackend', return_value=backend), patch('volume_archive.pack') as pack:
             with self.assertRaisesRegex(ValueError, 'remote_copy_participants_not_stopped'): fixture.copy_home(self.root)
             pack.assert_not_called()
+
+    def _actual_archive_copy(self, mixed_owners=False):
+        import hashlib
+        import volume_archive
+        from runtime_authority import tree_hash
+        configs = {}; homes = {}
+        for worker, suffix in [('worker-one', 'source'), ('worker-two', 'receiver')]:
+            parent = self.root / suffix; parent.mkdir()
+            leaf = parent / (suffix + '-home-' + hashlib.sha256(b'alice').hexdigest()[:24])
+            leaf.mkdir(mode=0o755); (leaf / 'work').mkdir(mode=0o755)
+            homes[worker] = leaf
+            configs[worker] = {'courses': {worker: {'course-main': {'home_root': str(parent), 'instance': suffix}}}}
+        source, target = (homes[worker] for worker in fixture.WORKERS)
+        runtime = source / '.runtime'; runtime.mkdir(mode=0o700); runtime.chmod(0o1700)
+        saved = source / 'work/saved.txt'; saved.write_text('retained-synthetic-bytes'); saved.chmod(0o660)
+        marker = runtime / 'metadata'; marker.write_text('root-owned-image-metadata'); marker.chmod(0o600)
+        (source / 'saved-link').symlink_to('work/saved.txt')
+        if mixed_owners:
+            for path in (source, source / 'work', runtime, saved): os.chown(path, 1000, 1000)
+            os.chown(source / 'saved-link', 1000, 1000, follow_symlinks=False)
+            self.assertEqual((marker.stat().st_uid, marker.stat().st_gid), (0, 0))
+        before = tree_hash(source)
+        class ActualTreeBackend:
+            def __init__(self, config): self.config = config
+            def containers(self, *_): return []
+            def inspect_course(self, _, worker): return {'retained_tree_sha256': tree_hash(homes[worker])}
+        fixture.write(self.root / 'remote-fixture.json', {'workers': configs})
+        original_pack, original_unpack = volume_archive.pack, volume_archive.unpack
+        # Non-root host tests retain their own numeric owner. Linux/root uses
+        # the exact helper arguments and proves real mixed0/1000 restoration.
+        def pack(*args): return original_pack(*args[:2], os.geteuid(), os.getegid())
+        def unpack(*args): return original_unpack(*args[:2], *(args[2:] if mixed_owners else (os.geteuid(), os.getegid())))
+        with patch.object(fixture, 'DockerBackend', ActualTreeBackend), \
+                patch.object(fixture, '_COPY_OWNERS', fixture._COPY_OWNERS | {(os.geteuid(), os.getegid())}), \
+                patch.object(volume_archive, 'pack', side_effect=pack), patch.object(volume_archive, 'unpack', side_effect=unpack):
+            self.assertEqual(fixture.copy_home(self.root), {'copied': True, 'local_recovery_staging': True, 'network_file_transfer': False})
+        self.assertEqual(tree_hash(source), before); self.assertEqual(tree_hash(target), before)
+        self.assertEqual((target / 'work/saved.txt').read_bytes(), saved.read_bytes())
+        self.assertEqual(stat.S_IMODE((target / '.runtime').stat().st_mode), 0o1700)
+        self.assertEqual(stat.S_IMODE((target / 'work/saved.txt').stat().st_mode), 0o660)
+        self.assertEqual(os.readlink(target / 'saved-link'), 'work/saved.txt')
+        if mixed_owners:
+            self.assertEqual(((target / '.runtime/metadata').stat().st_uid, (target / '.runtime/metadata').stat().st_gid), (0, 0))
+            self.assertEqual(((target / 'work/saved.txt').stat().st_uid, (target / 'work/saved.txt').stat().st_gid), (1000, 1000))
+
+    def test_copy_real_archive_and_tree_hash_preserves_bytes_modes_and_literal_link(self):
+        self._actual_archive_copy()
+
+    @unittest.skipUnless(os.geteuid() == 0, 'mixed0/1000 ownership requires Linux/root fixture execution')
+    def test_copy_real_archive_preserves_mixed_root_and_learner_ownership(self):
+        self._actual_archive_copy(mixed_owners=True)
+
+    def test_owner_restore_refuses_ancestor_symlink_without_touching_outside(self):
+        home = self.root / 'home'; home.mkdir()
+        outside = self.root / 'outside'; outside.mkdir(); (outside / 'sentinel').write_text('unchanged')
+        (home / 'swapped').symlink_to(outside, target_is_directory=True)
+        allowed = fixture._COPY_OWNERS | {(os.geteuid(), os.getegid())}
+        owners = {(): (stat.S_IFDIR, os.geteuid(), os.getegid()), ('swapped',): (stat.S_IFDIR, 0, 0),
+            ('swapped', 'sentinel'): (stat.S_IFREG, 0, 0)}
+        before = (outside / 'sentinel').stat()
+        with patch.object(fixture, '_COPY_OWNERS', allowed), patch.object(fixture.os, 'chown') as chown:
+            with self.assertRaisesRegex(ValueError, 'remote_copy_membership_changed'):
+                fixture._restore_home_owners(home, owners)
+            chown.assert_not_called()
+        after = (outside / 'sentinel').stat()
+        self.assertEqual((after.st_ino, after.st_uid, after.st_gid), (before.st_ino, before.st_uid, before.st_gid))
+        self.assertEqual((outside / 'sentinel').read_text(), 'unchanged')
+
+    def test_owner_restore_refuses_outside_hardlink_before_any_ownership_effect(self):
+        home = self.root / 'home'; home.mkdir()
+        outside = self.root / 'outside'; outside.write_text('outside-hardlink-sentinel')
+        os.link(outside, home / 'alias'); before = outside.stat()
+        owners = {(): (stat.S_IFDIR, 0, 0), ('alias',): (stat.S_IFREG, 1000, 1000)}
+        with patch.object(fixture, '_COPY_OWNERS', fixture._COPY_OWNERS | {(os.geteuid(), os.getegid())}), \
+                patch.object(fixture.os, 'fchown') as fchown, patch.object(fixture.os, 'chown') as chown:
+            with self.assertRaisesRegex(ValueError, 'remote_copy_hardlink_refused'):
+                fixture._restore_home_owners(home, owners)
+            fchown.assert_not_called(); chown.assert_not_called()
+        after = outside.stat()
+        self.assertEqual((after.st_ino, after.st_uid, after.st_gid), (before.st_ino, before.st_uid, before.st_gid))
+        self.assertEqual(outside.read_text(), 'outside-hardlink-sentinel')
 
     def test_one_shot_fault_does_not_modify_default_service(self):
         import ownership_contract
