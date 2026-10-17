@@ -105,6 +105,29 @@ class SourceBuildTests(unittest.TestCase):
             build_sources.bounded([sys.executable, '-c', 'import time; time.sleep(5)'], self.root/'timeout.log', timeout=0.1, maximum=100)
         self.assertTrue((self.root/'timeout.log').is_file())
 
+    def test_probe_timeout_cleans_only_the_exact_owned_container(self):
+        def inspect(args, **kwargs):
+            name = args[-1]
+            return subprocess.CompletedProcess(args, 0, json.dumps([{'Config': {'Labels': {'org.educloud.source-probe': name}}}]).encode(), b'')
+        calls = []
+        def command(args, **kwargs):
+            calls.append(args)
+            if args[1] == 'run':
+                raise subprocess.TimeoutExpired(args, 30)
+            return ''
+        with patch.object(build_sources, 'command', side_effect=command), patch('subprocess.run', side_effect=inspect):
+            with self.assertRaises(subprocess.TimeoutExpired):
+                build_sources.probe(self.entry['image'], ['python', '--version'])
+        self.assertEqual(calls[-1][1:4], ['container', 'rm', '--force'])
+        self.assertEqual(calls[-1][-1], calls[0][calls[0].index('--name')+1])
+
+    def test_probe_cleanup_refuses_foreign_ownership(self):
+        inspected = subprocess.CompletedProcess([], 0, b'[{"Config":{"Labels":{"org.educloud.source-probe":"foreign"}}}]', b'')
+        with patch.object(build_sources, 'command', return_value='') as command, patch('subprocess.run', return_value=inspected):
+            with self.assertRaises(ValueError):
+                build_sources.probe(self.entry['image'], ['python', '--version'])
+        self.assertEqual(command.call_count, 1)
+
     def test_historical_bundle_still_verifies_without_source_build_metadata(self):
         payload = (catalog.ROOT/'evidence/2026-10-17/browser-evidence.zip').read_bytes()
         result = evidence.verify_bundle(payload)

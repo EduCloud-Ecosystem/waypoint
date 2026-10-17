@@ -81,6 +81,26 @@ def fetch(runtime, destination):
     destination.write_bytes(payload)
 
 
+def probe(image, arguments):
+    """Bound probes too: client timeouts alone do not stop Docker containers."""
+    name = 'waypoint-source-probe-' + uuid.uuid4().hex
+    run = ['docker', 'run', '--rm', '--name', name, '--label', 'org.educloud.source-probe=' + name,
+           '--network=none', '--cpus=1', '--memory=256m', '--memory-swap=256m', '--pids-limit=64',
+           '--ulimit', 'cpu=20:20', '--read-only', '--cap-drop=ALL', '--security-opt=no-new-privileges',
+           '--tmpfs', '/tmp:rw,noexec,nosuid,nodev,size=16777216,mode=1777', image]
+    try:
+        return command(run + arguments)
+    finally:
+        inspected = subprocess.run(['docker', 'container', 'inspect', name], capture_output=True, timeout=10)
+        if inspected.returncode == 0:
+            container = json.loads(inspected.stdout)[0]
+            if container['Config']['Labels'].get('org.educloud.source-probe') != name:
+                raise ValueError('Probe ownership mismatch; automatic cleanup refused.')
+            command(['docker', 'container', 'rm', '--force', name], timeout=15)
+        elif b'No such container' not in inspected.stderr and b'No such object' not in inspected.stderr:
+            raise ValueError('Probe cleanup could not be independently verified.')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--platform', required=True, choices=['linux/arm64', 'linux/amd64'])
@@ -147,14 +167,12 @@ def main():
                               architecture=inspection['Architecture'], os=inspection['Os'], size=inspection['Size'])
                 if inspection['Architecture'] != args.platform.split('/')[1] or inspection['Os'] != 'linux':
                     raise ValueError('Built image platform mismatch.')
-                probe = ['python', '-c', 'import sys; print(".".join(map(str,sys.version_info[:3])))'] if runtime_id == 'python' else ['Rscript', '--vanilla', '-e', 'cat(as.character(getRversion()),"\\n")']
-                run = ['docker', 'run', '--rm', '--network=none', '--cpus=1', '--memory=256m', '--pids-limit=64',
-                       '--read-only', '--tmpfs', '/tmp:rw,noexec,nosuid,nodev,size=16777216,mode=1777', record['image']]
-                record['observed_runtime_version'] = command(run + probe).strip()
+                version_command = ['python', '-c', 'import sys; print(".".join(map(str,sys.version_info[:3])))'] if runtime_id == 'python' else ['Rscript', '--vanilla', '-e', 'cat(as.character(getRversion()),"\\n")']
+                record['observed_runtime_version'] = probe(record['image'], version_command).strip()
                 if record['observed_runtime_version'] != runtime['version']:
                     raise ValueError('Observed runtime version mismatch.')
                 for filename in ('packages.tsv', 'configure.log', 'config.log'):
-                    data = command(run + ['cat', '/usr/local/share/waypoint-build/' + filename])
+                    data = probe(record['image'], ['cat', '/usr/local/share/waypoint-build/' + filename])
                     (directory / filename).write_text(data)
                 record['package_inventory_sha256'] = sha((directory / 'packages.tsv').read_bytes())
                 record['log_sha256'] = sha((directory / 'build.log').read_bytes())
