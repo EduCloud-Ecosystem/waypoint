@@ -172,6 +172,17 @@ class WorkspaceTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 validate_result(wrong, CSV, "baseline")
 
+    def test_group_labels_and_shared_numeric_spellings_are_preserved(self):
+        data = 'group,value\n001,+1.0\n002,.5\nNA,2e1\nNULL,-1.\n001, 3E0 \n'
+        self.assertEqual(parse_csv(data), {"001": [1, 3], "002": [.5], "NA": [20], "NULL": [-1]})
+        self.assertEqual([row["group"] for row in expected_result(data, "baseline")["groups"]], ["001", "002", "NA", "NULL"])
+
+    def test_runtime_specific_numeric_spellings_are_refused_before_queueing(self):
+        for value in ("1_000", "١٢", "１２", "0x10", "\u00a01", "1,2"):
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                self.submit(csv=f'group,value\na,"{value}"\n')
+        self.assertEqual(self.store.project(self.pid, "alice")["runs"], [])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -10,6 +10,7 @@ from pathlib import Path
 
 RECIPES = Path(__file__).resolve().parent.parent / "recipes"
 IDS = {"summary-python": ("python", "recipe.py"), "summary-r": ("r", "recipe.R")}
+NUMBER = re.compile(r"[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?\Z")
 
 
 def digest(data):
@@ -31,8 +32,11 @@ def parse_csv(content):
         name = row["group"]
         if not isinstance(name, str) or not re.fullmatch(r"[A-Za-z0-9 _.-]{1,64}", name):
             raise ValueError("Group names use 1–64 letters, numbers, spaces, dots, dashes or underscores.")
+        spelling = row["value"]
+        if not isinstance(spelling, str) or not NUMBER.fullmatch(spelling.strip(" \t\r\n")):
+            raise ValueError("Values must use ASCII decimal or exponent notation, without digit separators.")
         try:
-            number = float(row["value"])
+            number = float(spelling)
         except (ValueError, TypeError) as exc:
             raise ValueError("Every value must be a finite number.") from exc
         if not math.isfinite(number) or abs(number) > 1e12:

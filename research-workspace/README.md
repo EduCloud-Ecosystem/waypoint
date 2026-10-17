@@ -61,7 +61,10 @@ access as operator privileges. Each active session expires after eight hours.
    total; closing a project does not reset or recycle it.
 2. Use the built-in sample or upload `examples/public-fixture.csv`. The format
    is exactly `group,value`, with at most 1,000 rows and 64 KiB. Use synthetic
-   subject names and public/synthetic data only.
+   subject names and public/synthetic data only. Group labels are preserved exactly;
+   values must use finite ASCII decimal notation (including decimal exponents),
+   with absolute value at most 1e12. Numeric separators and Unicode digits are
+   refused before any compute reservation.
 3. Run the Python baseline. Run the R alternative against the same input.
    Baseline includes all observations. Alternative removes one minimum and one
    maximum per group if that group has at least five observations. These are

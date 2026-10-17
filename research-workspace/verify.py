@@ -47,6 +47,8 @@ def main():
     checks = []
     recorded_runs = []
     report = {"scope": "local-public-data-http-docker-research-pilot", "status": "FAIL", "checks": checks,
+              "observed_at": dt.datetime.now(dt.timezone.utc).isoformat(),
+              "broker_binary_sha256": hashlib.sha256(Path(args.broker).read_bytes()).hexdigest(),
               "images": images, "production_identity": False, "scientific_validity": False,
               "human_independent_reproduction": False, "cloud_resources": False}
 
@@ -129,6 +131,12 @@ def main():
         status, archive = request(owner, "GET", f"/api/projects/{second}/export")
         check("second_project_export", status == 200 and verify_bundle(archive)["valid"])
         (output / "second-project.zip").write_bytes(archive)
+        labels = new_project("label-control", 60)
+        label_csv = 'group,value\n001,+1.0\n002,.5\nNA,2e1\nNULL,-1.\n001, 3E0 \n'
+        for recipe in ("summary-python", "summary-r"):
+            run = wait(labels, submit(labels, recipe, "baseline", label_csv, "labels-"+recipe)["id"])
+            check("exact_group_labels_"+recipe, run["status"] == "succeeded" and run["metrics"] == expected_result(label_csv, "baseline") and run["cleanup_verified"])
+        check("nonportable_number_refused_before_dispatch", request(owner, "POST", f"/api/projects/{labels}/runs", {"recipe": "summary-r", "condition": "baseline", "csv": "group,value\nNA,1_000\n"})[0] == 400)
         capped = new_project("budget-control", 30)
         successful = wait(capped, submit(capped, "summary-python", "baseline", csv, "budget-first")["id"])
         denied = wait(capped, submit(capped, "summary-python", "alternative", csv, "budget-second")["id"])
@@ -149,8 +157,9 @@ def main():
         thread.join(timeout=3)
         report["checks_passed"] = len(checks)
         report["all_recorded_runs_cleanup_verified"] = all(store.run(pid, rid, "owner")["cleanup_verified"] for pid, rid in recorded_runs)
-        report["source_hashes"] = {str(path.relative_to(Path(__file__).parent)): hashlib.sha256(path.read_bytes()).hexdigest()
-            for path in sorted(Path(__file__).parent.rglob("*.py")) if ".runtime" not in path.parts and "__pycache__" not in path.parts}
+        source_root = Path(__file__).parent
+        sources = {path for pattern in ("research_workspace/*.py", "tests/*.py", "recipes/*.py", "recipes/*.R", "static/*", "verify.py", "images.lock.json") for path in source_root.glob(pattern) if path.is_file()}
+        report["source_hashes"] = {str(path.relative_to(source_root)): hashlib.sha256(path.read_bytes()).hexdigest() for path in sorted(sources)}
         (output / "verification.json").write_text(json.dumps(report, indent=2)+"\n")
         print(json.dumps({"status": report["status"], "checks_passed": len(checks), "cleanup_verified": report["all_recorded_runs_cleanup_verified"]}))
 

@@ -7,8 +7,8 @@ was involved. Belay and the existing course/AI pilots were unchanged.
 
 | Layer | Observed result | Evidence boundary |
 | --- | --- | --- |
-| Unit and adversarial controls | 55 tests passed, with ResourceWarnings treated as errors. | Membership, cross-project refusal, durable state, allocation races, cancellation/recovery, receipt checks, and bounded archive verification; not cloud acceptance. |
-| Actual HTTP → broker → Docker | 35 checks passed; every recorded run had verified cleanup. | Python/R, two different datasets/projects, role/refusal controls, budget refusal, comparison, portable export and independent store reopening. |
+| Unit and adversarial controls | 57 tests passed, with ResourceWarnings treated as errors. | Membership, cross-project refusal, durable state, allocation races, cancellation/recovery, receipt checks, and bounded archive verification; not cloud acceptance. |
+| Actual HTTP → broker → Docker | 41 checks passed; every recorded run had verified cleanup. | Python/R, two different datasets/projects, role/refusal controls, budget refusal, comparison, portable export and independent store reopening. |
 | Browser | 23 observed checks passed. | Sign-in, creation, real runs, preserved failure, membership/removal, viewer controls, CSV upload, native ZIP download, keyboard tabs, mobile layout, draft preservation and project closure. |
 | Downloaded evidence | Valid; three runs and 15 files, including the failed R attempt. | Internal integrity and selected lineage; not authenticity, publication certification or scientific validity. |
 | Independent source review | Receipt, access-revocation and connection-lifetime findings fixed and regression-tested. | Scoped agent review, not an exhaustive security certification. |
@@ -16,9 +16,15 @@ was involved. Belay and the existing course/AI pilots were unchanged.
 The final local HTTP run used Outfitter commit
 `8542f092f9f4058c38c7b77ca019cd47803e0627` and the immutable references in
 `images.lock.json`. The browser run used its earlier Docker baseline. The final
-HTTP report contains hashes of the Python source and tests exercised. Browser
+HTTP report contains hashes of the Python/R source, static interface and tests exercised. Browser
 checks preceded the final receipt/refusal review;
 the final automated HTTP run and unit controls cover those backend changes.
+
+Merge review also found that R inferred numeric group labels and missing-value
+names. The recipe now preserves labels such as `001`, `NA` and `NULL` exactly,
+and input validation accepts only decimal spellings shared by both runtimes.
+Fresh Python/R execution verified these controls; unsupported numeric spellings
+are refused before admission.
 
 Outfitter's final scoped review also fixed authority-ledger growth, corrupted
 accounting acceptance, ambiguous late creation and expired cloud mutation

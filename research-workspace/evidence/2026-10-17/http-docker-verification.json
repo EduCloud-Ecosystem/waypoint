@@ -29,6 +29,12 @@
     "admit_second-alternative",
     "second_project_alternative",
     "second_project_export",
+    "create_label-control",
+    "admit_labels-summary-python",
+    "exact_group_labels_summary-python",
+    "admit_labels-summary-r",
+    "exact_group_labels_summary-r",
+    "nonportable_number_refused_before_dispatch",
     "create_budget-control",
     "admit_budget-first",
     "admit_budget-second",
@@ -38,6 +44,8 @@
     "closed_project_export_retained",
     "independent_reopen_preserves_recorded_runs"
   ],
+  "observed_at": "2026-10-17T21:45:39.386349+00:00",
+  "broker_binary_sha256": "f66506677e6a505aa32e93e271c9f64cfd77e92f4b9e63c43dff86b6f6f35a15",
   "images": {
     "python": "python@sha256:229a2c5bfa27522db7815ea81f9bed70af17ccb9de9fc7ad142b1877b5830d36",
     "r": "r-base@sha256:fa1972f31def171b83e0911e947ab8b57db143f0fc8a67af4c0d5ac329041646"
@@ -46,20 +54,26 @@
   "scientific_validity": false,
   "human_independent_reproduction": false,
   "cloud_resources": false,
-  "checks_passed": 35,
+  "checks_passed": 41,
   "all_recorded_runs_cleanup_verified": true,
   "source_hashes": {
+    "images.lock.json": "bf36e6c82b7b89ef438b0be7523e936dd2319b902325b8e91b0df440a2ea33af",
+    "recipes/recipe.R": "a3c06effab96558d8a09068adbfaf2650a3d9ab82b608ea63437dc9076fe3957",
     "recipes/recipe.py": "549f064aaaa36ee8259f1f8e2902d0dfb15d071fcb6d9b60e52b266a7bbdb922",
     "research_workspace/__init__.py": "d8cd56bc22ee978af2e94c63e5f3ac755934c728209cd5b3cceea7b2bc3af6e5",
     "research_workspace/__main__.py": "77c822f0f01e35e4a65c522072a6017a4228e575a1f15994be5dee6ceb35cb73",
     "research_workspace/evidence.py": "30f21cedc082ec48b743abbbc0390ad8115a3796c2a8a5b60ab9ce62ea5f738c",
-    "research_workspace/recipes.py": "8d680ba324c9eec2b68b52b5bcfb65a2bcd21b72a0277707026c1ff77ee4163a",
+    "research_workspace/recipes.py": "c157564229c562cc5fe5ee315e3cb2be74d5588d830e0de6d4c2e7caead2114f",
     "research_workspace/runtime.py": "dd165fcd8ae523302ee64a857ba47d1f8f8bdda0010565bb9f2c85ff95ae9f53",
     "research_workspace/server.py": "f4edd80aa6719c4840b541ba782c12fa0941a61b6b2b82951150f155993a83a2",
     "research_workspace/store.py": "cb200dae1e7711593350a0e221126f71fc51b626753721a451ec4f74b9f7b6bc",
+    "static/app.js": "c20785086f54acd48b69eb7cc0728ecad3e9e28e5559e817caa988c65335e606",
+    "static/favicon.svg": "883b41d4da89db464d88edfa1737edc53672e4c839d3e2fba93d1469479817cb",
+    "static/index.html": "18c2e73be16f14d5c7db4a917e2cf365d6337fa212ede9dec84bc939b7347386",
+    "static/styles.css": "72f19f74813e651b6c5a586818380c7a1560bba5338b08c3d166e5da85c11fcc",
     "tests/test_evidence.py": "e174dc1c18873e1114755dcfc9a175b30890f3ad5615e97c8f993e2c717a03e6",
     "tests/test_review_regressions.py": "61a74d957bd473dbd32e2f5591cc5fcad2fb73ab02d8361530871798ca32f790",
-    "tests/test_workspace.py": "e48711ab7343a0b5720a12076ec36dc194ef04d28cadf49a3636e2e9ca91b3bd",
-    "verify.py": "172c7bed14f14e667eb20f1ee44ddb0a74dd3297ca6ed9164e1b40b4d899fecb"
+    "tests/test_workspace.py": "f125c80b30d7fddbf372b5cd17e7faa2e9db08767edaabee0ff11bff7bc5eab3",
+    "verify.py": "e0cb313b195c68d979dd8f342560f7084497fa16c071fcaf6f3f9b779ba3211a"
   }
 }
