@@ -97,7 +97,7 @@ retained in the original browser evidence.
 | Focused environment browser review | PASS | 17 checks on disposable local service; catalog503 and disabled-fieldset controls explicitly simulated; no compute submitted |
 | Local image platform/declared-version inspection | PASS | Existing linux/arm64 image records only |
 | Existing Python / corrected R execution | PASS | Referenced local synthetic evidence; exact recorded hashes |
-| Clean image rebuild from source/build inputs | NOT RUN | Upstream build inputs and base-image construction are not captured |
+| Original opaque-image rebuild from source/build inputs | NOT RUN | Upstream build inputs and base-image construction are not captured |
 | Independent operator or second-machine reproduction | NOT RUN | No such acceptance is recorded |
 | Other architectures | NOT RUN | No support inferred from unrelated CI jobs |
 | Real research data or institutional pilot acceptance | NOT RUN | Public/synthetic proof of concept only |
@@ -123,6 +123,12 @@ unchanged. The new checks do not repeat role authorization, recipe execution,
 manual screen-reader review, or independent-machine acceptance.
 
 ## Source-build candidates
+
+Four disabled candidates record Python 3.12.15 and R 4.6.1 for native ARM64
+and AMD64. Each platform passed 49 automated checks, including all eight
+runtime/condition/project combinations. Full IDs bind the recipe/image pair
+with a SHA-256 suffix; inspect `environments.json` for exact identities. The
+original three entries above remain unchanged.
 
 [Clean source builds](SOURCE-BUILDS.md) define separate candidate identities,
 pinned inputs, native-platform qualification and promotion gates. Candidates

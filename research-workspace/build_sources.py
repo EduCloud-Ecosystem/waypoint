@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import selectors
 import shutil
+import signal
 import subprocess
 import time
 import urllib.request
@@ -33,7 +34,7 @@ def bounded(args, log, *, timeout, maximum):
     """Drain output continuously, kill the client at the finite limit, retain logs."""
     started, size = time.monotonic(), 0
     with log.open('xb') as stream, selectors.DefaultSelector() as selector:
-        process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, start_new_session=True)
         selector.register(process.stdout, selectors.EVENT_READ)
         try:
             while selector.get_map():
@@ -52,8 +53,12 @@ def bounded(args, log, *, timeout, maximum):
             if process.wait(timeout=10):
                 raise ValueError('Command failed; inspect retained log.')
         finally:
-            if process.poll() is None:
-                process.kill()
+            # Docker invokes a buildx child. Killing only the CLI parent can
+            # leave that child running after the deadline.
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
             process.wait(timeout=10)
             process.stdout.close()
     return round(time.monotonic() - started, 3)

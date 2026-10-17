@@ -6,11 +6,13 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from unittest.mock import patch
 
 import build_sources
 import qualify_sources
+import recheck_source_probes
 from research_workspace import catalog, evidence, reproduction
 
 
@@ -34,6 +36,19 @@ class SourceBuildTests(unittest.TestCase):
         self.assertFalse(any(e['available'] for e in entries))
         self.assertEqual(document['environments'][0]['id'], 'summary-python-v1')
 
+    def test_source_environment_id_changes_with_recipe_or_image(self):
+        entry = self.entry
+        self.assertEqual(entry['id'], catalog.source_identifier(entry['recipe'], entry['version'], entry['recipe_sha256'], entry['image']))
+        self.assertNotEqual(entry['id'], catalog.source_identifier(entry['recipe'], entry['version'], 'f'*64, entry['image']))
+        self.assertNotEqual(entry['id'], catalog.source_identifier(entry['recipe'], entry['version'], entry['recipe_sha256'], 'sha256:'+'f'*64))
+
+    def test_early_numeric_candidate_ids_are_inert_snapshot_metadata_only(self):
+        entry = deepcopy(self.entry)
+        entry['id'] = f"{entry['recipe']}-v{entry['version']}"
+        catalog.validate_snapshot(entry, entry['recipe'], entry['recipe_sha256'], entry['image'])
+        with self.assertRaises(ValueError):
+            catalog._validate(entry)
+
     def test_offline_snapshot_never_opens_packaged_source(self):
         with patch.object(catalog, '_read_packaged', side_effect=AssertionError('No file reads')):
             catalog.validate_snapshot(self.entry, self.entry['recipe'], self.entry['recipe_sha256'], self.entry['image'])
@@ -45,6 +60,7 @@ class SourceBuildTests(unittest.TestCase):
         project, runs, files = fixture()
         entry = deepcopy(self.entry)
         entry['recipe_sha256'] = runs[0]['recipe_sha256']
+        entry['id'] = catalog.source_identifier(entry['recipe'], entry['version'], entry['recipe_sha256'], entry['image'])
         runs[0]['environment'].update(image=entry['image'], specification=entry)
         payload = evidence.build_bundle(project, runs, files)
         with patch.object(catalog, '_read_packaged', side_effect=AssertionError('No file reads')):
@@ -90,6 +106,18 @@ class SourceBuildTests(unittest.TestCase):
                 build_sources.fetch({'url': 'https://www.python.org/test', 'sha256': '0'*64}, self.root/'source')
         self.assertFalse((self.root/'source').exists())
 
+    def test_probe_recheck_cannot_turn_incomplete_construction_into_success(self):
+        original = {'status': 'FAIL', 'inputs': self.report['inputs'], 'builds': [
+            {'runtime': runtime, 'repetition': 1, 'status': 'FAIL'} for runtime in ('python','r')]}
+        source = self.root/'original.json'
+        payload = json.dumps(original).encode()
+        source.write_bytes(payload)
+        with patch.object(recheck_source_probes, 'command') as command, self.assertRaises(ValueError):
+            recheck_source_probes.recheck(source, self.root/'recheck')
+        command.assert_not_called()
+        self.assertEqual(source.read_bytes(), payload)
+        self.assertEqual(json.loads((self.root/'recheck/builds.json').read_text())['status'], 'FAIL')
+
     def test_foreign_architecture_and_capacity_fail_before_build(self):
         contract = self.report['inputs']
         for architecture, memory, cpus in [('x86_64', 8*1024**3, 8), ('aarch64', 1024**3, 8), ('aarch64', 8*1024**3, 1)]:
@@ -120,6 +148,17 @@ class SourceBuildTests(unittest.TestCase):
                 build_sources.probe(self.entry['image'], ['python', '--version'])
         self.assertEqual(calls[-1][1:4], ['container', 'rm', '--force'])
         self.assertEqual(calls[-1][-1], calls[0][calls[0].index('--name')+1])
+
+    def test_deadline_also_stops_cli_descendants(self):
+        marker = self.root/'escaped-child'
+        started = self.root/'started'
+        child = f"import time; from pathlib import Path; Path({str(started)!r}).touch(); time.sleep(1); Path({str(marker)!r}).touch()"
+        parent = f"import subprocess,sys,time; subprocess.Popen([sys.executable,'-c',{child!r}]); time.sleep(5)"
+        with self.assertRaises(TimeoutError):
+            build_sources.bounded([sys.executable,'-c',parent], self.root/'descendant.log', timeout=0.5, maximum=1000)
+        self.assertTrue(started.exists())
+        time.sleep(1)
+        self.assertFalse(marker.exists())
 
     def test_probe_cleanup_refuses_foreign_ownership(self):
         inspected = subprocess.CompletedProcess([], 0, b'[{"Config":{"Labels":{"org.educloud.source-probe":"foreign"}}}]', b'')

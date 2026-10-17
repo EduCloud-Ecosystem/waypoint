@@ -19,7 +19,7 @@ MAX_RECIPE_BYTES = 65536
 IMAGE = re.compile(r"(?:[A-Za-z0-9][A-Za-z0-9./_:-]*@)?sha256:[0-9a-f]{64}\Z")
 SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 REVISION = re.compile(r"[0-9a-f]{40}\Z")
-IDENTIFIER = re.compile(r"[a-z][a-z0-9-]{2,63}\Z")
+IDENTIFIER = re.compile(r"[a-z][a-z0-9-]{2,127}\Z")
 RECIPES = {"summary-python": "python", "summary-r": "r"}
 LIMITS = {"cpus": 1, "memory_mb": 256, "pids_limit": 64,
           "timeout_seconds": 30, "max_output_bytes": 65536,
@@ -116,6 +116,12 @@ def _source(entry):
     return content
 
 
+def source_identifier(recipe, version, recipe_sha256, image):
+    """A rebuild cannot reuse an environment ID for a different source/image pair."""
+    identity = hashlib.sha256((recipe_sha256 + "\n" + image).encode()).hexdigest()
+    return f"{recipe}-v{version}-{identity}"
+
+
 def _validate(entry, *, check_source=True):
     _object(entry, ENTRY_KEYS, "environment")
     if not isinstance(entry["id"], str) or not IDENTIFIER.fullmatch(entry["id"]):
@@ -124,8 +130,6 @@ def _validate(entry, *, check_source=True):
         _fail("unreviewed recipe identifier.")
     if type(entry["version"]) is not int or not 1 <= entry["version"] <= 1000:
         _fail("invalid environment version.")
-    if entry["id"] != f"{entry['recipe']}-v{entry['version']}":
-        _fail("identifier and recipe version disagree.")
     _text(entry["name"], "environment name", 120)
     if entry["status"] not in ("active", "archived", "candidate"):
         _fail("invalid environment status.")
@@ -207,6 +211,12 @@ def _validate(entry, *, check_source=True):
             _fail("source-built active environments require passing build evidence.")
     else:
         _fail("invalid build input status.")
+    legacy_id = f"{entry['recipe']}-v{entry['version']}"
+    expected_id = source_identifier(entry['recipe'], entry['version'], entry['recipe_sha256'], entry['image']) if provenance['build_inputs_status'] == 'RECORDED' else legacy_id
+    # Early qualification exports used numeric candidate IDs. Accept those only
+    # as inert snapshots, never as installed execution-catalog identities.
+    if entry['id'] != expected_id and not (not check_source and entry['id'] == legacy_id):
+        _fail("identifier and immutable recipe/image identity disagree.")
     _text(provenance["clean_rebuild"]["boundary"], "clean rebuild boundary")
     evidence = provenance["execution_evidence"]
     _object(evidence, {"status", "reference", "boundary"}, "execution evidence")

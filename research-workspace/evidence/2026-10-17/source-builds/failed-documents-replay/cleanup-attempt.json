@@ -1,0 +1,23 @@
+{
+  "status": "FAIL",
+  "request_id": "replay_211c5d86f73d488e9a9af014e0736d06",
+  "scope": "Only the retained failed Documents-directory replay container",
+  "container_id": "98c0b3f716beeb62997a7183cec8b19b2566ceb6b3e74deb4a99cd7b14434fae",
+  "container_name": "/outfitter-bec8129ea1c89f0b9e40c3010d8551b7",
+  "state_before": {
+    "Status": "running",
+    "Running": true,
+    "Paused": false,
+    "Restarting": false,
+    "OOMKilled": false,
+    "Dead": false,
+    "Pid": 27252,
+    "ExitCode": 0,
+    "Error": "",
+    "StartedAt": "2026-10-17T22:25:42.655199013Z",
+    "FinishedAt": "0001-01-01T00:00:00Z"
+  },
+  "exit_code": 1,
+  "stdout": "",
+  "stderr": "Error response from daemon: removal of container 98c0b3f716beeb62997a7183cec8b19b2566ceb6b3e74deb4a99cd7b14434fae is already in progress\n"
+}

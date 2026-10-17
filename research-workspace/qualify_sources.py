@@ -10,7 +10,7 @@ import subprocess
 import sys
 
 from build_sources import bounded, sha, write
-from research_workspace.catalog import validate_snapshot
+from research_workspace.catalog import source_identifier, validate_snapshot
 from research_workspace.evidence import verify_bundle
 
 ROOT = Path(__file__).resolve().parent
@@ -22,7 +22,7 @@ def candidate(build, report):
                 if e['runtime']['id'] == runtime and e['status'] == 'active')
     entry = copy.deepcopy(base)
     version = (2 if runtime == 'python' else 3) + (1 if report['platform'] == 'linux/amd64' else 0) + 2 * (build['repetition'] - 1)
-    entry.update(id=f"summary-{runtime}-v{version}", version=version, status='candidate',
+    entry.update(id=source_identifier(entry['recipe'], version, entry['recipe_sha256'], build['image']), version=version, status='candidate',
                  name=f"{runtime.capitalize()} source build {version}", image=build['image'])
     entry['runtime'] = {'id': runtime, 'version': build['observed_runtime_version'],
                         'version_evidence': 'Executed version command in the new source-built image; see build record.'}

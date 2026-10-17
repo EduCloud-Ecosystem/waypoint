@@ -35,7 +35,7 @@ class CatalogTests(unittest.TestCase):
 
     def test_active_availability_requires_exact_configured_image(self):
         self.assertFalse(any(entry["available"] for entry in catalog.list_environments()))
-        images = {entry["runtime"]["id"]: entry["image"] for entry in self.document["environments"]}
+        images = {entry["runtime"]["id"]: entry["image"] for entry in self.document["environments"] if entry['status'] == 'active'}
         entries = catalog.list_environments(images)
         self.assertEqual([entry["id"] for entry in entries if entry["available"]],
                          ["summary-python-v1", "summary-r-v2"])

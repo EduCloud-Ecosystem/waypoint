@@ -72,11 +72,28 @@ layers. Compilation has networking disabled; only pinned base/tool downloads
 and source acquisition use the network. Package managers are used to obtain
 necessary compiler dependencies, not to manufacture a language lockfile.
 
+Build-client deadlines terminate the complete client process group. Short image
+probes have owned container names, finite CPU/memory limits, bounded scratch
+space and verified owned cleanup.
+
 The runner stops its own builder on success/failure, retaining its volume,
 images, contexts, build logs, and failed attempts. It does not prune shared
 Docker resources. Build interruption, unavailable capacity, failed downloads,
 and failed qualification remain visible. Host/daemon loss can prevent stopping
 the owned builder; inspect `builder_stopped` and reconcile before continuing.
+
+A completed construction can be rechecked after a post-build probe defect:
+
+```sh
+python3 recheck_source_probes.py --builds /absolute/failed-attempt/builds.json \
+  --output /absolute/new/probe-recheck
+```
+
+This verifies retained contexts, logs, manifests, local image identity and
+runtime versions. It refuses incomplete construction or changed packaged build
+inputs. It writes a separate report linked by hashes to the unchanged failed
+report; it never performs or claims another build. Pass that report to
+`qualify_sources.py`. A builder-start failure has no completed images to recheck.
 
 ## Qualification and export
 
@@ -89,6 +106,11 @@ controls. Counts/conditions/group strings are exact; means use relative
 `1e-12` and absolute `1e-9` tolerances. Labels `001`, `002`, `NA`, and `NULL`
 are tested explicitly. The unchanged Outfitter mechanism supplies finite
 admission, network-free execution, conservative charges and cleanup receipts.
+
+Candidate IDs include a SHA-256 derived from the complete recipe/image pair; a
+later rebuild cannot silently reuse the same ID. Early numeric candidate IDs
+remain accepted only as inert historical snapshot metadata, not installed
+execution identities.
 
 New runs retain an environment `specification` snapshot in `runs.json`, with
 version, dependency declarations, platform, input hashes and build evidence.
@@ -108,13 +130,15 @@ SHA-256 `888bbb96e611e6ba4a9b6181b2d8a1b314ac6167bf39d2642fb2e8c07ab20d87`.
 
 A bare `sha256:` is the immutable local Docker image ID, not a portable registry
 reference. Build evidence records OCI manifest and configuration digests
-separately. Retain exact images with `docker image save`, and load them before
+when supplied by the engine. The local containerd image ID was the manifest
+digest; the CI Docker image ID was the configuration digest. These are different
+object types and must not be compared as if interchangeable. Retain exact images with `docker image save`, and load them before
 attempting exact replay; images are not pushed to a registry by these tools.
 Rebuilding creates new evidence and may create a different image identity.
 
 ## Acceptance boundaries
 
-See the committed source-build acceptance record for measured results and
+See [the committed source-build acceptance record](evidence/2026-10-17/source-builds/README.md) for measured results and
 failed controls. Source construction, fixture repeatability, exact image
 replay, and independent reproduction are separate claims. Independent-human
 and second-machine reproduction, service-owner promotion, production security

@@ -1,0 +1,46 @@
+#1 [internal] booting buildkit
+#1 pulling image moby/buildkit@sha256:cec9f139f45e93c5c69c60f8b07cfad9f43f4ef6b6a6cd917527fea5ff2e3dea
+#1 pulling image moby/buildkit@sha256:cec9f139f45e93c5c69c60f8b07cfad9f43f4ef6b6a6cd917527fea5ff2e3dea 10.3s done
+#1 creating container buildx_buildkit_waypoint-source-2bef78a9ece30
+#1 creating container buildx_buildkit_waypoint-source-2bef78a9ece30 3.8s done
+#1 DONE 15.3s
+Name:          waypoint-source-2bef78a9ece3
+Driver:        docker-container
+Last Activity: 2026-10-17 22:18:15 +0000 UTC
+
+Nodes:
+Name:                  waypoint-source-2bef78a9ece30
+Endpoint:              orbstack
+Driver Options:        memory-swap="3g" cpu-period="100000" cpu-quota="200000" image="moby/buildkit@sha256:cec9f139f45e93c5c69c60f8b07cfad9f43f4ef6b6a6cd917527fea5ff2e3dea" memory="3g"
+Status:                running
+BuildKit daemon flags: --allow-insecure-entitlement=network.host
+BuildKit version:      v0.33.1
+Platforms:             linux/arm64, linux/amd64, linux/amd64/v2, linux/riscv64, linux/ppc64le, linux/s390x, linux/386, linux/mips64le, linux/arm/v7, linux/arm/v6
+Labels:
+ org.mobyproject.buildkit.worker.executor:         oci
+ org.mobyproject.buildkit.worker.hostname:         ef0f0c45504c
+ org.mobyproject.buildkit.worker.network:          host
+ org.mobyproject.buildkit.worker.oci.process-mode: sandbox
+ org.mobyproject.buildkit.worker.selinux.enabled:  false
+ org.mobyproject.buildkit.worker.snapshotter:      overlayfs
+GC Policy rule#0:
+ All:            false
+ Filters:        type==source.local type==exec.cachemount type==source.git.checkout
+ Keep Duration:  48h0m0s
+ Max Used Space: 488.3MiB
+GC Policy rule#1:
+ All:            false
+ Keep Duration:  1440h0m0s
+ Reserved Space: 5.588GiB
+ Max Used Space: 43.77GiB
+ Min Free Space: 11.18GiB
+GC Policy rule#2:
+ All:            false
+ Reserved Space: 5.588GiB
+ Max Used Space: 43.77GiB
+ Min Free Space: 11.18GiB
+GC Policy rule#3:
+ All:            true
+ Reserved Space: 5.588GiB
+ Max Used Space: 43.77GiB
+ Min Free Space: 11.18GiB

@@ -1,0 +1,251 @@
+{
+  "buildx.build.provenance": {
+    "builder": {
+      "id": ""
+    },
+    "buildType": "https://mobyproject.org/buildkit@v1",
+    "materials": [
+      {
+        "uri": "pkg:docker/debian?digest=sha256:a4672c0cb26fbdde88e38fa2dfb6c681942306680e41e4378b28770b6e79ee91\u0026platform=linux%2Famd64",
+        "digest": {
+          "sha256": "a4672c0cb26fbdde88e38fa2dfb6c681942306680e41e4378b28770b6e79ee91"
+        }
+      }
+    ],
+    "invocation": {
+      "configSource": {
+        "entryPoint": "Dockerfile"
+      },
+      "parameters": {
+        "frontend": "dockerfile.v0",
+        "args": {
+          "build-arg:BASE_IMAGE": "debian@sha256:a4672c0cb26fbdde88e38fa2dfb6c681942306680e41e4378b28770b6e79ee91",
+          "build-arg:RUNTIME": "python",
+          "build-arg:SNAPSHOT": "20261006T000000Z",
+          "no-cache": ""
+        },
+        "locals": [
+          {
+            "name": "context"
+          },
+          {
+            "name": "dockerfile"
+          }
+        ],
+        "root": {
+          "configSource": {
+            "path": "Dockerfile"
+          },
+          "request": {
+            "args": {
+              "build-arg:BASE_IMAGE": "debian@sha256:a4672c0cb26fbdde88e38fa2dfb6c681942306680e41e4378b28770b6e79ee91",
+              "build-arg:RUNTIME": "python",
+              "build-arg:SNAPSHOT": "20261006T000000Z",
+              "no-cache": ""
+            }
+          }
+        },
+        "compatibilityVersion": 30
+      },
+      "environment": {
+        "dockerfileVersion": "1.27.0",
+        "github_actor": "Gchism94",
+        "github_actor_id": "38962243",
+        "github_event_name": "workflow_dispatch",
+        "github_event_payload": {
+          "inputs": {
+            "clean_source_builds": "true"
+          },
+          "organization": {
+            "avatar_url": "https://avatars.githubusercontent.com/u/293639145?v=4",
+            "description": "",
+            "events_url": "https://api.github.com/orgs/EduCloud-Ecosystem/events",
+            "hooks_url": "https://api.github.com/orgs/EduCloud-Ecosystem/hooks",
+            "id": 293639145,
+            "issues_url": "https://api.github.com/orgs/EduCloud-Ecosystem/issues",
+            "login": "EduCloud-Ecosystem",
+            "members_url": "https://api.github.com/orgs/EduCloud-Ecosystem/members{/member}",
+            "node_id": "O_kgDOEYCT6Q",
+            "public_members_url": "https://api.github.com/orgs/EduCloud-Ecosystem/public_members{/member}",
+            "repos_url": "https://api.github.com/orgs/EduCloud-Ecosystem/repos",
+            "url": "https://api.github.com/orgs/EduCloud-Ecosystem"
+          },
+          "ref": "refs/heads/codex/research-source-builds",
+          "repository": {
+            "allow_forking": true,
+            "archive_url": "https://api.github.com/repos/EduCloud-Ecosystem/waypoint/{archive_format}{/ref}",
+            "archived": false,
+            "assignees_url": "https://api.github.com/repos/EduCloud-Ecosystem/waypoint/assignees{/user}",
+            "blobs_url": "https://api.github.com/repos/EduCloud-Ecosystem/waypoint/git/blobs{/sha}",
+            "branches_url": "https://api.github.com/repos/EduCloud-Ecosystem/waypoint/branches{/branch}",
+            "clone_url": "https://github.com/EduCloud-Ecosystem/waypoint.git",
+            "collaborators_url": "https://api.github.com/repos/EduCloud-Ecosystem/waypoint/collaborators{/collaborator}",
+            "comments_url": "https://api.github.com/repos/EduCloud-Ecosystem/waypoint/comments{/number}",
+            "commits_url": "https://api.github.com/repos/EduCloud-Ecosystem/waypoint/commits{/sha}",
+            "compare_url": "https://api.github.com/repos/EduCloud-Ecosystem/waypoint/compare/{base}...{head}",
+            "contents_url": "https://api.github.com/repos/EduCloud-Ecosystem/waypoint/contents/{+path}",
+            "contributors_url": "https://api.github.com/repos/EduCloud-Ecosystem/waypoint/contributors",
+            "created_at": "2026-07-28T16:19:48Z",
+            "custom_properties": {},
+            "default_branch": "main",
+            "deployments_url": "https://api.github.com/repos/EduCloud-Ecosystem/waypoint/deployments",
+            "description": null,
+            "disabled": false,
+            "downloads_url": "https://api.github.com/repos/EduCloud-Ecosystem/waypoint/downloads",
+            "events_url": "https://api.github.com/repos/EduCloud-Ecosystem/waypoint/events",
+            "fork": false,
+            "forks": 0,
+            "forks_count": 0,
+            "forks_url": "https://api.github.com/repos/EduCloud-Ecosystem/waypoint/forks",
+            "full_name": "EduCloud-Ecosystem/waypoint",
+            "git_commits_url": "https://api.github.com/repos/EduCloud-Ecosystem/waypoint/git/commits{/sha}",
+            "git_refs_url": "https://api.github.com/repos/EduCloud-Ecosystem/waypoint/git/refs{/sha}",
+            "git_tags_url": "https://api.github.com/repos/EduCloud-Ecosystem/waypoint/git/tags{/sha}",
+            "git_url": "git://github.com/EduCloud-Ecosystem/waypoint.git",
+            "has_discussions": false,
+            "has_downloads": false,
+            "has_issues": true,
+            "has_pages": false,
+            "has_projects": true,
+            "has_pull_requests": true,
+            "has_wiki": true,
+            "homepage": null,
+            "hooks_url": "https://api.github.com/repos/EduCloud-Ecosystem/waypoint/hooks",
+            "html_url": "https://github.com/EduCloud-Ecosystem/waypoint",
+            "id": 1315188630,
+            "is_template": false,
+            "issue_comment_url": "https://api.github.com/repos/EduCloud-Ecosystem/waypoint/issues/comments{/number}",
+            "issue_events_url": "https://api.github.com/repos/EduCloud-Ecosystem/waypoint/issues/events{/number}",
+            "issues_url": "https://api.github.com/repos/EduCloud-Ecosystem/waypoint/issues{/number}",
+            "keys_url": "https://api.github.com/repos/EduCloud-Ecosystem/waypoint/keys{/key_id}",
+            "labels_url": "https://api.github.com/repos/EduCloud-Ecosystem/waypoint/labels{/name}",
+            "language": "Python",
+            "languages_url": "https://api.github.com/repos/EduCloud-Ecosystem/waypoint/languages",
+            "license": {
+              "key": "apache-2.0",
+              "name": "Apache License 2.0",
+              "node_id": "MDc6TGljZW5zZTI=",
+              "spdx_id": "Apache-2.0",
+              "url": "https://api.github.com/licenses/apache-2.0"
+            },
+            "merges_url": "https://api.github.com/repos/EduCloud-Ecosystem/waypoint/merges",
+            "milestones_url": "https://api.github.com/repos/EduCloud-Ecosystem/waypoint/milestones{/number}",
+            "mirror_url": null,
+            "name": "waypoint",
+            "node_id": "R_kgDOTmQvlg",
+            "notifications_url": "https://api.github.com/repos/EduCloud-Ecosystem/waypoint/notifications{?since,all,participating}",
+            "open_issues": 4,
+            "open_issues_count": 4,
+            "owner": {
+              "avatar_url": "https://avatars.githubusercontent.com/u/293639145?v=4",
+              "events_url": "https://api.github.com/users/EduCloud-Ecosystem/events{/privacy}",
+              "followers_url": "https://api.github.com/users/EduCloud-Ecosystem/followers",
+              "following_url": "https://api.github.com/users/EduCloud-Ecosystem/following{/other_user}",
+              "gists_url": "https://api.github.com/users/EduCloud-Ecosystem/gists{/gist_id}",
+              "gravatar_id": "",
+              "html_url": "https://github.com/EduCloud-Ecosystem",
+              "id": 293639145,
+              "login": "EduCloud-Ecosystem",
+              "node_id": "O_kgDOEYCT6Q",
+              "organizations_url": "https://api.github.com/users/EduCloud-Ecosystem/orgs",
+              "received_events_url": "https://api.github.com/users/EduCloud-Ecosystem/received_events",
+              "repos_url": "https://api.github.com/users/EduCloud-Ecosystem/repos",
+              "site_admin": false,
+              "starred_url": "https://api.github.com/users/EduCloud-Ecosystem/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/EduCloud-Ecosystem/subscriptions",
+              "type": "Organization",
+              "url": "https://api.github.com/users/EduCloud-Ecosystem",
+              "user_view_type": "public"
+            },
+            "private": false,
+            "pull_request_creation_policy": "all",
+            "pulls_url": "https://api.github.com/repos/EduCloud-Ecosystem/waypoint/pulls{/number}",
+            "pushed_at": "2026-10-17T22:24:33Z",
+            "releases_url": "https://api.github.com/repos/EduCloud-Ecosystem/waypoint/releases{/id}",
+            "size": 2545,
+            "ssh_url": "git@github.com:EduCloud-Ecosystem/waypoint.git",
+            "stargazers_count": 0,
+            "stargazers_url": "https://api.github.com/repos/EduCloud-Ecosystem/waypoint/stargazers",
+            "statuses_url": "https://api.github.com/repos/EduCloud-Ecosystem/waypoint/statuses/{sha}",
+            "subscribers_url": "https://api.github.com/repos/EduCloud-Ecosystem/waypoint/subscribers",
+            "subscription_url": "https://api.github.com/repos/EduCloud-Ecosystem/waypoint/subscription",
+            "svn_url": "https://github.com/EduCloud-Ecosystem/waypoint",
+            "tags_url": "https://api.github.com/repos/EduCloud-Ecosystem/waypoint/tags",
+            "teams_url": "https://api.github.com/repos/EduCloud-Ecosystem/waypoint/teams",
+            "topics": [],
+            "trees_url": "https://api.github.com/repos/EduCloud-Ecosystem/waypoint/git/trees{/sha}",
+            "updated_at": "2026-10-17T22:13:44Z",
+            "url": "https://api.github.com/repos/EduCloud-Ecosystem/waypoint",
+            "visibility": "public",
+            "watchers": 0,
+            "watchers_count": 0,
+            "web_commit_signoff_required": false
+          },
+          "sender": {
+            "avatar_url": "https://avatars.githubusercontent.com/u/38962243?v=4",
+            "events_url": "https://api.github.com/users/Gchism94/events{/privacy}",
+            "followers_url": "https://api.github.com/users/Gchism94/followers",
+            "following_url": "https://api.github.com/users/Gchism94/following{/other_user}",
+            "gists_url": "https://api.github.com/users/Gchism94/gists{/gist_id}",
+            "gravatar_id": "",
+            "html_url": "https://github.com/Gchism94",
+            "id": 38962243,
+            "login": "Gchism94",
+            "node_id": "MDQ6VXNlcjM4OTYyMjQz",
+            "organizations_url": "https://api.github.com/users/Gchism94/orgs",
+            "received_events_url": "https://api.github.com/users/Gchism94/received_events",
+            "repos_url": "https://api.github.com/users/Gchism94/repos",
+            "site_admin": false,
+            "starred_url": "https://api.github.com/users/Gchism94/starred{/owner}{/repo}",
+            "subscriptions_url": "https://api.github.com/users/Gchism94/subscriptions",
+            "type": "User",
+            "url": "https://api.github.com/users/Gchism94",
+            "user_view_type": "public"
+          },
+          "workflow": ".github/workflows/research-workspace.yml"
+        },
+        "github_job": "clean-source-builds",
+        "github_ref": "refs/heads/codex/research-source-builds",
+        "github_ref_name": "codex/research-source-builds",
+        "github_ref_protected": "false",
+        "github_ref_type": "branch",
+        "github_repository": "EduCloud-Ecosystem/waypoint",
+        "github_repository_id": "1315188630",
+        "github_repository_owner": "EduCloud-Ecosystem",
+        "github_repository_owner_id": "293639145",
+        "github_run_attempt": "1",
+        "github_run_id": "39074989956",
+        "github_run_number": "8",
+        "github_runner_arch": "X64",
+        "github_runner_environment": "github-hosted",
+        "github_runner_image_os": "ubuntu24",
+        "github_runner_image_version": "20261012.334.1",
+        "github_runner_name": "GitHub Actions 1000001021",
+        "github_runner_os": "Linux",
+        "github_runner_tracking_id": "github_8c317f22-1fab-4acc-9d19-e7a30901f55a",
+        "github_server_url": "https://github.com",
+        "github_triggering_actor": "Gchism94",
+        "github_workflow": "Research workspace",
+        "github_workflow_ref": "EduCloud-Ecosystem/waypoint/.github/workflows/research-workspace.yml@refs/heads/codex/research-source-builds",
+        "github_workflow_sha": "e617761a8fb39dbc603ced51e4ed5f5a84c2bafc",
+        "platform": "linux/amd64"
+      }
+    }
+  },
+  "buildx.build.ref": "waypoint-source-1f8d2c9e002b/waypoint-source-1f8d2c9e002b0/iqw7uvnf0bmps870ngo16ofou",
+  "containerimage.config.digest": "sha256:4ab2cedba59b403fa1f9ef0c9887771f1f5fd51080807ee802a4c567b05ac065",
+  "containerimage.descriptor": {
+    "mediaType": "application/vnd.oci.image.manifest.v1+json",
+    "digest": "sha256:60f415952ab5713a99d5932a8acb5a063e16c07050eff5a872564f111316c3f9",
+    "size": 1250,
+    "annotations": {
+      "org.opencontainers.image.created": "2026-10-17T22:28:10Z"
+    },
+    "platform": {
+      "architecture": "amd64",
+      "os": "linux"
+    }
+  },
+  "containerimage.digest": "sha256:60f415952ab5713a99d5932a8acb5a063e16c07050eff5a872564f111316c3f9",
+  "image.name": "docker.io/library/waypoint-source-python:waypoint-source-1f8d2c9e002b-1"
+}

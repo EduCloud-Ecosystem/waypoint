@@ -1,0 +1,467 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-17T22:51:32.225204+00:00",
+  "issue": "https://github.com/EduCloud-Ecosystem/waypoint/issues/27",
+  "pull_request": "https://github.com/EduCloud-Ecosystem/waypoint/pull/31",
+  "scope": "Public/synthetic runtime source construction and automated repeatability; no promotion, cloud provisioning or private/student data",
+  "source_construction": {
+    "arm64": {
+      "status": "PASS",
+      "report": "arm64/build/builds.json",
+      "boundary": "One clean native construction of both runtimes. Separately recorded probes rechecked those same completed images after the original R probe defect. The recheck is not another build."
+    },
+    "amd64": {
+      "status": "PASS",
+      "report": "amd64/build/builds.json",
+      "ci_run": "https://github.com/EduCloud-Ecosystem/waypoint/actions/runs/39075522315",
+      "source_revision": "7a84e1a0cb22f5074618e267c023f5cd7562b032",
+      "boundary": "Fresh passing source-build/qualification pair after the earlier pair completed construction but failed its R probe. Both attempts retained."
+    }
+  },
+  "images": [
+    {
+      "platform": "linux/arm64",
+      "runtime": "python",
+      "image": "sha256:e028545ad6c8c393b8441ff67af0b6fef40aa828cfd010549e48935bf4686458",
+      "oci_manifest_digest": "sha256:e028545ad6c8c393b8441ff67af0b6fef40aa828cfd010549e48935bf4686458",
+      "oci_config_digest": null,
+      "observed_runtime_version": "3.12.15",
+      "seconds": 481.06,
+      "package_inventory_sha256": "c0c464fef8a38e1b5c914bc9bf0ae9bb715c111240f239019d23961567b0f189"
+    },
+    {
+      "platform": "linux/arm64",
+      "runtime": "r",
+      "image": "sha256:ba0f81935cb7e0b5742833dbdb826e8c713572702879d8ab3d384bf6551e4235",
+      "oci_manifest_digest": "sha256:ba0f81935cb7e0b5742833dbdb826e8c713572702879d8ab3d384bf6551e4235",
+      "oci_config_digest": null,
+      "observed_runtime_version": "4.6.1",
+      "seconds": 563.866,
+      "package_inventory_sha256": "c0c464fef8a38e1b5c914bc9bf0ae9bb715c111240f239019d23961567b0f189"
+    },
+    {
+      "platform": "linux/amd64",
+      "runtime": "python",
+      "image": "sha256:a0e50e4755ce77300a83f288779ab92274a96b6d8b24ac34f2cc24fdadb58a5e",
+      "oci_manifest_digest": "sha256:83bc862a4c5be3bfd09be2b7efbc0517c9f79f9bf363d74a97c06da29c9f59e3",
+      "oci_config_digest": "sha256:a0e50e4755ce77300a83f288779ab92274a96b6d8b24ac34f2cc24fdadb58a5e",
+      "observed_runtime_version": "3.12.15",
+      "seconds": 182.86,
+      "package_inventory_sha256": "003d35b6d096b1054e87155aa6c845579108776386b81d35dd154e3ba2264ff0"
+    },
+    {
+      "platform": "linux/amd64",
+      "runtime": "r",
+      "image": "sha256:be7cf46517584c92ab06b04b049afa234992a2e0bb4a290c3822d53cc2a2bdad",
+      "oci_manifest_digest": "sha256:85319b3719a4efd909b1093f28b186d64019bd86ebd9792d6edcece3642551c7",
+      "oci_config_digest": "sha256:be7cf46517584c92ab06b04b049afa234992a2e0bb4a290c3822d53cc2a2bdad",
+      "observed_runtime_version": "4.6.1",
+      "seconds": 251.404,
+      "package_inventory_sha256": "003d35b6d096b1054e87155aa6c845579108776386b81d35dd154e3ba2264ff0"
+    }
+  ],
+  "matrix": {
+    "status": "PASS",
+    "checks_per_platform": 49,
+    "matrix_runs_per_platform": 8,
+    "projects_per_platform": 2,
+    "conditions": [
+      "baseline",
+      "alternative"
+    ],
+    "runtimes": [
+      "python",
+      "r"
+    ],
+    "relative_tolerance": 1e-12,
+    "absolute_tolerance": 1e-09,
+    "exact_fields": [
+      "condition",
+      "group",
+      "count"
+    ],
+    "cross_architecture_max_observed_absolute_mean_difference": 0,
+    "recorded_runs_per_qualification": 12,
+    "boundary": "11 successful runs plus one expected budget refusal; eight successful runs form the required full matrix. Final ARM64 qualification uses hash-bound environment IDs; earlier AMD64 numeric-ID snapshots remain inert evidence."
+  },
+  "lineage_controls": {
+    "input": {
+      "status": "PASS",
+      "changed_fields": [
+        "input_sha256"
+      ],
+      "left": {
+        "artifact": "arm64/qualification/first-project.zip",
+        "run_id": "73d65660ba1440d9b2f76fa36c151a28",
+        "lineage": {
+          "input_sha256": "054ee89fec327e9a9292e1008d465c3190cfe3819a259ddce2d32e9e5a6a5360",
+          "recipe_sha256": "549f064aaaa36ee8259f1f8e2902d0dfb15d071fcb6d9b60e52b266a7bbdb922",
+          "parameters_sha256": "f57d40696fe766edbfc7cdd6d23a0c487ec915d0dc56458f4a8bf166f3130ae7",
+          "environment_sha256": "9c77276187620aac0850476c6cff18f4ace3065c2d5a9d283f04fe51495d75b2"
+        },
+        "metrics": {
+          "condition": "baseline",
+          "count": 10,
+          "groups": [
+            {
+              "count": 5,
+              "group": "alpha",
+              "mean": 22.0
+            },
+            {
+              "count": 5,
+              "group": "beta",
+              "mean": 14.0
+            }
+          ],
+          "mean": 18.0
+        }
+      },
+      "right": {
+        "artifact": "arm64/qualification/second-project.zip",
+        "run_id": "691c2d55589f42a4b2bf1dfc078ed178",
+        "lineage": {
+          "input_sha256": "0eb98eaefd071f55e7d43d85a15120b4705cf18394f8d5efeb0d3617dbbc6982",
+          "recipe_sha256": "549f064aaaa36ee8259f1f8e2902d0dfb15d071fcb6d9b60e52b266a7bbdb922",
+          "parameters_sha256": "f57d40696fe766edbfc7cdd6d23a0c487ec915d0dc56458f4a8bf166f3130ae7",
+          "environment_sha256": "9c77276187620aac0850476c6cff18f4ace3065c2d5a9d283f04fe51495d75b2"
+        },
+        "metrics": {
+          "condition": "baseline",
+          "count": 10,
+          "groups": [
+            {
+              "count": 5,
+              "group": "comparison",
+              "mean": 12.0
+            },
+            {
+              "count": 5,
+              "group": "control",
+              "mean": 6.0
+            }
+          ],
+          "mean": 9.0
+        }
+      }
+    },
+    "condition_parameter": {
+      "status": "PASS",
+      "changed_fields": [
+        "parameters_sha256"
+      ],
+      "left": {
+        "artifact": "arm64/qualification/first-project.zip",
+        "run_id": "73d65660ba1440d9b2f76fa36c151a28",
+        "lineage": {
+          "input_sha256": "054ee89fec327e9a9292e1008d465c3190cfe3819a259ddce2d32e9e5a6a5360",
+          "recipe_sha256": "549f064aaaa36ee8259f1f8e2902d0dfb15d071fcb6d9b60e52b266a7bbdb922",
+          "parameters_sha256": "f57d40696fe766edbfc7cdd6d23a0c487ec915d0dc56458f4a8bf166f3130ae7",
+          "environment_sha256": "9c77276187620aac0850476c6cff18f4ace3065c2d5a9d283f04fe51495d75b2"
+        },
+        "metrics": {
+          "condition": "baseline",
+          "count": 10,
+          "groups": [
+            {
+              "count": 5,
+              "group": "alpha",
+              "mean": 22.0
+            },
+            {
+              "count": 5,
+              "group": "beta",
+              "mean": 14.0
+            }
+          ],
+          "mean": 18.0
+        }
+      },
+      "right": {
+        "artifact": "arm64/qualification/first-project.zip",
+        "run_id": "b10891b6e32c426b9f30ce0eb4840d9d",
+        "lineage": {
+          "input_sha256": "054ee89fec327e9a9292e1008d465c3190cfe3819a259ddce2d32e9e5a6a5360",
+          "recipe_sha256": "549f064aaaa36ee8259f1f8e2902d0dfb15d071fcb6d9b60e52b266a7bbdb922",
+          "parameters_sha256": "adabfb371980c8bc7964f4ef66fd9a57d9a03ac51257d4990ead16434709948a",
+          "environment_sha256": "9c77276187620aac0850476c6cff18f4ace3065c2d5a9d283f04fe51495d75b2"
+        },
+        "metrics": {
+          "condition": "alternative",
+          "count": 6,
+          "groups": [
+            {
+              "count": 3,
+              "group": "alpha",
+              "mean": 3.0
+            },
+            {
+              "count": 3,
+              "group": "beta",
+              "mean": 14.0
+            }
+          ],
+          "mean": 8.5
+        }
+      }
+    },
+    "environment": {
+      "status": "PASS",
+      "changed_fields": [
+        "environment_sha256"
+      ],
+      "left": {
+        "artifact": "arm64/qualification/first-project.zip",
+        "run_id": "73d65660ba1440d9b2f76fa36c151a28",
+        "lineage": {
+          "input_sha256": "054ee89fec327e9a9292e1008d465c3190cfe3819a259ddce2d32e9e5a6a5360",
+          "recipe_sha256": "549f064aaaa36ee8259f1f8e2902d0dfb15d071fcb6d9b60e52b266a7bbdb922",
+          "parameters_sha256": "f57d40696fe766edbfc7cdd6d23a0c487ec915d0dc56458f4a8bf166f3130ae7",
+          "environment_sha256": "9c77276187620aac0850476c6cff18f4ace3065c2d5a9d283f04fe51495d75b2"
+        },
+        "metrics": {
+          "condition": "baseline",
+          "count": 10,
+          "groups": [
+            {
+              "count": 5,
+              "group": "alpha",
+              "mean": 22.0
+            },
+            {
+              "count": 5,
+              "group": "beta",
+              "mean": 14.0
+            }
+          ],
+          "mean": 18.0
+        }
+      },
+      "right": {
+        "artifact": "amd64/qualification/first-project.zip",
+        "run_id": "eebe2f5ec38140339dd446a1b7bf0f35",
+        "lineage": {
+          "input_sha256": "054ee89fec327e9a9292e1008d465c3190cfe3819a259ddce2d32e9e5a6a5360",
+          "recipe_sha256": "549f064aaaa36ee8259f1f8e2902d0dfb15d071fcb6d9b60e52b266a7bbdb922",
+          "parameters_sha256": "f57d40696fe766edbfc7cdd6d23a0c487ec915d0dc56458f4a8bf166f3130ae7",
+          "environment_sha256": "12bb9f894ccdb3aeedf6abab539053886239360d978d936fdd6fee84a0f38aad"
+        },
+        "metrics": {
+          "condition": "baseline",
+          "count": 10,
+          "groups": [
+            {
+              "count": 5,
+              "group": "alpha",
+              "mean": 22.0
+            },
+            {
+              "count": 5,
+              "group": "beta",
+              "mean": 14.0
+            }
+          ],
+          "mean": 18.0
+        }
+      }
+    },
+    "recipe": {
+      "status": "PASS",
+      "changed_fields": [
+        "recipe_sha256"
+      ],
+      "left": {
+        "artifact": "legacy-http/original-browser.zip",
+        "run_id": "ba0af6162a9c4de6a1cf8f11ea46cfd0",
+        "lineage": {
+          "input_sha256": "31b266eec3e380098d5d033309f1389928950951a2b2b3443c4646afa236112f",
+          "recipe_sha256": "91db760044f6879d8171d34db57d5138e9255ce4d16bf489c919990dc65da3fd",
+          "parameters_sha256": "adabfb371980c8bc7964f4ef66fd9a57d9a03ac51257d4990ead16434709948a",
+          "environment_sha256": "66552c76ae51a49f4f290c52105aabad2003f13dbbc67a5efd038369020404e5"
+        },
+        "metrics": {
+          "condition": "alternative",
+          "count": 6,
+          "groups": [
+            {
+              "count": 3,
+              "group": "A",
+              "mean": 12
+            },
+            {
+              "count": 3,
+              "group": "B",
+              "mean": 22
+            }
+          ],
+          "mean": 17
+        }
+      },
+      "right": {
+        "artifact": "recipe-lineage/evidence.zip",
+        "run_id": "1cd492ea309f4946ae9e97a5d1a67e31",
+        "lineage": {
+          "input_sha256": "31b266eec3e380098d5d033309f1389928950951a2b2b3443c4646afa236112f",
+          "recipe_sha256": "a3c06effab96558d8a09068adbfaf2650a3d9ab82b608ea63437dc9076fe3957",
+          "parameters_sha256": "adabfb371980c8bc7964f4ef66fd9a57d9a03ac51257d4990ead16434709948a",
+          "environment_sha256": "66552c76ae51a49f4f290c52105aabad2003f13dbbc67a5efd038369020404e5"
+        },
+        "metrics": {
+          "condition": "alternative",
+          "count": 6,
+          "groups": [
+            {
+              "count": 3,
+              "group": "A",
+              "mean": 12
+            },
+            {
+              "count": 3,
+              "group": "B",
+              "mean": 22
+            }
+          ],
+          "mean": 17
+        }
+      }
+    }
+  },
+  "historical_browser_replay": {
+    "status": "PASS",
+    "report": "historical-replay/report.json",
+    "original_bundle_sha256": "888bbb96e611e6ba4a9b6181b2d8a1b314ac6167bf39d2642fb2e8c07ab20d87",
+    "legacy_catalog_unchanged": true
+  },
+  "retained_failures": [
+    {
+      "status": "FAIL",
+      "artifact": "failed-arm64-probe/builds.json",
+      "consequence": "Construction completed; original R probe lacked scratch. Same image subsequently passed corrected probes and the full matrix."
+    },
+    {
+      "status": "FAIL",
+      "artifact": "failed-amd64-probe/builds.json",
+      "consequence": "Same R probe defect. Later fresh construction/qualification passed."
+    },
+    {
+      "status": "FAIL",
+      "artifact": "failed-arm64-builder-start/builds.json",
+      "consequence": "180-second builder-start deadline; additional local construction NOT RUN."
+    },
+    {
+      "status": "FAIL",
+      "artifact": "lineage-initial-comparison.json",
+      "consequence": "Input changed alongside recipe. Rejected as isolated control; dedicated recipe-only run passes."
+    },
+    {
+      "status": "FAIL",
+      "artifact": "failed-documents-replay/report.json",
+      "consequence": "Bind-mounted replay stalled in host I/O. Cleanup remains unresolved; Docker reports removal in progress. 30 CPU-seconds remain reserved. Separate /tmp replay passes; the failure is not rewritten or refunded."
+    }
+  ],
+  "promotion": {
+    "status": "NOT RUN",
+    "enabled": false,
+    "candidate_count": 4,
+    "boundary": "Hash-bound IDs identify exact recipe/image pairs. Ordinary admission, queued dispatch and replay refuse candidates."
+  },
+  "independent_human_second_machine": {
+    "status": "NOT RUN",
+    "boundary": "No independent human operator exercise. Native AMD64 CI is automated additional-machine evidence, not this gate."
+  },
+  "image_equivalence": {
+    "status": "NOT RUN",
+    "boundary": "No bit-identical rebuild or equivalence to opaque historical images claimed. OS/toolchain binaries inherited from pinned Debian inputs. Local image IDs equal manifest digests; separate config digests were not supplied. CI IDs equal config digests, with distinct manifest digests. CI images are ephemeral; exact replay requires retained images or separately reviewed distribution."
+  },
+  "tests": {
+    "status": "PASS",
+    "count": 136,
+    "boundary": "Final offline controls; final CI commit/status recorded on the PR."
+  },
+  "source_input_hashes": {
+    "Dockerfile": "15fc1c64825096f1971a102a5a6817c62f1880ef99ce4c9c0730f6a49aac5d84",
+    "build.sh": "abaee159ed424c15d855389a5505fc52538390cf11e1653607c97e7df17a417b",
+    "inputs.json": "88f08691e3a637310cc4fd263265729c51f34af2e3a84164857a4ae7f2a6b85e"
+  },
+  "files": {
+    "README.md": "73b1e6705fe54811a14825289811fd1069ef8e70a4aa0a8aa944b808613f2205",
+    "amd64/build/builder.log": "0e3581f73632cf087e792ded3fabe17f61563628f692d5656cadf72075b48aae",
+    "amd64/build/builds.json": "008905dda84c6bb9654b3d7f50842b918db112b732db97eeb544d444d8add741",
+    "amd64/build/python-1/build.json": "e5de0af23d186640e2f450e3d3a02e3b1a6f91b7cbc47db4d55a3aee998515be",
+    "amd64/build/python-1/build.log": "6a2330eddb70d571927c855d5faf204145bbab6899c914742c69d131f4ff7ff0",
+    "amd64/build/python-1/config.log": "bf090dd30317ecdf758ce447f905b46d6f72935ce899d66793ebd2e311f918ae",
+    "amd64/build/python-1/configure.log": "c5a4ea0d9bc0db062ae9b2515f1c6f13293cfca8db6484b2cecd3e8660251b34",
+    "amd64/build/python-1/metadata.json": "a6402446c8d57e745508ea7e546fd67b6fb2092f1f7911cfc72ab2376e586017",
+    "amd64/build/python-1/packages.tsv": "003d35b6d096b1054e87155aa6c845579108776386b81d35dd154e3ba2264ff0",
+    "amd64/build/r-1/build.json": "048df0821a9dc3e297c0d777e582ac2e896de9fb2805a0e6af10f60c060905df",
+    "amd64/build/r-1/build.log": "b69731d9445630aa8437ae2eee3745ccee78fb9afc0a230dde37c1e6b98d25f6",
+    "amd64/build/r-1/config.log": "73b115723a50d8827883a275585ff245ca77db2463982e834367447dfeb671a9",
+    "amd64/build/r-1/configure.log": "a4938306b4e510f4ee172ea245b9cd87c035c7acbb1e01402b6aff89e39bc708",
+    "amd64/build/r-1/metadata.json": "091bd78e15135211a785de49ccbb18c1339234c6f1af70dd708e51573dc86835",
+    "amd64/build/r-1/packages.tsv": "003d35b6d096b1054e87155aa6c845579108776386b81d35dd154e3ba2264ff0",
+    "amd64/ci-run.json": "bd355ed8632bad7f50f3d5e9f507500f3561c150f646507fef85c48d45bd74fd",
+    "amd64/qualification/first-project.zip": "c270927db6cd13a67f9b12e7bf130a90641930ef9cc14846788ffc7648fe182b",
+    "amd64/qualification/second-project.zip": "6ef12c8ce94291fd6481056af0152aa3af349aeca4f9ddcf1051dd6d4071b981",
+    "amd64/qualification/verification.json": "df0b47761a387ef292ac29208a9b7c52dc4e2ee87f02fc3cfe56727825325fec",
+    "amd64/qualification.json": "7a749eec8999b0900f7c84d8c590adc1f53653713df81e30114b00c932d5b5f7",
+    "arm64/build/builds.json": "15dcfcbcc79c114a6a2bc557197e9e0e7a87b7339e79c5ee1dc0bc4d0160ea2f",
+    "arm64/build/python-1/build.json": "3606b789bf04cdee9b802887213e732fd2e7a94b24befbb2dfa0bbca94e886c9",
+    "arm64/build/python-1/build.log": "e61e2f9321ebaed26af21d44847e83844561f130efe1da0ce70c1db777002acb",
+    "arm64/build/python-1/config.log": "09fcb621c9f6aa1a2425dffc623be7a9a8e242c4aeab3273f646a58e38649e6f",
+    "arm64/build/python-1/configure.log": "d7fc808fd38b8b19f4f06510bfd6e79920436400c5caba6a960447493f09828e",
+    "arm64/build/python-1/metadata.json": "1217595539a09989e4bcf87af83b80342c6e02c4cb9fdeb2982f18e552220efa",
+    "arm64/build/python-1/packages.tsv": "c0c464fef8a38e1b5c914bc9bf0ae9bb715c111240f239019d23961567b0f189",
+    "arm64/build/r-1/build.json": "56f7734d73020717db249d7be8b20abba966531a1a26139e9d015bbff754fc46",
+    "arm64/build/r-1/build.log": "7513e831c7ec9512ce54cf71e2db022d7b697d6815da92508006d389bd391a09",
+    "arm64/build/r-1/config.log": "2ba7b0142bd54c248237ab420763172e861f0b8cdb29b22a765ab3a9da46ee89",
+    "arm64/build/r-1/configure.log": "46a5d34130f0a5927f77c51ff5a2bd9d41a804c2346a2958abe0d1050b1a68f8",
+    "arm64/build/r-1/metadata.json": "b507be15674b12356fc7093965b7187555e549c47a4e5330bfe744456cda410f",
+    "arm64/build/r-1/packages.tsv": "c0c464fef8a38e1b5c914bc9bf0ae9bb715c111240f239019d23961567b0f189",
+    "arm64/qualification/first-project.zip": "e944652033082bc847dbfc525814860947104d050dfed7a04f05a5f7d961c7cb",
+    "arm64/qualification/second-project.zip": "39d6a24d1b61c1eba2143c3ceae0c757d0162f3c8edbcefa8cf7f0cedc935eef",
+    "arm64/qualification/verification.json": "b3e85c243af8cc5a4bac3184920c84664d180c600f275ee64731e7ee7ba71abf",
+    "arm64/qualification-initial/first-project.zip": "8b1dc1f777535c52d3b18642f065410b80dd9693dda757e5a34017ca1136ef51",
+    "arm64/qualification-initial/second-project.zip": "c5c28eb431d9c251bfbea9bf6a5dc339d762213e23fe53f591034aae0f9ed087",
+    "arm64/qualification-initial/verification.json": "36244dff2368bc7b161f8377c9e599aef66c50be931ff9ff1a98079f3a80d045",
+    "arm64/qualification.json": "d5fdc4c08d3d2c07511a1c2ccb93e9c4e8252f8efd7d45e160e9e0fa1ce20088",
+    "broker-provenance.json": "7c1e87587a74ca0c6eb0e6d807083761a08eed1e20394d56361a9fad7e4a1dd4",
+    "failed-amd64-probe/builder.log": "586d5a9ecfd295d1dc46b0e42d0012a3db597d52b25dad29cd3dd6fd6451280f",
+    "failed-amd64-probe/builds.json": "4a30fd466b800805a234a691ea13bd71178754a88babaf10451739a60ce229d9",
+    "failed-amd64-probe/python-1/build.json": "d65e38a2babe672fdfcf954c0572d30f3c989927ca41dbbd65b16caa486d3910",
+    "failed-amd64-probe/python-1/build.log": "5361c95d3f0614d6512298f9c51322ca4bd5f84274e90fc93d427639df8aa2bd",
+    "failed-amd64-probe/python-1/config.log": "6ec2d441e27f333f1843d90c4ed9634abfdaf89dd0b8b64eb4a654726aa50325",
+    "failed-amd64-probe/python-1/configure.log": "c5a4ea0d9bc0db062ae9b2515f1c6f13293cfca8db6484b2cecd3e8660251b34",
+    "failed-amd64-probe/python-1/metadata.json": "b43f6d77119a8ef186bda6e7f72418ee7197b68c762e3a4e36c81ff3c7a80457",
+    "failed-amd64-probe/python-1/packages.tsv": "003d35b6d096b1054e87155aa6c845579108776386b81d35dd154e3ba2264ff0",
+    "failed-amd64-probe/r-1/build.json": "e2fa475d68ef8b393c8341f7d9d2315f37ecdf40ce1b603bb0c85d8f20d1ed4f",
+    "failed-amd64-probe/r-1/build.log": "9a1fd94dab0c7f9440035523241dae6807cc185b86c4d8818f4f961f72222b92",
+    "failed-amd64-probe/r-1/metadata.json": "cac3d2c3bd7b543ae18e9c94a1fd5755d1a4b6690ce5826fbacfdc11e27e2533",
+    "failed-arm64-builder-start/builder.log": "d687209affd0560a3a3a415213515ddef8f088b12821245b6db364cfc5866527",
+    "failed-arm64-builder-start/builds.json": "e18c40cab0d026820ea351195747c726abeb99ba46fa8646163c77ca7f292cb1",
+    "failed-arm64-probe/builder.log": "fcc34564f340293b178f3957a3ac1382d03c4312de92e6e7779f363e23467c80",
+    "failed-arm64-probe/builds.json": "bd51a85956d55dec61d496c067f7de1ef71c5998140e4ee1e4c84465432161db",
+    "failed-arm64-probe/python-1/build.json": "6c7561c472a6586f0614458e382cd5ada483d07bf712307a563061ddecc6dc50",
+    "failed-arm64-probe/python-1/build.log": "e61e2f9321ebaed26af21d44847e83844561f130efe1da0ce70c1db777002acb",
+    "failed-arm64-probe/python-1/config.log": "09fcb621c9f6aa1a2425dffc623be7a9a8e242c4aeab3273f646a58e38649e6f",
+    "failed-arm64-probe/python-1/configure.log": "d7fc808fd38b8b19f4f06510bfd6e79920436400c5caba6a960447493f09828e",
+    "failed-arm64-probe/python-1/metadata.json": "1217595539a09989e4bcf87af83b80342c6e02c4cb9fdeb2982f18e552220efa",
+    "failed-arm64-probe/python-1/packages.tsv": "c0c464fef8a38e1b5c914bc9bf0ae9bb715c111240f239019d23961567b0f189",
+    "failed-arm64-probe/r-1/build.json": "ad41f7874a1c71622f74d041e58895b26abbed3592ec51fd13f3fd095e368e55",
+    "failed-arm64-probe/r-1/build.log": "7513e831c7ec9512ce54cf71e2db022d7b697d6815da92508006d389bd391a09",
+    "failed-arm64-probe/r-1/metadata.json": "b507be15674b12356fc7093965b7187555e549c47a4e5330bfe744456cda410f",
+    "failed-documents-replay/cleanup-attempt.json": "3fd0266e2f6a1be25b181c35f79eb1e3721b86bae96b30bb1bac4a3853ea0988",
+    "failed-documents-replay/evidence.zip": "e6211079ecca06cfa3f2b318d69a56b3074bb24ae4bcbad7d0e63c81cc2c3fa5",
+    "failed-documents-replay/report.json": "92df2f4e212a65186ffe10f55f73f361af49351dfafbfa960bc1db6e4620d3ab",
+    "historical-replay/evidence.zip": "6c551d5d3e039c0d581890ef31752df99d4e29b1dca54a2a047fb9aea9675993",
+    "historical-replay/report.json": "2dca840b6a24f27f149f6b49a6c6c201fde8872034d73229afedede8d8af4da2",
+    "legacy-http/first-project.zip": "e4ed0092e4b9efa9d0914a260777daf86f04acc36306067f43484976cbb64cae",
+    "legacy-http/original-browser.zip": "888bbb96e611e6ba4a9b6181b2d8a1b314ac6167bf39d2642fb2e8c07ab20d87",
+    "legacy-http/second-project.zip": "7cee46a0e948a6ff0d52b0d065ce5ef375a8c4cbe34a6894964860ed817dd335",
+    "legacy-http/verification.json": "5b06160544a9d57382f4aa57211593b988c004b896684079a3f0c5be6aae0a36",
+    "lineage-initial-comparison.json": "2b6bfd811fe96776fda4fc12598fe23fb292a5a3e4d908afea4ca27550ae2840",
+    "recipe-lineage/evidence.zip": "4e6b316883fb9e463ebde907b42af2980ba65659fa5e6b1d81321f5429986362",
+    "recipe-lineage/verification.json": "4b97df5799a5f8e8d5cb5c77b3061df1d08ce0ae518a6fb94cca7f65f16843d7",
+    "waypoint-source-r-probe-control-review.json": "6ca34d9920bae6caec5d0164c5287d44f991694d84b28172162a79d970c80eeb",
+    "waypoint-source-r-probe-control.json": "359079f7cea9fc76fdb0827a3cd2a6c305a30a782f2a669ade07649ec8686a87"
+  }
+}

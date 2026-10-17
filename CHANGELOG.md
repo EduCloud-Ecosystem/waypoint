@@ -349,3 +349,8 @@ candidate environments and two-project full-matrix qualification for issue 27.
 New study exports retain dependency/build specifications and separate lineage
 hashes while preserving exact historical browser-bundle verification/replay.
 Independent-human, second-machine and promotion gates remain explicit.
+
+Native ARM64 and AMD64 source construction and both 49-check fixture matrices
+pass with a hash-indexed acceptance record, preserved failures and immutable
+recipe/image candidate IDs. Historical replay passes; one earlier local Docker
+cleanup remains an explicit unresolved operator gate. All 136 controls pass.
