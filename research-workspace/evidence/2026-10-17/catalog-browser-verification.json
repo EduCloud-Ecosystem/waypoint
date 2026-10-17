@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-17T22:08:02.219326+00:00",
+  "basis_revision": "da4c65530b4ec34676823a466cdce475612fd0fe",
+  "evidence_kind": "focused_local_browser_catalog_review",
+  "service": "http://127.0.0.1:18767",
+  "project_id": "ea750301ec034ece9229f38a0b528726",
+  "compute_runs_submitted": 0,
+  "checks_passed": 17,
+  "checks": [
+    "operator_key_signin_on_disposable_local_service",
+    "created_disposable_project_with_30_cpu_second_allowance",
+    "live_api_loaded_three_reviewed_environment_versions",
+    "python_v1_runtime_and_no_extra_dependencies_displayed",
+    "corrected_r_v2_identity_and_exact_source_hash_displayed",
+    "archived_r_v1_not_present_in_new_run_recipe_choices",
+    "archived_r_original_hash_and_parsing_limitations_displayed",
+    "archived_version_disclosure_closed_and_opened_by_keyboard",
+    "simulated_environment_503_disabled_new_run_submission",
+    "csv_draft_preserved_during_simulated_catalog_failure",
+    "live_catalog_refresh_restored_availability_and_selected_r_draft",
+    "desktop_1200_pixel_viewport_without_horizontal_overflow",
+    "mobile_390_pixel_viewport_without_horizontal_overflow",
+    "simulated_disabled_fieldset_kept_metadata_readable_and_keyboard_operable",
+    "no_compute_runs_submitted_to_disposable_project",
+    "catalog_screenshots_visually_inspected",
+    "credential_bytes_absent_from_new_catalog_sources_and_evidence"
+  ],
+  "source_hashes": {
+    "environments.json": "dd2a4ac32b4296ebf5b4b4745ac14a07dae5cea7965f30f76866d3de5e439700",
+    "research_workspace/catalog.py": "06ddf3d39cc553793963b0b1ca255fdaa7e343278aab83087de65b8ca9221b41",
+    "tests/test_catalog.py": "126251808d842dcd5c2dad77b6f7ae83a00c9c654d8fb7c34c089de73cc3a035",
+    "static/app.js": "9aa13a6e835abfd1fcc6cc514da652bbe43ba8e55dbc36f54d45f613732fa61d",
+    "static/index.html": "35d05e45f0705c4a46051a94bce444f970c66396e0320a5e01626d038bdcdad7",
+    "static/styles.css": "6f7e6a1834808a476b0ab7a34a5c4601a1370ebb62e141763c601fd6c939f048",
+    "recipes/archive/recipe-r-v1.R": "91db760044f6879d8171d34db57d5138e9255ce4d16bf489c919990dc65da3fd"
+  },
+  "screenshots": [
+    "catalog-desktop.png",
+    "catalog-mobile.png"
+  ],
+  "simulated_controls": [
+    "Browser interception of GET /api/environments with HTTP503; removed before final screenshots.",
+    "Disabled-fieldset interaction was simulated in the browser DOM; no new viewer-role authorization acceptance is claimed."
+  ],
+  "not_run": [
+    "New recipe execution acceptance; earlier version-specific runtime evidence remains separate.",
+    "Image source rebuild.",
+    "Independent operator or second-machine reproduction.",
+    "Real research data or institutional pilot acceptance.",
+    "Manual screen-reader acceptance."
+  ],
+  "expected_console_responses": [
+    "Initial unauthenticated session check: HTTP401.",
+    "Simulated catalog failure: HTTP503."
+  ],
+  "preserved_evidence": "Original browser verification, ZIP, failed R record, and screenshots were not changed."
+}
