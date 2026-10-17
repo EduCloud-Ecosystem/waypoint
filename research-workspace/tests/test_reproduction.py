@@ -186,6 +186,8 @@ class ReproductionTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.replay()
         self.assertEqual(self.preflight.call_count, 2)
+        for call in self.preflight.call_args_list:
+            self.assertEqual(call.kwargs, {"require_active": False})
         self.assertFalse(self.output.exists())
         self.init.assert_not_called()
         self.observe.assert_not_called()

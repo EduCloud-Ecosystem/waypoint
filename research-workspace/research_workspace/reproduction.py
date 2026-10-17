@@ -255,7 +255,7 @@ def reproduce_bundle(bundle_path, *, trusted_sha256, output, broker, budget_cpu_
     chosen_ids = {row["source_run_id"] for row in selected}
     for runtime, image in sorted({(IDS[original["recipe"]][0], original["environment"]["image"])
                                   for original in originals if original["id"] in chosen_ids}):
-        validate_images({runtime: image})
+        validate_images({runtime: image}, require_active=False)
     output.mkdir(mode=0o700)  # Atomic refusal if another process won the name.
     private = output / "state.private"
     private.mkdir(mode=0o700)
