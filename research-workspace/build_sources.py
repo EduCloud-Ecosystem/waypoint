@@ -148,7 +148,8 @@ def main():
                 if inspection['Architecture'] != args.platform.split('/')[1] or inspection['Os'] != 'linux':
                     raise ValueError('Built image platform mismatch.')
                 probe = ['python', '-c', 'import sys; print(".".join(map(str,sys.version_info[:3])))'] if runtime_id == 'python' else ['Rscript', '--vanilla', '-e', 'cat(as.character(getRversion()),"\\n")']
-                run = ['docker', 'run', '--rm', '--network=none', '--cpus=1', '--memory=256m', '--pids-limit=64', '--read-only', record['image']]
+                run = ['docker', 'run', '--rm', '--network=none', '--cpus=1', '--memory=256m', '--pids-limit=64',
+                       '--read-only', '--tmpfs', '/tmp:rw,noexec,nosuid,nodev,size=16777216,mode=1777', record['image']]
                 record['observed_runtime_version'] = command(run + probe).strip()
                 if record['observed_runtime_version'] != runtime['version']:
                     raise ValueError('Observed runtime version mismatch.')
@@ -164,6 +165,8 @@ def main():
         report['status'] = 'PASS'
     except Exception as exc:
         report['failure'] = str(exc)
+        if isinstance(exc, subprocess.CalledProcessError) and exc.output:
+            report['failure_output'] = exc.output.decode(errors='replace')[:4000]
         raise
     finally:
         if created:
