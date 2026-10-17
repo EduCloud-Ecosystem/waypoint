@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Research workspace · EduCloud</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to workspace</a>
+  <div id="announcement" class="sr-only" role="status" aria-live="polite"></div>
+  <div id="boot" class="boot" role="status">Opening your workspace…</div>
+
+  <section id="sign-in" class="sign-in" aria-labelledby="sign-in-title" hidden>
+    <div class="sign-in-story">
+      <a class="brand" href="/" aria-label="EduCloud research workspace"><span class="brand-mark" aria-hidden="true">E</span><span>EduCloud<span class="brand-subtitle">Research workspace</span></span></a>
+      <div class="sign-in-copy"><p class="eyebrow">A question. A small experiment. A clear record.</p><h1 id="sign-in-title">Make room<br>for discovery.</h1><p>Set up a project, compare reviewed analysis methods, and keep the evidence together.</p></div>
+      <p class="sign-in-footnote">Local research proof of concept · Public or synthetic data only</p>
+    </div>
+    <div class="sign-in-form-wrap">
+      <form id="sign-in-form" class="sign-in-form">
+        <p class="eyebrow">Your research workspace</p><h2>Welcome back</h2>
+        <p class="muted">Use the access key your workspace operator provided. Your project permissions come with your account.</p>
+        <label for="access-key">Access key</label>
+        <input id="access-key" name="access_key" type="password" autocomplete="off" spellcheck="false" required autofocus aria-describedby="key-help">
+        <p id="key-help" class="field-help">The key stays out of browser storage. Keep it private.</p>
+        <p id="sign-in-error" class="form-error" role="alert" hidden></p>
+        <button id="sign-in-button" class="button primary" type="submit">Open workspace <span aria-hidden="true">→</span></button>
+        <div class="quiet-note"><strong>Need access?</strong><p>Ask your workspace operator for a key and a project invitation.</p></div>
+      </form>
+    </div>
+  </section>
+
+  <div id="app" class="app-shell" hidden>
+    <aside class="sidebar" aria-label="Projects">
+      <a class="brand" href="/" aria-label="EduCloud research workspace"><span class="brand-mark" aria-hidden="true">E</span><span>EduCloud<span class="brand-subtitle">Research workspace</span></span></a>
+      <div class="sidebar-heading"><h2>Your projects <span id="project-count" class="sidebar-count">0</span></h2><button id="refresh-list" class="text-button light" type="button" aria-label="Refresh project list">↻</button></div>
+      <button id="new-project" class="button sidebar-new" type="button"><span aria-hidden="true">＋</span> New project</button>
+      <nav id="project-list" class="project-list" aria-label="Select a research project"></nav>
+      <p id="project-list-empty" class="sidebar-empty" hidden>Your first project starts with a question.</p>
+      <div class="sidebar-footer"><span class="pilot-badge"><span aria-hidden="true"></span> Local proof of concept</span><p>Use public or synthetic data.<br>Results need independent validation.</p><div class="account-row"><span id="account-subject" class="account-subject"></span><button id="sign-out" class="text-button light" type="button">Sign out</button></div></div>
+    </aside>
+
+    <main id="main" class="main" tabindex="-1">
+      <div id="global-error" class="notice error" role="alert" hidden><span id="global-error-text"></span><button id="dismiss-error" type="button" class="text-button">Dismiss</button></div>
+      <div id="global-success" class="notice success" role="status" hidden></div>
+      <section id="welcome" class="welcome" aria-labelledby="welcome-title" hidden><p class="eyebrow">From question to evidence</p><h1 id="welcome-title">A place for your next experiment.</h1><p class="welcome-lead">Keep your question, inputs, runs, and results in one bounded research project.</p><button id="welcome-create" class="button primary" type="button">Create your first project <span aria-hidden="true">→</span></button><div class="welcome-steps"><div><span>01</span><h2>Frame a question</h2><p>Define what you want to learn, what success means, and how much compute to allow.</p></div><div><span>02</span><h2>Compare a method</h2><p>Run a reviewed recipe with a baseline and an alternative on the same public or synthetic data.</p></div><div><span>03</span><h2>Keep the evidence</h2><p>Export the inputs, methods, recorded results, and checksums for independent inspection.</p></div></div></section>
+      <div id="project-loading" class="loading-panel" role="status" hidden>Loading project…</div>
+
+      <div id="project-view" hidden>
+        <header class="project-header"><div><p class="eyebrow">Research project</p><h1 id="project-title"></h1><p id="project-question" class="project-question"></p><div class="project-badges"><span id="project-state" class="badge"></span><span id="project-role" class="badge neutral"></span></div></div><div class="header-actions"><button id="export-project" class="button secondary" type="button">↓ Export evidence</button></div></header>
+        <div id="project-unavailable" class="notice neutral-notice" hidden></div>
+        <div class="project-facts"><div><span class="fact-label">Compute allowance</span><strong id="project-budget"></strong><span class="fact-help">Total allowance across project runs</span></div><div><span class="fact-label">Recorded runs</span><strong id="project-run-count"></strong><span id="project-run-summary" class="fact-help"></span></div><div><span class="fact-label">Project end</span><strong id="project-end"></strong><span class="fact-help">New work stops at the end date</span></div></div>
+        <div class="tabs" role="tablist" aria-label="Project views"><button id="workspace-tab" class="tab" type="button" role="tab" aria-selected="true" aria-controls="workspace-panel" tabindex="0">Run workspace</button><button id="details-tab" class="tab" type="button" role="tab" aria-selected="false" aria-controls="details-panel" tabindex="-1">Project details <span id="member-count" class="tab-count"></span></button></div>
+
+        <section id="workspace-panel" role="tabpanel" aria-labelledby="workspace-tab">
+          <div class="workbench">
+            <section class="card setup-card" aria-labelledby="run-title"><div class="section-heading"><div><p class="eyebrow">Set up a run</p><h2 id="run-title">Try a reviewed method</h2></div><span class="step-marker" aria-hidden="true">01</span></div>
+              <p id="read-only-message" class="quiet-note" hidden></p>
+              <form id="run-form"><fieldset id="run-fields"><legend class="sr-only">Run configuration</legend>
+                <label for="recipe">Analysis recipe</label><select id="recipe" name="recipe" aria-describedby="recipe-description" required></select><p id="recipe-description" class="field-help"></p>
+                <label for="condition">Method condition</label><select id="condition" name="condition" aria-describedby="condition-help"><option value="baseline">Baseline · retain every row</option><option value="alternative">Alternative · trim extreme values</option></select><p id="condition-help" class="field-help">Baseline summarizes all values in each group.</p>
+                <div class="label-row"><label for="csv-input">Input data</label><button id="use-example" type="button" class="text-button">Use example data</button></div>
+                <textarea id="csv-input" name="csv" rows="8" spellcheck="false" placeholder="group,value&#10;A,10&#10;A,12&#10;B,14" aria-describedby="csv-help csv-size" required></textarea>
+                <div class="input-footer"><label for="csv-file" class="file-label">Upload CSV<input id="csv-file" type="file" accept=".csv,text/csv" aria-describedby="csv-help"></label><span id="csv-size" class="field-help">0 B / 64 KiB</span></div>
+                <p id="csv-help" class="field-help">Use columns <code>group,value</code>, with numeric values. Maximum 1,000 rows and 64 KiB. Public or synthetic data only.</p>
+                <p id="input-note" class="field-help" role="status"></p>
+                <button id="submit-run" class="button primary full-width" type="submit">Start run <span aria-hidden="true">→</span></button>
+              </fieldset></form><p class="card-footnote">Runs are recorded individually. Submit both conditions with the same data to make a descriptive comparison.</p>
+            </section>
+
+            <section class="card runs-card" aria-labelledby="runs-title"><div class="section-heading"><div><p class="eyebrow">Activity & results</p><h2 id="runs-title">Project runs</h2></div><button id="refresh-project" class="text-button" type="button">Refresh</button></div><p class="section-intro">Follow progress and inspect each recorded run.</p><div id="runs-empty" class="inline-empty"><span class="empty-symbol" aria-hidden="true">↗</span><h3>Your first run starts here</h3><p>Choose a recipe and add data. A completed run records its method, inputs, and descriptive results.</p></div><div id="runs-list" class="runs-list"></div><p id="poll-status" class="poll-status" role="status"></p></section>
+          </div>
+
+          <section class="card comparison-card" aria-labelledby="comparison-title"><div class="section-heading"><div><p class="eyebrow">Put results in context</p><h2 id="comparison-title">Descriptive comparison</h2></div><span class="badge neutral">Provisional results</span></div><p id="comparison-warning" class="section-intro">These summaries describe the supplied data. They do not establish scientific validity or statistical significance.</p><div id="comparison-empty" class="comparison-empty">Completed runs will appear here. For a useful comparison, use the same input data and recipe for both conditions.</div><div id="comparison-content" class="comparison-content"></div></section>
+        </section>
+
+        <section id="details-panel" role="tabpanel" aria-labelledby="details-tab" hidden>
+          <div class="details-grid"><section class="card" aria-labelledby="study-title"><div class="section-heading"><div><p class="eyebrow">Study brief</p><h2 id="study-title">What this project is for</h2></div></div><dl class="study-details"><dt>Research question</dt><dd id="details-question"></dd><dt>Success criterion</dt><dd id="details-success"></dd><dt>Project owner</dt><dd id="details-owner" class="mono"></dd><dt>Created</dt><dd id="details-created"></dd><dt>Project identifier</dt><dd id="details-id" class="mono"></dd></dl><h3 class="subheading">Recorded compute</h3><div id="usage-details"></div><p class="field-help">Recorded usage and reservations are enforced by the service. Uncertain runs may retain a reservation until an operator reviews them.</p></section>
+            <section class="card" aria-labelledby="people-title"><div class="section-heading"><div><p class="eyebrow">Work together</p><h2 id="people-title">Project access</h2></div></div><p class="section-intro">Owners manage access. Editors can run methods. Viewers can inspect and export evidence.</p><ul id="members-list" class="members-list"></ul><form id="member-form" hidden><h3 class="subheading">Add a collaborator</h3><label for="member-subject">Operator-provisioned account identifier</label><input id="member-subject" name="subject" type="text" autocomplete="off" spellcheck="false" required><p class="field-help">Ask your collaborator for the identifier associated with their access key.</p><label for="member-role">Project role</label><select id="member-role" name="role"><option value="editor">Editor · submit and cancel runs</option><option value="viewer">Viewer · inspect and export evidence</option></select><button class="button secondary full-width" type="submit">Add or update collaborator</button></form><p id="membership-readonly" class="quiet-note" hidden>Only the project owner can change access.</p></section></div>
+          <section id="close-section" class="card close-card" hidden><div><h2>Close this project</h2><p>Stop new runs and cancel queued work. Existing evidence remains available for inspection and export.</p></div><button id="close-project" class="button danger" type="button">Close project</button></section>
+        </section>
+        <footer class="workspace-footer"><span>EduCloud research workspace</span><span>Local pilot · Recorded evidence, independently validated conclusions</span></footer>
+      </div>
+    </main>
+  </div>
+
+  <dialog id="create-dialog" aria-labelledby="create-title"><form id="create-form"><div class="dialog-heading"><div><p class="eyebrow">Start with a question</p><h2 id="create-title">Create a research project</h2></div><button id="dismiss-create" class="icon-button" type="button" aria-label="Close create project dialog">×</button></div><p class="section-intro">Give this experiment a clear purpose and a finite allowance.</p><label for="create-name">Project name</label><input id="create-name" name="name" type="text" required maxlength="100" placeholder="e.g. Comparing group summaries"><label for="create-question">Research question</label><textarea id="create-question" name="question" rows="2" required maxlength="2000" placeholder="What do you want to learn?"></textarea><label for="create-success">Success criterion</label><textarea id="create-success" name="success_criterion" rows="2" required maxlength="2000" placeholder="What evidence would make this pilot useful?"></textarea><div class="form-grid"><div><label for="create-end">End date</label><input id="create-end" name="ends_at" type="date" required><p class="field-help">Ends at 23:59 on this date in your local time zone.</p></div><div><label for="create-budget">Compute allowance</label><input id="create-budget" name="budget_cpu_seconds" type="number" min="30" max="300" step="1" value="120" required aria-describedby="budget-help"><p id="budget-help" class="field-help">CPU seconds, from 30 to 300 per project. The local service also has a shared finite allowance.</p></div></div><p id="create-error" class="form-error" role="alert" hidden></p><div class="dialog-actions"><button id="cancel-create" class="button secondary" type="button">Cancel</button><button id="create-submit" class="button primary" type="submit">Create project</button></div></form></dialog>
+  <dialog id="confirm-dialog" aria-labelledby="confirm-title"><form id="confirm-form"><h2 id="confirm-title"></h2><p id="confirm-description" class="section-intro"></p><div class="dialog-actions"><button id="confirm-cancel" class="button secondary" type="button">Keep as is</button><button id="confirm-action" class="button danger" type="submit">Confirm</button></div></form></dialog>
+</body>
+</html>

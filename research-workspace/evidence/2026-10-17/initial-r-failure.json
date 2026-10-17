@@ -1,0 +1,45 @@
+{
+  "scope": "local-public-data-http-docker-research-pilot",
+  "status": "FAIL",
+  "checks": [
+    "anonymous_refused",
+    "opaque_key_signin",
+    "opaque_key_signin",
+    "opaque_key_signin",
+    "cross_origin_refused",
+    "dns_rebinding_host_refused",
+    "create_first-project",
+    "outsider_read_refused",
+    "viewer_enrolled",
+    "viewer_run_refused",
+    "admit_first-python",
+    "admit_first-python",
+    "request_deduplicated",
+    "python_actual_result_and_cleanup",
+    "admit_first-r"
+  ],
+  "images": {
+    "python": "python@sha256:229a2c5bfa27522db7815ea81f9bed70af17ccb9de9fc7ad142b1877b5830d36",
+    "r": "r-base@sha256:fa1972f31def171b83e0911e947ab8b57db143f0fc8a67af4c0d5ac329041646"
+  },
+  "production_identity": false,
+  "scientific_validity": false,
+  "human_independent_reproduction": false,
+  "cloud_resources": false,
+  "failure": "r_actual_result_and_cleanup",
+  "checks_passed": 15,
+  "all_recorded_runs_cleanup_verified": true,
+  "source_hashes": {
+    "recipes/recipe.py": "549f064aaaa36ee8259f1f8e2902d0dfb15d071fcb6d9b60e52b266a7bbdb922",
+    "research_workspace/__init__.py": "d8cd56bc22ee978af2e94c63e5f3ac755934c728209cd5b3cceea7b2bc3af6e5",
+    "research_workspace/__main__.py": "77c822f0f01e35e4a65c522072a6017a4228e575a1f15994be5dee6ceb35cb73",
+    "research_workspace/evidence.py": "795303071662c71d15bd5b83f877b153eb7d0e07c5669e7f96b23c090d2e7e2b",
+    "research_workspace/recipes.py": "8d680ba324c9eec2b68b52b5bcfb65a2bcd21b72a0277707026c1ff77ee4163a",
+    "research_workspace/runtime.py": "0633aea541f47a778d00775b341a277dafdc000d14dcb11f1f937fdb9aaf9cca",
+    "research_workspace/server.py": "f4edd80aa6719c4840b541ba782c12fa0941a61b6b2b82951150f155993a83a2",
+    "research_workspace/store.py": "131f0f89f05fb9eff72dd8516b239729455dfa045b4354d36e1f1c8447f3b7c6",
+    "tests/test_evidence.py": "1650953e0aa4366072e2d5a608b7942eb9b335da94102dff6c3a9e60f7ff44e0",
+    "tests/test_workspace.py": "76358065e0c769c34aa51ca176aacfae3b764a42fb966a830592898277c9c188",
+    "verify.py": "172c7bed14f14e667eb20f1ee44ddb0a74dd3297ca6ed9164e1b40b4d899fecb"
+  }
+}

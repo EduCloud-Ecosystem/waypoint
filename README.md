@@ -18,6 +18,14 @@ Coolify/federation rollout; no cloud purchase has been made.
 See the current [build roadmap](ROADMAP.md) and [course worker operations](course-workspace/OPERATIONS.md)
 for the operational release and the next integration steps.
 
+## Research pilot (October 2026)
+
+The separate [research workspace](research-workspace/README.md) now provides a
+local project, collaborator, Python/R experiment, comparison and evidence-export
+workflow. It uses Outfitter for bounded Docker execution and public/synthetic
+inputs. Its [verification record](research-workspace/VERIFICATION.md) separates
+local acceptance from the remaining identity, hosting and research-data gates.
+
 ## Earlier platform status (July 2026)
 
 Phase 0 and Phase 1.5 are done: requirements, the tenant intake and

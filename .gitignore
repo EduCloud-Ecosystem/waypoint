@@ -27,3 +27,9 @@ _git_locks_to_delete/
 output/
 
 !course-workspace/.env.example
+.research-runtime/
+research-workspace/.runtime/
+research-workspace/.venv/
+research-workspace/__pycache__/
+research-workspace/research_workspace/__pycache__/
+research-workspace/tests/__pycache__/
