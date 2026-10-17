@@ -1,0 +1,60 @@
+{
+  "observed_at": "2026-10-17T22:00:25.854820+00:00",
+  "mode": "actual local Docker automated repeatability; synthetic retained browser fixture",
+  "status": "PASS",
+  "source_bundle_sha256": "888bbb96e611e6ba4a9b6181b2d8a1b314ac6167bf39d2642fb2e8c07ab20d87",
+  "broker_binary_sha256": "f66506677e6a505aa32e93e271c9f64cfd77e92f4b9e63c43dff86b6f6f35a15",
+  "broker_build": "Go1.26.4 darwin/arm64; VCS metadata not embedded",
+  "implementation_sha256": "950f7f6fdc74f38148bcde7cdae1307781eb1cf52793fef2f76196fa6d0fa8de",
+  "catalog_sha256": "dd2a4ac32b4296ebf5b4b4745ac14a07dae5cea7965f30f76866d3de5e439700",
+  "selection": {
+    "mode": "successful_default",
+    "selected_count": 2,
+    "unselected_count": 1,
+    "required_cpu_seconds": 60
+  },
+  "artifacts": {
+    "report": {
+      "name": "report.json",
+      "sha256": "7defc39b55ca92df3cad2f11ae89bbb93dd0af4524ef38a9bcc5d8395178b28f"
+    },
+    "evidence": {
+      "name": "evidence.zip",
+      "sha256": "5847e05fcb17799a9d7e701fdfbf7785013c22e91a860a145d8978631307b47d"
+    }
+  },
+  "fresh_broker_usage": {
+    "project_id": "replay_237b60125165426b8e18d001e3414fd8",
+    "budget_cpu_seconds": 60,
+    "reserved_cpu_seconds": 0,
+    "charged_cpu_seconds": 60,
+    "remaining_cpu_seconds": 0,
+    "unknown_cpu_seconds": 0
+  },
+  "fresh_owned_container_absence": {
+    "replay_8560d9e6d0174b3d989da6d22e5a09a8": true,
+    "replay_e5764320a10e400b88f42f50ee99cfbf": true
+  },
+  "bundle_verification": {
+    "valid": true,
+    "project_id": "replay_237b60125165426b8e18d001e3414fd8",
+    "run_count": 2,
+    "file_count": 13,
+    "bundle_sha256": "5847e05fcb17799a9d7e701fdfbf7785013c22e91a860a145d8978631307b47d",
+    "gaps": [],
+    "warning": "Descriptive, provisional evidence only. Integrity and lineage checks do not establish scientific validity, independent reproduction, or authenticity."
+  },
+  "focused_unit_controls": {
+    "passed": 26,
+    "provider": "simulated; bounded observer controls use real local subprocesses"
+  },
+  "limits": [
+    "Automated repeatability, not independent human reproduction or scientific validity.",
+    "No cloud execution, image pulls, dependency installation or paid services.",
+    "Actual execution covers linux/arm64 Docker images on a local macOS arm64 host.",
+    "Archived original R v1 is used exactly; the original failed run remains visible and unselected.",
+    "CPU seconds are charged conservative ceilings, not actual metering.",
+    "The supervised watchdog does not guarantee cleanup after host or Docker daemon loss.",
+    "Private authority and raw diagnostics remain in ignored local state and are not included."
+  ]
+}
