@@ -14,7 +14,7 @@ import urllib.error
 import urllib.request
 
 from research_workspace.evidence import verify_bundle
-from research_workspace.recipes import expected_result
+from research_workspace.recipes import expected_result, validate_result
 from research_workspace.runtime import validate_images
 from research_workspace.server import Application, Handler, Server
 from research_workspace.store import Store, canonical, private_write
@@ -26,6 +26,7 @@ def main():
     parser.add_argument("--python-image", required=True)
     parser.add_argument("--r-image", required=True)
     parser.add_argument("--output", required=True)
+    parser.add_argument("--full-matrix", action="store_true", help="Run both conditions in both runtimes for both projects.")
     args = parser.parse_args()
     images = validate_images({"python": args.python_image, "r": args.r_image})
     output = Path(args.output).resolve()
@@ -102,7 +103,7 @@ def main():
             check("opaque_key_signin", request(connection, "POST", "/api/session", {"access_key": key})[0] == 200)
         check("cross_origin_refused", request(owner, "POST", "/api/projects", {}, {"Origin": "https://untrusted.example"})[0] == 403)
         check("dns_rebinding_host_refused", request(owner, "GET", "/api/projects", extra={"Host": "untrusted.example"})[0] == 403)
-        first = new_project("first-project", 120)
+        first = new_project("first-project", 240 if args.full_matrix else 120)
         check("outsider_read_refused", request(outsider, "GET", f"/api/projects/{first}")[0] == 403)
         check("viewer_enrolled", request(owner, "POST", f"/api/projects/{first}/members", {"subject": "viewer", "role": "viewer"})[0] == 200)
         check("viewer_run_refused", request(viewer, "POST", f"/api/projects/{first}/runs", {"recipe": "summary-python", "condition": "baseline", "csv": "group,value\nx,1\n"})[0] == 403)
@@ -111,23 +112,33 @@ def main():
         same = submit(first, "summary-python", "baseline", csv, "first-python")
         check("request_deduplicated", a["id"] == same["id"])
         a = wait(first, a["id"])
-        check("python_actual_result_and_cleanup", a["status"] == "succeeded" and a["cleanup_verified"] and a["metrics"] == expected_result(csv, "baseline"))
+        check("python_actual_result_and_cleanup", a["status"] == "succeeded" and a["cleanup_verified"] and validate_result(a["metrics"], csv, "baseline"))
         b = wait(first, submit(first, "summary-r", "alternative", csv, "first-r")["id"])
-        check("r_actual_result_and_cleanup", b["status"] == "succeeded" and b["cleanup_verified"] and b["metrics"] == expected_result(csv, "alternative"))
+        check("r_actual_result_and_cleanup", b["status"] == "succeeded" and b["cleanup_verified"] and validate_result(b["metrics"], csv, "alternative"))
         check("conservative_accounting_labelled", a["compute"]["provenance"] == "estimated_upper_bound" and a["compute"]["charged_cpu_seconds"] == 30)
+        if args.full_matrix:
+            for recipe, condition in (("summary-python", "alternative"), ("summary-r", "baseline")):
+                run = wait(first, submit(first, recipe, condition, csv, "matrix-first-"+recipe)["id"])
+                check("matrix_first_"+recipe+"_"+condition, run["status"] == "succeeded" and run["cleanup_verified"])
+                validate_result(run["metrics"], csv, condition)
         status, comparison = request(owner, "GET", f"/api/projects/{first}/comparison")
-        check("comparison_retains_conditions_and_limitations", status == 200 and len(comparison["runs"]) == 2 and bool(comparison["warning"]))
+        check("comparison_retains_conditions_and_limitations", status == 200 and len(comparison["runs"]) == (4 if args.full_matrix else 2) and bool(comparison["warning"]))
         status, archive = request(viewer, "GET", f"/api/projects/{first}/export")
         verified = verify_bundle(archive)
-        check("viewer_export_integrity", status == 200 and verified["valid"] and verified["run_count"] == 2)
+        check("viewer_export_integrity", status == 200 and verified["valid"] and verified["run_count"] == (4 if args.full_matrix else 2))
         (output / "first-project.zip").write_bytes(archive)
         check("member_removed", request(owner, "DELETE", f"/api/projects/{first}/members/viewer")[0] == 200)
         check("removed_member_export_refused", request(viewer, "GET", f"/api/projects/{first}/export")[0] == 403)
-        second = new_project("second-project", 120)
+        second = new_project("second-project", 240 if args.full_matrix else 120)
         second_csv = (Path(__file__).parent / "examples/second-project.csv").read_text()
         for recipe, condition in (("summary-r", "baseline"), ("summary-python", "alternative")):
             run = wait(second, submit(second, recipe, condition, second_csv, "second-"+condition)["id"])
-            check("second_project_"+condition, run["status"] == "succeeded" and run["metrics"] == expected_result(second_csv, condition) and run["cleanup_verified"])
+            check("second_project_"+condition, run["status"] == "succeeded" and validate_result(run["metrics"], second_csv, condition) and run["cleanup_verified"])
+        if args.full_matrix:
+            for recipe, condition in (("summary-python", "baseline"), ("summary-r", "alternative")):
+                run = wait(second, submit(second, recipe, condition, second_csv, "matrix-second-"+recipe)["id"])
+                check("matrix_second_"+recipe+"_"+condition, run["status"] == "succeeded" and run["cleanup_verified"])
+                validate_result(run["metrics"], second_csv, condition)
         status, archive = request(owner, "GET", f"/api/projects/{second}/export")
         check("second_project_export", status == 200 and verify_bundle(archive)["valid"])
         (output / "second-project.zip").write_bytes(archive)
@@ -135,7 +146,7 @@ def main():
         label_csv = 'group,value\n001,+1.0\n002,.5\nNA,2e1\nNULL,-1.\n001, 3E0 \n'
         for recipe in ("summary-python", "summary-r"):
             run = wait(labels, submit(labels, recipe, "baseline", label_csv, "labels-"+recipe)["id"])
-            check("exact_group_labels_"+recipe, run["status"] == "succeeded" and run["metrics"] == expected_result(label_csv, "baseline") and run["cleanup_verified"])
+            check("exact_group_labels_"+recipe, run["status"] == "succeeded" and validate_result(run["metrics"], label_csv, "baseline") and run["cleanup_verified"])
         check("nonportable_number_refused_before_dispatch", request(owner, "POST", f"/api/projects/{labels}/runs", {"recipe": "summary-r", "condition": "baseline", "csv": "group,value\nNA,1_000\n"})[0] == 400)
         capped = new_project("budget-control", 30)
         successful = wait(capped, submit(capped, "summary-python", "baseline", csv, "budget-first")["id"])
@@ -145,7 +156,7 @@ def main():
         check("closed_project_rejects_new_work", request(owner, "POST", f"/api/projects/{first}/runs", {"recipe": "summary-python", "condition": "baseline", "csv": csv})[0] == 400)
         check("closed_project_export_retained", request(owner, "GET", f"/api/projects/{first}/export")[0] == 200)
         restored_view = Store(root)
-        check("independent_reopen_preserves_recorded_runs", len(restored_view.project(second, "owner")["runs"]) == 2)
+        check("independent_reopen_preserves_recorded_runs", len(restored_view.project(second, "owner")["runs"]) == (4 if args.full_matrix else 2))
         report["status"] = "PASS"
     except Exception as exc:
         report["failure"] = str(exc)[:250]
@@ -158,7 +169,7 @@ def main():
         report["checks_passed"] = len(checks)
         report["all_recorded_runs_cleanup_verified"] = all(store.run(pid, rid, "owner")["cleanup_verified"] for pid, rid in recorded_runs)
         source_root = Path(__file__).parent
-        sources = {path for pattern in ("research_workspace/*.py", "tests/*.py", "recipes/*.py", "recipes/*.R", "static/*", "verify.py", "images.lock.json") for path in source_root.glob(pattern) if path.is_file()}
+        sources = {path for pattern in ("research_workspace/*.py", "tests/*.py", "recipes/*.py", "recipes/*.R", "static/*", "verify.py", "images.lock.json", "environments.json") for path in source_root.glob(pattern) if path.is_file()}
         report["source_hashes"] = {str(path.relative_to(source_root)): hashlib.sha256(path.read_bytes()).hexdigest() for path in sorted(sources)}
         (output / "verification.json").write_text(json.dumps(report, indent=2)+"\n")
         print(json.dumps({"status": report["status"], "checks_passed": len(checks), "cleanup_verified": report["all_recorded_runs_cleanup_verified"]}))

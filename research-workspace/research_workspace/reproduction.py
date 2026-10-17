@@ -97,6 +97,8 @@ def _plan(payload, trusted_sha256, selected_run_ids):
         eligible, environment_id, reason = False, None, "The exact recipe and image are not in the trusted packaged catalog."
         try:
             entry = resolve_environment(original["recipe"], original["recipe_sha256"], image)
+            if entry["status"] == "candidate":
+                raise ValueError("Candidate environments are not authorized for ordinary replay.")
             source = recipe_source(entry)
             if (type(source) is not bytes or source != members[prefix + filename]
                     or _sha(source) != original["recipe_sha256"]):

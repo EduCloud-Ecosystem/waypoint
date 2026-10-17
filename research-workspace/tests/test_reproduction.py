@@ -61,7 +61,7 @@ class ReproductionTests(unittest.TestCase):
         self.bundle = self.root / "source.zip"
         self.broker = self.root / "broker"
         self.broker.write_text("private executable placeholder")
-        self.entry = {"id": "summary-python-v1", "recipe": "summary-python", "recipe_sha256": HASH, "image": IMAGE}
+        self.entry = {"id": "summary-python-v1", "recipe": "summary-python", "recipe_sha256": HASH, "image": IMAGE, "status": "active"}
         def resolve(recipe, sha, image):
             if (recipe, sha, image) != ("summary-python", HASH, IMAGE):
                 raise ValueError("Not trusted")
@@ -146,6 +146,14 @@ class ReproductionTests(unittest.TestCase):
         self.source.return_value = SOURCE + b"\n# changed after catalog review\n"
         with self.assertRaises(ValueError):
             self.replay()
+        self.observe.assert_not_called()
+
+    def test_candidate_cannot_replay_even_with_matching_bytes_and_image(self):
+        self.entry['status'] = 'candidate'
+        self.assertFalse(reproduction.plan_reproduction(self.payload, self.hash)['executable'])
+        with self.assertRaises(ValueError):
+            self.replay()
+        self.preflight.assert_not_called()
         self.observe.assert_not_called()
 
     def test_invalid_input_is_rejected_before_compute(self):

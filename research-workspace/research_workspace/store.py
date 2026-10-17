@@ -245,7 +245,7 @@ class Store:
         run = dict(id=rid, project_id=project_id, recipe=recipe, condition=condition, status="queued",
                    created_at=now(), started_at=None, finished_at=None, input_sha256=digest(content.encode()),
                    recipe_sha256=digest(source), environment={"image": images[runtime], "runtime": runtime,
-                   "runner": "outfitter-docker-v1"}, parameters={}, metrics={}, error="", cleanup_verified=False,
+                   "runner": "outfitter-docker-v1", "specification": environment}, parameters={}, metrics={}, error="", cleanup_verified=False,
                    compute={"reserved_cpu_seconds": 0, "charged_cpu_seconds": 0, "provenance": "not_admitted", "unresolved_liability": False})
         with self.transaction() as db:
             self._access(db, project_id, subject, {"owner", "editor"}, active=True)

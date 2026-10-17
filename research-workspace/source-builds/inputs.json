@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "status": "candidate",
+  "base_images": {
+    "linux/arm64": "debian@sha256:a1b86db52ce3daef089e45aabe36dfec4091f82464c25c1fdcf03de197cbe82a",
+    "linux/amd64": "debian@sha256:a4672c0cb26fbdde88e38fa2dfb6c681942306680e41e4378b28770b6e79ee91"
+  },
+  "buildkit_image": "moby/buildkit@sha256:cec9f139f45e93c5c69c60f8b07cfad9f43f4ef6b6a6cd917527fea5ff2e3dea",
+  "debian_snapshot": "20261006T000000Z",
+  "runtimes": {
+    "python": {
+      "version": "3.12.15",
+      "url": "https://www.python.org/ftp/python/3.12.15/Python-3.12.15.tar.xz",
+      "sha256": "c2c4321961fab0fb999d66e0cecf521c2ab3994c7992873ea99e306c1094fd5a",
+      "checksum_provenance": "Published SHA-256 on the official Python 3.12.15 release page; independently matched downloaded bytes on 2026-10-17.",
+      "standard_library": ["csv", "json", "sys"],
+      "additional_packages": []
+    },
+    "r": {
+      "version": "4.6.1",
+      "url": "https://cran.r-project.org/src/base/R-4/R-4.6.1.tar.xz",
+      "sha256": "e4149581e151f3f1bc5edd6475e24ca1e2f452c08b6a22c29b570ce8abfe5783",
+      "checksum_provenance": "SHA-256 computed from the official CRAN HTTPS source download on 2026-10-17. No independent upstream SHA-256 signature verification is claimed.",
+      "standard_library": ["base", "utils"],
+      "additional_packages": []
+    }
+  },
+  "limits": {
+    "builder_cpus": 2,
+    "builder_memory_bytes": 3221225472,
+    "make_jobs": 2,
+    "build_seconds": 1200,
+    "log_bytes": 16777216,
+    "minimum_free_bytes": 12884901888,
+    "maximum_repetitions": 2
+  }
+}

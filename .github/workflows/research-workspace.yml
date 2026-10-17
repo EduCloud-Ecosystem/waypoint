@@ -6,6 +6,11 @@ on:
     branches: [main]
     paths: ['research-workspace/**', '.github/workflows/research-workspace.yml']
   workflow_dispatch:
+    inputs:
+      clean_source_builds:
+        description: 'Run bounded native AMD64 source builds and full synthetic qualification'
+        type: boolean
+        default: false
 permissions:
   contents: read
 jobs:
@@ -87,3 +92,55 @@ jobs:
             ${{ runner.temp }}/recovery-acceptance/verification.json
             ${{ runner.temp }}/recovery-acceptance/before.zip
             ${{ runner.temp }}/recovery-acceptance/after.zip
+  clean-source-builds:
+    if: github.event_name == 'workflow_dispatch' && inputs.clean_source_builds
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: waypoint
+      - uses: actions/checkout@v4
+        with:
+          repository: EduCloud-Ecosystem/outfitter
+          ref: 5827c84e9952cc67b85e91ceff4282e0ead6923b
+          path: outfitter
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.x'
+          cache: false
+      - run: go build -o bin/outfitter ./cmd/outfitter
+        working-directory: outfitter
+      - name: Clean native source builds with finite dedicated capacity
+        working-directory: waypoint/research-workspace
+        run: python build_sources.py --platform linux/amd64 --output "$RUNNER_TEMP/source-builds"
+      - name: Both conditions and runtimes across two projects
+        working-directory: waypoint/research-workspace
+        run: |
+          python qualify_sources.py --builds "$RUNNER_TEMP/source-builds/builds.json" \
+            --broker "$GITHUB_WORKSPACE/outfitter/bin/outfitter" --output "$RUNNER_TEMP/source-qualification"
+      - name: Retain successful and failed source-build evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: research-source-build-evidence
+          retention-days: 14
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/source-builds/builds.json
+            ${{ runner.temp }}/source-builds/builder.log
+            ${{ runner.temp }}/source-builds/*/build.json
+            ${{ runner.temp }}/source-builds/*/build.log
+            ${{ runner.temp }}/source-builds/*/metadata.json
+            ${{ runner.temp }}/source-builds/*/packages.tsv
+            ${{ runner.temp }}/source-builds/*/configure.log
+            ${{ runner.temp }}/source-builds/*/config.log
+            ${{ runner.temp }}/source-qualification/qualification.json
+            ${{ runner.temp }}/source-qualification/*/candidates.json
+            ${{ runner.temp }}/source-qualification/*/qualification.log
+            ${{ runner.temp }}/source-qualification/*/qualification/verification.json
+            ${{ runner.temp }}/source-qualification/*/qualification/first-project.zip
+            ${{ runner.temp }}/source-qualification/*/qualification/second-project.zip

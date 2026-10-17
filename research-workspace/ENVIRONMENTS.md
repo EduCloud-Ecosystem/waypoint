@@ -121,3 +121,17 @@ The focused record is
 records; the original 23-check browser record and its failed R run remain
 unchanged. The new checks do not repeat role authorization, recipe execution,
 manual screen-reader review, or independent-machine acceptance.
+
+## Source-build candidates
+
+[Clean source builds](SOURCE-BUILDS.md) define separate candidate identities,
+pinned inputs, native-platform qualification and promotion gates. Candidates
+are unavailable for ordinary admission and replay. Source-build provenance uses
+`build_inputs_status: RECORDED` with typed input hashes; legacy entries keep
+their original `NOT RECORDED` and `NOT RUN` statements. A bare local Docker
+SHA-256 is accepted only with recorded source-build provenance. Registry image
+references remain unchanged for historical replay.
+
+New run exports include a validated, bounded environment specification. Offline
+validation checks structure and lineage without opening packaged files or
+executing code; the snapshot is not a trusted execution allowlist.

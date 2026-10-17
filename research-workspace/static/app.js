@@ -159,7 +159,7 @@
   function environmentRecord(entry) {
     const section = element("section", "environment-record");
     section.append(element("h3", "", entry.name));
-    section.append(element("span", `badge ${entry.status === "archived" ? "warning" : "neutral"}`, entry.status === "archived" ? "Historical replay only" : entry.available ? "Configured for new runs" : "Not configured here"));
+    section.append(element("span", `badge ${entry.status === "archived" ? "warning" : "neutral"}`, entry.status === "candidate" ? "Candidate: awaiting promotion review" : entry.status === "archived" ? "Historical replay only" : entry.available ? "Configured for new runs" : "Not configured here"));
     const definitions = element("dl", "environment-facts");
     const add = (title, value, mono = false) => { definitions.append(element("dt", "", title), element("dd", mono ? "mono" : "", value)); };
     add("Environment version", entry.id, true);
@@ -207,7 +207,7 @@
       const details = element("details", "environment-version");
       details.dataset.environmentId = entry.id;
       details.open = expanded.has(entry.id);
-      details.append(element("summary", "", `${entry.name}${entry.status === "archived" ? " · archived" : ""}`), environmentRecord(entry));
+      details.append(element("summary", "", `${entry.name}${entry.status === "archived" ? " · archived" : entry.status === "candidate" ? " · candidate" : ""}`), environmentRecord(entry));
       target.append(details);
     }
   }

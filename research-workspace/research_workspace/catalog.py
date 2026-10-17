@@ -16,7 +16,7 @@ import stat
 ROOT = Path(__file__).resolve().parent.parent
 MAX_CATALOG_BYTES = 65536
 MAX_RECIPE_BYTES = 65536
-IMAGE = re.compile(r"[A-Za-z0-9][A-Za-z0-9./_:-]*@sha256:[0-9a-f]{64}\Z")
+IMAGE = re.compile(r"(?:[A-Za-z0-9][A-Za-z0-9./_:-]*@)?sha256:[0-9a-f]{64}\Z")
 SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 REVISION = re.compile(r"[0-9a-f]{40}\Z")
 IDENTIFIER = re.compile(r"[a-z][a-z0-9-]{2,63}\Z")
@@ -116,7 +116,7 @@ def _source(entry):
     return content
 
 
-def _validate(entry):
+def _validate(entry, *, check_source=True):
     _object(entry, ENTRY_KEYS, "environment")
     if not isinstance(entry["id"], str) or not IDENTIFIER.fullmatch(entry["id"]):
         _fail("invalid versioned identifier.")
@@ -127,10 +127,10 @@ def _validate(entry):
     if entry["id"] != f"{entry['recipe']}-v{entry['version']}":
         _fail("identifier and recipe version disagree.")
     _text(entry["name"], "environment name", 120)
-    if entry["status"] not in ("active", "archived"):
+    if entry["status"] not in ("active", "archived", "candidate"):
         _fail("invalid environment status.")
     if not isinstance(entry["image"], str) or len(entry["image"]) > 256 or not IMAGE.fullmatch(entry["image"]):
-        _fail("an immutable named SHA-256 image reference is required.")
+        _fail("an immutable SHA-256 image reference is required.")
     if not isinstance(entry["recipe_sha256"], str) or not SHA256.fullmatch(entry["recipe_sha256"]):
         _fail("invalid recipe SHA-256.")
     runtime = entry["runtime"]
@@ -182,11 +182,31 @@ def _validate(entry):
     if not isinstance(provenance["source_revision"], str) or not REVISION.fullmatch(provenance["source_revision"]):
         _fail("source provenance requires a full commit revision.")
     _text(provenance["image_origin"], "image provenance")
-    if provenance["build_inputs_status"] != "NOT RECORDED" or provenance["build_inputs"] != []:
-        _fail("source image builds have not been recorded for this catalog version.")
     _object(provenance["clean_rebuild"], {"status", "boundary"}, "clean rebuild")
-    if provenance["clean_rebuild"]["status"] != "NOT RUN":
-        _fail("this catalog cannot attest an unperformed clean image rebuild.")
+    if provenance["build_inputs_status"] == "NOT RECORDED":
+        if provenance["build_inputs"] != [] or provenance["clean_rebuild"]["status"] != "NOT RUN" or "@" not in entry["image"]:
+            _fail("legacy opaque images cannot attest a source rebuild or use local build IDs.")
+    elif provenance["build_inputs_status"] == "RECORDED":
+        inputs = provenance["build_inputs"]
+        if not isinstance(inputs, list) or not 5 <= len(inputs) <= 12:
+            _fail("source builds require bounded recorded inputs.")
+        kinds = set()
+        for item in inputs:
+            _object(item, {"kind", "reference", "sha256"}, "build input")
+            if item["kind"] not in {"runtime-source", "base-image", "buildkit-image", "dockerfile", "build-script", "input-contract", "package-inventory", "build-record"} or item["kind"] in kinds:
+                _fail("unknown or duplicate build input kind.")
+            kinds.add(item["kind"])
+            _text(item["reference"], "build input reference")
+            if not isinstance(item["sha256"], str) or not SHA256.fullmatch(item["sha256"]):
+                _fail("invalid build input SHA-256.")
+        if not {"runtime-source", "base-image", "dockerfile", "build-script", "input-contract"} <= kinds:
+            _fail("incomplete source build contract.")
+        if provenance["clean_rebuild"]["status"] not in ("PASS", "FAIL", "NOT RUN"):
+            _fail("invalid clean build evidence status.")
+        if entry["status"] == "active" and provenance["clean_rebuild"]["status"] != "PASS":
+            _fail("source-built active environments require passing build evidence.")
+    else:
+        _fail("invalid build input status.")
     _text(provenance["clean_rebuild"]["boundary"], "clean rebuild boundary")
     evidence = provenance["execution_evidence"]
     _object(evidence, {"status", "reference", "boundary"}, "execution evidence")
@@ -195,7 +215,23 @@ def _validate(entry):
     _text(evidence["reference"], "execution evidence reference")
     _text(evidence["boundary"], "execution evidence boundary")
     _strings(entry["limitations"], "limitations", allow_empty=True)
-    _source(entry)
+    parts = _safe_parts(entry["source"])
+    suffix = ".py" if runtime["id"] == "python" else ".R"
+    if len(parts) < 2 or parts[0] != "recipes" or not parts[-1].endswith(suffix):
+        _fail("recipe source must remain in the packaged recipes directory.")
+    if check_source:
+        _source(entry)
+
+
+def validate_snapshot(entry, recipe, recipe_sha256, image):
+    """Validate untrusted exported metadata without reading files or granting trust.
+
+    A structurally valid snapshot is a claim from its exporting operator. Only
+    resolve_environment/recipe_source may authorize local packaged execution.
+    """
+    _validate(entry, check_source=False)
+    if (entry["recipe"], entry["recipe_sha256"], entry["image"]) != (recipe, recipe_sha256, image):
+        _fail("exported environment does not match run lineage.")
 
 
 def _load():
