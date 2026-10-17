@@ -1,0 +1,71 @@
+name: Research workspace
+on:
+  pull_request:
+    paths: ['research-workspace/**', '.github/workflows/research-workspace.yml']
+  push:
+    branches: [main]
+    paths: ['research-workspace/**', '.github/workflows/research-workspace.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  controls:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: research-workspace
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: python -W error::ResourceWarning -m unittest discover -s tests -v
+      - run: node --check static/app.js
+  actual-docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: waypoint
+      - uses: actions/checkout@v4
+        with:
+          repository: EduCloud-Ecosystem/outfitter
+          ref: 8542f092f9f4058c38c7b77ca019cd47803e0627
+          path: outfitter
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.x'
+          cache: false
+      - run: go build -o bin/outfitter ./cmd/outfitter
+        working-directory: outfitter
+      - name: Pull reviewed immutable runtimes
+        run: |
+          docker pull python@sha256:229a2c5bfa27522db7815ea81f9bed70af17ccb9de9fc7ad142b1877b5830d36
+          docker pull r-base@sha256:fa1972f31def171b83e0911e947ab8b57db143f0fc8a67af4c0d5ac329041646
+      - name: Exercise HTTP, authorization, Docker, accounting and export
+        working-directory: waypoint/research-workspace
+        run: |
+          python verify.py \
+            --broker "$GITHUB_WORKSPACE/outfitter/bin/outfitter" \
+            --python-image python@sha256:229a2c5bfa27522db7815ea81f9bed70af17ccb9de9fc7ad142b1877b5830d36 \
+            --r-image r-base@sha256:fa1972f31def171b83e0911e947ab8b57db143f0fc8a67af4c0d5ac329041646 \
+            --output "$RUNNER_TEMP/research-acceptance"
+      - name: Retain only public synthetic acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: research-public-evidence
+          if-no-files-found: warn
+          retention-days: 14
+          path: |
+            ${{ runner.temp }}/research-acceptance/verification.json
+            ${{ runner.temp }}/research-acceptance/first-project.zip
+            ${{ runner.temp }}/research-acceptance/second-project.zip

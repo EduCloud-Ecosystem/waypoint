@@ -1,0 +1,73 @@
+{
+  "observed_at": "2026-10-17T21:12:46.735259+00:00",
+  "origin": "http://127.0.0.1:18765",
+  "browser": "Chromium via Playwright CLI",
+  "mode": "local synthetic inputs; actual Docker recipe runs",
+  "project_id": "4284d19a58964a2682ae95600eaedd78",
+  "checks": {
+    "operator_key_signin": true,
+    "create_project_120_cpu_seconds": true,
+    "synthetic_example_input": true,
+    "python_baseline_succeeded": true,
+    "r_initial_failure_retained": true,
+    "r_alternative_after_operator_fix_succeeded": true,
+    "descriptive_group_tables": true,
+    "native_evidence_download": true,
+    "downloaded_bundle_integrity_valid": true,
+    "owner_adds_viewer": true,
+    "viewer_run_controls_disabled": true,
+    "viewer_membership_and_close_controls_hidden": true,
+    "owner_removal_not_offered": true,
+    "owner_removes_collaborator": true,
+    "removed_collaborator_has_no_projects": true,
+    "public_csv_file_upload_94_bytes": true,
+    "keyboard_arrow_tab_navigation": true,
+    "cross_project_csv_draft_preserved": true,
+    "isolated_30_cpu_second_project_closed": true,
+    "closed_project_run_controls_disabled": true,
+    "closed_project_export_control_available": true,
+    "mobile_390px_no_horizontal_overflow": true,
+    "access_keys_absent_from_saved_browser_artifacts_and_export": true
+  },
+  "observations": {
+    "python_baseline": {
+      "rows": 10,
+      "mean": 23.2,
+      "group_means": {
+        "A": 17.2,
+        "B": 29.2
+      }
+    },
+    "r_alternative": {
+      "rows": 6,
+      "mean": 17,
+      "group_means": {
+        "A": 12,
+        "B": 22
+      }
+    },
+    "original_r_failure": "Retained run f147599cc0a841bbbf7ee406eff75221; cleanup verified; charged 30 CPU seconds. A later operator-fixed run succeeded.",
+    "bundle": {
+      "path": "research-evidence-browser.zip",
+      "runs": 3,
+      "files": 15,
+      "sha256": "888bbb96e611e6ba4a9b6181b2d8a1b314ac6167bf39d2642fb2e8c07ab20d87",
+      "gaps": [
+        "failed run",
+        "result not available for failed run"
+      ]
+    },
+    "final_browser_state": "Owner session, active synthetic comparison project, run workspace at top, desktop 1440x1000."
+  },
+  "not_executed": [
+    "Browser cancellation click (API cancellation covered separately by root agent).",
+    "Forced session expiry browser flow.",
+    "Manual screen reader assessment.",
+    "Scientific validity or external reproduction."
+  ],
+  "screenshots": [
+    "research-workspace-desktop.png",
+    "research-workspace-mobile.png",
+    "research-project-details-desktop.png"
+  ]
+}
