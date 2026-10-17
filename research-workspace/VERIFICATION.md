@@ -33,7 +33,38 @@ diagnostics cannot prevent cleanup/accounting updates. Its provider-failure
 regressions use simulated providers; its separate real-Docker suite covers local
 execution, broker loss, cancellation, cleanup and concurrent reservations.
 
-## Retained evidence
+## Portability and coordinated local recovery
+
+The P1 code snapshot `bf275dd` extends the accepted baseline above. Its local
+HTTP and recovery reports record exact exercised source hashes and the broker
+binary; the pinned recovery broker revision is
+`5827c84e9952cc67b85e91ceff4282e0ead6923b`.
+
+| Layer | Observed result | Boundary |
+| --- | --- | --- |
+| Unit/adversarial | 119 passed | Includes 17 catalog, 26 reproduction, 16 recovery and 2 operator-file controls; simulated providers remain labelled. |
+| Current HTTP → Docker | 41 passed, all recorded cleanup verified | New admission uses exact active catalog pairs; two public/synthetic studies and the R-label control. |
+| Historical reproduction | Two selected successful runs passed | Original Python v1 and archived R v1 bytes; original failed R remains NOT RUN. Fresh 60 CPU-second authority, full charges retained, no owned containers remaining. |
+| Workspace recovery | 25 passed | Two actual Docker runtimes; exact completed records, access restrictions and charges preserved through held restore and an injected cutover interruption. |
+| Environment browser interface | 17 passed | Desktop/mobile, keyboard, active/archive disclosure and draft preservation; includes two explicitly simulated controls and no compute submissions. |
+| Broker recovery | 38 passed in its separate suite | Local CLI/Docker evidence in Outfitter; independent review fixed and verified a special-file hang. |
+
+The final workspace restore observation was 0.773 seconds on this computer,
+with no lost completed records or artifacts at the frozen checkpoint. This is
+not an approved recovery target. Clean image builds from source, independent
+human/second-machine reproduction, off-host recovery, live cloud operation and
+private-data admission remain **NOT RUN**. Recorded OCI images were reused;
+no source-build or architecture-portability claim is made.
+
+Evidence: [P1 acceptance manifest](evidence/2026-10-17/p1/acceptance.json),
+[current HTTP report](evidence/2026-10-17/p1/http-docker-verification.json),
+[recovery report](evidence/2026-10-17/p1/recovery-verification.json),
+[reproduction report](evidence/2026-10-17/reproduction/verification.json), and
+[catalog browser report](evidence/2026-10-17/catalog-browser-verification.json).
+The P1 evidence directory retains both synthetic project ZIPs and recovery
+before/after ZIPs. Private checkpoint/authority directories are excluded.
+
+## Retained baseline evidence
 
 - [Final HTTP/Docker report](evidence/2026-10-17/http-docker-verification.json)
 - [Browser report](evidence/2026-10-17/browser-verification.json)
@@ -66,7 +97,7 @@ or declassify future user-provided inputs.
   were not exercised. Backend cancellation and expiry enforcement have focused
   controls; they do not substitute for those browser/manual assessments.
 - A second independent researcher has not yet completed the runbook.
-- Shared hosting, campus SSO, complete backup/restore, retention/deletion,
+- Shared hosting, campus SSO, off-host backup/restore, retention/deletion,
   store-wide quotas and approved private-data handling remain future work.
 - Jetstream2 preflight/worker simulation in Outfitter is separate from live
   resource acceptance. No native service-unit accounting, independent cloud

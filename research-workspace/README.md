@@ -83,6 +83,11 @@ an estimate, not measured CPU time or money. The recipe runs without network
 access as a non-root user, with read-only inputs and limits on memory, CPU,
 processes, output and wall time. Only the two packaged recipes can be selected.
 
+For exact historical replay, use [REPRODUCTION.md](REPRODUCTION.md). The
+[environment catalog](ENVIRONMENTS.md) records reviewed code, dependencies,
+images, limits and known gaps; archived recipes are available only for verified
+historical reproduction.
+
 ## Failure and recovery
 
 The history retains failed, cancelled and interrupted attempts. Project closure
