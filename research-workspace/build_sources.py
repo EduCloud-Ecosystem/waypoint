@@ -90,6 +90,7 @@ def main():
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=False)
     contract = json.loads((INPUTS / 'inputs.json').read_text())
+    packaged = {name: (INPUTS/name).read_bytes() for name in ('Dockerfile', 'build.sh', 'inputs.json')}
     report = {'schema_version': 1, 'status': 'NOT RUN', 'observed_at': dt.datetime.now(dt.timezone.utc).isoformat(),
               'platform': args.platform, 'repetitions': args.repetitions, 'builds': [],
               'promotion': 'DISABLED', 'independent_human_second_machine': 'NOT RUN',
@@ -97,7 +98,7 @@ def main():
               'runner_sha256': sha(Path(__file__).read_bytes()),
               'source_revision': command(['git', '-C', str(ROOT), 'rev-parse', 'HEAD']).strip(),
               'tracked_changes': command(['git', '-C', str(ROOT), 'status', '--short']),
-              'inputs': contract, 'input_hashes': {p.name: sha(p.read_bytes()) for p in sorted(INPUTS.iterdir()) if p.is_file()}}
+              'inputs': contract, 'input_hashes': {name: sha(data) for name, data in packaged.items()}}
     builder = 'waypoint-source-' + uuid.uuid4().hex[:12]
     report['builder'] = builder
     created = False
@@ -125,7 +126,7 @@ def main():
                 context.mkdir(parents=True)
                 record['preflight'] = preflight(output, contract, args.platform)
                 for filename in ('Dockerfile', 'build.sh', 'inputs.json'):
-                    shutil.copyfile(INPUTS / filename, context / filename)
+                    (context / filename).write_bytes(packaged[filename])
                 fetch(runtime, context / 'source.tar.xz')
                 record['context_sha256'] = {p.name: sha(p.read_bytes()) for p in sorted(context.iterdir())}
                 tag = f'waypoint-source-{runtime_id}:{builder}-{repetition}'

@@ -168,6 +168,8 @@ def main():
         thread.join(timeout=3)
         report["checks_passed"] = len(checks)
         report["all_recorded_runs_cleanup_verified"] = all(store.run(pid, rid, "owner")["cleanup_verified"] for pid, rid in recorded_runs)
+        if args.full_matrix:
+            report["recorded_runs"] = list({rid: store.run(pid, rid, "owner") for pid, rid in recorded_runs}.values())
         source_root = Path(__file__).parent
         sources = {path for pattern in ("research_workspace/*.py", "tests/*.py", "recipes/*.py", "recipes/*.R", "static/*", "verify.py", "images.lock.json", "environments.json") for path in source_root.glob(pattern) if path.is_file()}
         report["source_hashes"] = {str(path.relative_to(source_root)): hashlib.sha256(path.read_bytes()).hexdigest() for path in sorted(sources)}

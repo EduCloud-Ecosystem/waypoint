@@ -61,6 +61,7 @@ class SourceBuildTests(unittest.TestCase):
         for mutate in (
             lambda e: e['provenance']['build_inputs'].pop(0),
             lambda e: e['provenance']['build_inputs'][0].update(sha256='not-a-hash'),
+            lambda e: e['provenance']['build_inputs'][0].update(kind=[]),
             lambda e: e.update(image='python:latest'),
             lambda e: e['dependencies'].update(additional_packages=['numpy']),
             lambda e: e['provenance']['build_inputs'].append(deepcopy(e['provenance']['build_inputs'][0])),

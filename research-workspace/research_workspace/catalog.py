@@ -193,7 +193,7 @@ def _validate(entry, *, check_source=True):
         kinds = set()
         for item in inputs:
             _object(item, {"kind", "reference", "sha256"}, "build input")
-            if item["kind"] not in {"runtime-source", "base-image", "buildkit-image", "dockerfile", "build-script", "input-contract", "package-inventory", "build-record"} or item["kind"] in kinds:
+            if not isinstance(item["kind"], str) or item["kind"] not in {"runtime-source", "base-image", "buildkit-image", "dockerfile", "build-script", "input-contract", "package-inventory", "build-record"} or item["kind"] in kinds:
                 _fail("unknown or duplicate build input kind.")
             kinds.add(item["kind"])
             _text(item["reference"], "build input reference")

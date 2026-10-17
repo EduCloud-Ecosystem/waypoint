@@ -241,7 +241,7 @@ class Store:
         from .catalog import resolve_environment
         environment = resolve_environment(recipe, digest(source), images[runtime])
         if environment["status"] != "active":
-            raise ValueError("This environment is archived and unavailable for new runs.")
+            raise ValueError("This environment is unavailable for new runs.")
         run = dict(id=rid, project_id=project_id, recipe=recipe, condition=condition, status="queued",
                    created_at=now(), started_at=None, finished_at=None, input_sha256=digest(content.encode()),
                    recipe_sha256=digest(source), environment={"image": images[runtime], "runtime": runtime,

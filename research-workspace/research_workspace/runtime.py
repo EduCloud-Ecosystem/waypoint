@@ -129,6 +129,8 @@ class Worker:
             return
         from .catalog import resolve_environment, recipe_source
         trusted = resolve_environment(run["recipe"], run["recipe_sha256"], run["environment"]["image"])
+        if trusted["status"] == "candidate":
+            raise ValueError("Candidate environments cannot dispatch outside qualification.")
         if source != recipe_source(trusted):
             raise ValueError("Queued source no longer matches the trusted environment catalog.")
         if self.store.should_cancel(run["id"]):
