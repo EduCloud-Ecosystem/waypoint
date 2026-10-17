@@ -10,7 +10,7 @@ from research_workspace.recipes import expected_result, parse_csv, validate_resu
 from research_workspace.store import AccessError, Store, canonical
 
 CSV = "group,value\na,1\na,2\na,3\na,4\na,100\n"
-IMAGES = {"python": "sha256:" + "1" * 64, "r": "sha256:" + "2" * 64}
+IMAGES = json.loads((Path(__file__).resolve().parents[1] / "images.lock.json").read_text())
 
 
 class Broker:
@@ -58,6 +58,11 @@ class WorkspaceTests(unittest.TestCase):
             self.store.session(token=token)
         with self.assertRaises(AccessError):
             self.store.session(key=self.alice)
+
+    def test_unregistered_immutable_image_cannot_enter_queue(self):
+        with self.assertRaises(ValueError):
+            self.store.submit(self.pid, "alice", {"recipe": "summary-python", "condition": "baseline", "csv": CSV}, {"python": "sha256:" + "1" * 64})
+        self.assertEqual(self.store.project(self.pid, "alice")["runs"], [])
 
     def test_cross_project_read_submit_export_refused(self):
         run = self.submit()

@@ -127,6 +127,10 @@ class Worker:
             run.update(status="failed", error="Immutable input or recipe integrity failed before dispatch.", cleanup_verified=True)
             self.store.finish(run)
             return
+        from .catalog import resolve_environment, recipe_source
+        trusted = resolve_environment(run["recipe"], run["recipe_sha256"], run["environment"]["image"])
+        if source != recipe_source(trusted):
+            raise ValueError("Queued source no longer matches the trusted environment catalog.")
         if self.store.should_cancel(run["id"]):
             run.update(status="cancelled", error="Cancelled before dispatch.", cleanup_verified=True)
             self.store.finish(run)
@@ -188,12 +192,15 @@ class Worker:
         self.store.finish(run, result)
 
 
-def validate_images(images):
+def validate_images(images, *, require_active=True):
     if not isinstance(images, dict) or set(images) - {"python", "r"}:
         raise ValueError("Configure only the reviewed Python and R runtimes.")
     for runtime, image in images.items():
         if not isinstance(image, str) or not re.fullmatch(r"(?:[A-Za-z0-9./_:-]+@)?sha256:[0-9a-f]{64}", image):
             raise ValueError("Runtime images must be pinned by immutable SHA-256 digest.")
+        from .catalog import list_environments
+        if require_active and not any(entry["available"] and entry["runtime"]["id"] == runtime for entry in list_environments(images)):
+            raise ValueError(f"The configured {runtime} image has no active reviewed environment.")
         check = subprocess.run(["docker", "image", "inspect", image, "--format", "{{.Id}}"], capture_output=True, timeout=20)
         if check.returncode != 0:
             raise ValueError(f"The pinned {runtime} image is not available locally.")

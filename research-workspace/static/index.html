@@ -62,6 +62,7 @@
               <p id="read-only-message" class="quiet-note" hidden></p>
               <form id="run-form"><fieldset id="run-fields"><legend class="sr-only">Run configuration</legend>
                 <label for="recipe">Analysis recipe</label><select id="recipe" name="recipe" aria-describedby="recipe-description" required></select><p id="recipe-description" class="field-help"></p>
+                <details id="environment-details" class="environment-details"><summary>Environment &amp; dependencies</summary><p id="environment-summary" class="field-help" role="status">Loading reviewed environment details…</p><div id="environment-content"></div></details>
                 <label for="condition">Method condition</label><select id="condition" name="condition" aria-describedby="condition-help"><option value="baseline">Baseline · retain every row</option><option value="alternative">Alternative · trim extreme values</option></select><p id="condition-help" class="field-help">Baseline summarizes all values in each group.</p>
                 <div class="label-row"><label for="csv-input">Input data</label><button id="use-example" type="button" class="text-button">Use example data</button></div>
                 <textarea id="csv-input" name="csv" rows="8" spellcheck="false" placeholder="group,value&#10;A,10&#10;A,12&#10;B,14" aria-describedby="csv-help csv-size" required></textarea>

@@ -83,6 +83,11 @@ an estimate, not measured CPU time or money. The recipe runs without network
 access as a non-root user, with read-only inputs and limits on memory, CPU,
 processes, output and wall time. Only the two packaged recipes can be selected.
 
+For exact historical replay, use [REPRODUCTION.md](REPRODUCTION.md). The
+[environment catalog](ENVIRONMENTS.md) records reviewed code, dependencies,
+images, limits and known gaps; archived recipes are available only for verified
+historical reproduction.
+
 ## Failure and recovery
 
 The history retains failed, cancelled and interrupted attempts. Project closure
@@ -107,9 +112,11 @@ record or publish uncertain results. Unknown liability is never assumed zero.
 Keep the entire state directory together: SQLite authority, immutable run
 files, configuration and broker ledger. Do not delete or restore an older
 ledger to reset allowances, copy a live SQLite database by itself, or place
-this store on network-mounted storage. This release has no accepted backup
-restore procedure, automatic retention/deletion workflow or store-wide disk
-quota. Stop admission if authority is lost and preserve the original state.
+this store on network-mounted storage. [RECOVERY.md](RECOVERY.md) describes
+private offline checkpoints and a held replacement that activates only after
+the current source is verified and fenced. Off-host recovery, automatic
+retention/deletion and store-wide disk quotas remain open. Stop admission if
+authority is lost and preserve the original state.
 
 ## Verification and expansion
 
@@ -132,7 +139,7 @@ operator diagnostics. CI uploads an explicit allowlist of public artifacts.
 Read [VERIFICATION.md](VERIFICATION.md) for observed evidence and failed controls,
 [CONTRACT.md](CONTRACT.md) for the integration/API boundary, and
 [EVIDENCE.md](EVIDENCE.md) for bundle guarantees. The next institutional gates
-are campus identity, shared hosting, full-state recovery, approved data storage
+are campus identity, shared hosting, off-host recovery, approved data storage
 and retention, and independently verified provider cleanup/accounting. Real
 participant data, live cloud provisioning and scientific validity are not
 accepted by this local proof of concept.

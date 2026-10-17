@@ -9,6 +9,8 @@
     lastSubject: null,
     projects: [],
     recipes: [],
+    environments: [],
+    environmentError: "",
     selected: null,
     detail: null,
     drafts: new Map(),
@@ -148,7 +150,66 @@
   function updateRecipe() {
     const recipe = state.recipes.find((item) => item.id === $("recipe").value);
     $("recipe-description").textContent = recipe?.description || "Ask the operator to configure a reviewed, pinned execution environment before running an analysis.";
+    renderEnvironment();
     updateRunPermissions();
+  }
+  function selectedEnvironment() {
+    return state.environments.find((entry) => entry.recipe === $("recipe").value && entry.status === "active");
+  }
+  function environmentRecord(entry) {
+    const section = element("section", "environment-record");
+    section.append(element("h3", "", entry.name));
+    section.append(element("span", `badge ${entry.status === "archived" ? "warning" : "neutral"}`, entry.status === "archived" ? "Historical replay only" : entry.available ? "Configured for new runs" : "Not configured here"));
+    const definitions = element("dl", "environment-facts");
+    const add = (title, value, mono = false) => { definitions.append(element("dt", "", title), element("dd", mono ? "mono" : "", value)); };
+    add("Environment version", entry.id, true);
+    add("Runtime", `${entry.runtime?.id === "r" ? "R" : "Python"} ${entry.runtime?.version || "version not recorded"}`);
+    add("Version evidence", entry.runtime?.version_evidence);
+    add("Dependencies", entry.dependencies?.statement);
+    add("Included libraries", (entry.dependencies?.standard_library || []).join(", "));
+    add("Additional packages", entry.dependencies?.additional_packages?.length ? entry.dependencies.additional_packages.join(", ") : "None beyond the runtime standard library");
+    for (const platform of entry.platforms || []) add("Recorded platform", `${platform.os}/${platform.architecture} · ${platform.evidence_status}. ${platform.evidence_boundary}`);
+    const limits = entry.limits || {};
+    add("Run limits", `${limits.cpus} CPU · ${limits.memory_mb} MiB memory · ${limits.pids_limit} processes · ${limits.timeout_seconds} seconds maximum`);
+    add("Input & output limits", `${bytes(limits.max_input_bytes)} input, ${number(limits.max_input_rows)} rows; ${bytes(limits.max_output_bytes)} output`);
+    add("Baseline method", entry.conditions?.baseline);
+    add("Alternative method", entry.conditions?.alternative);
+    add("Result checks", `Mean tolerance: relative ${entry.validation?.relative_tolerance}, absolute ${entry.validation?.absolute_tolerance}. ${entry.validation?.independent_check || ""}`);
+    add("Pinned runtime image", entry.image, true);
+    add("Packaged recipe", entry.source, true);
+    add("Recipe SHA-256", entry.recipe_sha256, true);
+    add("Recipe source revision", entry.provenance?.source_revision, true);
+    add("Recipe repository", entry.provenance?.repository, true);
+    add("Image provenance", entry.provenance?.image_origin);
+    const evidence = entry.provenance?.execution_evidence;
+    add("Recorded execution", `${evidence?.status || "NOT RUN"}. ${evidence?.boundary || "No execution evidence recorded."}`);
+    add("Evidence record", evidence?.reference, true);
+    section.append(definitions);
+    const rebuild = entry.provenance?.clean_rebuild;
+    section.append(element("p", "environment-boundary", `Clean image rebuild: ${rebuild?.status || "NOT RUN"}. ${rebuild?.boundary || "No source build reproduction is recorded."}`));
+    if (entry.limitations?.length) {
+      const limitations = element("ul", "environment-limitations");
+      for (const item of entry.limitations) limitations.append(element("li", "", item));
+      section.append(limitations);
+    }
+    return section;
+  }
+  function renderEnvironment() {
+    const target = $("environment-content");
+    const expanded = new Set([...target.querySelectorAll("details[open]")].map((node) => node.dataset.environmentId));
+    target.replaceChildren();
+    const current = selectedEnvironment();
+    $("environment-summary").textContent = state.environmentError || (!state.environments.length ? "Reviewed environment details are unavailable. Refresh before starting a new run." : current ? `${current.runtime.id === "r" ? "R" : "Python"} ${current.runtime.version} · version ${current.version} · no additional packages. ${current.available ? "Ready on this service." : "This exact environment is not configured here."}` : "Inspect the reviewed versions below. No environment is selected for a new run.");
+    if (current) target.append(environmentRecord(current));
+    const others = state.environments.filter((entry) => entry.id !== current?.id);
+    if (others.length) target.append(element("p", "environment-others", "Other reviewed versions"));
+    for (const entry of others) {
+      const details = element("details", "environment-version");
+      details.dataset.environmentId = entry.id;
+      details.open = expanded.has(entry.id);
+      details.append(element("summary", "", `${entry.name}${entry.status === "archived" ? " · archived" : ""}`), environmentRecord(entry));
+      target.append(details);
+    }
   }
   function updateCondition() {
     $("condition-help").textContent = $("condition").value === "alternative" ? "For each group with at least five rows, remove one smallest and one largest value before summarizing. Smaller groups keep all rows." : "Baseline summarizes all values in each group.";
@@ -162,7 +223,7 @@
   function updateRunPermissions() {
     const permitted = canRun();
     $("run-fields").disabled = !permitted || state.runBusy;
-    $("submit-run").disabled = !permitted || state.runBusy || !$("recipe").value;
+    $("submit-run").disabled = !permitted || state.runBusy || !$("recipe").value || !selectedEnvironment()?.available;
     const readOnly = $("read-only-message");
     readOnly.hidden = permitted || !state.detail;
     if (state.detail && !permitted) readOnly.textContent = state.detail.role === "viewer" ? "You have view access. You can inspect and export this project's evidence; ask the owner for editor access to submit a run." : "This project is closed or has reached its end date. Existing evidence remains available below.";
@@ -198,6 +259,8 @@
     state.subject = subject;
     state.detail = null;
     state.projects = [];
+    state.environments = [];
+    state.environmentError = "";
     renderProjectList();
     $("project-view").hidden = true;
     $("welcome").hidden = true;
@@ -209,7 +272,7 @@
     $("account-subject").title = subject;
     clearError();
     $("project-loading").hidden = false;
-    const results = await Promise.allSettled([api("/api/projects"), api("/api/recipes")]);
+    const results = await Promise.allSettled([api("/api/projects"), api("/api/recipes"), api("/api/environments")]);
     if (!state.subject) return;
     if (results[0].status !== "fulfilled") {
       $("project-loading").hidden = true;
@@ -220,6 +283,8 @@
     state.projects = results[0].value.projects || [];
     if (results[1].status === "fulfilled") state.recipes = results[1].value.recipes || [];
     else { state.recipes = []; showError(`Recipes could not be loaded. ${errorMessage(results[1].reason)}`); }
+    if (results[2].status === "fulfilled") state.environments = results[2].value.environments || [];
+    else state.environmentError = "Environment details could not be loaded. Refresh before starting a new run.";
     renderProjectList();
     const selected = state.projects.find((project) => project.id === state.selected) || state.projects[0];
     state.selected = null;
@@ -572,7 +637,7 @@
     event.target.value = "";
   });
   $("run-form").addEventListener("submit", async (event) => {
-    event.preventDefault(); if (!canRun() || state.runBusy) return;
+    event.preventDefault(); if (!canRun() || state.runBusy || !selectedEnvironment()?.available) return;
     updateInputSize(); if (!$("run-form").reportValidity()) return;
     const id = state.selected;
     const body = { recipe: $("recipe").value, condition: $("condition").value, csv: $("csv-input").value, parameters: {} };
@@ -594,8 +659,13 @@
   });
   $("refresh-project").addEventListener("click", async () => {
     clearError();
-    try { const payload = await api("/api/recipes"); state.recipes = payload.recipes || []; renderRecipes(); }
-    catch (error) { if (state.subject) showError(errorMessage(error)); }
+    const results = await Promise.allSettled([api("/api/recipes"), api("/api/environments")]);
+    if (!state.subject) return;
+    state.recipes = results[0].status === "fulfilled" ? results[0].value.recipes || [] : [];
+    state.environments = results[1].status === "fulfilled" ? results[1].value.environments || [] : [];
+    state.environmentError = results[1].status === "fulfilled" ? "" : "Environment details could not be loaded. Refresh before starting a new run.";
+    if (results[0].status === "rejected") showError(errorMessage(results[0].reason));
+    renderRecipes();
     await refreshProject(); schedulePoll();
   });
   $("member-form").addEventListener("submit", async (event) => {

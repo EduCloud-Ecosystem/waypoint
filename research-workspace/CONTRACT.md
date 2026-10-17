@@ -59,6 +59,16 @@ adapter refuses network-wide binding and is not production SSO.
   this reports descriptive results, not statistical/scientific acceptance.
 - `GET /api/projects/{id}/export` → downloadable application/zip evidence bundle.
 - `GET /api/recipes` → `{recipes:[{id,name,description,available}]}`.
+- `GET /api/environments` → `{environments:[...]}`; reviewed source/image
+  identities, dependencies, limits and bounded provenance. New-run availability
+  requires an active entry matching the configured image.
+
+Operator-only portability and recovery commands are defined in
+[REPRODUCTION.md](REPRODUCTION.md) and [RECOVERY.md](RECOVERY.md). Public evidence
+contains no executable authority. Private checkpoints include authority and stay
+held until the original source is verified and fenced; they are never browser
+uploads. Both mechanisms preserve uncertainty and never import a fresh allowance
+from historical run records.
 
 Only owners/editors can submit or cancel runs. Viewers can inspect/export project
 evidence. Every operation rechecks active membership; submission, queued dispatch
