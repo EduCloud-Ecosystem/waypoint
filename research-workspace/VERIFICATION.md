@@ -13,11 +13,19 @@ was involved. Belay and the existing course/AI pilots were unchanged.
 | Downloaded evidence | Valid; three runs and 15 files, including the failed R attempt. | Internal integrity and selected lineage; not authenticity, publication certification or scientific validity. |
 | Independent source review | Receipt, access-revocation and connection-lifetime findings fixed and regression-tested. | Scoped agent review, not an exhaustive security certification. |
 
-The local runs used Outfitter commit
-`149fecc5cd9aecdddca52ba893f17a9f4318670e` and the immutable references in
-`images.lock.json`. The final HTTP report contains hashes of the Python source
-and tests exercised. Browser checks preceded the final receipt/refusal review;
+The final local HTTP run used Outfitter commit
+`8542f092f9f4058c38c7b77ca019cd47803e0627` and the immutable references in
+`images.lock.json`. The browser run used its earlier Docker baseline. The final
+HTTP report contains hashes of the Python source and tests exercised. Browser
+checks preceded the final receipt/refusal review;
 the final automated HTTP run and unit controls cover those backend changes.
+
+Outfitter's final scoped review also fixed authority-ledger growth, corrupted
+accounting acceptance, ambiguous late creation and expired cloud mutation
+permissions. Bounded diagnostics now live outside the core ledger, while missing
+diagnostics cannot prevent cleanup/accounting updates. Its provider-failure
+regressions use simulated providers; its separate real-Docker suite covers local
+execution, broker loss, cancellation, cleanup and concurrent reservations.
 
 ## Retained evidence
 
