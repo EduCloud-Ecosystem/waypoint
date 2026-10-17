@@ -91,6 +91,9 @@ class Store:
         db = self.connect()
         try:
             db.execute("BEGIN IMMEDIATE")
+            config_path = self.root / "config.json"
+            if config_path.exists() and json.loads(config_path.read_text()).get("mode") in ("recovery-held", "retired"):
+                raise ValueError("This workspace is held or retired for recovery; mutations are disabled.")
             yield db
             db.commit()
         except BaseException:
@@ -113,6 +116,16 @@ class Store:
             db.execute("UPDATE users SET active=0 WHERE subject=?", (subject,))
             db.execute("DELETE FROM sessions WHERE subject=?", (subject,))
             db.execute("UPDATE runs SET cancel_requested=1 WHERE subject=? AND status IN ('queued','running')", (subject,))
+
+    def rotate_user(self, subject):
+        identifier(subject)
+        key = secrets.token_urlsafe(32)
+        with self.transaction() as db:
+            if not db.execute("SELECT 1 FROM users WHERE subject=? AND active=1", (subject,)).fetchone():
+                raise ValueError("Only an existing active subject can receive a replacement key.")
+            db.execute("DELETE FROM sessions WHERE subject=?", (subject,))
+            db.execute("UPDATE users SET key_hash=? WHERE subject=?", (digest(key.encode()), subject))
+        return key
 
     def session(self, key=None, token=None):
         with self.transaction() as db:
@@ -225,6 +238,10 @@ class Store:
         rid = uuid.uuid4().hex
         runtime, filename = IDS[recipe]
         source = recipe_bytes(recipe)
+        from .catalog import resolve_environment
+        environment = resolve_environment(recipe, digest(source), images[runtime])
+        if environment["status"] != "active":
+            raise ValueError("This environment is archived and unavailable for new runs.")
         run = dict(id=rid, project_id=project_id, recipe=recipe, condition=condition, status="queued",
                    created_at=now(), started_at=None, finished_at=None, input_sha256=digest(content.encode()),
                    recipe_sha256=digest(source), environment={"image": images[runtime], "runtime": runtime,

@@ -17,7 +17,7 @@ from research_workspace.store import AccessError, Store
 
 
 CSV = "group,value\na,1\na,2\na,3\na,4\na,100\n"
-IMAGE = "sha256:" + "1" * 64
+IMAGE = json.loads((Path(__file__).resolve().parents[1] / "images.lock.json").read_text())["python"]
 
 
 class StubBroker:

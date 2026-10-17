@@ -27,10 +27,11 @@ class Application:
         self.worker = Worker(self.store, self.broker)
 
     def recipes(self):
-        images = self.config["images"]
+        from .catalog import list_environments
+        available = {entry["recipe"] for entry in list_environments(self.config["images"]) if entry["available"]}
         return {"recipes": [
-            {"id": "summary-python", "name": "Python · group comparison", "description": "Compare all observations with a trimmed descriptive summary.", "available": "python" in images},
-            {"id": "summary-r", "name": "R · group comparison", "description": "Run the same reviewed method in R for a runtime comparison.", "available": "r" in images},
+            {"id": "summary-python", "name": "Python · group comparison", "description": "Compare all observations with a trimmed descriptive summary.", "available": "summary-python" in available},
+            {"id": "summary-r", "name": "R · group comparison", "description": "Run the same reviewed method in R for a runtime comparison.", "available": "summary-r" in available},
         ]}
 
     def dispatch(self, method, path, subject, data, request_key):
@@ -38,6 +39,9 @@ class Application:
             return 200, {"subject": subject}
         if path == "/api/recipes" and method == "GET":
             return 200, self.recipes()
+        if path == "/api/environments" and method == "GET":
+            from .catalog import list_environments
+            return 200, {"environments": list_environments(self.config["images"])}
         if path == "/api/projects":
             if method == "GET":
                 return 200, {"projects": self.store.projects(subject)}
@@ -209,12 +213,12 @@ class Server(ThreadingHTTPServer):
 def serve(state, host="127.0.0.1", port=18765):
     if host != "127.0.0.1":
         raise ValueError("The local identity adapter refuses non-loopback binding.")
-    app = Application(state)
-    with (app.store.root / "server.lock").open("a") as lock:
+    with (Path(state) / "server.lock").open("a") as lock:
         try:
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError as exc:
             raise ValueError("This workspace already has a running service.") from exc
+        app = Application(state)
         server = Server((host, port), Handler)
         server.app = app
         app.worker.start()

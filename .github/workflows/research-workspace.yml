@@ -35,7 +35,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: EduCloud-Ecosystem/outfitter
-          ref: 8542f092f9f4058c38c7b77ca019cd47803e0627
+          ref: 5827c84e9952cc67b85e91ceff4282e0ead6923b
           path: outfitter
       - uses: actions/setup-python@v5
         with:
@@ -58,6 +58,19 @@ jobs:
             --python-image python@sha256:229a2c5bfa27522db7815ea81f9bed70af17ccb9de9fc7ad142b1877b5830d36 \
             --r-image r-base@sha256:fa1972f31def171b83e0911e947ab8b57db143f0fc8a67af4c0d5ac329041646 \
             --output "$RUNNER_TEMP/research-acceptance"
+      - name: Reproduce verified historical browser evidence
+        working-directory: waypoint/research-workspace
+        run: |
+          python -m research_workspace reproduce evidence/2026-10-17/browser-evidence.zip \
+            --trusted-sha256 888bbb96e611e6ba4a9b6181b2d8a1b314ac6167bf39d2642fb2e8c07ab20d87 \
+            --broker "$GITHUB_WORKSPACE/outfitter/bin/outfitter" \
+            --budget-cpu-seconds 60 --output "$RUNNER_TEMP/reproduction-acceptance"
+          python -c 'import json,os; from pathlib import Path; assert json.loads((Path(os.environ["RUNNER_TEMP"])/"reproduction-acceptance/report.json").read_text())["status"] == "PASS"'
+      - name: Exercise coordinated local replacement and failed cutover
+        working-directory: waypoint/research-workspace
+        run: |
+          python verify_recovery.py --broker "$GITHUB_WORKSPACE/outfitter/bin/outfitter" \
+            --output "$RUNNER_TEMP/recovery-acceptance"
       - name: Retain only public synthetic acceptance evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -69,3 +82,8 @@ jobs:
             ${{ runner.temp }}/research-acceptance/verification.json
             ${{ runner.temp }}/research-acceptance/first-project.zip
             ${{ runner.temp }}/research-acceptance/second-project.zip
+            ${{ runner.temp }}/reproduction-acceptance/report.json
+            ${{ runner.temp }}/reproduction-acceptance/evidence.zip
+            ${{ runner.temp }}/recovery-acceptance/verification.json
+            ${{ runner.temp }}/recovery-acceptance/before.zip
+            ${{ runner.temp }}/recovery-acceptance/after.zip
