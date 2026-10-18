@@ -1,0 +1,155 @@
+{
+  "original_directory": "/Users/gregchism/Documents/Codex/2026-10-18/waypoint-scoped-docker-independent-review/final-09418f2",
+  "originals_unchanged": true,
+  "retained_files": {
+    "absence-failure-control-report.json": {
+      "sha256": "8d94ebe59c690d7e492d6ab094992cc1af41ce576a23d14f0d293bd158ab8663",
+      "bytes": 15694
+    },
+    "baseline-control-report.json": {
+      "sha256": "f3dcfbb7b475f36ef2cfabcf398399a634e7ae22dda5e67a7b8a9b6837e15e50",
+      "bytes": 70613
+    },
+    "extra-ledger-project-report.json": {
+      "sha256": "bc0bcec0f399c1ee47358f8c0d09c12c12fe3378da2908ba5f317a0b3636369c",
+      "bytes": 1969
+    },
+    "focused-normal.log": {
+      "sha256": "89bcee3f018b769332a40c3ffe7aa0921121fa46d288f01e84251c9051f64d1f",
+      "bytes": 4027
+    },
+    "focused-optimized.log": {
+      "sha256": "56601082abfe4df7be39613400146d7e0bc3ab03ab583c5c895414ec23601649",
+      "bytes": 4027
+    },
+    "focused-tests.json": {
+      "sha256": "20b52425ddd6f27eb4414acc59872382a81b14e038ff8734c6ba1b00a77c7a41",
+      "bytes": 873
+    },
+    "independent-failure-control-results.json": {
+      "sha256": "f6567daa61dff900dd58a21cd32965d5739130aa46e668e8143f96d351220bf6",
+      "bytes": 3390
+    },
+    "independent-ledger-probe-results.json": {
+      "sha256": "daf44800b25040c64deb7b3ec903fbd6c487028f796724a9b9967c204ff2c7e3",
+      "bytes": 1456
+    },
+    "independent_diagnostic_correlation_probe.py": {
+      "sha256": "c11d6104ddcdde9e24be58f88e279ac60fa0a20e4d00b6c9bac3f7993dc3e9fc",
+      "bytes": 2636
+    },
+    "independent_diagnostic_correlation_probe.py.log": {
+      "sha256": "01c7c166cc1db28cf7dad709b0bc494a25ef80b26762eaf221253231204841ab",
+      "bytes": 2609
+    },
+    "independent_failure_controls.py": {
+      "sha256": "161327b570969fc54a6a5b2323fa6307ef14e76daaf6b0169d33324b931530df",
+      "bytes": 4822
+    },
+    "independent_ledger_probes.py": {
+      "sha256": "56481fdb55941b4676311cda806ea8a48f18d3d711d775d94f7e852c90c76a20",
+      "bytes": 1710
+    },
+    "independent_ledger_probes.py.log": {
+      "sha256": "daf44800b25040c64deb7b3ec903fbd6c487028f796724a9b9967c204ff2c7e3",
+      "bytes": 1456
+    },
+    "independent_lineage_projection_probe.py": {
+      "sha256": "6aea2aee41e725e02b7eb7cd219a122f0e4e19ef98e4997ffeb525f558f9f81b",
+      "bytes": 3475
+    },
+    "interrupted-second-intent-control-report.json": {
+      "sha256": "8dfaffba9a22679959d5648d3d2c5bbbd35c466865ec102db92d625228e1080d",
+      "bytes": 28661
+    },
+    "lineage-input-report.json": {
+      "sha256": "fade4648bfeb3922568e5e4d87228909b19315563bd40d809e9046c196404446",
+      "bytes": 70613
+    },
+    "lineage-projection-results.json": {
+      "sha256": "9430e854fbba849e96466dde4975048893bd516c08cd58d360d768cef61b8745",
+      "bytes": 796
+    },
+    "lineage-recipe-report.json": {
+      "sha256": "e7136de7ab633ed57c5552eec38ef601383b80cf8f553e7b7a0637922e2897e2",
+      "bytes": 70613
+    },
+    "mismatched-diagnostics/5ae1472927a0fca1e50056c63d638494da9ff3b01f4958a722c8ec20c21f437d.json": {
+      "sha256": "5ae1472927a0fca1e50056c63d638494da9ff3b01f4958a722c8ec20c21f437d",
+      "bytes": 225
+    },
+    "mismatched-diagnostics/733ed0b5cdb1c5bce3f33dc00283b09045f0ab72c20bacf9d4eba58566101205.json": {
+      "sha256": "733ed0b5cdb1c5bce3f33dc00283b09045f0ab72c20bacf9d4eba58566101205",
+      "bytes": 226
+    },
+    "mismatched-diagnostics/8fb36686977863d0a01409d378d59c5bb863175702b40e02c89a4a5339aaff79.json": {
+      "sha256": "8fb36686977863d0a01409d378d59c5bb863175702b40e02c89a4a5339aaff79",
+      "bytes": 218
+    },
+    "mismatched-diagnostics/c11976e8bed22ff06087fbfa0c712fd2ed23b6d656047048a2c32c013d8c6722.json": {
+      "sha256": "c11976e8bed22ff06087fbfa0c712fd2ed23b6d656047048a2c32c013d8c6722",
+      "bytes": 219
+    },
+    "mismatched-diagnostics-report.json": {
+      "sha256": "d1b91f39915199f119bf6f96f4b038bc75aa4c8ce631c2de74702cd4519e596c",
+      "bytes": 29771
+    },
+    "mismatched-diagnostics-result.json": {
+      "sha256": "01c7c166cc1db28cf7dad709b0bc494a25ef80b26762eaf221253231204841ab",
+      "bytes": 2609
+    },
+    "missing-output-binding-report.json": {
+      "sha256": "5a496678713f4f5b88c131770a5cba01f708f54689b01e754899e32bafbe7e28",
+      "bytes": 15261
+    },
+    "monotonic-accounting-control-report.json": {
+      "sha256": "4c18c6b6100e667092fbf6ce80b134cfde119ea5d0289f80e68ef28ea3bfcafd",
+      "bytes": 31108
+    },
+    "numeric-export-control-report.json": {
+      "sha256": "f3d9b961f88bd6b622c60441befc908a11b2420f553ca2187ae117d598c0e848",
+      "bytes": 69144
+    },
+    "review-sha256.json": {
+      "sha256": "8f2690c22bd9ead1144b8c1d0495c07627b6a8a3d3d34fc4b1313db8df4e5202",
+      "bytes": 389
+    },
+    "review.json": {
+      "sha256": "842a4b4b2217ca1c2e0b3463d24df6e4ee7599e32ca1a4626a81bf915d687047",
+      "bytes": 17326
+    },
+    "review.md": {
+      "sha256": "94ed12d2b0ea61c33e98f76464928249aef26ba54793aa4724f1549c5fe52c91",
+      "bytes": 2010
+    },
+    "self-consistent-diagnostic-oracle-report.json": {
+      "sha256": "4b82c6a7323cc119788345a080f44a2a013b8fac4d2afd5ac4b7ff569e8f3d71",
+      "bytes": 29687
+    },
+    "self-consistent-different-diagnostics-control-report.json": {
+      "sha256": "e1a5138abf3d1f7c1e283a57e94395210600151cdd0cde9cd22d3dd5d70b2665",
+      "bytes": 15559
+    },
+    "source-manifest.json": {
+      "sha256": "e7b42e8559cb59b262ea2e032d4e790f2b9b6338a8811362173145c08722b9cd",
+      "bytes": 169231
+    },
+    "source-scope-verification.json": {
+      "sha256": "695de5c7e52094ca459fda8ef60f19bb35497db4605df563679e0ebe32805d9a",
+      "bytes": 234
+    },
+    "unknown-export-control-report.json": {
+      "sha256": "403f78268a01fd45c72830d319ea238466c5a5ba143546792e8d818329258be1",
+      "bytes": 69144
+    },
+    "wrong-output-binding-report.json": {
+      "sha256": "5715ca7de30610bb488e1052d11dd5f9d2d6407fab1e53266ebb347cf16ed601",
+      "bytes": 15456
+    },
+    "wrong-project-budget-report.json": {
+      "sha256": "71f920801683430ef5f9673563ca49acaa108e9544acc404dc67cd9e858e4a98",
+      "bytes": 1969
+    }
+  },
+  "scope": "Synthetic review witnesses only; no actual Docker execution."
+}

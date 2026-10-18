@@ -1,0 +1,106 @@
+{
+  "original_directory": "/Users/gregchism/Documents/Codex/2026-10-18/waypoint-scoped-docker-independent-review/final-fe4788c",
+  "retained_files": {
+    "SCOPED-DOCKER-QUALIFICATION.md": {
+      "sha256": "fe05e9415500e6974a60f145cfc6709aa8a05b6df7bdedf23e4ef78fd360e62c",
+      "bytes": 9997
+    },
+    "capture-provenance.json": {
+      "sha256": "cd786bad6f7b2692f1ceacc21be8d1c3f018e28f698885a303dfccdd2524c18c",
+      "bytes": 4116
+    },
+    "fixed/independent_lineage_projection_probe.py": {
+      "sha256": "6aea2aee41e725e02b7eb7cd219a122f0e4e19ef98e4997ffeb525f558f9f81b",
+      "bytes": 3475
+    },
+    "fixed/lineage-input-report.json": {
+      "sha256": "ec5351452d18ec4c74230548d5980ec482ca116e21f16f4d660c3363a1bf4b35",
+      "bytes": 15577
+    },
+    "fixed/lineage-projection-results.json": {
+      "sha256": "c20d40bc79209415487b12710fa9c320238cec33e129bac35a8f155f1cd274e2",
+      "bytes": 970
+    },
+    "fixed/lineage-recipe-report.json": {
+      "sha256": "5ba9fbff36ad9797188011fbb89275af401466021de1aabffbd4304042ef7aea",
+      "bytes": 15577
+    },
+    "fixed/replay-summary.json": {
+      "sha256": "e5f9720a0c00545130b2aafc96ffc52f74032e279e0bed8a75537b9df8178a36",
+      "bytes": 1265
+    },
+    "fixed.log": {
+      "sha256": "710535baf6ab6fb6c325d1f5e2478a4ddef4d811b5ccbc8819beda966c9e66ff",
+      "bytes": 1867
+    },
+    "focused-normal.log": {
+      "sha256": "3151e8f7083185b32aa1cc3d3ef97cae9ae1b1e14487eaf252a7d297811103b0",
+      "bytes": 808
+    },
+    "focused-optimized.log": {
+      "sha256": "46ebab6de2f3005d3a4e2ba72d3f419ad720f5faf4dc55e42e430984f160e6eb",
+      "bytes": 808
+    },
+    "manifest.json": {
+      "sha256": "ad701c8d5b164666133a1d06f241a80ab052ccbeb02a48c499a663589e537295",
+      "bytes": 10808
+    },
+    "narrow-scope-verification.json": {
+      "sha256": "94b7d2d538c280ba78659208d2fea0037ed0027b9818dcf72b77565bba2bccb1",
+      "bytes": 477
+    },
+    "narrow.diff": {
+      "sha256": "f04ece83bf187e3205e385fcb58a177a8fe460b9e60e8d1ef4c24810f2529a04",
+      "bytes": 12779
+    },
+    "replay_lineage_witness.py": {
+      "sha256": "175113fa9a1df5213175a18d40343cfeb6c8524634fd37e934d9a2f6e422235b",
+      "bytes": 2768
+    },
+    "reverted/independent_lineage_projection_probe.py": {
+      "sha256": "6aea2aee41e725e02b7eb7cd219a122f0e4e19ef98e4997ffeb525f558f9f81b",
+      "bytes": 3475
+    },
+    "reverted/lineage-input-report.json": {
+      "sha256": "ef11a5c1df482d63fa17b5365112d064c28d6dcac378a8a5610c398419709cdd",
+      "bytes": 70613
+    },
+    "reverted/lineage-projection-results.json": {
+      "sha256": "9430e854fbba849e96466dde4975048893bd516c08cd58d360d768cef61b8745",
+      "bytes": 796
+    },
+    "reverted/lineage-recipe-report.json": {
+      "sha256": "00312b1a9f6eecb430c927e37e20e103816a9f1a4da8d84c61d3e33ecca2efbb",
+      "bytes": 70613
+    },
+    "reverted/replay-summary.json": {
+      "sha256": "47a166b8b621f81ec5f80ee9501897a42d010fe86185ad05e96698d59c88f47b",
+      "bytes": 1154
+    },
+    "reverted.log": {
+      "sha256": "096f6f5b068a55ff735f307b1573704de2ad312694167fe21dcd3bc60f7fe515",
+      "bytes": 1582
+    },
+    "review-sha256.json": {
+      "sha256": "b37c70f9465867e65bb4d15a36b7ed3035eb8f27dadc50c1ae6da9164d3015bf",
+      "bytes": 568
+    },
+    "review.json": {
+      "sha256": "3676a612616cdd50549dc6c251dda7f5fa2cb3052a9f78e4ba61bf0094706752",
+      "bytes": 15019
+    },
+    "review.md": {
+      "sha256": "2b8089488a6abc3fbeff9141b545f4a1dfe884244facc8f03042b2d8e7e24a82",
+      "bytes": 1294
+    },
+    "source.tar.gz": {
+      "sha256": "6fcfce9bf3db5b57b4f503574f379123a43739c44fc69f9af9b40a8cc17055b5",
+      "bytes": 135150
+    },
+    "test-execution.json": {
+      "sha256": "0a9a3f2081e5846771eb2f44f9758ad53130f33011aa3c951c904a1682ce7722",
+      "bytes": 2098
+    }
+  },
+  "originals_unchanged": true
+}

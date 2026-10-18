@@ -1,0 +1,61 @@
+[
+  {
+    "name": "fixed",
+    "command": [
+      "python3",
+      "replay_lineage_witness.py",
+      "fixed"
+    ],
+    "returncode": 0,
+    "seconds": 4.196120249980595,
+    "log_sha256": "710535baf6ab6fb6c325d1f5e2478a4ddef4d811b5ccbc8819beda966c9e66ff"
+  },
+  {
+    "name": "reverted",
+    "command": [
+      "python3",
+      "replay_lineage_witness.py",
+      "reverted"
+    ],
+    "returncode": 0,
+    "seconds": 6.214138749986887,
+    "log_sha256": "096f6f5b068a55ff735f307b1573704de2ad312694167fe21dcd3bc60f7fe515"
+  },
+  {
+    "name": "focused-normal",
+    "command": [
+      "python3",
+      "-W",
+      "error::ResourceWarning",
+      "-m",
+      "unittest",
+      "-v",
+      "test_scoped_docker_qualification.OracleTests.test_complete_bound_synthetic_observations_pass",
+      "test_scoped_docker_qualification.OracleTests.test_final_http_lineage_must_match_prelaunch_binding_and_matrix",
+      "test_scoped_docker_qualification.SimulatedWiringTests.test_real_http_v4_worker_wiring_with_simulated_provider",
+      "test_scoped_docker_qualification.SimulatedWiringTests.test_shared_http_and_export_lineage_drift_refuses_after_first_attempt"
+    ],
+    "returncode": 0,
+    "seconds": 8.298314167011995,
+    "log_sha256": "3151e8f7083185b32aa1cc3d3ef97cae9ae1b1e14487eaf252a7d297811103b0"
+  },
+  {
+    "name": "focused-optimized",
+    "command": [
+      "python3",
+      "-O",
+      "-W",
+      "error::ResourceWarning",
+      "-m",
+      "unittest",
+      "-v",
+      "test_scoped_docker_qualification.OracleTests.test_complete_bound_synthetic_observations_pass",
+      "test_scoped_docker_qualification.OracleTests.test_final_http_lineage_must_match_prelaunch_binding_and_matrix",
+      "test_scoped_docker_qualification.SimulatedWiringTests.test_real_http_v4_worker_wiring_with_simulated_provider",
+      "test_scoped_docker_qualification.SimulatedWiringTests.test_shared_http_and_export_lineage_drift_refuses_after_first_attempt"
+    ],
+    "returncode": 0,
+    "seconds": 8.358987666957546,
+    "log_sha256": "46ebab6de2f3005d3a4e2ba72d3f419ad720f5faf4dc55e42e430984f160e6eb"
+  }
+]

@@ -1,0 +1,56 @@
+{
+  "format": "waypoint-v4-docker-qualification-v1",
+  "exercise": "waypoint-v4-docker-20261018-01",
+  "status": "FAIL",
+  "manifest_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "checks": {
+    "fresh_v4_cli": true,
+    "anonymous_refused": true,
+    "source_candidates_disabled": true,
+    "server_closed": true
+  },
+  "attempts": [],
+  "refusal_controls": {},
+  "projects": {
+    "first": "b6d0b2a18b484616aeec10fff50b8888",
+    "second": "d9b1ce88636f4e77afe4e45109d0ec70"
+  },
+  "project_records": {
+    "first": {
+      "id": "b6d0b2a18b484616aeec10fff50b8888",
+      "name": "Synthetic first",
+      "question": "Do the fixed fixture summaries match independent answers?",
+      "success_criterion": "Four bounded runs retain full charges and verified cleanup.",
+      "owner": "owner",
+      "created_at": "2026-10-18T11:25:01.502653+00:00",
+      "ends_at": "2026-10-19T11:25:01.500040+00:00",
+      "budget_cpu_seconds": 60,
+      "status": "active"
+    },
+    "second": {
+      "id": "d9b1ce88636f4e77afe4e45109d0ec70",
+      "name": "Synthetic second",
+      "question": "Do the fixed fixture summaries match independent answers?",
+      "success_criterion": "Four bounded runs retain full charges and verified cleanup.",
+      "owner": "owner",
+      "created_at": "2026-10-18T11:25:01.563985+00:00",
+      "ends_at": "2026-10-19T11:25:01.561471+00:00",
+      "budget_cpu_seconds": 60,
+      "status": "active"
+    }
+  },
+  "artifacts": {},
+  "attempt_limit": 4,
+  "conservative_cpu_seconds": 120,
+  "charged_cpu_seconds": 0,
+  "accounting_complete": false,
+  "potential_intent_cpu_seconds": 0,
+  "quota_enforced": false,
+  "available_capacity": "UNKNOWN",
+  "fifth_headroom": "FAIL_UNCHANGED",
+  "failure_boundary": "Interrupted/partial exercise requires manual review; no resume or new allowance.",
+  "failure": {
+    "type": "ValueError",
+    "message": "Ledger project population or budgets differ from manifest"
+  }
+}

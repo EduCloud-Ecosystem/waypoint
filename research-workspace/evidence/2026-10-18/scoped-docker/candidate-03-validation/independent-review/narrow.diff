@@ -1,0 +1,162 @@
+diff --git a/research-workspace/SCOPED-DOCKER-QUALIFICATION.md b/research-workspace/SCOPED-DOCKER-QUALIFICATION.md
+index 1e076d6..86ff8b4 100644
+--- a/research-workspace/SCOPED-DOCKER-QUALIFICATION.md
++++ b/research-workspace/SCOPED-DOCKER-QUALIFICATION.md
+@@ -55,7 +55,8 @@ is not the later `qualified-final` binary. No build or download is needed. The
+ accounting review must confirm the exact pairing before this exercise. Neither
+ the CI pin nor any operator executable is changed.
+ 
+-Candidate 01 remains frozen and unexecuted with its older P1 broker pairing.
++Candidates 01 and 02 remain frozen and unexecuted. Candidate 01 retains its older
++P1 broker pairing; Candidate 02 retains the later lineage-correlation finding.
+ Candidate revisions share the same exercise identity, output and durable marker;
+ they do not create a fresh allowance.
+ 
+@@ -84,6 +85,9 @@ The ledger must contain exactly the two planned 60-CPU-second projects, with no
+ additional authority populations, before dispatch and at final verification.
+ Each diagnostic sidecar must be a bounded regular file with the ledger's exact
+ size and SHA-256, and its stdout/stderr must equal the final receipt streams.
++The final HTTP input and recipe hashes must equal the recorded prelaunch hashes,
++and its recipe and condition must equal the fixed matrix, before settlement can
++pass. Agreement between HTTP and export alone cannot establish that lineage.
+ 
+ ## Controls and retained evidence
+ 
+@@ -131,6 +135,10 @@ review witnesses are retained under `pre-review/independent-5fd7d44`,
+ `pre-review/root-export` and `pre-review/accounting-absence`. The revised checks
+ and synthetic regressions address these witnesses. These are qualification
+ checker findings, not findings of a production export or provider defect.
++The Candidate 02 re-review then demonstrated that matching HTTP/export lineage
++could differ from the prelaunch binding. Its unchanged witnesses are retained
++under `pre-review/independent-09418f2`; the revised settlement comparison refuses
++that mismatch after the first attempt while preserving its known charge.
+ 
+ ## Boundaries that remain
+ 
+diff --git a/research-workspace/qualify_scoped_docker.py b/research-workspace/qualify_scoped_docker.py
+index cafbe34..ba97f1f 100644
+--- a/research-workspace/qualify_scoped_docker.py
++++ b/research-workspace/qualify_scoped_docker.py
+@@ -295,6 +295,10 @@ def verify_settlement(binding, request, receipt, data, run, diagnostics, project
+     require(settled(record) and record['compute'] == receipt['compute'], 'Ledger must independently retain the full charge')
+     require(record['container_name'] == 'outfitter-' + digest((record['owner'] + ':' + binding['request_id']).encode())[:32], 'Wrong owned container')
+     require(record['create_attempted'] is True and record['create_finished'] is True and record['create_ambiguous'] is False, 'Creation remains uncertain')
++    plan = MATRIX[binding['index']]
++    require(run['input_sha256'] == binding['input_sha256'] and run['recipe_sha256'] == binding['recipe_sha256']
++            and run['recipe'] == 'summary-' + plan['runtime'] and run['condition'] == plan['condition'],
++            'Final HTTP lineage differs from prelaunch binding or fixed matrix')
+     require(run['id'] == binding['request_id'] and run['project_id'] == binding['project_id'] and run['status'] == 'succeeded'
+             and run['cleanup_verified'] is True and run['compute']['unresolved_liability'] is False
+             and encoded({k: run['compute'][k] for k in receipt['compute']}) == encoded(receipt['compute']), 'Application accounting differs')
+diff --git a/research-workspace/tests/test_scoped_docker_qualification.py b/research-workspace/tests/test_scoped_docker_qualification.py
+index 7bfa0d3..b7b6c04 100644
+--- a/research-workspace/tests/test_scoped_docker_qualification.py
++++ b/research-workspace/tests/test_scoped_docker_qualification.py
+@@ -46,12 +46,15 @@ def complete_report():
+                        request_id=r['request_id'], project_id=r['project_id'], image=r['image'], image_id='sha256:' + 'a' * 64,
+                        source_commit='c' * 40, source_archive_sha256='d' * 64, broker_source_commit=q.BROKER_COMMIT,
+                        request_sha256=q.digest(q.canonical(request).encode()),
++                       input_sha256=q.file_hash(q.HERE / 'examples' / plan['fixture']),
++                       recipe_sha256=q.file_hash(q.HERE / 'recipes' / ('recipe.py' if plan['runtime'] == 'python' else 'recipe.R')),
+                        project_authority_sha256=q.digest(q.encoded({pid:dict(project_id=pid,budget_cpu_seconds=60) for pid in result['projects'].values()})))
+         diagnostics = q.encoded(dict(stdout=r['stdout'], stderr=r['stderr']))
+         record = dict(r, output_sha256=q.digest(diagnostics), output_bytes=len(diagnostics), owner=identity['owner'], request=request, broker_pid=123,
+                       payload_hash=q.digest(json.dumps(request, separators=(',', ':')).encode()), create_attempted=True, create_finished=True,
+                       create_ambiguous=False, container_name='outfitter-' + q.digest((identity['owner'] + ':' + r['request_id']).encode())[:32])
+         run = dict(id=r['request_id'], project_id=r['project_id'], environment=dict(image=r['image']),
++                   input_sha256=binding['input_sha256'], recipe_sha256=binding['recipe_sha256'], recipe='summary-' + plan['runtime'], condition=plan['condition'],
+                    status='succeeded', cleanup_verified=True, compute=dict(r['compute'], unresolved_liability=False), metrics=q.ORACLES[i])
+         result['attempts'].append(dict(binding=binding, binding_sha256=q.digest(q.encoded(binding)), final_receipt=r,
+             request=request, run=run, ledger_record=record, ledger_identity=identity, ledger_verified=True,
+@@ -134,6 +137,11 @@ class OracleTests(unittest.TestCase):
+         report = complete_report(); report['attempts'][0]['ledger_record']['create_ambiguous'] = True
+         self.assertFalse(q.accepted(report, synthetic_manifest()))
+ 
++    def test_final_http_lineage_must_match_prelaunch_binding_and_matrix(self):
++        for field in ('input_sha256', 'recipe_sha256', 'recipe', 'condition'):
++            report = complete_report(); report['attempts'][0]['run'][field] = 'changed'
++            with self.subTest(field=field): self.assertFalse(q.accepted(report, synthetic_manifest()))
++
+     def test_independent_numeric_oracle_checks_both_output_and_saved_result(self):
+         for key in ('metrics', 'run'):
+             report = complete_report()
+@@ -178,7 +186,7 @@ class SimulatedWiringTests(unittest.TestCase):
+     copied into the real exercise, and its stable marker is a temporary path.
+     """
+     def simulated(self, interrupt=False, interrupt_at=0, bad_charge=False, close_failure=False,
+-                  bad_diagnostics=None, project_budget=60, extra_project=False, absence_failure=False, export_mutation=None):
++                  bad_diagnostics=None, project_budget=60, extra_project=False, absence_failure=False, export_mutation=None, lineage_mutation=None):
+         with tempfile.TemporaryDirectory() as tmp, ExitStack() as stack:
+             root = Path(tmp).resolve(); binary = Path(sys.executable).resolve()
+             stack.enter_context(patch.object(q, 'BROKER', binary))
+@@ -251,10 +259,19 @@ class SimulatedWiringTests(unittest.TestCase):
+                                                    else ('Error response from daemon: No such container: ' + command[3] + '\n').encode())
+             stack.enter_context(patch.object(q.subprocess, 'run', side_effect=inspect))
+             stack.enter_context(patch.object(q, 'prerequisites', return_value=manifest['prerequisites']))
+-            if export_mutation:
++            if export_mutation or lineage_mutation:
+                 request_http = q.HTTP.request
+                 def altered_export(client, method, path, *args, **kwargs):
+                     status, payload = request_http(client, method, path, *args, **kwargs)
++                    if (lineage_mutation and method == 'GET' and status == 200 and '/runs/' in path
++                            and type(payload) is dict and payload.get('status') == 'succeeded'):
++                        if lineage_mutation in ('input', 'recipe'):
++                            name = 'input/data.csv' if lineage_mutation == 'input' else ('recipe/recipe.py' if payload['recipe'] == 'summary-python' else 'recipe/recipe.R')
++                            changed = (audit.state / 'runs' / payload['id'] / name).read_bytes() + b'\n'
++                            payload[lineage_mutation + '_sha256'] = q.digest(changed)
++                            if lineage_mutation == 'recipe': payload['environment']['specification']['recipe_sha256'] = payload['recipe_sha256']
++                        else: payload[lineage_mutation] = 'changed'
++                        return status, payload
+                     if status != 200 or not path.endswith('/export'): return status, payload
+                     with zipfile.ZipFile(io.BytesIO(payload)) as archive:
+                         project = q.strict_json(archive.read('project.json'))
+@@ -262,23 +279,24 @@ class SimulatedWiringTests(unittest.TestCase):
+                         files = {name: archive.read(name) for name in archive.namelist() if name.startswith('runs/')}
+                     succeeded = next(run for run in runs if run['status'] == 'succeeded')
+                     prefix = 'runs/' + succeeded['id'] + '/'
+-                    if export_mutation == 'numeric':
++                    mutation = export_mutation or lineage_mutation
++                    if mutation == 'numeric':
+                         succeeded['metrics']['mean'] += 1
+                         for group in succeeded['metrics']['groups']: group['mean'] += 1
+                         files[prefix + 'result.json'] = q.encoded(succeeded['metrics'])
+-                    elif export_mutation == 'unknown':
++                    elif mutation == 'unknown':
+                         succeeded.update(status='failed', metrics={}, cleanup_verified=False,
+                             compute=dict(reserved_cpu_seconds=None, charged_cpu_seconds=None, provenance='unknown', unresolved_liability=True))
+                         files.pop(prefix + 'result.json')
+-                    elif export_mutation == 'project': project['budget_cpu_seconds'] = 600
+-                    elif export_mutation in ('input', 'recipe'):
+-                        name = 'input.csv' if export_mutation == 'input' else ('recipe.py' if succeeded['recipe'] == 'summary-python' else 'recipe.R')
++                    elif mutation == 'project': project['budget_cpu_seconds'] = 600
++                    elif mutation in ('input', 'recipe'):
++                        name = 'input.csv' if mutation == 'input' else ('recipe.py' if succeeded['recipe'] == 'summary-python' else 'recipe.R')
+                         files[prefix + name] += b'\n'
+-                        succeeded[export_mutation + '_sha256'] = q.digest(files[prefix + name])
+-                        if export_mutation == 'recipe':
++                        succeeded[mutation + '_sha256'] = q.digest(files[prefix + name])
++                        if mutation == 'recipe':
+                             succeeded['environment']['specification']['recipe_sha256'] = succeeded['recipe_sha256']
+-                    elif export_mutation == 'result-bytes': files[prefix + 'result.json'] += b'\n'
+-                    elif export_mutation == 'refusal':
++                    elif mutation == 'result-bytes': files[prefix + 'result.json'] += b'\n'
++                    elif mutation == 'refusal':
+                         refused = next(run for run in runs if run['status'] == 'cancelled')
+                         refused['error'] = 'different refusal reason'
+                     else: self.fail('Unexpected test mutation')
+@@ -385,5 +403,15 @@ class SimulatedWiringTests(unittest.TestCase):
+                 self.assertFalse(report['accounting_complete'])
+                 self.assertNotIn('first_export', report['checks'])
+ 
++    def test_shared_http_and_export_lineage_drift_refuses_after_first_attempt(self):
++        for mutation in ('input', 'recipe', 'condition'):
++            with self.subTest(mutation=mutation):
++                report = self.simulated(lineage_mutation=mutation)
++                self.assertEqual(report['status'], 'FAIL')
++                self.assertEqual(len(report['attempts']), 1)
++                self.assertEqual(report['charged_cpu_seconds'], 30)
++                self.assertIn('Final HTTP lineage', report['failure']['message'])
++                self.assertFalse(report['accounting_complete'])
++
+ 
+ if __name__ == '__main__': unittest.main()

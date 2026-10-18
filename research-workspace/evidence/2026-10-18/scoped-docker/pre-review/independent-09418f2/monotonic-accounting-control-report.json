@@ -1,0 +1,757 @@
+{
+  "format": "waypoint-v4-docker-qualification-v1",
+  "exercise": "waypoint-v4-docker-20261018-01",
+  "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "checks": {
+    "queued_cancel_zero_dispatch": true,
+    "first_export": true,
+    "second-python-alternative": true,
+    "four_exact_settlements": true,
+    "server_closed": true,
+    "first-python-baseline": true,
+    "fresh_v4_cli": true,
+    "restore_refused": true,
+    "source_candidates_disabled": true,
+    "current_access_zero_dispatch": true,
+    "final_ledger_120": true,
+    "second-r-baseline": true,
+    "removed_member_export_refused": true,
+    "first-r-alternative": true,
+    "oidc_refused": true,
+    "two_projects": true,
+    "anonymous_refused": true,
+    "second_export": true
+  },
+  "attempts": [
+    {
+      "binding": {
+        "index": 0,
+        "slot": "first-python-baseline",
+        "exercise": "waypoint-v4-docker-20261018-01",
+        "broker_sha256": "1bf1ce898d6d10e574ab7b2f79a830fa94fa740867e208470bfc15790dc41bb1",
+        "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "ledger_identity": {
+          "owner": "11111111111111111111111111111111",
+          "authority_id": "22222222222222222222222222222222",
+          "path_sha256": "26548060aa52cda160044a1d10fe17b773353507f059056062966357a3daf32b"
+        },
+        "ledger_path": "/synthetic/state.private/broker",
+        "request_id": "00000000000000000000000000000001",
+        "project_id": "0000000000000000000000000000000a",
+        "image": "python@sha256:229a2c5bfa27522db7815ea81f9bed70af17ccb9de9fc7ad142b1877b5830d36",
+        "image_id": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "source_commit": "cccccccccccccccccccccccccccccccccccccccc",
+        "source_archive_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "broker_source_commit": "5446438985e31cb739f2048a2aa2176918831a7e",
+        "request_sha256": "f8bc2818a7eca0b23e25b44fc07a73a1ee5b8a412bedd24d1b03a4127820bfa9",
+        "project_authority_sha256": "dc91b2c6ac1a96c7f3916d2e6bcfdaada45eb87092f7d66a72f1c5265a2350a9"
+      },
+      "binding_sha256": "ce3801a71c890bd470a30d84981bc15edb67e3f53377fedbd3780a408bb053b5",
+      "final_receipt": {
+        "schema_version": 1,
+        "request_id": "00000000000000000000000000000001",
+        "project_id": "0000000000000000000000000000000a",
+        "image": "python@sha256:229a2c5bfa27522db7815ea81f9bed70af17ccb9de9fc7ad142b1877b5830d36",
+        "status": "succeeded",
+        "admitted": true,
+        "execution_started": true,
+        "cleanup_verified": true,
+        "unresolved_liability": false,
+        "exit_code": 0,
+        "error": "",
+        "stdout": "{\"condition\": \"baseline\", \"count\": 10, \"mean\": 18, \"groups\": [{\"group\": \"alpha\", \"count\": 5, \"mean\": 22}, {\"group\": \"beta\", \"count\": 5, \"mean\": 14}]}",
+        "stderr": "",
+        "compute": {
+          "reserved_cpu_seconds": 30,
+          "charged_cpu_seconds": 30,
+          "provenance": "estimated_upper_bound"
+        }
+      },
+      "request": {
+        "schema_version": 1,
+        "request_id": "00000000000000000000000000000001",
+        "project_id": "0000000000000000000000000000000a",
+        "image": "python@sha256:229a2c5bfa27522db7815ea81f9bed70af17ccb9de9fc7ad142b1877b5830d36",
+        "command": [
+          "python",
+          "/recipe/recipe.py",
+          "/input/data.csv",
+          "baseline"
+        ],
+        "input_dir": "/synthetic/state.private/runs/00000000000000000000000000000001/input",
+        "recipe_dir": "/synthetic/state.private/runs/00000000000000000000000000000001/recipe",
+        "cpus": 1,
+        "memory_mb": 256,
+        "pids_limit": 64,
+        "timeout_seconds": 30,
+        "max_output_bytes": 65536,
+        "isolation": "reviewed-local",
+        "allow_supervised_reaper": true
+      },
+      "run": {
+        "id": "00000000000000000000000000000001",
+        "project_id": "0000000000000000000000000000000a",
+        "environment": {
+          "image": "python@sha256:229a2c5bfa27522db7815ea81f9bed70af17ccb9de9fc7ad142b1877b5830d36"
+        },
+        "status": "succeeded",
+        "cleanup_verified": true,
+        "compute": {
+          "reserved_cpu_seconds": 30,
+          "charged_cpu_seconds": 30,
+          "provenance": "estimated_upper_bound",
+          "unresolved_liability": false
+        },
+        "metrics": {
+          "condition": "baseline",
+          "count": 10,
+          "mean": 18,
+          "groups": [
+            {
+              "group": "alpha",
+              "count": 5,
+              "mean": 22
+            },
+            {
+              "group": "beta",
+              "count": 5,
+              "mean": 14
+            }
+          ]
+        }
+      },
+      "ledger_record": {
+        "schema_version": 1,
+        "request_id": "00000000000000000000000000000001",
+        "project_id": "0000000000000000000000000000000a",
+        "image": "python@sha256:229a2c5bfa27522db7815ea81f9bed70af17ccb9de9fc7ad142b1877b5830d36",
+        "status": "succeeded",
+        "admitted": true,
+        "execution_started": true,
+        "cleanup_verified": true,
+        "unresolved_liability": false,
+        "exit_code": 0,
+        "error": "",
+        "stdout": "{\"condition\": \"baseline\", \"count\": 10, \"mean\": 18, \"groups\": [{\"group\": \"alpha\", \"count\": 5, \"mean\": 22}, {\"group\": \"beta\", \"count\": 5, \"mean\": 14}]}",
+        "stderr": "",
+        "compute": {
+          "reserved_cpu_seconds": 30,
+          "charged_cpu_seconds": 30,
+          "provenance": "estimated_upper_bound"
+        },
+        "output_sha256": "6b6e43862c6d9dc5ad95d5abec584b355ca34f222d6baad3fe01838c844d66aa",
+        "output_bytes": 201,
+        "owner": "11111111111111111111111111111111",
+        "request": {
+          "schema_version": 1,
+          "request_id": "00000000000000000000000000000001",
+          "project_id": "0000000000000000000000000000000a",
+          "image": "python@sha256:229a2c5bfa27522db7815ea81f9bed70af17ccb9de9fc7ad142b1877b5830d36",
+          "command": [
+            "python",
+            "/recipe/recipe.py",
+            "/input/data.csv",
+            "baseline"
+          ],
+          "input_dir": "/synthetic/state.private/runs/00000000000000000000000000000001/input",
+          "recipe_dir": "/synthetic/state.private/runs/00000000000000000000000000000001/recipe",
+          "cpus": 1,
+          "memory_mb": 256,
+          "pids_limit": 64,
+          "timeout_seconds": 30,
+          "max_output_bytes": 65536,
+          "isolation": "reviewed-local",
+          "allow_supervised_reaper": true
+        },
+        "broker_pid": 123,
+        "payload_hash": "7d2f57484082930c3543420f5f71b5b87d37684c06cd97effe1fbd1cfc90e58b",
+        "create_attempted": true,
+        "create_finished": true,
+        "create_ambiguous": false,
+        "container_name": "outfitter-95adf85fbb8456f9b0ae63ca6695b046"
+      },
+      "ledger_identity": {
+        "owner": "11111111111111111111111111111111",
+        "authority_id": "22222222222222222222222222222222",
+        "path_sha256": "26548060aa52cda160044a1d10fe17b773353507f059056062966357a3daf32b"
+      },
+      "ledger_verified": true,
+      "container_absent": true,
+      "metrics": {
+        "condition": "baseline",
+        "count": 10,
+        "mean": 18,
+        "groups": [
+          {
+            "group": "alpha",
+            "count": 5,
+            "mean": 22
+          },
+          {
+            "group": "beta",
+            "count": 5,
+            "mean": 14
+          }
+        ]
+      },
+      "diagnostics_utf8": "{\"stderr\":\"\",\"stdout\":\"{\\\"condition\\\": \\\"baseline\\\", \\\"count\\\": 10, \\\"mean\\\": 18, \\\"groups\\\": [{\\\"group\\\": \\\"alpha\\\", \\\"count\\\": 5, \\\"mean\\\": 22}, {\\\"group\\\": \\\"beta\\\", \\\"count\\\": 5, \\\"mean\\\": 14}]}\"}\n",
+      "dispatch_boundary_entered": true,
+      "outcome": "succeeded",
+      "observed_charged_cpu_seconds": 30,
+      "observed_reserved_cpu_seconds": 30,
+      "ledger_compute_observation": {
+        "reserved_cpu_seconds": 30,
+        "charged_cpu_seconds": 0,
+        "provenance": "estimated_upper_bound"
+      },
+      "ledger_cleanup_verified_observation": true,
+      "ledger_unresolved_liability_observation": false,
+      "accounting_observation": "NO_RECORD_OBSERVED; exposure not resolved",
+      "charge_regression_observed": true
+    },
+    {
+      "binding": {
+        "index": 1,
+        "slot": "first-r-alternative",
+        "exercise": "waypoint-v4-docker-20261018-01",
+        "broker_sha256": "1bf1ce898d6d10e574ab7b2f79a830fa94fa740867e208470bfc15790dc41bb1",
+        "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "ledger_identity": {
+          "owner": "11111111111111111111111111111111",
+          "authority_id": "22222222222222222222222222222222",
+          "path_sha256": "26548060aa52cda160044a1d10fe17b773353507f059056062966357a3daf32b"
+        },
+        "ledger_path": "/synthetic/state.private/broker",
+        "request_id": "00000000000000000000000000000002",
+        "project_id": "0000000000000000000000000000000a",
+        "image": "r-base@sha256:fa1972f31def171b83e0911e947ab8b57db143f0fc8a67af4c0d5ac329041646",
+        "image_id": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "source_commit": "cccccccccccccccccccccccccccccccccccccccc",
+        "source_archive_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "broker_source_commit": "5446438985e31cb739f2048a2aa2176918831a7e",
+        "request_sha256": "1a5e04d40a543f76bfc1d12bfe29113089ae2408868a9a170ea37dc3c0301c44",
+        "project_authority_sha256": "dc91b2c6ac1a96c7f3916d2e6bcfdaada45eb87092f7d66a72f1c5265a2350a9"
+      },
+      "binding_sha256": "d0626e712687c6f9a146ab0341aea1d35eac4dda13cb0bbcb96c074ef7a54576",
+      "final_receipt": {
+        "schema_version": 1,
+        "request_id": "00000000000000000000000000000002",
+        "project_id": "0000000000000000000000000000000a",
+        "image": "r-base@sha256:fa1972f31def171b83e0911e947ab8b57db143f0fc8a67af4c0d5ac329041646",
+        "status": "succeeded",
+        "admitted": true,
+        "execution_started": true,
+        "cleanup_verified": true,
+        "unresolved_liability": false,
+        "exit_code": 0,
+        "error": "",
+        "stdout": "{\"condition\": \"alternative\", \"count\": 6, \"mean\": 8.5, \"groups\": [{\"group\": \"alpha\", \"count\": 3, \"mean\": 3}, {\"group\": \"beta\", \"count\": 3, \"mean\": 14}]}",
+        "stderr": "",
+        "compute": {
+          "reserved_cpu_seconds": 30,
+          "charged_cpu_seconds": 30,
+          "provenance": "estimated_upper_bound"
+        }
+      },
+      "request": {
+        "schema_version": 1,
+        "request_id": "00000000000000000000000000000002",
+        "project_id": "0000000000000000000000000000000a",
+        "image": "r-base@sha256:fa1972f31def171b83e0911e947ab8b57db143f0fc8a67af4c0d5ac329041646",
+        "command": [
+          "Rscript",
+          "--vanilla",
+          "/recipe/recipe.R",
+          "/input/data.csv",
+          "alternative"
+        ],
+        "input_dir": "/synthetic/state.private/runs/00000000000000000000000000000002/input",
+        "recipe_dir": "/synthetic/state.private/runs/00000000000000000000000000000002/recipe",
+        "cpus": 1,
+        "memory_mb": 256,
+        "pids_limit": 64,
+        "timeout_seconds": 30,
+        "max_output_bytes": 65536,
+        "isolation": "reviewed-local",
+        "allow_supervised_reaper": true
+      },
+      "run": {
+        "id": "00000000000000000000000000000002",
+        "project_id": "0000000000000000000000000000000a",
+        "environment": {
+          "image": "r-base@sha256:fa1972f31def171b83e0911e947ab8b57db143f0fc8a67af4c0d5ac329041646"
+        },
+        "status": "succeeded",
+        "cleanup_verified": true,
+        "compute": {
+          "reserved_cpu_seconds": 30,
+          "charged_cpu_seconds": 30,
+          "provenance": "estimated_upper_bound",
+          "unresolved_liability": false
+        },
+        "metrics": {
+          "condition": "alternative",
+          "count": 6,
+          "mean": 8.5,
+          "groups": [
+            {
+              "group": "alpha",
+              "count": 3,
+              "mean": 3
+            },
+            {
+              "group": "beta",
+              "count": 3,
+              "mean": 14
+            }
+          ]
+        }
+      },
+      "ledger_record": {
+        "schema_version": 1,
+        "request_id": "00000000000000000000000000000002",
+        "project_id": "0000000000000000000000000000000a",
+        "image": "r-base@sha256:fa1972f31def171b83e0911e947ab8b57db143f0fc8a67af4c0d5ac329041646",
+        "status": "succeeded",
+        "admitted": true,
+        "execution_started": true,
+        "cleanup_verified": true,
+        "unresolved_liability": false,
+        "exit_code": 0,
+        "error": "",
+        "stdout": "{\"condition\": \"alternative\", \"count\": 6, \"mean\": 8.5, \"groups\": [{\"group\": \"alpha\", \"count\": 3, \"mean\": 3}, {\"group\": \"beta\", \"count\": 3, \"mean\": 14}]}",
+        "stderr": "",
+        "compute": {
+          "reserved_cpu_seconds": 30,
+          "charged_cpu_seconds": 30,
+          "provenance": "estimated_upper_bound"
+        },
+        "output_sha256": "c2f5b71cebccddc10a2c6816c851dd439a340dba7026f0042685617a1e252b09",
+        "output_bytes": 203,
+        "owner": "11111111111111111111111111111111",
+        "request": {
+          "schema_version": 1,
+          "request_id": "00000000000000000000000000000002",
+          "project_id": "0000000000000000000000000000000a",
+          "image": "r-base@sha256:fa1972f31def171b83e0911e947ab8b57db143f0fc8a67af4c0d5ac329041646",
+          "command": [
+            "Rscript",
+            "--vanilla",
+            "/recipe/recipe.R",
+            "/input/data.csv",
+            "alternative"
+          ],
+          "input_dir": "/synthetic/state.private/runs/00000000000000000000000000000002/input",
+          "recipe_dir": "/synthetic/state.private/runs/00000000000000000000000000000002/recipe",
+          "cpus": 1,
+          "memory_mb": 256,
+          "pids_limit": 64,
+          "timeout_seconds": 30,
+          "max_output_bytes": 65536,
+          "isolation": "reviewed-local",
+          "allow_supervised_reaper": true
+        },
+        "broker_pid": 123,
+        "payload_hash": "e1e9a01fac0ba641171ebdb95cf28faeab96af710ebcf0e87e0fd467b6a57252",
+        "create_attempted": true,
+        "create_finished": true,
+        "create_ambiguous": false,
+        "container_name": "outfitter-b82eed7371bc7c30d4c122763a632ead"
+      },
+      "ledger_identity": {
+        "owner": "11111111111111111111111111111111",
+        "authority_id": "22222222222222222222222222222222",
+        "path_sha256": "26548060aa52cda160044a1d10fe17b773353507f059056062966357a3daf32b"
+      },
+      "ledger_verified": true,
+      "container_absent": true,
+      "metrics": {
+        "condition": "alternative",
+        "count": 6,
+        "mean": 8.5,
+        "groups": [
+          {
+            "group": "alpha",
+            "count": 3,
+            "mean": 3
+          },
+          {
+            "group": "beta",
+            "count": 3,
+            "mean": 14
+          }
+        ]
+      },
+      "diagnostics_utf8": "{\"stderr\":\"\",\"stdout\":\"{\\\"condition\\\": \\\"alternative\\\", \\\"count\\\": 6, \\\"mean\\\": 8.5, \\\"groups\\\": [{\\\"group\\\": \\\"alpha\\\", \\\"count\\\": 3, \\\"mean\\\": 3}, {\\\"group\\\": \\\"beta\\\", \\\"count\\\": 3, \\\"mean\\\": 14}]}\"}\n",
+      "dispatch_boundary_entered": true,
+      "outcome": "succeeded",
+      "observed_charged_cpu_seconds": 30,
+      "observed_reserved_cpu_seconds": 30,
+      "accounting_observation": "NO_RECORD_OBSERVED; exposure not resolved"
+    },
+    {
+      "binding": {
+        "index": 2,
+        "slot": "second-r-baseline",
+        "exercise": "waypoint-v4-docker-20261018-01",
+        "broker_sha256": "1bf1ce898d6d10e574ab7b2f79a830fa94fa740867e208470bfc15790dc41bb1",
+        "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "ledger_identity": {
+          "owner": "11111111111111111111111111111111",
+          "authority_id": "22222222222222222222222222222222",
+          "path_sha256": "26548060aa52cda160044a1d10fe17b773353507f059056062966357a3daf32b"
+        },
+        "ledger_path": "/synthetic/state.private/broker",
+        "request_id": "00000000000000000000000000000003",
+        "project_id": "0000000000000000000000000000000b",
+        "image": "r-base@sha256:fa1972f31def171b83e0911e947ab8b57db143f0fc8a67af4c0d5ac329041646",
+        "image_id": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "source_commit": "cccccccccccccccccccccccccccccccccccccccc",
+        "source_archive_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "broker_source_commit": "5446438985e31cb739f2048a2aa2176918831a7e",
+        "request_sha256": "aa044a47346dce36d1b3fdf1514d028761abacd8b1d4a73651930e70095e6e6b",
+        "project_authority_sha256": "dc91b2c6ac1a96c7f3916d2e6bcfdaada45eb87092f7d66a72f1c5265a2350a9"
+      },
+      "binding_sha256": "b980474eaec8a2aa2f3af156a51ef298426463baec4af72f2259aac944a76c27",
+      "final_receipt": {
+        "schema_version": 1,
+        "request_id": "00000000000000000000000000000003",
+        "project_id": "0000000000000000000000000000000b",
+        "image": "r-base@sha256:fa1972f31def171b83e0911e947ab8b57db143f0fc8a67af4c0d5ac329041646",
+        "status": "succeeded",
+        "admitted": true,
+        "execution_started": true,
+        "cleanup_verified": true,
+        "unresolved_liability": false,
+        "exit_code": 0,
+        "error": "",
+        "stdout": "{\"condition\": \"baseline\", \"count\": 10, \"mean\": 9, \"groups\": [{\"group\": \"comparison\", \"count\": 5, \"mean\": 12}, {\"group\": \"control\", \"count\": 5, \"mean\": 6}]}",
+        "stderr": "",
+        "compute": {
+          "reserved_cpu_seconds": 30,
+          "charged_cpu_seconds": 30,
+          "provenance": "estimated_upper_bound"
+        }
+      },
+      "request": {
+        "schema_version": 1,
+        "request_id": "00000000000000000000000000000003",
+        "project_id": "0000000000000000000000000000000b",
+        "image": "r-base@sha256:fa1972f31def171b83e0911e947ab8b57db143f0fc8a67af4c0d5ac329041646",
+        "command": [
+          "Rscript",
+          "--vanilla",
+          "/recipe/recipe.R",
+          "/input/data.csv",
+          "baseline"
+        ],
+        "input_dir": "/synthetic/state.private/runs/00000000000000000000000000000003/input",
+        "recipe_dir": "/synthetic/state.private/runs/00000000000000000000000000000003/recipe",
+        "cpus": 1,
+        "memory_mb": 256,
+        "pids_limit": 64,
+        "timeout_seconds": 30,
+        "max_output_bytes": 65536,
+        "isolation": "reviewed-local",
+        "allow_supervised_reaper": true
+      },
+      "run": {
+        "id": "00000000000000000000000000000003",
+        "project_id": "0000000000000000000000000000000b",
+        "environment": {
+          "image": "r-base@sha256:fa1972f31def171b83e0911e947ab8b57db143f0fc8a67af4c0d5ac329041646"
+        },
+        "status": "succeeded",
+        "cleanup_verified": true,
+        "compute": {
+          "reserved_cpu_seconds": 30,
+          "charged_cpu_seconds": 30,
+          "provenance": "estimated_upper_bound",
+          "unresolved_liability": false
+        },
+        "metrics": {
+          "condition": "baseline",
+          "count": 10,
+          "mean": 9,
+          "groups": [
+            {
+              "group": "comparison",
+              "count": 5,
+              "mean": 12
+            },
+            {
+              "group": "control",
+              "count": 5,
+              "mean": 6
+            }
+          ]
+        }
+      },
+      "ledger_record": {
+        "schema_version": 1,
+        "request_id": "00000000000000000000000000000003",
+        "project_id": "0000000000000000000000000000000b",
+        "image": "r-base@sha256:fa1972f31def171b83e0911e947ab8b57db143f0fc8a67af4c0d5ac329041646",
+        "status": "succeeded",
+        "admitted": true,
+        "execution_started": true,
+        "cleanup_verified": true,
+        "unresolved_liability": false,
+        "exit_code": 0,
+        "error": "",
+        "stdout": "{\"condition\": \"baseline\", \"count\": 10, \"mean\": 9, \"groups\": [{\"group\": \"comparison\", \"count\": 5, \"mean\": 12}, {\"group\": \"control\", \"count\": 5, \"mean\": 6}]}",
+        "stderr": "",
+        "compute": {
+          "reserved_cpu_seconds": 30,
+          "charged_cpu_seconds": 30,
+          "provenance": "estimated_upper_bound"
+        },
+        "output_sha256": "b6040bddeea3831e4ce16608085892220304703a63f1d457f8c82424cfdf4e01",
+        "output_bytes": 207,
+        "owner": "11111111111111111111111111111111",
+        "request": {
+          "schema_version": 1,
+          "request_id": "00000000000000000000000000000003",
+          "project_id": "0000000000000000000000000000000b",
+          "image": "r-base@sha256:fa1972f31def171b83e0911e947ab8b57db143f0fc8a67af4c0d5ac329041646",
+          "command": [
+            "Rscript",
+            "--vanilla",
+            "/recipe/recipe.R",
+            "/input/data.csv",
+            "baseline"
+          ],
+          "input_dir": "/synthetic/state.private/runs/00000000000000000000000000000003/input",
+          "recipe_dir": "/synthetic/state.private/runs/00000000000000000000000000000003/recipe",
+          "cpus": 1,
+          "memory_mb": 256,
+          "pids_limit": 64,
+          "timeout_seconds": 30,
+          "max_output_bytes": 65536,
+          "isolation": "reviewed-local",
+          "allow_supervised_reaper": true
+        },
+        "broker_pid": 123,
+        "payload_hash": "a0826e465647478b007a8a0b9e84a66639d1aecb190227fab067978904b7670a",
+        "create_attempted": true,
+        "create_finished": true,
+        "create_ambiguous": false,
+        "container_name": "outfitter-dc1f979d749f7d1d277b7ba96a851099"
+      },
+      "ledger_identity": {
+        "owner": "11111111111111111111111111111111",
+        "authority_id": "22222222222222222222222222222222",
+        "path_sha256": "26548060aa52cda160044a1d10fe17b773353507f059056062966357a3daf32b"
+      },
+      "ledger_verified": true,
+      "container_absent": true,
+      "metrics": {
+        "condition": "baseline",
+        "count": 10,
+        "mean": 9,
+        "groups": [
+          {
+            "group": "comparison",
+            "count": 5,
+            "mean": 12
+          },
+          {
+            "group": "control",
+            "count": 5,
+            "mean": 6
+          }
+        ]
+      },
+      "diagnostics_utf8": "{\"stderr\":\"\",\"stdout\":\"{\\\"condition\\\": \\\"baseline\\\", \\\"count\\\": 10, \\\"mean\\\": 9, \\\"groups\\\": [{\\\"group\\\": \\\"comparison\\\", \\\"count\\\": 5, \\\"mean\\\": 12}, {\\\"group\\\": \\\"control\\\", \\\"count\\\": 5, \\\"mean\\\": 6}]}\"}\n",
+      "dispatch_boundary_entered": true,
+      "outcome": "succeeded",
+      "observed_charged_cpu_seconds": 30,
+      "observed_reserved_cpu_seconds": 30,
+      "accounting_observation": "NO_RECORD_OBSERVED; exposure not resolved"
+    },
+    {
+      "binding": {
+        "index": 3,
+        "slot": "second-python-alternative",
+        "exercise": "waypoint-v4-docker-20261018-01",
+        "broker_sha256": "1bf1ce898d6d10e574ab7b2f79a830fa94fa740867e208470bfc15790dc41bb1",
+        "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "ledger_identity": {
+          "owner": "11111111111111111111111111111111",
+          "authority_id": "22222222222222222222222222222222",
+          "path_sha256": "26548060aa52cda160044a1d10fe17b773353507f059056062966357a3daf32b"
+        },
+        "ledger_path": "/synthetic/state.private/broker",
+        "request_id": "00000000000000000000000000000004",
+        "project_id": "0000000000000000000000000000000b",
+        "image": "python@sha256:229a2c5bfa27522db7815ea81f9bed70af17ccb9de9fc7ad142b1877b5830d36",
+        "image_id": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "source_commit": "cccccccccccccccccccccccccccccccccccccccc",
+        "source_archive_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "broker_source_commit": "5446438985e31cb739f2048a2aa2176918831a7e",
+        "request_sha256": "56c2eb846c270d31c2c710e24c456eaf5f1368b7d88f1ea100aa360a9cb474c8",
+        "project_authority_sha256": "dc91b2c6ac1a96c7f3916d2e6bcfdaada45eb87092f7d66a72f1c5265a2350a9"
+      },
+      "binding_sha256": "d1a3b8067eb865bc70ccb64004f1962ef8488078b5e89926e4b1bbb19d7bef8c",
+      "final_receipt": {
+        "schema_version": 1,
+        "request_id": "00000000000000000000000000000004",
+        "project_id": "0000000000000000000000000000000b",
+        "image": "python@sha256:229a2c5bfa27522db7815ea81f9bed70af17ccb9de9fc7ad142b1877b5830d36",
+        "status": "succeeded",
+        "admitted": true,
+        "execution_started": true,
+        "cleanup_verified": true,
+        "unresolved_liability": false,
+        "exit_code": 0,
+        "error": "",
+        "stdout": "{\"condition\": \"alternative\", \"count\": 6, \"mean\": 7.5, \"groups\": [{\"group\": \"comparison\", \"count\": 3, \"mean\": 9}, {\"group\": \"control\", \"count\": 3, \"mean\": 6}]}",
+        "stderr": "",
+        "compute": {
+          "reserved_cpu_seconds": 30,
+          "charged_cpu_seconds": 30,
+          "provenance": "estimated_upper_bound"
+        }
+      },
+      "request": {
+        "schema_version": 1,
+        "request_id": "00000000000000000000000000000004",
+        "project_id": "0000000000000000000000000000000b",
+        "image": "python@sha256:229a2c5bfa27522db7815ea81f9bed70af17ccb9de9fc7ad142b1877b5830d36",
+        "command": [
+          "python",
+          "/recipe/recipe.py",
+          "/input/data.csv",
+          "alternative"
+        ],
+        "input_dir": "/synthetic/state.private/runs/00000000000000000000000000000004/input",
+        "recipe_dir": "/synthetic/state.private/runs/00000000000000000000000000000004/recipe",
+        "cpus": 1,
+        "memory_mb": 256,
+        "pids_limit": 64,
+        "timeout_seconds": 30,
+        "max_output_bytes": 65536,
+        "isolation": "reviewed-local",
+        "allow_supervised_reaper": true
+      },
+      "run": {
+        "id": "00000000000000000000000000000004",
+        "project_id": "0000000000000000000000000000000b",
+        "environment": {
+          "image": "python@sha256:229a2c5bfa27522db7815ea81f9bed70af17ccb9de9fc7ad142b1877b5830d36"
+        },
+        "status": "succeeded",
+        "cleanup_verified": true,
+        "compute": {
+          "reserved_cpu_seconds": 30,
+          "charged_cpu_seconds": 30,
+          "provenance": "estimated_upper_bound",
+          "unresolved_liability": false
+        },
+        "metrics": {
+          "condition": "alternative",
+          "count": 6,
+          "mean": 7.5,
+          "groups": [
+            {
+              "group": "comparison",
+              "count": 3,
+              "mean": 9
+            },
+            {
+              "group": "control",
+              "count": 3,
+              "mean": 6
+            }
+          ]
+        }
+      },
+      "ledger_record": {
+        "schema_version": 1,
+        "request_id": "00000000000000000000000000000004",
+        "project_id": "0000000000000000000000000000000b",
+        "image": "python@sha256:229a2c5bfa27522db7815ea81f9bed70af17ccb9de9fc7ad142b1877b5830d36",
+        "status": "succeeded",
+        "admitted": true,
+        "execution_started": true,
+        "cleanup_verified": true,
+        "unresolved_liability": false,
+        "exit_code": 0,
+        "error": "",
+        "stdout": "{\"condition\": \"alternative\", \"count\": 6, \"mean\": 7.5, \"groups\": [{\"group\": \"comparison\", \"count\": 3, \"mean\": 9}, {\"group\": \"control\", \"count\": 3, \"mean\": 6}]}",
+        "stderr": "",
+        "compute": {
+          "reserved_cpu_seconds": 30,
+          "charged_cpu_seconds": 30,
+          "provenance": "estimated_upper_bound"
+        },
+        "output_sha256": "093ad99e1f96c1baf32338ca59718dfef71b8da5ebff4abd8989e28c882a8a27",
+        "output_bytes": 210,
+        "owner": "11111111111111111111111111111111",
+        "request": {
+          "schema_version": 1,
+          "request_id": "00000000000000000000000000000004",
+          "project_id": "0000000000000000000000000000000b",
+          "image": "python@sha256:229a2c5bfa27522db7815ea81f9bed70af17ccb9de9fc7ad142b1877b5830d36",
+          "command": [
+            "python",
+            "/recipe/recipe.py",
+            "/input/data.csv",
+            "alternative"
+          ],
+          "input_dir": "/synthetic/state.private/runs/00000000000000000000000000000004/input",
+          "recipe_dir": "/synthetic/state.private/runs/00000000000000000000000000000004/recipe",
+          "cpus": 1,
+          "memory_mb": 256,
+          "pids_limit": 64,
+          "timeout_seconds": 30,
+          "max_output_bytes": 65536,
+          "isolation": "reviewed-local",
+          "allow_supervised_reaper": true
+        },
+        "broker_pid": 123,
+        "payload_hash": "41a69b71ed5caface406ad786346d83280fbc3a73e8e413cd703a77520197f49",
+        "create_attempted": true,
+        "create_finished": true,
+        "create_ambiguous": false,
+        "container_name": "outfitter-5b70428610cbd8dd29172ec7a1a46916"
+      },
+      "ledger_identity": {
+        "owner": "11111111111111111111111111111111",
+        "authority_id": "22222222222222222222222222222222",
+        "path_sha256": "26548060aa52cda160044a1d10fe17b773353507f059056062966357a3daf32b"
+      },
+      "ledger_verified": true,
+      "container_absent": true,
+      "metrics": {
+        "condition": "alternative",
+        "count": 6,
+        "mean": 7.5,
+        "groups": [
+          {
+            "group": "comparison",
+            "count": 3,
+            "mean": 9
+          },
+          {
+            "group": "control",
+            "count": 3,
+            "mean": 6
+          }
+        ]
+      },
+      "diagnostics_utf8": "{\"stderr\":\"\",\"stdout\":\"{\\\"condition\\\": \\\"alternative\\\", \\\"count\\\": 6, \\\"mean\\\": 7.5, \\\"groups\\\": [{\\\"group\\\": \\\"comparison\\\", \\\"count\\\": 3, \\\"mean\\\": 9}, {\\\"group\\\": \\\"control\\\", \\\"count\\\": 3, \\\"mean\\\": 6}]}\"}\n",
+      "dispatch_boundary_entered": true,
+      "outcome": "succeeded",
+      "observed_charged_cpu_seconds": 30,
+      "observed_reserved_cpu_seconds": 30,
+      "accounting_observation": "NO_RECORD_OBSERVED; exposure not resolved"
+    }
+  ],
+  "charged_cpu_seconds": 120,
+  "accounting_complete": true,
+  "projects": {
+    "first": "0000000000000000000000000000000a",
+    "second": "0000000000000000000000000000000b"
+  }
+}

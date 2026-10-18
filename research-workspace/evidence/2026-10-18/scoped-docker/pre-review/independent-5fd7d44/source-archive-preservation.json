@@ -1,0 +1,9 @@
+{
+  "original_path": "/Users/gregchism/Documents/Codex/2026-10-18/waypoint-scoped-docker-independent-review/final-5fd7d44/candidate-source.tar",
+  "original_sha256": "ca875b67a55901b6a84e091c26558d66e4a9432b9b47999e51d624abf180393a",
+  "uncompressed_bytes": 67727360,
+  "original_unchanged": true,
+  "repository_scope_archive": "../../candidate-01/source.tar.gz",
+  "repository_scope_sha256": "038fc4ebf21acdb2f6142a374e93662005a69b4ce6e633820eb361c3183b5300",
+  "note": "The complete 1071-file repository snapshot remains at original_path. The exact 32 candidate runtime, harness and test files needed by the probes are retained in candidate-01/source.tar.gz. Extract its members into source/research-workspace in a disposable replay folder. Original witness scripts and outputs are unchanged."
+}

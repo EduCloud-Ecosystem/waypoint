@@ -1,0 +1,8 @@
+{
+  "changed_files": 47,
+  "non_evidence_changes": [
+    "research-workspace/SCOPED-DOCKER-QUALIFICATION.md",
+    "research-workspace/qualify_scoped_docker.py",
+    "research-workspace/tests/test_scoped_docker_qualification.py"
+  ]
+}

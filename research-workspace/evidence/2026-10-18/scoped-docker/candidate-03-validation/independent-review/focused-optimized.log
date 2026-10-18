@@ -1,0 +1,9 @@
+test_complete_bound_synthetic_observations_pass (test_scoped_docker_qualification.OracleTests.test_complete_bound_synthetic_observations_pass) ... ok
+test_final_http_lineage_must_match_prelaunch_binding_and_matrix (test_scoped_docker_qualification.OracleTests.test_final_http_lineage_must_match_prelaunch_binding_and_matrix) ... ok
+test_real_http_v4_worker_wiring_with_simulated_provider (test_scoped_docker_qualification.SimulatedWiringTests.test_real_http_v4_worker_wiring_with_simulated_provider) ... ok
+test_shared_http_and_export_lineage_drift_refuses_after_first_attempt (test_scoped_docker_qualification.SimulatedWiringTests.test_shared_http_and_export_lineage_drift_refuses_after_first_attempt) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 7.927s
+
+OK

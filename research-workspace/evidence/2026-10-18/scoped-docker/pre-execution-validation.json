@@ -1,0 +1,18 @@
+{
+  "accepted46_worktree_clean_at": "40fe12e62b98f1109cffbe76485d31abf218171b",
+  "docker_attempts": 0,
+  "execution": "NOT RUN; review pending",
+  "focused_tests_passed": 16,
+  "harness_commit": "5fd7d445855b191fd2f20eee218a4860961cf38e",
+  "logs": {
+    "focused.log": "f826d17faca83097d3cfc2c153f43859a63b678fb81b2eab30fa9f5adc2b66f2",
+    "full-suite.log": "54d3a69b56912fdcdf07c2943d8a390e48823ac47178a9a0c91b13640ca8fda1"
+  },
+  "manifest_commit": "7f0bba78d68a0f5a62809c350259e9afdaa7386a",
+  "manifest_sha256": "05d222c318359d546b91b05b13448693c0db154808aff2fba44d58e7b59389e4",
+  "preserved_failure": "pre-review/first/manifest.json",
+  "required_execution_controls": 18,
+  "runtime_and_workflows_changed": false,
+  "status": "PASS_SYNTHETIC_ONLY",
+  "tests_passed": 449
+}

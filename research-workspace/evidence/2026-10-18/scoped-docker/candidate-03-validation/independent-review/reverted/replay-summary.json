@@ -1,0 +1,41 @@
+{
+  "candidate": "fe4788c47a378e6234648dc4131ec4b870a8e713",
+  "mode": "reverted",
+  "original_witness_sha256": "6aea2aee41e725e02b7eb7cd219a122f0e4e19ef98e4997ffeb525f558f9f81b",
+  "historical_script_candidate_label": "09418f231187a5465ba9d0b8546b3b59514959e9",
+  "actual_source": "/Users/gregchism/Documents/Codex/2026-10-18/waypoint-scoped-docker-independent-review/final-fe4788c/source/research-workspace",
+  "in_memory_removed_statements": [
+    {
+      "lineno": 299,
+      "end_lineno": 301
+    }
+  ],
+  "expectations_met": true,
+  "results": [
+    {
+      "case": "input",
+      "status": "PASS",
+      "failure": null,
+      "attempts": 4,
+      "charged_cpu_seconds": 120,
+      "structural_exports_valid": [
+        true,
+        true
+      ],
+      "mismatch_count": 4
+    },
+    {
+      "case": "recipe",
+      "status": "PASS",
+      "failure": null,
+      "attempts": 4,
+      "charged_cpu_seconds": 120,
+      "structural_exports_valid": [
+        true,
+        true
+      ],
+      "mismatch_count": 4
+    }
+  ],
+  "scope": "Temporary synthetic fixture only. No source files changed; reversion is in-memory function substitution only."
+}

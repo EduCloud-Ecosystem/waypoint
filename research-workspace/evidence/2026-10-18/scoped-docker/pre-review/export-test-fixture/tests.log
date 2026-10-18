@@ -1,0 +1,37 @@
+test_accounting_observation_cannot_erase_a_known_charge (test_scoped_docker_qualification.OracleTests.test_accounting_observation_cannot_erase_a_known_charge) ... ok
+test_binary_ledger_request_project_image_and_manifest_binding_failures (test_scoped_docker_qualification.OracleTests.test_binary_ledger_request_project_image_and_manifest_binding_failures) ... ok
+test_complete_bound_synthetic_observations_pass (test_scoped_docker_qualification.OracleTests.test_complete_bound_synthetic_observations_pass) ... ok
+test_dispatch_and_monotonic_accounting_observations_are_required (test_scoped_docker_qualification.OracleTests.test_dispatch_and_monotonic_accounting_observations_are_required) ... ok
+test_empty_partial_duplicate_extra_or_false_controls_fail (test_scoped_docker_qualification.OracleTests.test_empty_partial_duplicate_extra_or_false_controls_fail) ... ok
+test_exclusive_output_and_fifth_attempt_refuse_without_effect (test_scoped_docker_qualification.OracleTests.test_exclusive_output_and_fifth_attempt_refuse_without_effect) ... ok
+test_exercise_marker_survives_missing_or_changed_output (test_scoped_docker_qualification.OracleTests.test_exercise_marker_survives_missing_or_changed_output) ... ok
+test_generic_receipt_and_failure_marker_cannot_become_pass (test_scoped_docker_qualification.OracleTests.test_generic_receipt_and_failure_marker_cannot_become_pass) ... ok
+test_independent_numeric_oracle_checks_both_output_and_saved_result (test_scoped_docker_qualification.OracleTests.test_independent_numeric_oracle_checks_both_output_and_saved_result) ... ok
+test_ledger_or_application_disagreement_fails (test_scoped_docker_qualification.OracleTests.test_ledger_or_application_disagreement_fails) ... ok
+test_manifest_captures_every_runtime_source_and_disabled_catalog (test_scoped_docker_qualification.OracleTests.test_manifest_captures_every_runtime_source_and_disabled_catalog) ... ok
+test_partial_duplicate_or_fifth_attempt_fails (test_scoped_docker_qualification.OracleTests.test_partial_duplicate_or_fifth_attempt_fails) ... ok
+test_zero_partial_float_bool_refund_or_unknown_charge_fails (test_scoped_docker_qualification.OracleTests.test_zero_partial_float_bool_refund_or_unknown_charge_fails) ... ok
+test_absence_observation_failure_preserves_known_full_charge (test_scoped_docker_qualification.SimulatedWiringTests.test_absence_observation_failure_preserves_known_full_charge) ... ok
+test_cleanup_acknowledgement_failure_cannot_pass_after_four_good_runs (test_scoped_docker_qualification.SimulatedWiringTests.test_cleanup_acknowledgement_failure_cannot_pass_after_four_good_runs) ... ok
+test_diagnostics_missing_wrong_hash_size_or_streams_refuse (test_scoped_docker_qualification.SimulatedWiringTests.test_diagnostics_missing_wrong_hash_size_or_streams_refuse) ... ok
+test_exact_project_budgets_and_population_refuse_before_dispatch (test_scoped_docker_qualification.SimulatedWiringTests.test_exact_project_budgets_and_population_refuse_before_dispatch) ... ok
+test_interrupt_records_failure_before_cleanup_and_stops_after_one_intent (test_scoped_docker_qualification.SimulatedWiringTests.test_interrupt_records_failure_before_cleanup_and_stops_after_one_intent) ... ok
+test_interruption_retains_prior_charge_and_no_resume_budget (test_scoped_docker_qualification.SimulatedWiringTests.test_interruption_retains_prior_charge_and_no_resume_budget) ... ok
+test_partial_charge_stops_without_third_attempt_or_refund (test_scoped_docker_qualification.SimulatedWiringTests.test_partial_charge_stops_without_third_attempt_or_refund) ... ok
+test_real_http_v4_worker_wiring_with_simulated_provider (test_scoped_docker_qualification.SimulatedWiringTests.test_real_http_v4_worker_wiring_with_simulated_provider) ... ok
+test_structurally_valid_exports_must_match_captured_http_and_bytes (test_scoped_docker_qualification.SimulatedWiringTests.test_structurally_valid_exports_must_match_captured_http_and_bytes) ... 
+  test_structurally_valid_exports_must_match_captured_http_and_bytes (test_scoped_docker_qualification.SimulatedWiringTests.test_structurally_valid_exports_must_match_captured_http_and_bytes) (mutation='recipe') ... FAIL
+
+======================================================================
+FAIL: test_structurally_valid_exports_must_match_captured_http_and_bytes (test_scoped_docker_qualification.SimulatedWiringTests.test_structurally_valid_exports_must_match_captured_http_and_bytes) (mutation='recipe')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-v4-docker-qualification/research-workspace/tests/test_scoped_docker_qualification.py", line 382, in test_structurally_valid_exports_must_match_captured_http_and_bytes
+    self.assertIn('Export ', report['failure']['message'])
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'Export ' not found in 'Invalid reviewed environment catalog: exported environment does not match run lineage.'
+
+----------------------------------------------------------------------
+Ran 22 tests in 34.548s
+
+FAILED (failures=1)

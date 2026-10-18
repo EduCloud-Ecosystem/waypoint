@@ -1,0 +1,6 @@
+.........
+----------------------------------------------------------------------
+Ran 9 tests in 0.018s
+
+OK
+{"boundary": "after successful worker receipt and ledger; independent absence unavailable", "broker_processes": 0, "dispatch_boundary_entries": 1, "docker_attempts": 0, "exception": "Container absence was not verified", "markers_created": 0, "report_charge": 0, "report_outcome": "UNKNOWN_BEFORE_LAUNCH", "retained_ledger_charge": 30, "retained_receipt_charge": 30}

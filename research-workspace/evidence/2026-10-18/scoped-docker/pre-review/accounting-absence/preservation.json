@@ -1,0 +1,15 @@
+{
+  "original_directory": "/tmp",
+  "retained_files": {
+    "waypoint-v4-broker-accounting-probe-explicit-absence.log": {
+      "sha256": "072352754e1cfe7c1ab9a56c54cef610897726c67107607ed2f25b9e5f196c8f",
+      "bytes": 473
+    },
+    "waypoint-v4-broker-accounting-probe-explicit-absence.py": {
+      "sha256": "61791417fca83fad25944710eddf5764c4ac198e1dccde2759eb479a8355caef",
+      "bytes": 3681
+    }
+  },
+  "originals_unchanged": true,
+  "scope": "Synthetic review witnesses only; no actual Docker execution."
+}

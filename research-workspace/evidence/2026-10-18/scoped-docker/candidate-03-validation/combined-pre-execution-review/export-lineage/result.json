@@ -1,0 +1,50 @@
+{
+  "attachment": "00af40dceb38902bc6e7df4b8d359c300e1c5c17",
+  "harness_commit": "fe4788c47a378e6234648dc4131ec4b870a8e713",
+  "harness_sha256": "8e66c9fc9a0062891219cc8ca2bd31928f835b63ebd439427137c74a7346a8c4",
+  "archive_sha256": "6fcfce9bf3db5b57b4f503574f379123a43739c44fc69f9af9b40a8cc17055b5",
+  "scope": "Pure export/settlement predicates using immutable synthetic fixtures. No HTTP, Docker, broker, exercise marker, provider, owner edits or full tests.",
+  "original_export_witness": {
+    "original_fixture_accepted": true,
+    "mutations": [
+      {
+        "case": "wrong_numeric_result",
+        "structurally_valid": true,
+        "new_export_acceptance": false,
+        "refusal": "Export status/accounting/lineage/metrics differ from captured HTTP record",
+        "bundle_sha256": "c15853257bb87191caa6ad2136e63a661c686979591a0c5dd8fc66c71303e0a6"
+      },
+      {
+        "case": "unknown_accounting_and_failed_runs",
+        "structurally_valid": true,
+        "new_export_acceptance": false,
+        "refusal": "Export status/accounting/lineage/metrics differ from captured HTTP record",
+        "bundle_sha256": "5f53ff47dcbc668f09e841b02249f4f3506eec7813e271c9e0837cc88a500551"
+      }
+    ]
+  },
+  "retained_lineage_reports_fixed": {
+    "baseline-control": {
+      "accepted": true
+    },
+    "lineage-input": {
+      "accepted": false,
+      "reason": "Final HTTP lineage differs from prelaunch binding or fixed matrix"
+    },
+    "lineage-recipe": {
+      "accepted": false,
+      "reason": "Final HTTP lineage differs from prelaunch binding or fixed matrix"
+    }
+  },
+  "retained_lineage_reports_one_check_reverted": {
+    "baseline-control": {
+      "accepted": true
+    },
+    "lineage-input": {
+      "accepted": true
+    },
+    "lineage-recipe": {
+      "accepted": true
+    }
+  }
+}

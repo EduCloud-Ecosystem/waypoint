@@ -1,0 +1,41 @@
+[
+  {
+    "mode": "normal",
+    "command": [
+      "python3",
+      "-W",
+      "error::ResourceWarning",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "tests",
+      "-p",
+      "test_scoped_docker_qualification.py",
+      "-v"
+    ],
+    "returncode": 0,
+    "seconds": 38.403763916983735,
+    "scope": "Only focused synthetic fixture; CLI initialization and all provider/broker/Docker effects mocked."
+  },
+  {
+    "mode": "optimized",
+    "command": [
+      "python3",
+      "-O",
+      "-W",
+      "error::ResourceWarning",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "tests",
+      "-p",
+      "test_scoped_docker_qualification.py",
+      "-v"
+    ],
+    "returncode": 0,
+    "seconds": 38.57599979196675,
+    "scope": "Only focused synthetic fixture; CLI initialization and all provider/broker/Docker effects mocked."
+  }
+]

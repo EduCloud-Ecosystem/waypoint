@@ -1,0 +1,32 @@
+{
+  "docker_attempts": 0,
+  "files": {
+    "identity.json": {
+      "bytes": 364,
+      "sha256": "aeb1fb42bc6ece72b778b610d3ab85c2fd5b899162adfae88b2b570169cfd6ce"
+    },
+    "normal.log": {
+      "bytes": 4412,
+      "sha256": "4f456a80fd0add6b418a0b3dd6cc7fc5e8f589a51ce0c1ffc7de78eb74e36ea1"
+    },
+    "optimized.log": {
+      "bytes": 4412,
+      "sha256": "d84fc48e416e610013bfd149e9272ff41054f58380a5a380b506191900804425"
+    }
+  },
+  "focused_tests_normal": 24,
+  "focused_tests_optimized": 24,
+  "pending": [
+    "Outfitter review",
+    "Export/provenance review",
+    "Combined root execution CLEAR"
+  ],
+  "provider": "Simulated only",
+  "reviewed_attachment": "00af40dceb38902bc6e7df4b8d359c300e1c5c17",
+  "source_directory": "/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/waypoint-v4-candidate03-root-review-ce89wj_l",
+  "status": "INTERIM_ONLY_EXECUTION_HOLD",
+  "whitespace": {
+    "raw_diff": "Flags preserved narrow.diff and historical failed test logs; exact evidence bytes intentionally unchanged.",
+    "source_and_docs": "PASS"
+  }
+}

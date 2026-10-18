@@ -1,0 +1,373 @@
+{
+  "review": "Independent candidate02 scoped v4 Docker qualification harness review",
+  "generated_at_utc": "2026-10-18T11:29:05.421314+00:00",
+  "candidate": "09418f231187a5465ba9d0b8546b3b59514959e9",
+  "attachment": "b665fa8e6c77877c283b8a1dff4d9532c36f3103",
+  "disposition": "HOLD",
+  "execution_authorized": false,
+  "immutable_capture": {
+    "path": "/Users/gregchism/Documents/Codex/2026-10-18/waypoint-scoped-docker-independent-review/final-09418f2/source",
+    "archive_sha256": "e397d970ea019cd7a4a71ac7918880e42136cdd62909a71e80b805471119427b",
+    "source_manifest_sha256": "e7b42e8559cb59b262ea2e032d4e790f2b9b6338a8811362173145c08722b9cd",
+    "files": 1111,
+    "changed_files": []
+  },
+  "manifest_sha256": "7c8b281f1675f868d680f3707ed1a4d0d0fb6d37481a8a06bc2399f1a21c5bb1",
+  "prepared_archive_sha256": "37c119dbc04cce127b8b1a20ff58a5adf0fe8ade428dbf4dddbdc2c107397655",
+  "prepared_verification": {
+    "candidate": "09418f231187a5465ba9d0b8546b3b59514959e9",
+    "prepared_sources": 34,
+    "sources_match_capture": true,
+    "source_errors": [],
+    "archive_exact_match": true,
+    "manifest_source_commit": "09418f231187a5465ba9d0b8546b3b59514959e9",
+    "broker_binary_sha256": "1bf1ce898d6d10e574ab7b2f79a830fa94fa740867e208470bfc15790dc41bb1",
+    "broker_matches": true,
+    "broker_source_commit": "5446438985e31cb739f2048a2aa2176918831a7e",
+    "broker_pin_matches": true,
+    "broker_attestation_sha256": "8edd1334a8560c3c94a0e5d59f4804ac03566630f3d034a96d8930edbcf16e31",
+    "broker_attestation_matches": true,
+    "broker_metadata_matches": true,
+    "broker_retained_sources": 22,
+    "broker_source_errors": [],
+    "source_pin_matches": true,
+    "real_marker_absent": true,
+    "real_output_absent": true
+  },
+  "source_scope": {
+    "changed_files": 47,
+    "non_evidence_changes": [
+      "research-workspace/SCOPED-DOCKER-QUALIFICATION.md",
+      "research-workspace/qualify_scoped_docker.py",
+      "research-workspace/tests/test_scoped_docker_qualification.py"
+    ]
+  },
+  "findings": [
+    {
+      "id": "D5",
+      "priority": "P2",
+      "status": "OPEN",
+      "title": "Final HTTP/export lineage is not bound to the prelaunch input and recipe hashes",
+      "source": "research-workspace/qualify_scoped_docker.py",
+      "lines": [
+        298,
+        301
+      ],
+      "additional_lines": [
+        [
+          314,
+          326
+        ],
+        [
+          471,
+          477
+        ],
+        [
+          653,
+          656
+        ]
+      ],
+      "description": "The immutable prelaunch binding records input_sha256 and recipe_sha256, but verify_settlement never checks either against the final HTTP run. verify_public_export compares exported bytes and metadata with that later HTTP run only. A shared projection drift can make both later observations agree on replacement input/recipe bytes while disagreeing with prepared execution evidence.",
+      "witnesses": [
+        "independent_lineage_projection_probe.py",
+        "lineage-projection-results.json",
+        "lineage-input-report.json",
+        "lineage-recipe-report.json"
+      ],
+      "result": "Both full synthetic exercises return PASS with four attempts, 120 charges and two structurally valid exports. All four final run input hashes or recipe hashes differ from the prelaunch binding. A newline is appended only to exported inputs/recipes, and corresponding later HTTP/export hashes and recipe environment specifications are updated. Prelaunch bindings, requests, receipts, broker diagnostics and runtime source remain unchanged.",
+      "limitation": "The existing synthetic fixture mocks provider, CLI initialization, Docker and checkpoint effects. This is a qualification-checker correlation gap, not evidence that production Store/export behavior normally changes these fields.",
+      "fix": "Require final HTTP input_sha256 and recipe_sha256 to equal the retained prelaunch binding, and recipe/condition to equal the fixed matrix or captured prelaunch values, before accepting settlement. Preserve this comparison through the final oracle and exported projection. Add both shared-projection regressions."
+    }
+  ],
+  "resolved_prior_findings": [
+    {
+      "id": "D1",
+      "status": "RESOLVED",
+      "evidence": "Missing/wrong diagnostic bindings reject; self-consistent valid-hash/size diagnostics with differing streams reject in full synthetic exercise and final oracle. Known charge remains30.",
+      "source_lines": [
+        252,
+        275
+      ]
+    },
+    {
+      "id": "D2",
+      "status": "RESOLVED",
+      "evidence": "Changed/extra/missing projects, wrong mapped IDs, float/bool budgets and extra native population reject. Budget/population violations refuse before dispatch.",
+      "source_lines": [
+        245,
+        250
+      ]
+    },
+    {
+      "id": "D3",
+      "status": "ORIGINAL EXPORT-ONLY WITNESSES RESOLVED; D5 REMAINS",
+      "evidence": "Numeric/unknown-state export mutations reject against HTTP records. Focused tests also reject project/input/recipe/result-byte/refusal export-only drift. D5 is the separate missing tie back to prelaunch.",
+      "source_lines": [
+        310,
+        334
+      ]
+    },
+    {
+      "id": "D4",
+      "status": "RESOLVED",
+      "evidence": "Failed independent absence observation returns FAIL with one attempt,30 known charges,accounting_complete false and no accepted container absence. Diagnostic failure does likewise. Second-intent interruption retains first30; regression/disappearance never lowers known120 and prevents acceptance.",
+      "source_lines": [
+        415,
+        450
+      ]
+    }
+  ],
+  "validation": {
+    "focused": [
+      {
+        "mode": "normal",
+        "command": [
+          "python3",
+          "-W",
+          "error::ResourceWarning",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "tests",
+          "-p",
+          "test_scoped_docker_qualification.py",
+          "-v"
+        ],
+        "returncode": 0,
+        "seconds": 38.403763916983735,
+        "scope": "Only focused synthetic fixture; CLI initialization and all provider/broker/Docker effects mocked."
+      },
+      {
+        "mode": "optimized",
+        "command": [
+          "python3",
+          "-O",
+          "-W",
+          "error::ResourceWarning",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "tests",
+          "-p",
+          "test_scoped_docker_qualification.py",
+          "-v"
+        ],
+        "returncode": 0,
+        "seconds": 38.57599979196675,
+        "scope": "Only focused synthetic fixture; CLI initialization and all provider/broker/Docker effects mocked."
+      }
+    ],
+    "focused_count_each": 22,
+    "prior_independent_witnesses_rejected": 5,
+    "additional_failure_controls": {
+      "candidate": "09418f231187a5465ba9d0b8546b3b59514959e9",
+      "scope": "Temporary synthetic stores and pure objects only; no real provider, broker, Docker, production CLI or checkpoint.",
+      "controls": [
+        {
+          "name": "baseline",
+          "actual_status": "PASS",
+          "expected_status": "PASS",
+          "matched": true,
+          "charge": 120,
+          "accounting_complete": true,
+          "attempts": 4,
+          "failure": null
+        },
+        {
+          "name": "absence-failure",
+          "actual_status": "FAIL",
+          "expected_status": "FAIL",
+          "matched": true,
+          "charge": 30,
+          "accounting_complete": false,
+          "attempts": 1,
+          "failure": {
+            "type": "ValueError",
+            "message": "Container absence was not verified"
+          }
+        },
+        {
+          "name": "numeric-export",
+          "actual_status": "FAIL",
+          "expected_status": "FAIL",
+          "matched": true,
+          "charge": 120,
+          "accounting_complete": false,
+          "attempts": 4,
+          "failure": {
+            "type": "ValueError",
+            "message": "Export status/accounting/lineage/metrics differ from captured HTTP record"
+          }
+        },
+        {
+          "name": "unknown-export",
+          "actual_status": "FAIL",
+          "expected_status": "FAIL",
+          "matched": true,
+          "charge": 120,
+          "accounting_complete": false,
+          "attempts": 4,
+          "failure": {
+            "type": "ValueError",
+            "message": "Export status/accounting/lineage/metrics differ from captured HTTP record"
+          }
+        },
+        {
+          "name": "self-consistent-different-diagnostics",
+          "actual_status": "FAIL",
+          "expected_status": "FAIL",
+          "matched": true,
+          "charge": 30,
+          "accounting_complete": false,
+          "attempts": 1,
+          "failure": {
+            "type": "ValueError",
+            "message": "Receipt differs from retained ledger diagnostics"
+          }
+        },
+        {
+          "name": "interrupted-second-intent",
+          "actual_status": "FAIL",
+          "expected_status": "FAIL",
+          "matched": true,
+          "charge": 30,
+          "accounting_complete": false,
+          "attempts": 2,
+          "failure": {
+            "type": "KeyboardInterrupt",
+            "message": "synthetic interruption before external effect"
+          }
+        },
+        {
+          "name": "self-consistent-diagnostic-oracle",
+          "accepted": false,
+          "matched": true
+        },
+        {
+          "name": "missing-project",
+          "rejected": true,
+          "matched": true,
+          "reason": "Ledger project population or budgets differ from manifest"
+        },
+        {
+          "name": "wrong-map-id",
+          "rejected": true,
+          "matched": true,
+          "reason": "Ledger project population or budgets differ from manifest"
+        },
+        {
+          "name": "float-budget",
+          "rejected": true,
+          "matched": true,
+          "reason": "Ledger project population or budgets differ from manifest"
+        },
+        {
+          "name": "bool-budget",
+          "rejected": true,
+          "matched": true,
+          "reason": "Ledger project population or budgets differ from manifest"
+        },
+        {
+          "name": "native-population",
+          "rejected": true,
+          "matched": true,
+          "reason": "Unexpected ledger authority population"
+        },
+        {
+          "name": "charge-regression-and-disappearance",
+          "charge": 120,
+          "regression_latched": true,
+          "accounting_observation": "NO_RECORD_OBSERVED; exposure not resolved",
+          "accepted": false,
+          "matched": true
+        }
+      ],
+      "all_expected": true
+    },
+    "new_false_pass_witnesses": {
+      "candidate": "09418f231187a5465ba9d0b8546b3b59514959e9",
+      "scope": "Only temporary synthetic fixture. All CLI/provider/Docker/checkpoint effects mocked; production state and sources unchanged.",
+      "expected": "FAIL: final records and exported bytes must retain the prelaunch input/recipe hashes.",
+      "results": [
+        {
+          "case": "input",
+          "status": "PASS",
+          "failure": null,
+          "attempts": 4,
+          "charged_cpu_seconds": 120,
+          "structural_exports_valid": [
+            true,
+            true
+          ],
+          "mismatch_count": 4
+        },
+        {
+          "case": "recipe",
+          "status": "PASS",
+          "failure": null,
+          "attempts": 4,
+          "charged_cpu_seconds": 120,
+          "structural_exports_valid": [
+            true,
+            true
+          ],
+          "mismatch_count": 4
+        }
+      ]
+    },
+    "full_suite": "Owner reports455 tests PASS in115.197s at evidence-only attachment c5cf1950603294c62b4fdbb7c081ccfafcd93504; not independently rerun and does not waiveD5."
+  },
+  "boundaries": [
+    "No prepare/run, Docker, real broker, production CLI initialization, image or provider operation was invoked by this reviewer.",
+    "All execution used temporary synthetic stores, mocked external effects and pure objects.",
+    "No original or protected worktree, workflow, pin, runtime, historical qualification or prior review artifact was edited. All writes confined to this fresh Documents review folder.",
+    "Previous5fd7d44 HOLD report SHAce992af00fe20e2051198c79e1fc56a698c16a9c88a1f1cdb887a658731ede92 unchanged.",
+    "Restart-wide four-attempt marker, fixed caps, no retry/refund/new allowance, disabled source environments, capacity UNKNOWN and historical fifth-headroom FAIL unchanged.",
+    "Static call order and focused owner-event assertions place evidence writes outside SQLite owners. Dispatch hook only performs existing reads and changes in-memory observations.",
+    "No additional blocker beyondD5 found in this bounded pass. No execution, CI, merge or coordinating clearance granted."
+  ],
+  "real_marker_absent": true,
+  "real_output_absent": true,
+  "evidence_sha256": {
+    "absence-failure-control-report.json": "8d94ebe59c690d7e492d6ab094992cc1af41ce576a23d14f0d293bd158ab8663",
+    "baseline-control-report.json": "f3dcfbb7b475f36ef2cfabcf398399a634e7ae22dda5e67a7b8a9b6837e15e50",
+    "candidate-source.tar": "e397d970ea019cd7a4a71ac7918880e42136cdd62909a71e80b805471119427b",
+    "extra-ledger-project-report.json": "bc0bcec0f399c1ee47358f8c0d09c12c12fe3378da2908ba5f317a0b3636369c",
+    "focused-normal.log": "89bcee3f018b769332a40c3ffe7aa0921121fa46d288f01e84251c9051f64d1f",
+    "focused-optimized.log": "56601082abfe4df7be39613400146d7e0bc3ab03ab583c5c895414ec23601649",
+    "focused-tests.json": "20b52425ddd6f27eb4414acc59872382a81b14e038ff8734c6ba1b00a77c7a41",
+    "independent-failure-control-results.json": "f6567daa61dff900dd58a21cd32965d5739130aa46e668e8143f96d351220bf6",
+    "independent-ledger-probe-results.json": "daf44800b25040c64deb7b3ec903fbd6c487028f796724a9b9967c204ff2c7e3",
+    "independent_diagnostic_correlation_probe.py": "c11d6104ddcdde9e24be58f88e279ac60fa0a20e4d00b6c9bac3f7993dc3e9fc",
+    "independent_diagnostic_correlation_probe.py.log": "01c7c166cc1db28cf7dad709b0bc494a25ef80b26762eaf221253231204841ab",
+    "independent_failure_controls.py": "161327b570969fc54a6a5b2323fa6307ef14e76daaf6b0169d33324b931530df",
+    "independent_ledger_probes.py": "56481fdb55941b4676311cda806ea8a48f18d3d711d775d94f7e852c90c76a20",
+    "independent_ledger_probes.py.log": "daf44800b25040c64deb7b3ec903fbd6c487028f796724a9b9967c204ff2c7e3",
+    "independent_lineage_projection_probe.py": "6aea2aee41e725e02b7eb7cd219a122f0e4e19ef98e4997ffeb525f558f9f81b",
+    "interrupted-second-intent-control-report.json": "8dfaffba9a22679959d5648d3d2c5bbbd35c466865ec102db92d625228e1080d",
+    "lineage-input-report.json": "fade4648bfeb3922568e5e4d87228909b19315563bd40d809e9046c196404446",
+    "lineage-projection-results.json": "9430e854fbba849e96466dde4975048893bd516c08cd58d360d768cef61b8745",
+    "lineage-recipe-report.json": "e7136de7ab633ed57c5552eec38ef601383b80cf8f553e7b7a0637922e2897e2",
+    "mismatched-diagnostics/5ae1472927a0fca1e50056c63d638494da9ff3b01f4958a722c8ec20c21f437d.json": "5ae1472927a0fca1e50056c63d638494da9ff3b01f4958a722c8ec20c21f437d",
+    "mismatched-diagnostics/733ed0b5cdb1c5bce3f33dc00283b09045f0ab72c20bacf9d4eba58566101205.json": "733ed0b5cdb1c5bce3f33dc00283b09045f0ab72c20bacf9d4eba58566101205",
+    "mismatched-diagnostics/8fb36686977863d0a01409d378d59c5bb863175702b40e02c89a4a5339aaff79.json": "8fb36686977863d0a01409d378d59c5bb863175702b40e02c89a4a5339aaff79",
+    "mismatched-diagnostics/c11976e8bed22ff06087fbfa0c712fd2ed23b6d656047048a2c32c013d8c6722.json": "c11976e8bed22ff06087fbfa0c712fd2ed23b6d656047048a2c32c013d8c6722",
+    "mismatched-diagnostics-report.json": "d1b91f39915199f119bf6f96f4b038bc75aa4c8ce631c2de74702cd4519e596c",
+    "mismatched-diagnostics-result.json": "01c7c166cc1db28cf7dad709b0bc494a25ef80b26762eaf221253231204841ab",
+    "missing-output-binding-report.json": "5a496678713f4f5b88c131770a5cba01f708f54689b01e754899e32bafbe7e28",
+    "monotonic-accounting-control-report.json": "4c18c6b6100e667092fbf6ce80b134cfde119ea5d0289f80e68ef28ea3bfcafd",
+    "numeric-export-control-report.json": "f3d9b961f88bd6b622c60441befc908a11b2420f553ca2187ae117d598c0e848",
+    "prepared-attachment/manifest.json": "7c8b281f1675f868d680f3707ed1a4d0d0fb6d37481a8a06bc2399f1a21c5bb1",
+    "prepared-attachment/source.tar.gz": "37c119dbc04cce127b8b1a20ff58a5adf0fe8ade428dbf4dddbdc2c107397655",
+    "prepared-attachment/verification.json": "ec03758c94c48d91bdb2625138dc9cca13c78168d239c3cf0b03de8000b1ba93",
+    "self-consistent-diagnostic-oracle-report.json": "4b82c6a7323cc119788345a080f44a2a013b8fac4d2afd5ac4b7ff569e8f3d71",
+    "self-consistent-different-diagnostics-control-report.json": "e1a5138abf3d1f7c1e283a57e94395210600151cdd0cde9cd22d3dd5d70b2665",
+    "source-manifest.json": "e7b42e8559cb59b262ea2e032d4e790f2b9b6338a8811362173145c08722b9cd",
+    "source-scope-verification.json": "695de5c7e52094ca459fda8ef60f19bb35497db4605df563679e0ebe32805d9a",
+    "unknown-export-control-report.json": "403f78268a01fd45c72830d319ea238466c5a5ba143546792e8d818329258be1",
+    "wrong-output-binding-report.json": "5715ca7de30610bb488e1052d11dd5f9d2d6407fab1e53266ebb347cf16ed601",
+    "wrong-project-budget-report.json": "71f920801683430ef5f9673563ca49acaa108e9544acc404dc67cd9e858e4a98"
+  }
+}

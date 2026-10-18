@@ -1,0 +1,50 @@
+{
+  "candidate": "5fd7d445855b191fd2f20eee218a4860961cf38e",
+  "case": "valid-hash-diagnostics-do-not-match-receipt",
+  "observed_accepted": true,
+  "expected_accepted": false,
+  "observations": [
+    {
+      "request_id": "00000000000000000000000000000001",
+      "path": "/Users/gregchism/Documents/Codex/2026-10-18/waypoint-scoped-docker-independent-review/final-5fd7d44/mismatched-diagnostics/8fb36686977863d0a01409d378d59c5bb863175702b40e02c89a4a5339aaff79.json",
+      "sha256": "8fb36686977863d0a01409d378d59c5bb863175702b40e02c89a4a5339aaff79",
+      "bytes": 218,
+      "size_and_sha256_valid": true,
+      "valid_json": true,
+      "within_request_output_cap": true,
+      "differs_from_receipt": true
+    },
+    {
+      "request_id": "00000000000000000000000000000002",
+      "path": "/Users/gregchism/Documents/Codex/2026-10-18/waypoint-scoped-docker-independent-review/final-5fd7d44/mismatched-diagnostics/c11976e8bed22ff06087fbfa0c712fd2ed23b6d656047048a2c32c013d8c6722.json",
+      "sha256": "c11976e8bed22ff06087fbfa0c712fd2ed23b6d656047048a2c32c013d8c6722",
+      "bytes": 219,
+      "size_and_sha256_valid": true,
+      "valid_json": true,
+      "within_request_output_cap": true,
+      "differs_from_receipt": true
+    },
+    {
+      "request_id": "00000000000000000000000000000003",
+      "path": "/Users/gregchism/Documents/Codex/2026-10-18/waypoint-scoped-docker-independent-review/final-5fd7d44/mismatched-diagnostics/5ae1472927a0fca1e50056c63d638494da9ff3b01f4958a722c8ec20c21f437d.json",
+      "sha256": "5ae1472927a0fca1e50056c63d638494da9ff3b01f4958a722c8ec20c21f437d",
+      "bytes": 225,
+      "size_and_sha256_valid": true,
+      "valid_json": true,
+      "within_request_output_cap": true,
+      "differs_from_receipt": true
+    },
+    {
+      "request_id": "00000000000000000000000000000004",
+      "path": "/Users/gregchism/Documents/Codex/2026-10-18/waypoint-scoped-docker-independent-review/final-5fd7d44/mismatched-diagnostics/733ed0b5cdb1c5bce3f33dc00283b09045f0ab72c20bacf9d4eba58566101205.json",
+      "sha256": "733ed0b5cdb1c5bce3f33dc00283b09045f0ab72c20bacf9d4eba58566101205",
+      "bytes": 226,
+      "size_and_sha256_valid": true,
+      "valid_json": true,
+      "within_request_output_cap": true,
+      "differs_from_receipt": true
+    }
+  ],
+  "scope": "Pure synthetic final oracle only. No provider, broker, Docker, production init, or checkpoint executed.",
+  "production_checkpoint_limit": "P1 checkpoint verifies referenced sidecar size/hash, not equality to the separately retained receipt. Each synthetic sidecar here satisfies those size/hash checks."
+}

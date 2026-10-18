@@ -1,0 +1,1 @@
+{"stdout":"{\"condition\": \"baseline\", \"count\": 10, \"mean\": -999, \"groups\": [{\"group\": \"alpha\", \"count\": 5, \"mean\": 22}, {\"group\": \"beta\", \"count\": 5, \"mean\": 14}]}","stderr":"different stderr"}

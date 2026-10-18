@@ -1,0 +1,50 @@
+{
+  "attachment_commit": "00af40dceb38902bc6e7df4b8d359c300e1c5c17",
+  "harness_commit": "fe4788c47a378e6234648dc4131ec4b870a8e713",
+  "manifest_sha256": "ad701c8d5b164666133a1d06f241a80ab052ccbeb02a48c499a663589e537295",
+  "source_archive_sha256": "6fcfce9bf3db5b57b4f503574f379123a43739c44fc69f9af9b40a8cc17055b5",
+  "source_files": 34,
+  "actual_attempts": 0,
+  "status": "CLEAR_SOURCE_AND_SYNTHETIC_SCOPE",
+  "execution_permission": "HOLD pending separate exact-candidate Outfitter CLEAR and coordinating dispatch message",
+  "reviewed_components": [
+    "strict fixed manifest and restart-wide four-attempt ceiling",
+    "production HTTP/Worker integration without runtime changes",
+    "exports bound to captured public records and bytes",
+    "final input and recipe lineage bound to prelaunch identities",
+    "independent numerical oracles",
+    "current accepted broker pin",
+    "failure retention and no automatic reconciliation/refund"
+  ],
+  "tests": {
+    "normal": {
+      "status": "PASS",
+      "test_count": 24,
+      "sha256": "4f456a80fd0add6b418a0b3dd6cc7fc5e8f589a51ce0c1ffc7de78eb74e36ea1",
+      "scope": "Synthetic provider with disposable loopback HTTP; ResourceWarning-as-error; no actual broker or Docker calls"
+    },
+    "optimized": {
+      "status": "PASS",
+      "test_count": 24,
+      "sha256": "d84fc48e416e610013bfd149e9272ff41054f58380a5a380b506191900804425",
+      "scope": "Synthetic provider with disposable loopback HTTP; ResourceWarning-as-error; no actual broker or Docker calls"
+    }
+  },
+  "independent_export_lineage_recheck": {
+    "result_path": "/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/waypoint-v4-candidate03-recheck-qh_30jar/result.json",
+    "sha256": "cb1104237f2f57910c4a995b15e7a2c169fbdd39b4890ae7e176df4fef0a0da8",
+    "status": "CLEAR",
+    "scope": "Original two export false-pass witnesses now reject; original two lineage witnesses reject and removing only the check reopens them; pure predicates only"
+  },
+  "whitespace": {
+    "source_and_docs": "PASS",
+    "raw_diff": "FAIL only preserved historical failed test logs and review narrow.diff; unchanged evidence bytes intentionally retained"
+  },
+  "not_run": [
+    "Actual four-attempt Docker qualification",
+    "Browser exercise",
+    "Late-revocation race qualification",
+    "Hosted or live-allocation tests",
+    "Real private/student data"
+  ]
+}

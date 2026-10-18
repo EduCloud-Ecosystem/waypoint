@@ -1,0 +1,264 @@
+{
+  "review": "Narrow independent candidate03 D5 lineage re-review",
+  "candidate": "fe4788c47a378e6234648dc4131ec4b870a8e713",
+  "attachment": "ded6f113ea9149f947a41cb7a6d58841cd965211",
+  "generated_at_utc": "2026-10-18T11:32:43.498391+00:00",
+  "disposition": "CLEAR",
+  "scope": "D5 fix and exact narrow change from reviewed candidate02; source engineering clearance only, not execution/merge authorization.",
+  "execution_authorized": false,
+  "findings": [],
+  "resolved_finding": {
+    "id": "D5",
+    "status": "RESOLVED",
+    "source": "research-workspace/qualify_scoped_docker.py",
+    "lines": [
+      298,
+      301
+    ],
+    "assessment": "Final HTTP input and recipe hashes now equal prelaunch binding, and recipe/condition equal the fixed matrix. The same verify_settlement function enforces this during initial settlement, final ledger verification and final acceptance. Prior source checks bind prelaunch fixture/recipe hashes; subsequent export checks preserve the validated HTTP projection."
+  },
+  "provenance": {
+    "candidate": "fe4788c47a378e6234648dc4131ec4b870a8e713",
+    "attachment": "ded6f113ea9149f947a41cb7a6d58841cd965211",
+    "manifest_sha256": "ad701c8d5b164666133a1d06f241a80ab052ccbeb02a48c499a663589e537295",
+    "archive_sha256": "6fcfce9bf3db5b57b4f503574f379123a43739c44fc69f9af9b40a8cc17055b5",
+    "manifest_source_commit": "fe4788c47a378e6234648dc4131ec4b870a8e713",
+    "files": {
+      "environments.json": "9a206b4c96fe7365764b0e5521734a7502d4b72e8acdf6c23a404436ed4614a4",
+      "qualify_scoped_docker.py": "8e66c9fc9a0062891219cc8ca2bd31928f835b63ebd439427137c74a7346a8c4",
+      "images.lock.json": "bf36e6c82b7b89ef438b0be7523e936dd2319b902325b8e91b0df440a2ea33af",
+      "research_workspace/catalog.py": "3ea03e99bd71d61138c4278c72896d79debea1a930770adcfaf8f36eb9c68686",
+      "research_workspace/bounded_export.py": "8d1703a0c59e5a6cb9f916edaca752a436232997279b93f3625f93eebd7bd64b",
+      "research_workspace/store.py": "e8e3dd4cc14e365a04caea9dd26ee903a107e2c67d08ddb81f9729a13850ac8a",
+      "research_workspace/finite_authority.py": "37cfc8b5bbef3864faa8f9e0ee79e27fb87829df76d876ad803c00514fc0557d",
+      "research_workspace/server.py": "fad6079ef7768009fed485cc37af697a0219b08c3ec2c269f2b6962d56deda30",
+      "research_workspace/guard_publication.py": "73c3b5754d1738b34d63f7893a727687a275aa4b9ddc3aedd55435d47dd7def7",
+      "research_workspace/recovery.py": "0c78cf6033a5fc9cabbf9312912009a48f1dc904591c23335d823bbba669fbe6",
+      "research_workspace/sqlite_ownership.py": "3f92b6d885b2acf22eb0d6d1a179d907445f165447bb9bb7f87f18f3f9e1dd5b",
+      "research_workspace/bounded_process.py": "719856121bde1bae521a2f1e589eeb921d78af2c93ff6fdaa6cd417ba8bb3419",
+      "research_workspace/__init__.py": "d8cd56bc22ee978af2e94c63e5f3ac755934c728209cd5b3cceea7b2bc3af6e5",
+      "research_workspace/guarded_recovery.py": "6120a8abb50f38d655a7b87e5f881eff58e4ed99712cb26993f404b22915a117",
+      "research_workspace/reproduction.py": "a00e771b2712c4ae289098418856f3580a3d8fd5396724ecdbd685a9bff8041d",
+      "research_workspace/runtime.py": "768fbe1c8d2610d655c9e89a63fcc4e0e9f5f2c21036ca1dd19bf6c420b88141",
+      "research_workspace/storage_inventory.py": "992f0957b4e9fc10f8152c5b862f1fe4f26050298532e2e18b8c2a6e3e4b0b52",
+      "research_workspace/recipes.py": "c157564229c562cc5fe5ee315e3cb2be74d5588d830e0de6d4c2e7caead2114f",
+      "research_workspace/identity.py": "5bd7f9f1639812837406c6adaf5b90b8aa28179415e02bdbdbfbb8ea055907d8",
+      "research_workspace/evidence.py": "017bc96e79a05592852f851cdbf0b59e65501d974261eb726099293b6e81ed7d",
+      "research_workspace/operation_guard.py": "095dfbc24558fa2419fa65c9687884c5584eb84f0ad7e8d2cc5c176bc92a7757",
+      "research_workspace/__main__.py": "e11240958b801f7e2e214f50e2318a96fc90e5c1e1ce0862fed0b09fac48a677",
+      "tests/test_scoped_docker_qualification.py": "14cfdcce612b4948e95d58234d6fe89a2ed99aa38853bd16c1cf87b4fd7d7e42",
+      "recipes/recipe.R": "a3c06effab96558d8a09068adbfaf2650a3d9ab82b608ea63437dc9076fe3957",
+      "recipes/recipe.py": "549f064aaaa36ee8259f1f8e2902d0dfb15d071fcb6d9b60e52b266a7bbdb922",
+      "static/index.html": "90a62ff893fa35643b5c9b0bb2871751ee86338220f152b543cfa52f0b8fede4",
+      "static/styles.css": "6f7e6a1834808a476b0ab7a34a5c4601a1370ebb62e141763c601fd6c939f048",
+      "static/app.js": "1748ad3ba52fe5617c2b1f498a78bf914976c80fca2971f8acbde893d71bda12",
+      "static/favicon.svg": "883b41d4da89db464d88edfa1737edc53672e4c839d3e2fba93d1469479817cb",
+      "examples/second-project.csv": "0eb98eaefd071f55e7d43d85a15120b4705cf18394f8d5efeb0d3617dbbc6982",
+      "examples/public-fixture.csv": "054ee89fec327e9a9292e1008d465c3190cfe3819a259ddce2d32e9e5a6a5360",
+      "qualification/broker-upgrade/pins.json": "f25096dd58a8d7388834d1b6333276317b0187f46ebd489975097fdfdcd8e35c",
+      "recipes/archive/recipe-r-v1.R": "91db760044f6879d8171d34db57d5138e9255ce4d16bf489c919990dc65da3fd",
+      "evidence/2026-10-18/broker-upgrade/verification.json": "b59a8c9c16c5ff89d1b47a3cdc27d6b2766c7eeda40169094967fcbfc833143f"
+    },
+    "file_count": 34,
+    "archive_matches_manifest": true,
+    "git_object_mismatches": [],
+    "real_marker_absent": true,
+    "real_output_absent": true
+  },
+  "narrow_scope_verification": {
+    "changed_archive_files": [
+      "qualify_scoped_docker.py",
+      "tests/test_scoped_docker_qualification.py"
+    ],
+    "added_archive_files": [],
+    "removed_archive_files": [],
+    "changed_manifest_fields": [
+      "source_archive_sha256",
+      "source_commit",
+      "sources"
+    ],
+    "exercise_unchanged": true,
+    "output_marker_unchanged": true,
+    "broker_prerequisites_unchanged": true,
+    "operator_doc_sha256": "fe05e9415500e6974a60f145cfc6709aa8a05b6df7bdedf23e4ef78fd360e62c"
+  },
+  "validation": {
+    "exact_prior_witness_sha256": "6aea2aee41e725e02b7eb7cd219a122f0e4e19ef98e4997ffeb525f558f9f81b",
+    "fixed_witnesses": {
+      "candidate": "fe4788c47a378e6234648dc4131ec4b870a8e713",
+      "mode": "fixed",
+      "original_witness_sha256": "6aea2aee41e725e02b7eb7cd219a122f0e4e19ef98e4997ffeb525f558f9f81b",
+      "historical_script_candidate_label": "09418f231187a5465ba9d0b8546b3b59514959e9",
+      "actual_source": "/Users/gregchism/Documents/Codex/2026-10-18/waypoint-scoped-docker-independent-review/final-fe4788c/source/research-workspace",
+      "in_memory_removed_statements": [],
+      "expectations_met": true,
+      "results": [
+        {
+          "case": "input",
+          "status": "FAIL",
+          "failure": {
+            "type": "ValueError",
+            "message": "Final HTTP lineage differs from prelaunch binding or fixed matrix"
+          },
+          "attempts": 1,
+          "charged_cpu_seconds": 30,
+          "structural_exports_valid": [],
+          "mismatch_count": 0
+        },
+        {
+          "case": "recipe",
+          "status": "FAIL",
+          "failure": {
+            "type": "ValueError",
+            "message": "Final HTTP lineage differs from prelaunch binding or fixed matrix"
+          },
+          "attempts": 1,
+          "charged_cpu_seconds": 30,
+          "structural_exports_valid": [],
+          "mismatch_count": 0
+        }
+      ],
+      "scope": "Temporary synthetic fixture only. No source files changed; reversion is in-memory function substitution only."
+    },
+    "deliberate_reversion_witnesses": {
+      "candidate": "fe4788c47a378e6234648dc4131ec4b870a8e713",
+      "mode": "reverted",
+      "original_witness_sha256": "6aea2aee41e725e02b7eb7cd219a122f0e4e19ef98e4997ffeb525f558f9f81b",
+      "historical_script_candidate_label": "09418f231187a5465ba9d0b8546b3b59514959e9",
+      "actual_source": "/Users/gregchism/Documents/Codex/2026-10-18/waypoint-scoped-docker-independent-review/final-fe4788c/source/research-workspace",
+      "in_memory_removed_statements": [
+        {
+          "lineno": 299,
+          "end_lineno": 301
+        }
+      ],
+      "expectations_met": true,
+      "results": [
+        {
+          "case": "input",
+          "status": "PASS",
+          "failure": null,
+          "attempts": 4,
+          "charged_cpu_seconds": 120,
+          "structural_exports_valid": [
+            true,
+            true
+          ],
+          "mismatch_count": 4
+        },
+        {
+          "case": "recipe",
+          "status": "PASS",
+          "failure": null,
+          "attempts": 4,
+          "charged_cpu_seconds": 120,
+          "structural_exports_valid": [
+            true,
+            true
+          ],
+          "mismatch_count": 4
+        }
+      ],
+      "scope": "Temporary synthetic fixture only. No source files changed; reversion is in-memory function substitution only."
+    },
+    "focused_tests": [
+      {
+        "name": "fixed",
+        "command": [
+          "python3",
+          "replay_lineage_witness.py",
+          "fixed"
+        ],
+        "returncode": 0,
+        "seconds": 4.196120249980595,
+        "log_sha256": "710535baf6ab6fb6c325d1f5e2478a4ddef4d811b5ccbc8819beda966c9e66ff"
+      },
+      {
+        "name": "reverted",
+        "command": [
+          "python3",
+          "replay_lineage_witness.py",
+          "reverted"
+        ],
+        "returncode": 0,
+        "seconds": 6.214138749986887,
+        "log_sha256": "096f6f5b068a55ff735f307b1573704de2ad312694167fe21dcd3bc60f7fe515"
+      },
+      {
+        "name": "focused-normal",
+        "command": [
+          "python3",
+          "-W",
+          "error::ResourceWarning",
+          "-m",
+          "unittest",
+          "-v",
+          "test_scoped_docker_qualification.OracleTests.test_complete_bound_synthetic_observations_pass",
+          "test_scoped_docker_qualification.OracleTests.test_final_http_lineage_must_match_prelaunch_binding_and_matrix",
+          "test_scoped_docker_qualification.SimulatedWiringTests.test_real_http_v4_worker_wiring_with_simulated_provider",
+          "test_scoped_docker_qualification.SimulatedWiringTests.test_shared_http_and_export_lineage_drift_refuses_after_first_attempt"
+        ],
+        "returncode": 0,
+        "seconds": 8.298314167011995,
+        "log_sha256": "3151e8f7083185b32aa1cc3d3ef97cae9ae1b1e14487eaf252a7d297811103b0"
+      },
+      {
+        "name": "focused-optimized",
+        "command": [
+          "python3",
+          "-O",
+          "-W",
+          "error::ResourceWarning",
+          "-m",
+          "unittest",
+          "-v",
+          "test_scoped_docker_qualification.OracleTests.test_complete_bound_synthetic_observations_pass",
+          "test_scoped_docker_qualification.OracleTests.test_final_http_lineage_must_match_prelaunch_binding_and_matrix",
+          "test_scoped_docker_qualification.SimulatedWiringTests.test_real_http_v4_worker_wiring_with_simulated_provider",
+          "test_scoped_docker_qualification.SimulatedWiringTests.test_shared_http_and_export_lineage_drift_refuses_after_first_attempt"
+        ],
+        "returncode": 0,
+        "seconds": 8.358987666957546,
+        "log_sha256": "46ebab6de2f3005d3a4e2ba72d3f419ad720f5faf4dc55e42e430984f160e6eb"
+      }
+    ],
+    "focused_scope": "Four relevant baseline and D5 tests independently run in normal and optimized modes, all pass. Other 20 focused tests/full suite were not rerun in this narrow pass.",
+    "fixed_checks": "Both exact original witnesses reject after the first synthetic attempt with known charge30 and accounting_complete false.",
+    "mutation_sensitivity": "Removing only the new require statement in an isolated in-memory function reopens both original witnesses: PASS, four attempts,120 charge and four lineage mismatches. No source bytes are modified."
+  },
+  "source_changes_after_review": [],
+  "previous_review_sha256": "842a4b4b2217ca1c2e0b3463d24df6e4ee7599e32ca1a4626a81bf915d687047",
+  "real_marker_absent": true,
+  "real_output_absent": true,
+  "limits": [
+    "The 34-file candidate archive was checked against its manifest and exact fe4788c git objects. Only harness and its tests differ from candidate02 within this archive; operator documentation is retained separately from its exact git object.",
+    "The manifest differs from candidate02 only in source commit, source hashes and archive hash. Exercise identity, fixed output/marker, broker provenance/prerequisites and allowance are unchanged.",
+    "No real Docker, broker, production CLI init, prepare/run, provider, image or protected-worktree operation occurred. All experiments use temporary synthetic fixture stores and mocked external effects.",
+    "The previous frozen reviews and witnesses remain unchanged.",
+    "Coordinating review, Outfitter clearance, final CI and actual execution evidence remain separate requirements. This report grants no additional attempt, retry, refund or output allowance."
+  ],
+  "evidence_sha256": {
+    "SCOPED-DOCKER-QUALIFICATION.md": "fe05e9415500e6974a60f145cfc6709aa8a05b6df7bdedf23e4ef78fd360e62c",
+    "capture-provenance.json": "cd786bad6f7b2692f1ceacc21be8d1c3f018e28f698885a303dfccdd2524c18c",
+    "fixed/independent_lineage_projection_probe.py": "6aea2aee41e725e02b7eb7cd219a122f0e4e19ef98e4997ffeb525f558f9f81b",
+    "fixed/lineage-input-report.json": "ec5351452d18ec4c74230548d5980ec482ca116e21f16f4d660c3363a1bf4b35",
+    "fixed/lineage-projection-results.json": "c20d40bc79209415487b12710fa9c320238cec33e129bac35a8f155f1cd274e2",
+    "fixed/lineage-recipe-report.json": "5ba9fbff36ad9797188011fbb89275af401466021de1aabffbd4304042ef7aea",
+    "fixed/replay-summary.json": "e5f9720a0c00545130b2aafc96ffc52f74032e279e0bed8a75537b9df8178a36",
+    "fixed.log": "710535baf6ab6fb6c325d1f5e2478a4ddef4d811b5ccbc8819beda966c9e66ff",
+    "focused-normal.log": "3151e8f7083185b32aa1cc3d3ef97cae9ae1b1e14487eaf252a7d297811103b0",
+    "focused-optimized.log": "46ebab6de2f3005d3a4e2ba72d3f419ad720f5faf4dc55e42e430984f160e6eb",
+    "manifest.json": "ad701c8d5b164666133a1d06f241a80ab052ccbeb02a48c499a663589e537295",
+    "narrow-scope-verification.json": "94b7d2d538c280ba78659208d2fea0037ed0027b9818dcf72b77565bba2bccb1",
+    "narrow.diff": "f04ece83bf187e3205e385fcb58a177a8fe460b9e60e8d1ef4c24810f2529a04",
+    "replay_lineage_witness.py": "175113fa9a1df5213175a18d40343cfeb6c8524634fd37e934d9a2f6e422235b",
+    "reverted/independent_lineage_projection_probe.py": "6aea2aee41e725e02b7eb7cd219a122f0e4e19ef98e4997ffeb525f558f9f81b",
+    "reverted/lineage-input-report.json": "ef11a5c1df482d63fa17b5365112d064c28d6dcac378a8a5610c398419709cdd",
+    "reverted/lineage-projection-results.json": "9430e854fbba849e96466dde4975048893bd516c08cd58d360d768cef61b8745",
+    "reverted/lineage-recipe-report.json": "00312b1a9f6eecb430c927e37e20e103816a9f1a4da8d84c61d3e33ecca2efbb",
+    "reverted/replay-summary.json": "47a166b8b621f81ec5f80ee9501897a42d010fe86185ad05e96698d59c88f47b",
+    "reverted.log": "096f6f5b068a55ff735f307b1573704de2ad312694167fe21dcd3bc60f7fe515",
+    "source.tar.gz": "6fcfce9bf3db5b57b4f503574f379123a43739c44fc69f9af9b40a8cc17055b5",
+    "test-execution.json": "0a9a3f2081e5846771eb2f44f9758ad53130f33011aa3c951c904a1682ce7722"
+  }
+}

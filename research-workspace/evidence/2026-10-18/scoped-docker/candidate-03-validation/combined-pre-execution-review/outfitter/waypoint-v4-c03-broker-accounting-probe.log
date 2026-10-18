@@ -1,0 +1,21 @@
+test_accounting_observation_cannot_erase_a_known_charge (test_scoped_docker_qualification.OracleTests.test_accounting_observation_cannot_erase_a_known_charge) ... ok
+test_binary_ledger_request_project_image_and_manifest_binding_failures (test_scoped_docker_qualification.OracleTests.test_binary_ledger_request_project_image_and_manifest_binding_failures) ... ok
+test_complete_bound_synthetic_observations_pass (test_scoped_docker_qualification.OracleTests.test_complete_bound_synthetic_observations_pass) ... ok
+test_dispatch_and_monotonic_accounting_observations_are_required (test_scoped_docker_qualification.OracleTests.test_dispatch_and_monotonic_accounting_observations_are_required) ... ok
+test_empty_partial_duplicate_extra_or_false_controls_fail (test_scoped_docker_qualification.OracleTests.test_empty_partial_duplicate_extra_or_false_controls_fail) ... ok
+test_final_http_lineage_must_match_prelaunch_binding_and_matrix (test_scoped_docker_qualification.OracleTests.test_final_http_lineage_must_match_prelaunch_binding_and_matrix) ... ok
+test_generic_receipt_and_failure_marker_cannot_become_pass (test_scoped_docker_qualification.OracleTests.test_generic_receipt_and_failure_marker_cannot_become_pass) ... ok
+test_independent_numeric_oracle_checks_both_output_and_saved_result (test_scoped_docker_qualification.OracleTests.test_independent_numeric_oracle_checks_both_output_and_saved_result) ... ok
+test_ledger_or_application_disagreement_fails (test_scoped_docker_qualification.OracleTests.test_ledger_or_application_disagreement_fails) ... ok
+test_manifest_captures_every_runtime_source_and_disabled_catalog (test_scoped_docker_qualification.OracleTests.test_manifest_captures_every_runtime_source_and_disabled_catalog) ... ok
+test_partial_duplicate_or_fifth_attempt_fails (test_scoped_docker_qualification.OracleTests.test_partial_duplicate_or_fifth_attempt_fails) ... ok
+test_zero_partial_float_bool_refund_or_unknown_charge_fails (test_scoped_docker_qualification.OracleTests.test_zero_partial_float_bool_refund_or_unknown_charge_fails) ... ok
+
+----------------------------------------------------------------------
+Ran 12 tests in 0.035s
+
+OK
+{"accounting_complete": false, "outcome": "ACCOUNTING_OBSERVED_CLEANUP_NOT_INDEPENDENTLY_VERIFIED", "probe": "cleanup_unavailable", "report_charge": 30, "retained_ledger_charge": 30, "retained_receipt_charge": 30, "status": "PASS"}
+{"identity_mismatch_retains_charge": true, "invalid_amount_cases": 4, "lower_charge_flagged": true, "missing_record_retains_charge": true, "probe": "monotonic_charge_and_unresolved_exposure", "status": "PASS"}
+{"probe": "fifth_attempt_refuses_before_read_or_dispatch", "status": "PASS"}
+{"actual_docker_attempts": 0, "marker_tests_excluded": ["test_exclusive_output_and_fifth_attempt_refuse_without_effect", "test_exercise_marker_survives_missing_or_changed_output"], "markers_created": 0, "pure_oracle_tests": 12, "real_process_calls": 0, "scratch_probes": 3, "status": "PASS"}

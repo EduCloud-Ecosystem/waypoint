@@ -1,0 +1,31 @@
+{
+  "candidate": "09418f231187a5465ba9d0b8546b3b59514959e9",
+  "scope": "Only temporary synthetic fixture. All CLI/provider/Docker/checkpoint effects mocked; production state and sources unchanged.",
+  "expected": "FAIL: final records and exported bytes must retain the prelaunch input/recipe hashes.",
+  "results": [
+    {
+      "case": "input",
+      "status": "FAIL",
+      "failure": {
+        "type": "ValueError",
+        "message": "Final HTTP lineage differs from prelaunch binding or fixed matrix"
+      },
+      "attempts": 1,
+      "charged_cpu_seconds": 30,
+      "structural_exports_valid": [],
+      "mismatch_count": 0
+    },
+    {
+      "case": "recipe",
+      "status": "FAIL",
+      "failure": {
+        "type": "ValueError",
+        "message": "Final HTTP lineage differs from prelaunch binding or fixed matrix"
+      },
+      "attempts": 1,
+      "charged_cpu_seconds": 30,
+      "structural_exports_valid": [],
+      "mismatch_count": 0
+    }
+  ]
+}
