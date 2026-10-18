@@ -159,3 +159,8 @@ unqualified for that profile. These limits do not establish storage capacity.
 The [SQLite and guard protocol qualification](SQLITE-GUARD-PROTOCOL.md) separates
 per-save ceilings from unknown WAL, reader and retry-file growth. Its proposed
 coordination rules require further decisions before any runtime implementation.
+
+The fresh [bounded export profile](BOUNDED-EXPORT.md) scopes export database
+readers to manifest capture and final authorization. Artifact reads, ZIP
+construction and HTTP streaming hold no export reader. Existing profiles retain
+their behavior; this opt-in adds no storage quota or recovery enablement.

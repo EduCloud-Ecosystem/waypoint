@@ -130,7 +130,7 @@ def database_digest(db):
     schema = [tuple(row) for row in db.execute("SELECT type,name,tbl_name,sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' ORDER BY type,name")]
     guarded = db.execute("PRAGMA application_id").fetchone()[0] == APPLICATION_ID
     version = db.execute("PRAGMA user_version").fetchone()[0]
-    if version not in (0, finite.USER_VERSION) or (version and not guarded):
+    if version not in {0} | finite.USER_VERSIONS or (version and not guarded):
         raise ValueError("Unsupported database profile for recovery.")
     tables = TABLES + ("operation_authority", "operation_receipts") if guarded else TABLES
     if guarded:
@@ -145,7 +145,8 @@ def database_digest(db):
         raise ValueError("The workspace database failed its integrity check.")
     digest = hashlib.sha256(canonical(schema).encode())
     if version:
-        digest.update(canonical({"user_version": version, "logical_authority": finite.profile_digest()}).encode())
+        profile_version = 1 if version == finite.USER_VERSION else 2
+        digest.update(canonical({"user_version": version, "logical_authority": finite.profile_digest(profile_version)}).encode())
     for table in tables:
         digest.update(table.encode())
         for row in db.execute(f"SELECT rowid,* FROM {table} ORDER BY rowid"):

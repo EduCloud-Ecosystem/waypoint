@@ -1,0 +1,48 @@
+test_after_copy_file_removal_keeps_verified_bytes (test_bounded_export.BoundedExportTests.test_after_copy_file_removal_keeps_verified_bytes) ... ok
+test_blocked_artifacts_and_zip_release_readers_for_safety (test_bounded_export.BoundedExportTests.test_blocked_artifacts_and_zip_release_readers_for_safety) ... ok
+test_cli_profiles_are_mutually_exclusive_before_state_creation (test_bounded_export.BoundedExportTests.test_cli_profiles_are_mutually_exclusive_before_state_creation) ... ok
+test_exact_fresh_profile_and_old_profile_compatibility (test_bounded_export.BoundedExportTests.test_exact_fresh_profile_and_old_profile_compatibility) ... ok
+test_final_check_rejects_membership_logout_expiry_close_and_new_run (test_bounded_export.BoundedExportTests.test_final_check_rejects_membership_logout_expiry_close_and_new_run) ... ok
+test_http_stream_has_no_readers_or_locks_and_no_late_retraction (test_bounded_export.BoundedExportTests.test_http_stream_has_no_readers_or_locks_and_no_late_retraction) ... ERROR
+test_manifest_bounds_before_parse_or_artifacts (test_bounded_export.BoundedExportTests.test_manifest_bounds_before_parse_or_artifacts) ... ok
+test_membership_change_reverted_before_final_check_is_current_equality (test_bounded_export.BoundedExportTests.test_membership_change_reverted_before_final_check_is_current_equality) ... ok
+test_missing_or_changed_artifacts_refuse_without_mutation (test_bounded_export.BoundedExportTests.test_missing_or_changed_artifacts_refuse_without_mutation) ... ok
+test_mixed_stripped_and_stale_bindings_refuse (test_bounded_export.BoundedExportTests.test_mixed_stripped_and_stale_bindings_refuse) ... ok
+test_oidc_and_direct_stripped_checkpoint_recovery_refuse (test_bounded_export.BoundedExportTests.test_oidc_and_direct_stripped_checkpoint_recovery_refuse) ... ok
+test_read_zip_and_final_failures_release_resources_without_intents (test_bounded_export.BoundedExportTests.test_read_zip_and_final_failures_release_resources_without_intents) ... ok
+test_safe_artifact_traversal_and_descriptor_cleanup (test_bounded_export.BoundedExportTests.test_safe_artifact_traversal_and_descriptor_cleanup) ... ok
+test_session_required_and_subject_cannot_substitute (test_bounded_export.BoundedExportTests.test_session_required_and_subject_cannot_substitute) ... ok
+test_uncertain_descriptor_close_attempts_all_others_once (test_bounded_export.BoundedExportTests.test_uncertain_descriptor_close_attempts_all_others_once) ... FAIL
+test_unchanged_running_and_successful_exports_preserve_private_boundary (test_bounded_export.BoundedExportTests.test_unchanged_running_and_successful_exports_preserve_private_boundary) ... ERROR
+
+======================================================================
+ERROR: test_http_stream_has_no_readers_or_locks_and_no_late_retraction (test_bounded_export.BoundedExportTests.test_http_stream_has_no_readers_or_locks_and_no_late_retraction)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-bounded-export/research-workspace/tests/test_bounded_export.py", line 338, in test_http_stream_has_no_readers_or_locks_and_no_late_retraction
+    self.assertEqual(evidence.verify_bundle(result[0][1])["format"], evidence.FORMAT)
+                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+KeyError: 'format'
+
+======================================================================
+ERROR: test_unchanged_running_and_successful_exports_preserve_private_boundary (test_bounded_export.BoundedExportTests.test_unchanged_running_and_successful_exports_preserve_private_boundary)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-bounded-export/research-workspace/tests/test_bounded_export.py", line 161, in test_unchanged_running_and_successful_exports_preserve_private_boundary
+    self.assertEqual(evidence.verify_bundle(payload)["format"], evidence.FORMAT)
+                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+KeyError: 'format'
+
+======================================================================
+FAIL: test_uncertain_descriptor_close_attempts_all_others_once (test_bounded_export.BoundedExportTests.test_uncertain_descriptor_close_attempts_all_others_once)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-bounded-export/research-workspace/tests/test_bounded_export.py", line 354, in test_uncertain_descriptor_close_attempts_all_others_once
+    with self.assertRaises(AccessError): self.store.session(token=self.token)
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+AssertionError: AccessError not raised
+
+----------------------------------------------------------------------
+Ran 16 tests in 2.519s
+
+FAILED (failures=1, errors=2)

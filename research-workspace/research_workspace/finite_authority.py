@@ -16,6 +16,13 @@ FORMAT = "educloud-finite-authority-v1"
 GUARD_FORMAT = "educloud-operation-guard-v2"
 MODE = "local-finite-public-data-v1"
 USER_VERSION = 0x45464131
+EXPORT_MODE = "local-finite-public-data-v2"
+EXPORT_FORMAT = "educloud-finite-authority-v2"
+EXPORT_GUARD_FORMAT = "educloud-operation-guard-v3"
+EXPORT_USER_VERSION = 0x45464132
+MODES = {MODE, EXPORT_MODE}
+GUARD_FORMATS = {GUARD_FORMAT, EXPORT_GUARD_FORMAT}
+USER_VERSIONS = {USER_VERSION, EXPORT_USER_VERSION}
 ROW_LIMITS = {"users": 128, "projects": 20, "members": 1024, "runs": 1000,
               "sessions": 256, "sessions_per_subject": 8}
 ENCODED_LIMITS = {"config": 65536, "project": 32768, "run": 262144,
@@ -37,14 +44,34 @@ def encode(value):
     return json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
 
 
-def profile():
-    return {"format": FORMAT, "row_limits": dict(ROW_LIMITS),
+def profile(version=1):
+    if type(version) is not int or version not in (1, 2):
+        raise InvalidProfile("Unsupported finite authority version.")
+    result = {"format": FORMAT if version == 1 else EXPORT_FORMAT, "row_limits": dict(ROW_LIMITS),
             "encoded_limits": dict(ENCODED_LIMITS), "path_utf8_bytes": PATH_LIMIT,
             "counter_limit": COUNTER_LIMIT}
+    if version == 2:
+        result["export_protocol"] = "educloud-bounded-export-v1"
+    return result
 
 
-def profile_digest():
-    return hashlib.sha256(encode(profile())).hexdigest()
+def profile_digest(version=1):
+    return hashlib.sha256(encode(profile(version))).hexdigest()
+
+
+def binding_version(binding):
+    if not isinstance(binding, dict):
+        raise InvalidProfile("Missing finite authority binding.")
+    for version, name in ((1, GUARD_FORMAT), (2, EXPORT_GUARD_FORMAT)):
+        if (binding.get("format") == name
+                and binding.get("logical_authority_sha256") == profile_digest(version)):
+            return version
+    raise InvalidProfile("Unsupported finite authority binding.")
+
+
+def database_version(version):
+    profile(version)  # Reject unknown versions, including booleans.
+    return USER_VERSION if version == 1 else EXPORT_USER_VERSION
 
 
 def bounded(value, kind):
@@ -92,12 +119,16 @@ def validate_config(config, *, binding=None):
     allowed = {"version", "mode", "broker", "images", "total_budget_cpu_seconds",
                "operation_guard", "logical_authority", "recovery_retired"}
     required = {"version", "mode", "broker", "images", "total_budget_cpu_seconds", "logical_authority"}
+    version = next((v for v in (1, 2) if isinstance(config, dict)
+                    and encode(config.get("logical_authority")) == encode(profile(v))), None)
+    mode = MODE if version == 1 else EXPORT_MODE
     if (not isinstance(config, dict) or set(config) - allowed or not required <= set(config)
-            or config.get("mode") not in {MODE, "recovery-held", "retired"}
-            or encode(config.get("logical_authority")) != encode(profile())):
+            or version is None or config.get("mode") not in {mode, "recovery-held", "retired"}):
         raise InvalidProfile("Missing or unsupported finite authority profile; unrestricted fallback is disabled.")
     if binding is not None and config.get("operation_guard") != binding:
         raise InvalidProfile("The configuration and finite authority binding differ.")
+    if binding is not None and binding_version(binding) != version:
+        raise InvalidProfile("The policy and finite authority binding differ.")
     bounded(config, "config")
     if (type(config["version"]) is not int or config["version"] != 1
             or type(config["total_budget_cpu_seconds"]) is not int
@@ -107,12 +138,12 @@ def validate_config(config, *, binding=None):
     if not isinstance(config.get("broker"), str):
         raise InvalidProfile("The finite profile requires a broker path.")
     bounded_path(config["broker"])
+    return version
 
 
 def validate_binding(root, binding, db):
-    if (db.execute("PRAGMA user_version").fetchone()[0] != USER_VERSION
-            or binding.get("format") != GUARD_FORMAT
-            or binding.get("logical_authority_sha256") != profile_digest()):
+    version = binding_version(binding)
+    if db.execute("PRAGMA user_version").fetchone()[0] != database_version(version):
         raise InvalidProfile("The database and finite authority binding differ.")
     authority = db.execute("SELECT authority_id,sequence FROM operation_authority").fetchmany(2)
     if (len(authority) != 1 or authority[0][0] != binding.get("authority_id")
@@ -128,8 +159,8 @@ def refuse_unqualified_recovery(archive):
     binding = config.get("operation_guard")
     with closing(sqlite3.connect((Path(archive) / "workspace.sqlite3").as_uri() + "?mode=ro&immutable=1", uri=True)) as db:
         version = db.execute("PRAGMA user_version").fetchone()[0]
-    if (version or "logical_authority" in config or config.get("mode") == MODE
-            or isinstance(binding, dict) and binding.get("format") == GUARD_FORMAT):
+    if (version or "logical_authority" in config or config.get("mode") in MODES
+            or isinstance(binding, dict) and binding.get("format") in GUARD_FORMATS):
         raise ValueError("Finite-profile restore/cutover is not qualified. The checkpoint and source are preserved; no destination or provider effect was created.")
 
 

@@ -1,0 +1,59 @@
+test_after_copy_file_removal_keeps_verified_bytes (test_bounded_export.BoundedExportTests.test_after_copy_file_removal_keeps_verified_bytes) ... ok
+test_blocked_artifacts_and_zip_release_readers_for_safety (test_bounded_export.BoundedExportTests.test_blocked_artifacts_and_zip_release_readers_for_safety) ... ok
+test_cli_profiles_are_mutually_exclusive_before_state_creation (test_bounded_export.BoundedExportTests.test_cli_profiles_are_mutually_exclusive_before_state_creation) ... ok
+test_exact_fresh_profile_and_old_profile_compatibility (test_bounded_export.BoundedExportTests.test_exact_fresh_profile_and_old_profile_compatibility) ... ok
+test_final_check_rejects_membership_logout_expiry_close_and_new_run (test_bounded_export.BoundedExportTests.test_final_check_rejects_membership_logout_expiry_close_and_new_run) ... ok
+test_http_stream_has_no_readers_or_locks_and_no_late_retraction (test_bounded_export.BoundedExportTests.test_http_stream_has_no_readers_or_locks_and_no_late_retraction) ... ERROR
+test_manifest_bounds_before_parse_or_artifacts (test_bounded_export.BoundedExportTests.test_manifest_bounds_before_parse_or_artifacts) ... ok
+test_membership_change_reverted_before_final_check_is_current_equality (test_bounded_export.BoundedExportTests.test_membership_change_reverted_before_final_check_is_current_equality) ... ok
+test_missing_or_changed_artifacts_refuse_without_mutation (test_bounded_export.BoundedExportTests.test_missing_or_changed_artifacts_refuse_without_mutation) ... ok
+test_mixed_stripped_and_stale_bindings_refuse (test_bounded_export.BoundedExportTests.test_mixed_stripped_and_stale_bindings_refuse) ... ok
+test_oidc_and_direct_stripped_checkpoint_recovery_refuse (test_bounded_export.BoundedExportTests.test_oidc_and_direct_stripped_checkpoint_recovery_refuse) ... ok
+test_read_zip_and_final_failures_release_resources_without_intents (test_bounded_export.BoundedExportTests.test_read_zip_and_final_failures_release_resources_without_intents) ... ok
+test_safe_artifact_traversal_and_descriptor_cleanup (test_bounded_export.BoundedExportTests.test_safe_artifact_traversal_and_descriptor_cleanup) ... ok
+test_session_required_and_subject_cannot_substitute (test_bounded_export.BoundedExportTests.test_session_required_and_subject_cannot_substitute) ... ok
+test_unchanged_running_and_successful_exports_preserve_private_boundary (test_bounded_export.BoundedExportTests.test_unchanged_running_and_successful_exports_preserve_private_boundary) ... ERROR
+test_all_caps_preserve_safety_and_conservative_settlement (test_finite_authority.FiniteAuthorityTests.test_all_caps_preserve_safety_and_conservative_settlement) ... ok
+test_all_recovery_entrypoints_reject_db_marker_before_effects (test_finite_authority.FiniteAuthorityTests.test_all_recovery_entrypoints_reject_db_marker_before_effects) ... ok
+test_binding_and_profile_are_explicit_and_not_a_quota (test_finite_authority.FiniteAuthorityTests.test_binding_and_profile_are_explicit_and_not_a_quota) ... ok
+test_checkpoint_preserves_profile_restore_refuses_before_effects (test_finite_authority.FiniteAuthorityTests.test_checkpoint_preserves_profile_restore_refuses_before_effects) ... ok
+test_closed_project_history_and_idempotency_at_cap (test_finite_authority.FiniteAuthorityTests.test_closed_project_history_and_idempotency_at_cap) ... ok
+test_competing_final_project_membership_and_run_slots (test_finite_authority.FiniteAuthorityTests.test_competing_final_project_membership_and_run_slots) ... ok
+test_database_authority_identity_is_required_before_safety (test_finite_authority.FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety) ... ok
+test_encoded_limits_use_escaped_bytes_and_precede_result_write (test_finite_authority.FiniteAuthorityTests.test_encoded_limits_use_escaped_bytes_and_precede_result_write) ... ok
+test_escaped_receipt_overflow_retains_unknown_without_file (test_finite_authority.FiniteAuthorityTests.test_escaped_receipt_overflow_retains_unknown_without_file) ... ok
+test_every_encoded_ceiling_and_project_refusal_before_provider (test_finite_authority.FiniteAuthorityTests.test_every_encoded_ceiling_and_project_refusal_before_provider) ... ok
+test_guard_profile_digest_cannot_be_stripped (test_finite_authority.FiniteAuthorityTests.test_guard_profile_digest_cannot_be_stripped) ... ok
+test_missing_or_changed_binding_refuses_open_and_stale_writer (test_finite_authority.FiniteAuthorityTests.test_missing_or_changed_binding_refuses_open_and_stale_writer) ... ok
+test_oversize_terminal_keeps_prior_record_and_guard_hold (test_finite_authority.FiniteAuthorityTests.test_oversize_terminal_keeps_prior_record_and_guard_hold) ... ok
+test_project_initialization_keeps_owner_membership_slot (test_finite_authority.FiniteAuthorityTests.test_project_initialization_keeps_owner_membership_slot) ... ok
+test_run_history_cap_idempotency_and_settlement (test_finite_authority.FiniteAuthorityTests.test_run_history_cap_idempotency_and_settlement) ... ok
+test_signin_cap_invalid_keys_and_last_slot_compete (test_finite_authority.FiniteAuthorityTests.test_signin_cap_invalid_keys_and_last_slot_compete) ... ok
+test_total_live_session_cap_and_expiry (test_finite_authority.FiniteAuthorityTests.test_total_live_session_cap_and_expiry) ... ok
+test_unqualified_profiles_and_oversize_paths_refuse_before_creation (test_finite_authority.FiniteAuthorityTests.test_unqualified_profiles_and_oversize_paths_refuse_before_creation) ... ok
+test_user_history_cap_and_competing_final_slot (test_finite_authority.FiniteAuthorityTests.test_user_history_cap_and_competing_final_slot) ... ok
+test_valid_interruption_keeps_sessions_and_safety_available (test_finite_authority.FiniteAuthorityTests.test_valid_interruption_keeps_sessions_and_safety_available) ... ok
+test_viewer_insertion_is_admission_demotion_and_removal_are_safety (test_finite_authority.FiniteAuthorityTests.test_viewer_insertion_is_admission_demotion_and_removal_are_safety) ... ok
+
+======================================================================
+ERROR: test_http_stream_has_no_readers_or_locks_and_no_late_retraction (test_bounded_export.BoundedExportTests.test_http_stream_has_no_readers_or_locks_and_no_late_retraction)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-bounded-export/research-workspace/tests/test_bounded_export.py", line 338, in test_http_stream_has_no_readers_or_locks_and_no_late_retraction
+    self.assertEqual(evidence.verify_bundle(result[0][1])["status"], "PASS")
+                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+KeyError: 'status'
+
+======================================================================
+ERROR: test_unchanged_running_and_successful_exports_preserve_private_boundary (test_bounded_export.BoundedExportTests.test_unchanged_running_and_successful_exports_preserve_private_boundary)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-bounded-export/research-workspace/tests/test_bounded_export.py", line 161, in test_unchanged_running_and_successful_exports_preserve_private_boundary
+    self.assertEqual(evidence.verify_bundle(payload)["status"], "PASS")
+                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+KeyError: 'status'
+
+----------------------------------------------------------------------
+Ran 36 tests in 8.328s
+
+FAILED (errors=2)

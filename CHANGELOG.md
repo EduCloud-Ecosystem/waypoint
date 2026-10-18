@@ -1,5 +1,14 @@
 # CHANGELOG.md: Document history for the EduCloud hosting layer repo
 
+## 2026-10-18: Scoped readers for a fresh export profile
+
+- Add an explicit local-key export profile with independently bound policy,
+  guard and database versions; preserve existing finite and legacy profiles.
+- Close export readers before bounded artifact reads and bundle construction,
+  then recheck exact private manifest and local session authority before return.
+- Preserve unknown charges, disabled sources, prior evidence and recovery
+  refusals; add no quota, checkpoint, default change or accepted-store migration.
+
 ## 2026-10-18: SQLite and guard protocol qualification
 
 - Pin unchanged production writers and qualify disposable held-reader WAL,

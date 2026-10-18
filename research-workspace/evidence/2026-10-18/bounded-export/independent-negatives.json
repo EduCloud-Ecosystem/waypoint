@@ -1,0 +1,44 @@
+{
+  "source_sha256": "2900079a2f4bcd19ed09a7e27ee1eaa5c0b49e8ab4967eb7c8adf0dd026e22dc",
+  "test_sha256": "71879537a866ac3de9082adb9a98d67bca86c1a954b28d9bcac47ad5eb1d997b",
+  "observations": [
+    {
+      "name": "capture_reader_survives_into_artifact_stage",
+      "detected_failures": 1,
+      "errors": 0,
+      "failure_cases": [
+        "test_blocked_artifacts_and_zip_release_readers_for_safety (test_bounded_export.BoundedExportTests.test_blocked_artifacts_and_zip_release_readers_for_safety) (stage='artifact', action='revoke')"
+      ]
+    },
+    {
+      "name": "final_authorization_omitted",
+      "detected_failures": 6,
+      "errors": 0,
+      "failure_cases": [
+        "test_final_check_rejects_membership_logout_expiry_close_and_new_run (test_bounded_export.BoundedExportTests.test_final_check_rejects_membership_logout_expiry_close_and_new_run) (action='remove')",
+        "test_final_check_rejects_membership_logout_expiry_close_and_new_run (test_bounded_export.BoundedExportTests.test_final_check_rejects_membership_logout_expiry_close_and_new_run) (action='demote')",
+        "test_final_check_rejects_membership_logout_expiry_close_and_new_run (test_bounded_export.BoundedExportTests.test_final_check_rejects_membership_logout_expiry_close_and_new_run) (action='logout')",
+        "test_final_check_rejects_membership_logout_expiry_close_and_new_run (test_bounded_export.BoundedExportTests.test_final_check_rejects_membership_logout_expiry_close_and_new_run) (action='expire')",
+        "test_final_check_rejects_membership_logout_expiry_close_and_new_run (test_bounded_export.BoundedExportTests.test_final_check_rejects_membership_logout_expiry_close_and_new_run) (action='close')",
+        "test_final_check_rejects_membership_logout_expiry_close_and_new_run (test_bounded_export.BoundedExportTests.test_final_check_rejects_membership_logout_expiry_close_and_new_run) (action='new-run')"
+      ]
+    },
+    {
+      "name": "cancel_requested_removed_from_private_comparison",
+      "detected_failures": 2,
+      "errors": 0,
+      "failure_cases": [
+        "test_blocked_artifacts_and_zip_release_readers_for_safety (test_bounded_export.BoundedExportTests.test_blocked_artifacts_and_zip_release_readers_for_safety) (stage='artifact', action='cancel')",
+        "test_blocked_artifacts_and_zip_release_readers_for_safety (test_bounded_export.BoundedExportTests.test_blocked_artifacts_and_zip_release_readers_for_safety) (stage='zip', action='cancel')"
+      ]
+    },
+    {
+      "name": "fixed_close_failure_attempts_every_descriptor_once",
+      "passed": true,
+      "opened": 3,
+      "close_attempts": 3,
+      "remaining_open": 0
+    }
+  ],
+  "scope": "In-memory negative mutations only; no repository edits; disposable resources closed."
+}

@@ -1,0 +1,9 @@
+{
+  "bounded_export_sha256": "bd561a93a577bd1f46be7c8483967f9a838ad66492e9c6bb6eddb5628ee91a1c",
+  "injection": "First descriptor close closes its FD then raises acknowledgement error",
+  "opened_count": 5,
+  "close_attempt_count": 1,
+  "remaining_open_count": 4,
+  "error": "injected close acknowledgement loss",
+  "scope": "Disposable read-only artifact fixture; leaked descriptors closed explicitly by reviewer after observation."
+}
