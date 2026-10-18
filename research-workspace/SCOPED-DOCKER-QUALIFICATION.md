@@ -1,7 +1,12 @@
 # Fresh v4 Docker qualification
 
 This is one qualification-only local exercise of the runtime accepted in PR #46
-at `0efc6fd734e7f812cabc3822d2ea93b8c1063752`. Its execution status is **NOT RUN**.
+at `0efc6fd734e7f812cabc3822d2ea93b8c1063752`. Its execution status is **PASS**:
+Candidate 03 completed exactly four local Docker attempts and all 18 controls on
+2026-10-18. All four retain full 30/30 reservation/charge, verified cleanup and no
+unresolved liability. The allowance is exhausted; this exercise cannot resume.
+The [public execution packet](evidence/2026-10-18/scoped-docker/actual-run/README.md)
+contains the summary and bounded exports. Raw state and receipts remain private.
 The standard Docker CI job exercises older profiles, so its passing result does
 not establish that fresh v4 has completed this HTTP, Worker and export path.
 
@@ -10,6 +15,13 @@ accounting review of the exact prepared manifest and source archive before its
 `run` command. The manifest hash identifies the reviewed candidate; supplying a
 hash is not itself review approval. Any subsequent PR merge also requires an
 independent final review, passing CI and coordinating CLEAR.
+
+The executed harness source is `fe4788c47a378e6234648dc4131ec4b870a8e713`, with
+manifest `ad701c8d5b164666133a1d06f241a80ab052ccbeb02a48c499a663589e537295`
+and source archive `6fcfce9bf3db5b57b4f503574f379123a43739c44fc69f9af9b40a8cc17055b5`.
+Later evidence/documentation commits do not relabel the execution source. The
+coordinating and Outfitter reviews cleared this exact candidate before launch;
+their original source/synthetic limits remain preserved with the dispatch record.
 
 ## Fixed exercise
 
