@@ -1,0 +1,33 @@
+test_owner_reentry_reuse_and_wrong_thread_refuse_before_any_open (test_sqlite_ownership.OwnershipTests.test_owner_reentry_reuse_and_wrong_thread_refuse_before_any_open) ... ERROR
+
+======================================================================
+ERROR: test_owner_reentry_reuse_and_wrong_thread_refuse_before_any_open (test_sqlite_ownership.OwnershipTests.test_owner_reentry_reuse_and_wrong_thread_refuse_before_any_open)
+----------------------------------------------------------------------
+RuntimeError: End child SQLite scopes before releasing their parent reservation.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 292, in test_owner_reentry_reuse_and_wrong_thread_refuse_before_any_open
+    with self.assertRaisesRegex(RuntimeError,"single-use"):
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: "single-use" does not match "End child SQLite scopes before releasing their parent reservation."
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 282, in test_owner_reentry_reuse_and_wrong_thread_refuse_before_any_open
+    with owner as db:
+         ^^^^^
+  File "/private<captured-source>/research_workspace/sqlite_ownership.py", line 559, in __exit__
+    raise RuntimeError("End child SQLite scopes before releasing their parent reservation.")
+RuntimeError: End child SQLite scopes before releasing their parent reservation.
+
+----------------------------------------------------------------------
+Ran 1 test in 0.115s
+
+FAILED (errors=1)
+Exception ignored while finalizing database connection <sqlite3.Connection object at 0x10a8d65c0>:
+ResourceWarning: unclosed database in <sqlite3.Connection object at 0x10a8d65c0>
+Exception ignored while finalizing database connection <sqlite3.Connection object at 0x10a8d66b0>:
+ResourceWarning: unclosed database in <sqlite3.Connection object at 0x10a8d66b0>

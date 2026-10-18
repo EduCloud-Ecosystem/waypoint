@@ -1,0 +1,16 @@
+test_backup_rechecks_native_reservation_before_and_after_copy (test_sqlite_ownership.OwnershipTests.test_backup_rechecks_native_reservation_before_and_after_copy) ... 
+  test_backup_rechecks_native_reservation_before_and_after_copy (test_sqlite_ownership.OwnershipTests.test_backup_rechecks_native_reservation_before_and_after_copy) (boundary='after-copy') ... FAIL
+
+======================================================================
+FAIL: test_backup_rechecks_native_reservation_before_and_after_copy (test_sqlite_ownership.OwnershipTests.test_backup_rechecks_native_reservation_before_and_after_copy) (boundary='after-copy')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 465, in test_backup_rechecks_native_reservation_before_and_after_copy
+    with self.assertRaisesRegex(ValueError,"reservation has ended"):
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.563s
+
+FAILED (failures=1)

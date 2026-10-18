@@ -1,0 +1,141 @@
+diff --git a/research-workspace/research_workspace/sqlite_ownership.py b/research-workspace/research_workspace/sqlite_ownership.py
+index 522fed4..9f637c1 100644
+--- a/research-workspace/research_workspace/sqlite_ownership.py
++++ b/research-workspace/research_workspace/sqlite_ownership.py
+@@ -244,6 +244,9 @@ class Owner:
+         self._entry_lock = threading.Lock()
+         self._entered = False
+         self._read_ended = False
++        self._reservation_ended = False
++        self._immediate = False
++        self._freeze_owner = None
+         self._rollback_attempted = False
+         self._close_attempted = False
+         self._validated = False
+@@ -270,12 +273,31 @@ class Owner:
+             raise ValueError("Existing authority owners require binding and schema validation.")
+ 
+     def _check(self):
+-        if not self._active or self._thread != threading.get_ident() or self._read_ended:
++        if not self._active or self._thread != threading.get_ident() or self._read_ended or self._reservation_ended:
+             raise RuntimeError("SQLite scope has ended or belongs to another thread.")
+         if self._uncertain:
+             raise self._cleanup_error or OwnershipFailure()
+         _permit(self.root, self.role, self.guard)
+ 
++    def _dependents(self):
++        owners = getattr(_local,"owners",[])
++        if self not in owners:
++            return []
++        return [owner for owner in owners[owners.index(self)+1:] if owner.root == self.root]
++
++    def _require_freeze(self):
++        self._check()
++        if self.role != "offline-freeze" or not self._validated or not self._immediate:
++            raise ValueError("Backup requires a validated immediate freeze reservation.")
++        try:
++            live = self.__connection.in_transaction
++        except BaseException as failure:
++            hold(self.root,self,failure)
++            raise
++        if not live:
++            self._reservation_ended = True
++            raise ValueError("The backup freeze reservation has ended.")
++
+     @contextmanager
+     def _cursor(self):
+         try:
+@@ -319,8 +341,14 @@ class Owner:
+         try:
+             _permit(self.root, self.role, self.guard)
+             parents = [x for x in getattr(_local,"owners",[]) if x.root == self.root]
++            if self.role in {"backup-source","backup-destination"}:
++                freezes = [owner for owner in parents if owner.role == "offline-freeze"]
++                if len(freezes) != 1:
++                    raise ValueError("Backup owners require their live parent freeze.")
++                freezes[0]._require_freeze()
++                self._freeze_owner = freezes[0]
+             if parents and self.role not in {"memory-reference", "guard-proof"}:
+-                offline = self.role in {"backup-source", "backup-destination"} and any(x.role == "offline-freeze" for x in parents)
++                offline = self._freeze_owner is not None
+                 if not offline:
+                     raise ValueError("End the current SQLite scope before opening another business or barrier owner.")
+             _event(self.root, self.role, "before-open")
+@@ -371,6 +399,8 @@ class Owner:
+     def execute(self, sql, parameters=()):
+         self._check()
+         normalized = " ".join(sql.split())
++        if self.role in {"offline-freeze","dispatch-reservation"} and normalized == "BEGIN":
++            raise ValueError("This reservation requires BEGIN IMMEDIATE.")
+         if self.role in _ROLE_READS:
+             reads = _ROLE_READS[self.role]
+             queued = (self.role == "guard-proof" and getattr(_local,"diagnostic",None) is None
+@@ -386,12 +416,14 @@ class Owner:
+                 self._control(normalized)
+                 self._rollback_attempted = False
+                 self._validate()
++                self._immediate = normalized == "BEGIN IMMEDIATE"
+             return Values()
+         if (not self.readonly and not self.initialize and not self.memory
+                 and not self.__connection.in_transaction):
+             self._control("BEGIN IMMEDIATE")
+             self._rollback_attempted = False
+             self._validate()
++            self._immediate = True
+         if normalized in _PRAGMAS:
+             with self._cursor() as cursor:
+                 cursor.execute(sql, parameters)
+@@ -472,11 +504,12 @@ class Owner:
+ 
+     def commit(self):
+         self._check()
+-        if self.readonly:
+-            raise ValueError("Read scopes do not commit writes.")
++        if self.readonly or self.role in {"offline-freeze","dispatch-reservation","backup-destination"}:
++            raise ValueError("Observation and reservation scopes do not commit writes.")
+         try:
+             self.__connection.commit()
+             self._rollback_attempted = False
++            self._immediate = False
+             _event(self.root,self.role,"committed")
+         except BaseException as failure:
+             hold(self.root,self,failure)
+@@ -486,11 +519,16 @@ class Owner:
+         # Cleanup must still run after a hold; do not consult _permit here.
+         if not self._active or self._thread != threading.get_ident():
+             raise RuntimeError("SQLite scope has ended.")
++        if self._dependents():
++            raise RuntimeError("End child SQLite scopes before releasing their parent reservation.")
+         if self._rollback_attempted:
+             raise OwnershipFailure()
+         self._rollback_attempted = True
+         if self.readonly:
+             self._read_ended = True
++        if self.role in {"offline-freeze","dispatch-reservation"}:
++            self._reservation_ended = True
++        self._immediate = False
+         try:
+             self.__connection.rollback()
+             _event(self.root,self.role,"rolled-back")
+@@ -503,8 +541,12 @@ class Owner:
+         if (self.role != "backup-source" or destination.role != "backup-destination"
+                 or self.root != destination.root or self.guard is not destination.guard):
+             raise ValueError("Backup requires distinct owned offline source and destination.")
++        if self._freeze_owner is None or self._freeze_owner is not destination._freeze_owner:
++            raise ValueError("Backup owners require the same parent freeze reservation.")
++        self._freeze_owner._require_freeze()
+         try:
+             self.__connection.backup(destination.__connection)
++            self._freeze_owner._require_freeze()
+         except BaseException as failure:
+             hold(self.root,self,failure)
+             hold(destination.root,destination,failure)
+@@ -513,6 +555,8 @@ class Owner:
+     def __exit__(self, kind, error, tb):
+         if self._thread != threading.get_ident() or not self._entered:
+             raise RuntimeError("Only the owning thread may end an entered SQLite scope.")
++        if self._dependents():
++            raise RuntimeError("End child SQLite scopes before releasing their parent reservation.")
+         original = error
+         if error is not None:
+             _end_diagnostic_attempt(self.root)

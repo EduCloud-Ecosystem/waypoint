@@ -1,0 +1,15 @@
+test_schema_scripts_cannot_attach_file_authority (test_sqlite_ownership.OwnershipTests.test_schema_scripts_cannot_attach_file_authority) ... FAIL
+
+======================================================================
+FAIL: test_schema_scripts_cannot_attach_file_authority (test_sqlite_ownership.OwnershipTests.test_schema_scripts_cannot_attach_file_authority)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 335, in test_schema_scripts_cannot_attach_file_authority
+    with self.assertRaises(ValueError):db.executescript(script)
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.329s
+
+FAILED (failures=1)

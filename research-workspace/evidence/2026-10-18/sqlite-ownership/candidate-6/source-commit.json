@@ -1,0 +1,5 @@
+{
+  "runtime_commit": "d06cba93f2bef8697823e814906dfedb54edfba6",
+  "matching_source_files": 91,
+  "qualification": "PASS; not independent clearance. R14 later found nondeterministic projection gap."
+}

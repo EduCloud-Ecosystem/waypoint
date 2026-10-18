@@ -1,0 +1,15 @@
+test_caught_backup_acknowledgement_failure_keeps_both_owners_failed (test_sqlite_ownership.OwnershipTests.test_caught_backup_acknowledgement_failure_keeps_both_owners_failed) ... FAIL
+
+======================================================================
+FAIL: test_caught_backup_acknowledgement_failure_keeps_both_owners_failed (test_sqlite_ownership.OwnershipTests.test_caught_backup_acknowledgement_failure_keeps_both_owners_failed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 408, in test_caught_backup_acknowledgement_failure_keeps_both_owners_failed
+    with self.assertRaisesRegex(OSError,"backup acknowledgement"):
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: OSError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.124s
+
+FAILED (failures=1)

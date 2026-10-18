@@ -1,0 +1,20 @@
+[
+  {
+    "case": "standalone-source",
+    "admitted": true,
+    "exception": null
+  },
+  {
+    "case": "standalone-destination",
+    "admitted": true,
+    "file_created": true,
+    "exception": null
+  },
+  {
+    "case": "backup-after-parent-rollback",
+    "backup_succeeded": true,
+    "raw_other_process": "reservation-acquired",
+    "destination_size": 77824,
+    "exception": null
+  }
+]

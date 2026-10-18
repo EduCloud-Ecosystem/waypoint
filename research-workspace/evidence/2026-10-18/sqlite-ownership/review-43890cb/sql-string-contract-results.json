@@ -1,0 +1,16 @@
+[
+  {
+    "case": "proof-execute-subclass",
+    "exception": "ValueError('SQLite statements require plain string values.')"
+  },
+  {
+    "case": "barrier-execute-subclass",
+    "exception": "ValueError('SQLite statements require plain string values.')",
+    "alice_active": 1
+  },
+  {
+    "case": "schema-script-subclass",
+    "exception": "ValueError('SQLite statements require plain string values.')",
+    "alice_active": 1
+  }
+]

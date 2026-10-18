@@ -1,0 +1,23 @@
+test_backup_rechecks_native_reservation_before_and_after_copy (test_sqlite_ownership.OwnershipTests.test_backup_rechecks_native_reservation_before_and_after_copy) ... 
+  test_backup_rechecks_native_reservation_before_and_after_copy (test_sqlite_ownership.OwnershipTests.test_backup_rechecks_native_reservation_before_and_after_copy) (boundary='before-copy') ... FAIL
+
+======================================================================
+FAIL: test_backup_rechecks_native_reservation_before_and_after_copy (test_sqlite_ownership.OwnershipTests.test_backup_rechecks_native_reservation_before_and_after_copy) (boundary='before-copy')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 477, in test_backup_rechecks_native_reservation_before_and_after_copy
+    self.assertEqual(copied,[] if boundary=="before-copy" else [True])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [True] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+True
+
+- [True]
++ []
+
+----------------------------------------------------------------------
+Ran 1 test in 0.815s
+
+FAILED (failures=1)

@@ -1,0 +1,9 @@
+{
+  "duplicate_names": [
+    "subject",
+    "subject"
+  ],
+  "second_field_type": "bytes",
+  "second_field_bytes": 1000000,
+  "declared_subject_limit_bytes": 80
+}

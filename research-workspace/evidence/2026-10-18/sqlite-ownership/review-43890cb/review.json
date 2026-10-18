@@ -1,0 +1,69 @@
+{
+  "format": "waypoint-scoped-sqlite-independent-review-v1",
+  "candidate_commit": "43890cbf10a02cd522da627f6ea5a841820a4762",
+  "precode_commit": "4606cc6076999c6bae507bdb6beab4bbd0b0819a",
+  "disposition": "CLEAR_INDEPENDENT_REVIEW",
+  "source_archive_sha256": "de326095d5ec2988f3d6c07dcfe1f95cb06e203b68dcbb47c69f2de28fda2378",
+  "captured_files": 517,
+  "captured_source_changes": [],
+  "resolved_findings": {
+    "R1": "Phase-two freeze-close failure prevents manifest; independent 43-control suite PASS.",
+    "R2": "Independent offline-body/spawn-primary witnesses preserve original exceptions and annotate rollback failure.",
+    "R3": "Caught cursor-close failure prevents scope success and retains process hold.",
+    "R4": "Reuse, recursive entry, wrong-thread exit rejected; rightful owner closes once and guard depth returns zero.",
+    "R5": "Diagnostic business JOIN refused by exact role statement allowlist.",
+    "R6": "Barrier and started-receipt business UPDATE refused by exact role statement allowlist.",
+    "R7": "ATTACH/UPDATE/DETACH script refused before business write; exact schema scripts covered by passing controls.",
+    "R8": "Validation bypass, mismatched guard/root and file-path override all refused before admission.",
+    "R9": "Public read rollback ends usable read capability.",
+    "R10": "Caught diagnostic proof-open failure permanently ends token diagnostic attempt; subsequent proof owner refused.",
+    "R11": "Caught write, commit and backup native acknowledgement failures preserve original error, refuse success and hold process. Commit is not retried; acknowledged visibility remains distinct from success.",
+    "R12": "Duplicate projection names refused before payload fetch.",
+    "R13": "All seven prior reservation failures now reject or retain a live freeze; valid immediate control still works. Added out-of-order parent exit rejects before releasing children. Independent real-process contention confirms the reservation remains held after rejected commit/rollback/exit.",
+    "R14": "Exact retained ordinary-string random/1MB witness rejects32/32 attempts. Complete deterministic statement registration and primitive parameter copying preserve metadata/payload correspondence for reviewed query shapes.",
+    "R15": "All3 retained disguised-string read/write/script witnesses reject before execution; business user remains active. Exact built-in str is required at Owner.execute, Owner.executescript and Mutation.execute before normalization/effect handling; schema helper also refuses subclasses. Focused control verifies no override normalization or mutation effect call."
+  },
+  "open_findings": [],
+  "independent_validation": {
+    "prior_witnesses": 19,
+    "prior_witness_disposition": "All19 retained R1-R12 witness forms remain rejected or preserve expected original failures. Expected nonzero process exits in path/projection witnesses are explicit rejections, not harness errors.",
+    "prior_witness_report": "all-prior-witness-reruns.json",
+    "R13_isolated_rechecks": "9/9 expected outcomes in reservation-fix-results.json, including valid control,7 prior failures and additional out-of-order parent exit. Real second-process writer remains blocked when release is refused.",
+    "R14_exact_witness": "32/32 ordinary-string attempts rejected; no oversized value returned.",
+    "R15_exact_witnesses": "3/3 SQL-subclass attempts rejected; no unauthorized read or user mutation.",
+    "ownership_controls": 49,
+    "ownership_controls_result": "PASS",
+    "ownership_controls_seconds": 46.607,
+    "ownership_control_log": "49-controls.log",
+    "command_exit": 0,
+    "production_query_inventory": "50 registered literal SELECT call sites,4 fixed generated-query sites, and3 legacy raw/discriminator exemptions reviewed. Callsite source hashes and registry AST unchanged since exact abe2f11 inventory.",
+    "production_query_inventory_files": [
+      "production-query-inventory.json",
+      "production-query-inventory-continuity.json"
+    ],
+    "prior_R1_R2_R3_and_PR43_regressions": "Passing named controls plus retained independent primary-error/cursor-close witnesses.",
+    "protected_boundaries": "No workflow/pin/catalog/FINAL-DISPATCH changes since pre-code.4 source entries remain candidate and catalog.py289 makes them unavailable; unresolved cleanup remains explicit in SQLITE-OWNERSHIP.md.",
+    "review_check_correction": "Initial catalog verification assumed enabled property and failed its assertion. Retained in protected-boundary-check-initial-error.json; corrected using actual status schema and active-only availability filter. This was a reviewer-check error, not a runtime failure."
+  },
+  "parent_reported_validation": {
+    "candidate8": "Qualification and433-test full suite announced as running when review started. This review independently ran49 ownership controls; it does not claim full-suite or CI completion."
+  },
+  "capability_review": "Reviewed exact SQL/parameter argument handling, role/schema/deterministic observation allowlists, constructor binding/options, owner single-use/thread lifecycle, bounded typed projections, commit/rollback failures and reservation ending, diagnostic allowance, process hold, backup admission/use and cleanup ordering. Ordinary rejection paths remain distinct from uncertain native effects. This review does not prove absence of all defects.",
+  "preserved_boundaries": [
+    "No source/runtime/test/docs/workflow/pin modifications by reviewer",
+    "No Belay or parent pilot or accepted43 mutations",
+    "No provider or Docker actions",
+    "No historical qualification harness reruns or evidence replacement",
+    "Original source environments remain disabled; unresolved cleanup gate is not discharged",
+    "Review does not authorize merge, deployment, quota/checkpoint gates, or global quiescence claims"
+  ],
+  "gate": "Independent review CLEAR for exact candidate43890cb only. Full frozen qualification/full-suite completion, exact-final-head CI and coordinating CLEAR must still be verified by the owner before any merge. No deployment/provider, source-environment promotion, cleanup resolution, quota/checkpoint gate, or global-quiescence claim is authorized.",
+  "review_clearance_scope": "CLEAR only for this bounded independent source review of exact43890cb. All R1-R15 findings have passing retained witnesses and no further substantive blocker was found in the reviewed ownership/API/backup surface. This is not coordinating CLEAR or permission to merge.",
+  "approved_clause_assessment": {
+    "v4_binding": "Exact fresh opt-in binding; rejected mixed/stripped existing authority; no migration/adoption path.",
+    "legacy_discriminator": "Rejection-only legacy format probe remains outside admitted v4 and does not enable business authority.",
+    "process_hold": "Same resolved-root process hold and safety refusal retain uncertainty; no constructor reset.",
+    "diagnostic_exception": "Existing token only, original role only, once-per-token allowance; native diagnostic failure ends attempt.",
+    "v0_v3_compatibility": "Version dispatch and legacy memory helpers remain; current review ran v4 controls, while full regression suite remains a separate gate."
+  }
+}

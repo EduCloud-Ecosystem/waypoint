@@ -1,0 +1,15 @@
+test_backup_parent_cannot_release_children_and_blocks_other_process (test_sqlite_ownership.OwnershipTests.test_backup_parent_cannot_release_children_and_blocks_other_process) ... FAIL
+
+======================================================================
+FAIL: test_backup_parent_cannot_release_children_and_blocks_other_process (test_sqlite_ownership.OwnershipTests.test_backup_parent_cannot_release_children_and_blocks_other_process)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 451, in test_backup_parent_cannot_release_children_and_blocks_other_process
+    with self.assertRaises(RuntimeError):release()
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: RuntimeError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.218s
+
+FAILED (failures=1)

@@ -1,0 +1,6 @@
+{
+  "result": "review-check assertion failed",
+  "cause": "Reviewer incorrectly assumed enabled property and source in id; catalog uses status=candidate. No source failure or source mutation.",
+  "retained_observation": "All7 catalog enabled values were None; incorrect assertion rejected before report creation.",
+  "resolution": "Inspect actual catalog schema and active-status admission filter, then rerun in separate result."
+}

@@ -1,0 +1,159 @@
+{
+  "format": "waypoint-scoped-sqlite-independent-review-v1",
+  "candidate_commit": "5d3e06b02c0e131acdcf99f16c9cc520257ce122",
+  "precode_commit": "4606cc6076999c6bae507bdb6beab4bbd0b0819a",
+  "disposition": "HOLD_CHANGES_REQUIRED",
+  "source_archive_sha256": "b6fc1ffcb64e69e893eebce5ab38df7580c76c292fdc7df8a34758c1e7c75a10",
+  "captured_files": 486,
+  "captured_source_changes": [],
+  "resolved_findings": {
+    "R1": "Phase-two cleanup-before-manifest control PASS",
+    "R2": "Original offline/spawn exceptions remain primary in independent witnesses",
+    "R3": "Caught cursor-close exception prevents successful exit",
+    "R4": "Independent reuse, recursive entry and wrong-thread exit witnesses now refuse without disturbing owned cleanup",
+    "R5": "Independent diagnostic join witness now refuses",
+    "R6": "Independent barrier and receipt business-write witnesses now refuse"
+  },
+  "open_findings": [
+    {
+      "id": "R7",
+      "priority": "P2",
+      "title": "Restrict script capabilities to reviewed schema only",
+      "source_lines": [
+        412,
+        418
+      ],
+      "witness": "script-capability-results.json",
+      "evidence": "Allowed diagnostic memory-reference executescript attaches live authority, commits a business-user revocation, and detaches while process remains held; no new operation intent is created.",
+      "required_change": "Allow exact reviewed schema scripts/statements only in matching initialization and memory roles; refuse scripts in backup destination and ATTACH/other arbitrary SQL everywhere."
+    },
+    {
+      "id": "R8",
+      "priority": "P2",
+      "title": "Bind constructor options to the exact authority and role",
+      "source_lines": [
+        205,
+        233
+      ],
+      "witnesses": [
+        "remaining-capabilities-results.json",
+        "path-capability-results.json"
+      ],
+      "evidence": "validate=False permits online reads from a database with invalid user_version; guard A can protect an Owner rooted at cloned B; even with matching guard/root A, path override to cloned B returns business rows under the wrong file lock.",
+      "required_change": "Require binding validation for normal file roles; require resolved guard.root == owner.root; allow explicit file path override only for fresh backup destination. Memory roles must not accept a file path."
+    },
+    {
+      "id": "R9",
+      "priority": "P2",
+      "title": "Invalidate read capability when its snapshot ends",
+      "source_lines": [
+        428,
+        440
+      ],
+      "witness": "remaining-capabilities-results.json",
+      "evidence": "readonly rollback ends validated snapshot but leaves execute usable. After a raw synthetic writer changes user_version to 0, the same owner returns business rows and observes version 0 without revalidation.",
+      "required_change": "Reader transaction ending belongs to owner cleanup. Refuse or permanently invalidate read use after public rollback; do not silently start unvalidated observations."
+    },
+    {
+      "id": "R10",
+      "priority": "P2",
+      "title": "Terminate diagnostic allowance after any owner failure",
+      "source_lines": [
+        70,
+        90
+      ],
+      "witness": "remaining-capabilities-results.json",
+      "evidence": "Inside one diagnostic context, catching a first guard-proof open failure permits a second proof owner/open and successful rows. _ownership_diagnostic_used is true but does not invalidate the active allowance.",
+      "required_change": "Latch diagnostic failure per existing token before another owner/statement can open, including errors caught within the diagnostic context. Preserve single original-role note and forbid helper retries."
+    },
+    {
+      "id": "R11",
+      "priority": "P2",
+      "title": "Retain failed native effect acknowledgements even if caller catches them",
+      "source_lines": [
+        367,
+        375
+      ],
+      "additional_lines": [
+        [
+          420,
+          447
+        ]
+      ],
+      "additional_source": "store.py:399-401",
+      "witnesses": [
+        "failed-effect-results.json",
+        "backup-ack-results.json"
+      ],
+      "evidence": "Caught native write acknowledgement error permits automatic context commit and ready status. Caught post-commit acknowledgement error triggers a second native commit and ready status. Caught backup acknowledgement error permits both source and destination scopes to exit successfully.",
+      "required_change": "Invalidate owner effect/commit/backup success paths after native effect acknowledgement failures, retain the original exception, prevent later effect or commit retry, and let existing token uncertainty handling run. Keep clean read/business refusals distinct; preserve partial backup output."
+    },
+    {
+      "id": "R12",
+      "priority": "P2",
+      "title": "Reject ambiguous projections before bounded materialization",
+      "source_lines": [
+        381,
+        397
+      ],
+      "witness": "projection-capability-results.json",
+      "evidence": "SELECT subject, zeroblob(1000000) AS subject FROM users returns a one-million-byte bytes field under the registered text <=80 subject name. Both generated preflight checks resolve to the first duplicate name.",
+      "required_change": "Reject duplicate/ambiguous result names before payload fetch or validate every projected position unambiguously."
+    }
+  ],
+  "public_surfaces_reviewed": [
+    "constructor role/mode/validation/root/path",
+    "enter/exit reuse, recursion and threads",
+    "execute statements and result bounds",
+    "executescript",
+    "commit acknowledgement",
+    "rollback read-snapshot lifetime",
+    "backup_to acknowledgement",
+    "diagnostic allowance after caught owner failure"
+  ],
+  "tests": {
+    "v4_controls": {
+      "run": 35,
+      "passed": 35,
+      "exit_code": 0,
+      "log": "35-controls.log"
+    },
+    "prior_independent_witnesses": {
+      "run": 9,
+      "fixed": 9
+    },
+    "new_independent_capability_witnesses": {
+      "run": 10,
+      "contract_failures_reproduced": 10
+    },
+    "both_pr43_regressions": "PASS in captured 35 controls",
+    "historical_harnesses": "NOT RUN",
+    "full_legacy_suite": "Not independently rerun; no claim based on owner runs"
+  },
+  "five_design_clauses": "Core shared-root hold, once-per-context token count, queue selection, legacy dispatch and clean-full-cap/held-safety controls pass. R7-R10 expose ways the public owner interface can violate binding/snapshot/diagnostic clauses; R11-R12 violate failure/bounds promises.",
+  "boundary": "These are internal capability and ownership-contract violations. No remotely reachable exploit, provider/Docker acceptance, power-loss behavior, global quiescence or capacity is claimed.",
+  "protection": "Review only changed new Documents evidence files and disposable synthetic stores. Earlier review folders and all captured source files remain intact. No source/workflow/pin/provider/historical qualification actions.",
+  "evidence_sha256": {
+    "source-manifest.json": "be69ec8438170cfd893c9cad234c95f7bc638ededea42f38802cf475f9f4a85d",
+    "remaining_capabilities.py": "b18543d94f0bfe25a7d36ad99ee344d6faaa6c4c4d8508697e5e886e4b15e5e1",
+    "projection_capability_review.py": "9ad4e93b164bd88925078ffb8a2d490039d133b9b94055b79d38065f8ad950a9",
+    "path_capability_review.py": "417ca6fec1f1a75a659b23390d07d650dc0dc898585a9d47c0a326e61808d4bb",
+    "prior_fix_review.py": "4429f6a7a989b6ffe3946adbcd48565709baf7fdc140feafdd73c65391ea4ce5",
+    "failed_effect_capabilities.py": "e6bea04609b422e7c559d35836e764b9fd937549aac1ee55a7c5fc58756c58dd",
+    "35-controls-exit.json": "df4d721d233a2334088d2d2e0110346ae9e509ff46bf0b379fbcfa85c715af4d",
+    "backup_ack_review.py": "40c1f18971d066eb260c6dd56e244df38b3c051b41ef6b64a5dd389fda6309c5",
+    "cross_thread_exit.py": "a05291c239e5d215d79b608f24acfde020bba46dba7873ec1470fa5c30835dbe",
+    "path-capability-results.json": "8a486addf05e15256177e025452c7c3f96a03b3f7d3b711ab806d8b5222e3864",
+    "adversarial-results.json": "6cb07355cd2421ed98196de2848c6a52662a43c05665a6b103b1700795171439",
+    "failed-effect-results.json": "fa1466318af57fd7709d802df8caaead39860687c2c2b30ab8bbf4d7a116c58d",
+    "script-capability-results.json": "ebe761d74db00a29a2d4904a484e54afa4813115c2d8d3610988673f8d9875b3",
+    "remaining-capabilities-results.json": "c6f5c20d19d216f289a48788411e9cb14dd1a600c3357c75ef43bd45d70925ba",
+    "35-controls.log": "4a72b555a2df5bde7f4072c51562e7aa45d4986f517d232a6616e98c68147fcc",
+    "backup-ack-results.json": "c49ff46b9ce1b56430262fe5af96e639bdfbb15fff882ee5450c5811b0b548da",
+    "prior-fix-results.json": "d82a2fccee7684198d65bc18b637d2fee0b93e150cfcf78825ea565697d40843",
+    "script_capability_review.py": "5ad95938ef53b1c7db6d9b99b957f32f28cbf5f83dacd8234624aa0ebaa695d3",
+    "cross-thread-exit.json": "59a7660f14ed0ebb1174c850c93c8f63d995fa7e8935ae923e9ba7c66e36c224",
+    "adversarial_candidate.py": "dabf7c52bf17356f6e3f429ff662ac2cbc41a2adefaf559fd263f8c16b6370a0",
+    "projection-capability-results.json": "4985c6bf870e9e7bcd8065cbb1fb0f22a4930b6e66540f946fe7123590089593"
+  }
+}

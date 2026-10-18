@@ -1,0 +1,70 @@
+{
+  "format": "waypoint-scoped-sqlite-independent-review-v1",
+  "candidate_commit": "d06cba93f2bef8697823e814906dfedb54edfba6",
+  "precode_commit": "4606cc6076999c6bae507bdb6beab4bbd0b0819a",
+  "disposition": "HOLD_CHANGES_REQUIRED",
+  "source_archive_sha256": "1f1521d181002dd36b280e7b90946def4ab8557b07a3f1273574901b8f027d38",
+  "captured_files": 517,
+  "captured_source_changes": [],
+  "resolved_findings": {
+    "R1": "Phase-two freeze-close failure prevents manifest; independent 43-control suite PASS.",
+    "R2": "Independent offline-body/spawn-primary witnesses preserve original exceptions and annotate rollback failure.",
+    "R3": "Caught cursor-close failure prevents scope success and retains process hold.",
+    "R4": "Reuse, recursive entry, wrong-thread exit rejected; rightful owner closes once and guard depth returns zero.",
+    "R5": "Diagnostic business JOIN refused by exact role statement allowlist.",
+    "R6": "Barrier and started-receipt business UPDATE refused by exact role statement allowlist.",
+    "R7": "ATTACH/UPDATE/DETACH script refused before business write; exact schema scripts covered by passing controls.",
+    "R8": "Validation bypass, mismatched guard/root and file-path override all refused before admission.",
+    "R9": "Public read rollback ends usable read capability.",
+    "R10": "Caught diagnostic proof-open failure permanently ends token diagnostic attempt; subsequent proof owner refused.",
+    "R11": "Caught write, commit and backup native acknowledgement failures preserve original error, refuse success and hold process. Commit is not retried; acknowledged visibility remains distinct from success.",
+    "R12": "Duplicate projection names refused before payload fetch.",
+    "R13": "All seven prior reservation failures now reject or retain a live freeze; valid immediate control still works. Added out-of-order parent exit rejects before releasing children. Independent real-process contention confirms the reservation remains held after rejected commit/rollback/exit."
+  },
+  "open_findings": [
+    {
+      "id": "R14",
+      "priority": "P2",
+      "title": "Require bounds checks to describe the same evaluated payload values",
+      "source": "research_workspace/sqlite_ownership.py",
+      "source_lines": [
+        461,
+        478
+      ],
+      "witnesses": [
+        "nondeterministic-projection-results.json",
+        "nondeterministic_projection_review.py"
+      ],
+      "evidence": "Owner accepts a computed CASE/random() projection as subject. Payload query and separate metadata-wrapper query evaluate independently. In the retained run, attempt3 returned a1000000-byte subject and clean scope exit with heldFalse despite the80-byte subject bound. Prior attempts and their ReadBounds denials are preserved. No duplicate projection names are involved.",
+      "impact": "Internal read capability cannot guarantee its pre-materialization field bound for accepted computed observations. Ordinary reviewed application queries are deterministic; this is not a demonstrated remote exploit.",
+      "required_change": "Restrict accepted observations to reviewed deterministic query shapes or ensure bounds and payload derive from identical evaluated rows. A post-fetch length check alone does not satisfy the pre-transfer bound."
+    }
+  ],
+  "independent_validation": {
+    "prior_witnesses": 19,
+    "prior_witness_disposition": "All19 remain resolved. Expected nonzero path/projection exits are explicit rejection.",
+    "prior_witness_report": "all-prior-witness-reruns.json",
+    "R13_original_scripts": "Unchanged scripts now stop at newly rejected reservation commit/parent rollback; full stdout/stderr retained.",
+    "R13_isolated_rechecks": "reservation-fix-results.json independently isolates all7 prior failures, valid control, and an additional out-of-order parent exit;9/9 expected outcomes.",
+    "ownership_controls": 46,
+    "ownership_controls_result": "PASS",
+    "ownership_controls_seconds": 45.199,
+    "ownership_control_log": "46-controls.log",
+    "command_exit": 0,
+    "new_nondeterministic_projection_result": "Oversized payload accepted at attempt3; all4 attempts retained.",
+    "prior_R1_R2_R3_and_PR43_regressions": "Passing named controls plus retained independent primary-error/cursor-close witnesses."
+  },
+  "parent_reported_validation": {
+    "candidate6": "Full suite and46-control/25-mutant qualification running when this report was frozen; no independent assertion of completion."
+  },
+  "capability_review": "Reviewed constructor binding/options, entry/exit and thread lifecycle, execute/script role allowlists, bounded projections, commit/rollback failure state, diagnostic allowance, process hold, and backup admission/use. This bounded review does not establish absence of other defects.",
+  "preserved_boundaries": [
+    "No source/runtime/test/docs/workflow/pin modifications by reviewer",
+    "No Belay or parent pilot or accepted43 mutations",
+    "No provider or Docker actions",
+    "No historical qualification harness reruns or evidence replacement",
+    "Original source environments remain disabled; unresolved cleanup gate is not discharged",
+    "Review does not authorize merge, deployment, quota/checkpoint gates, or global quiescence claims"
+  ],
+  "gate": "Changes required on R14. New immutable candidate review, exact-head CI and coordinating CLEAR remain required. R13 resolved does not clear this candidate."
+}

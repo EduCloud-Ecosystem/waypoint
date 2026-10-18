@@ -1,0 +1,16 @@
+test_diagnostic_role_rejects_join_union_subquery_and_business_pragma (test_sqlite_ownership.OwnershipTests.test_diagnostic_role_rejects_join_union_subquery_and_business_pragma) ... 
+  test_diagnostic_role_rejects_join_union_subquery_and_business_pragma (test_sqlite_ownership.OwnershipTests.test_diagnostic_role_rejects_join_union_subquery_and_business_pragma) (sql="SELECT id FROM runs WHERE status='queued' LIMIT 21") ... FAIL
+
+======================================================================
+FAIL: test_diagnostic_role_rejects_join_union_subquery_and_business_pragma (test_sqlite_ownership.OwnershipTests.test_diagnostic_role_rejects_join_union_subquery_and_business_pragma) (sql="SELECT id FROM runs WHERE status='queued' LIMIT 21")
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 311, in test_diagnostic_role_rejects_join_union_subquery_and_business_pragma
+    with self.subTest(sql=sql),self.assertRaises(ValueError):db.execute(sql)
+                               ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.191s
+
+FAILED (failures=1)

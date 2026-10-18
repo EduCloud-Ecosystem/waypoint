@@ -1,0 +1,15 @@
+test_read_rollback_ends_the_validated_snapshot_capability (test_sqlite_ownership.OwnershipTests.test_read_rollback_ends_the_validated_snapshot_capability) ... FAIL
+
+======================================================================
+FAIL: test_read_rollback_ends_the_validated_snapshot_capability (test_sqlite_ownership.OwnershipTests.test_read_rollback_ends_the_validated_snapshot_capability)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 350, in test_read_rollback_ends_the_validated_snapshot_capability
+    with self.assertRaises(RuntimeError):db.execute("SELECT subject FROM users")
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: RuntimeError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.174s
+
+FAILED (failures=1)

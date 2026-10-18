@@ -1,0 +1,6 @@
+{
+  "exception": "ValueError('This owner accepts only its exact reviewed schema script.')",
+  "held": true,
+  "business_write_committed": false,
+  "new_intent_created": false
+}

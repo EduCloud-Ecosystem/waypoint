@@ -1,0 +1,89 @@
+{
+  "format": "waypoint-scoped-sqlite-independent-review-v1",
+  "candidate_commit": "abe2f1172a57d9f589cf2357feabdab6ae2c88ad",
+  "precode_commit": "4606cc6076999c6bae507bdb6beab4bbd0b0819a",
+  "disposition": "HOLD_CHANGES_REQUIRED",
+  "source_archive_sha256": "a22b5cd71ead7b67b3ed7c2278348ff2fda358d766d37989584b2a319eaedc30",
+  "captured_files": 517,
+  "captured_source_changes": [],
+  "resolved_findings": {
+    "R1": "Phase-two freeze-close failure prevents manifest; independent 43-control suite PASS.",
+    "R2": "Independent offline-body/spawn-primary witnesses preserve original exceptions and annotate rollback failure.",
+    "R3": "Caught cursor-close failure prevents scope success and retains process hold.",
+    "R4": "Reuse, recursive entry, wrong-thread exit rejected; rightful owner closes once and guard depth returns zero.",
+    "R5": "Diagnostic business JOIN refused by exact role statement allowlist.",
+    "R6": "Barrier and started-receipt business UPDATE refused by exact role statement allowlist.",
+    "R7": "ATTACH/UPDATE/DETACH script refused before business write; exact schema scripts covered by passing controls.",
+    "R8": "Validation bypass, mismatched guard/root and file-path override all refused before admission.",
+    "R9": "Public read rollback ends usable read capability.",
+    "R10": "Caught diagnostic proof-open failure permanently ends token diagnostic attempt; subsequent proof owner refused.",
+    "R11": "Caught write, commit and backup native acknowledgement failures preserve original error, refuse success and hold process. Commit is not retried; acknowledged visibility remains distinct from success.",
+    "R12": "Duplicate projection names refused before payload fetch.",
+    "R13": "All seven prior reservation failures now reject or retain a live freeze; valid immediate control still works. Added out-of-order parent exit rejects before releasing children. Independent real-process contention confirms the reservation remains held after rejected commit/rollback/exit.",
+    "R14": "Exact retained ordinary-string random/1MB witness is rejected in32/32 attempts by complete deterministic statement registration. Production observation bindings copy primitive parameters once. R15 below shows a distinct SQL-argument-type bypass of registration."
+  },
+  "open_findings": [
+    {
+      "id": "R15",
+      "priority": "P2",
+      "title": "Require exact built-in SQL strings before authorization and native execution",
+      "source": "research_workspace/sqlite_ownership.py",
+      "source_lines": [
+        460,
+        471
+      ],
+      "additional_lines": [
+        [
+          243,
+          254
+        ],
+        [
+          516,
+          524
+        ],
+        [
+          557,
+          566
+        ]
+      ],
+      "origin": "Owner requested a narrow str-subclass hypothesis check; reviewer independently reproduced it against immutable candidate.",
+      "witnesses": [
+        "sql-string-contract-results.json",
+        "sql_string_contract_review.py"
+      ],
+      "evidence": "A str subclass overrides split() to return approved text while SQLite receives its underlying text. Guard-proof returns alice from business users; barrier executes and commits an unauthorized user revocation; memory-reference executescript passes schema validation then ATTACH/UPDATE/DETACH revokes alice. All3 scopes return success.",
+      "impact": "Role and deterministic-query/schema allowlists can be bypassed by the SQL argument itself. This is a callable internal capability boundary defect, not a claimed remote exploit.",
+      "required_change": "Require type(sql) is str at execute and executescript before normalization/authorization; also make schema helper reject subclasses. Preserve exact parameter-copy restrictions."
+    }
+  ],
+  "independent_validation": {
+    "prior_witnesses": 19,
+    "prior_witness_disposition": "All19 original witness forms remain rejected or preserve expected original failures; R15 is an additional argument-type bypass affecting otherwise-fixed role/script boundaries.",
+    "prior_witness_report": "all-prior-witness-reruns.json",
+    "R13_isolated_rechecks": "9/9 expected outcomes in reservation-fix-results.json.",
+    "R14_exact_witness": "32/32 ordinary-string attempts rejected; no oversized value returned.",
+    "ownership_controls": 48,
+    "ownership_controls_result": "PASS",
+    "ownership_controls_seconds": 46.417,
+    "ownership_control_log": "48-controls.log",
+    "command_exit": 0,
+    "new_SQL_subclass_cases": 3,
+    "new_SQL_subclass_failures": 3,
+    "production_query_inventory": "50 literal SELECT call sites match the registry.3 unregistered literals are the legacy rejection discriminator and legacy raw in-memory storage classifier.4 generated-query call sites match fixed bounded export, finite table counts and recovery digest shapes. No missing production v4 query shape found.",
+    "production_query_inventory_file": "production-query-inventory.json",
+    "prior_R1_R2_R3_and_PR43_regressions": "Passing named controls plus retained independent primary-error/cursor-close witnesses."
+  },
+  "parent_reported_validation": {
+    "candidate7": "Full432-test suite and candidate-7 qualification running when review started; no completion claimed here."
+  },
+  "capability_review": "Reviewed constructor binding/options, entry/exit and thread lifecycle, execute/script role allowlists, bounded projections, commit/rollback failure state, diagnostic allowance, process hold, and backup admission/use. This bounded review does not establish absence of other defects.",
+  "preserved_boundaries": [
+    "No source/runtime/test/docs/workflow/pin modifications by reviewer",
+    "No Belay or parent pilot or accepted43 mutations",
+    "No provider or Docker actions",
+    "No historical qualification harness reruns or evidence replacement",
+    "Original source environments remain disabled; unresolved cleanup gate is not discharged",
+    "Review does not authorize merge, deployment, quota/checkpoint gates, or global quiescence claims"
+  ],
+  "gate": "Changes required on R15. New immutable candidate review, exact-head CI and coordinating CLEAR remain required."
+}

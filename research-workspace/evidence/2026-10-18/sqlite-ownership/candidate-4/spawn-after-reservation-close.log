@@ -1,0 +1,47 @@
+test_unrelated_publication_qualifies_before_request_and_final_spawn_fenced (test_sqlite_ownership.OwnershipTests.test_unrelated_publication_qualifies_before_request_and_final_spawn_fenced) ... 
+  test_unrelated_publication_qualifies_before_request_and_final_spawn_fenced (test_sqlite_ownership.OwnershipTests.test_unrelated_publication_qualifies_before_request_and_final_spawn_fenced) (late=False) ... FAIL
+  test_unrelated_publication_qualifies_before_request_and_final_spawn_fenced (test_sqlite_ownership.OwnershipTests.test_unrelated_publication_qualifies_before_request_and_final_spawn_fenced) (late=True) ... ERROR
+
+======================================================================
+ERROR: test_unrelated_publication_qualifies_before_request_and_final_spawn_fenced (test_sqlite_ownership.OwnershipTests.test_unrelated_publication_qualifies_before_request_and_final_spawn_fenced) (late=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 548, in test_unrelated_publication_qualifies_before_request_and_final_spawn_fenced
+    runtime.Worker(c.store,c.broker).execute(run)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/private<captured-source>/research_workspace/runtime.py", line 227, in execute
+    process = self.store.launch_run(run, spawn, publication=self.identity.publication(run["id"]) if self.identity else None)
+  File "/private<captured-source>/research_workspace/store.py", line 822, in launch_run
+    return callback()
+TypeError: 'NoneType' object is not callable
+
+======================================================================
+FAIL: test_unrelated_publication_qualifies_before_request_and_final_spawn_fenced (test_sqlite_ownership.OwnershipTests.test_unrelated_publication_qualifies_before_request_and_final_spawn_fenced) (late=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 548, in test_unrelated_publication_qualifies_before_request_and_final_spawn_fenced
+    runtime.Worker(c.store,c.broker).execute(run)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/private<captured-source>/research_workspace/runtime.py", line 227, in execute
+    process = self.store.launch_run(run, spawn, publication=self.identity.publication(run["id"]) if self.identity else None)
+  File "/private<captured-source>/research_workspace/store.py", line 822, in launch_run
+    return callback()
+  File "/private<captured-source>/research_workspace/runtime.py", line 224, in spawn
+    process = subprocess.Popen(self.broker.command("run", "--request", str(request_path)), stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/mock.py", line 1176, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/mock.py", line 1180, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/mock.py", line 1247, in _execute_mock_call
+    result = effect(*args, **kwargs)
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 544, in spawn
+    self.assertIn("dispatch-reservation",active);self.assertGreater(c.store.guard.lease.depth,0);order.append("spawn");return Mock(returncode=0)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'dispatch-reservation' not found in []
+
+----------------------------------------------------------------------
+Ran 1 test in 1.083s
+
+FAILED (failures=1, errors=1)

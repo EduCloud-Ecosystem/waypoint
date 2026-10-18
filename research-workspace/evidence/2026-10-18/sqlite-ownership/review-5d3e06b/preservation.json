@@ -1,0 +1,31 @@
+{
+  "candidate_source_uncompressed_sha256": "b6fc1ffcb64e69e893eebce5ab38df7580c76c292fdc7df8a34758c1e7c75a10",
+  "disposition": "HOLD",
+  "files_sha256": {
+    "35-controls-exit.json": "df4d721d233a2334088d2d2e0110346ae9e509ff46bf0b379fbcfa85c715af4d",
+    "35-controls.log": "4a72b555a2df5bde7f4072c51562e7aa45d4986f517d232a6616e98c68147fcc",
+    "adversarial-results.json": "6cb07355cd2421ed98196de2848c6a52662a43c05665a6b103b1700795171439",
+    "adversarial_candidate.py": "dabf7c52bf17356f6e3f429ff662ac2cbc41a2adefaf559fd263f8c16b6370a0",
+    "backup-ack-results.json": "c49ff46b9ce1b56430262fe5af96e639bdfbb15fff882ee5450c5811b0b548da",
+    "backup_ack_review.py": "40c1f18971d066eb260c6dd56e244df38b3c051b41ef6b64a5dd389fda6309c5",
+    "candidate-source.tar.gz": "c2f1bfdfcf9dd955b74fce6d1e17f51d272f912aace4f84345d70c0f2424e06e",
+    "cross-thread-exit.json": "59a7660f14ed0ebb1174c850c93c8f63d995fa7e8935ae923e9ba7c66e36c224",
+    "cross_thread_exit.py": "a05291c239e5d215d79b608f24acfde020bba46dba7873ec1470fa5c30835dbe",
+    "failed-effect-results.json": "fa1466318af57fd7709d802df8caaead39860687c2c2b30ab8bbf4d7a116c58d",
+    "failed_effect_capabilities.py": "e6bea04609b422e7c559d35836e764b9fd937549aac1ee55a7c5fc58756c58dd",
+    "path-capability-results.json": "8a486addf05e15256177e025452c7c3f96a03b3f7d3b711ab806d8b5222e3864",
+    "path_capability_review.py": "417ca6fec1f1a75a659b23390d07d650dc0dc898585a9d47c0a326e61808d4bb",
+    "prior-fix-results.json": "d82a2fccee7684198d65bc18b637d2fee0b93e150cfcf78825ea565697d40843",
+    "prior_fix_review.py": "4429f6a7a989b6ffe3946adbcd48565709baf7fdc140feafdd73c65391ea4ce5",
+    "projection-capability-results.json": "4985c6bf870e9e7bcd8065cbb1fb0f22a4930b6e66540f946fe7123590089593",
+    "projection_capability_review.py": "9ad4e93b164bd88925078ffb8a2d490039d133b9b94055b79d38065f8ad950a9",
+    "remaining-capabilities-results.json": "c6f5c20d19d216f289a48788411e9cb14dd1a600c3357c75ef43bd45d70925ba",
+    "remaining_capabilities.py": "b18543d94f0bfe25a7d36ad99ee344d6faaa6c4c4d8508697e5e886e4b15e5e1",
+    "review.json": "7fad35c4a350136774385396fea199431f241c8bad3cf5c5b2352a79cd7dd0ef",
+    "script-capability-results.json": "ebe761d74db00a29a2d4904a484e54afa4813115c2d8d3610988673f8d9875b3",
+    "script_capability_review.py": "5ad95938ef53b1c7db6d9b99b957f32f28cbf5f83dacd8234624aa0ebaa695d3",
+    "source-manifest.json": "be69ec8438170cfd893c9cad234c95f7bc638ededea42f38802cf475f9f4a85d"
+  },
+  "format": "waypoint-independent-review-preservation-v1",
+  "reviewed_runtime_commit": "5d3e06b02c0e131acdcf99f16c9cc520257ce122"
+}

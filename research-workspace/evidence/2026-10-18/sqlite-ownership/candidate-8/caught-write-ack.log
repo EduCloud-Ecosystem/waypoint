@@ -1,0 +1,16 @@
+test_caught_write_or_commit_acknowledgement_failure_cannot_succeed (test_sqlite_ownership.OwnershipTests.test_caught_write_or_commit_acknowledgement_failure_cannot_succeed) ... 
+  test_caught_write_or_commit_acknowledgement_failure_cannot_succeed (test_sqlite_ownership.OwnershipTests.test_caught_write_or_commit_acknowledgement_failure_cannot_succeed) (stage='write') ... FAIL
+
+======================================================================
+FAIL: test_caught_write_or_commit_acknowledgement_failure_cannot_succeed (test_sqlite_ownership.OwnershipTests.test_caught_write_or_commit_acknowledgement_failure_cannot_succeed) (stage='write')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 393, in test_caught_write_or_commit_acknowledgement_failure_cannot_succeed
+    with self.assertRaisesRegex(OSError,"write acknowledgement|commit failure"):
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: OSError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.393s
+
+FAILED (failures=1)

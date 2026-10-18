@@ -1,0 +1,19 @@
+{
+  "baseline_commit": "abe2f1172a57d9f589cf2357feabdab6ae2c88ad",
+  "current_commit": "43890cbf10a02cd522da627f6ea5a841820a4762",
+  "callsite_files_unchanged": [
+    "research_workspace/store.py",
+    "research_workspace/bounded_export.py",
+    "research_workspace/finite_authority.py",
+    "research_workspace/recovery.py",
+    "research_workspace/storage_inventory.py",
+    "research_workspace/operation_guard.py"
+  ],
+  "registry_ast_unchanged": [
+    "_SELECTS",
+    "_export_selects",
+    "_query_limit",
+    "_field"
+  ],
+  "result": "Prior complete production query inventory remains exact for current source."
+}

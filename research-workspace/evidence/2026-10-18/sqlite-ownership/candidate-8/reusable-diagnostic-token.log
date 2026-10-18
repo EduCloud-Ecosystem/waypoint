@@ -1,0 +1,15 @@
+test_diagnostic_allowance_is_once_per_token_not_nested_owner (test_sqlite_ownership.OwnershipTests.test_diagnostic_allowance_is_once_per_token_not_nested_owner) ... FAIL
+
+======================================================================
+FAIL: test_diagnostic_allowance_is_once_per_token_not_nested_owner (test_sqlite_ownership.OwnershipTests.test_diagnostic_allowance_is_once_per_token_not_nested_owner)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 664, in test_diagnostic_allowance_is_once_per_token_not_nested_owner
+    with self.assertRaises(o.OwnershipFailure):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+AssertionError: OwnershipFailure not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.434s
+
+FAILED (failures=1)

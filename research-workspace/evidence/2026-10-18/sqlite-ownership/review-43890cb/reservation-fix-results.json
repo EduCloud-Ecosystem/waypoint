@@ -1,0 +1,61 @@
+[
+  {
+    "boundary": "valid-immediate",
+    "setup_error": null,
+    "raw_other_process": "reservation-blocked",
+    "backup_source_admitted": true,
+    "backup_error": null
+  },
+  {
+    "boundary": "before-begin",
+    "setup_error": null,
+    "raw_other_process": "reservation-acquired",
+    "backup_source_admitted": false,
+    "backup_error": "ValueError('Backup requires a validated immediate freeze reservation.')"
+  },
+  {
+    "boundary": "after-commit",
+    "setup_error": "ValueError('Observation and reservation scopes do not commit writes.')",
+    "raw_other_process": "reservation-blocked",
+    "backup_source_admitted": true,
+    "backup_error": null
+  },
+  {
+    "boundary": "after-rollback",
+    "setup_error": null,
+    "raw_other_process": "reservation-acquired",
+    "backup_source_admitted": false,
+    "backup_error": "RuntimeError('SQLite scope has ended or belongs to another thread.')"
+  },
+  {
+    "boundary": "deferred-begin",
+    "setup_error": "ValueError('This reservation requires BEGIN IMMEDIATE.')",
+    "raw_other_process": "reservation-acquired",
+    "backup_source_admitted": false,
+    "backup_error": "ValueError('Backup requires a validated immediate freeze reservation.')"
+  },
+  {
+    "boundary": "standalone-backup-source",
+    "error": "ValueError('Backup owners require their live parent freeze.')",
+    "destination_created": false
+  },
+  {
+    "boundary": "standalone-backup-destination",
+    "error": "ValueError('Backup owners require their live parent freeze.')",
+    "destination_created": false
+  },
+  {
+    "boundary": "parent-rollback-with-children",
+    "error": "RuntimeError('End child SQLite scopes before releasing their parent reservation.')",
+    "raw_other_process": "reservation-blocked",
+    "backup_succeeded": true,
+    "destination_size": 77824
+  },
+  {
+    "boundary": "parent-exit-with-children",
+    "error": "RuntimeError('End child SQLite scopes before releasing their parent reservation.')",
+    "raw_other_process": "reservation-blocked",
+    "backup_succeeded": true,
+    "destination_size": 77824
+  }
+]

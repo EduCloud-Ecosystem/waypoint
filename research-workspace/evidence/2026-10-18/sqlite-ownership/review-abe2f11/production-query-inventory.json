@@ -1,0 +1,401 @@
+[
+  {
+    "file": "bounded_export.py",
+    "line": 36,
+    "function": "_rows",
+    "sql": "'SELECT ' + ' AND '.join(checks) + suffix",
+    "registered": "dynamic"
+  },
+  {
+    "file": "bounded_export.py",
+    "line": 39,
+    "function": "_rows",
+    "sql": "'SELECT ' + ','.join((f[0] for f in fields)) + suffix",
+    "registered": "dynamic"
+  },
+  {
+    "file": "store.py",
+    "line": 494,
+    "function": "_access",
+    "sql": "SELECT p.payload,m.role FROM projects p JOIN members m ON m.project_id=p.id JOIN users u ON u.subject=m.subject WHERE p.id=? AND m.subject=? AND u.active=1",
+    "registered": true
+  },
+  {
+    "file": "store.py",
+    "line": 429,
+    "function": "add_user",
+    "sql": "SELECT 1 FROM users WHERE subject=?",
+    "registered": true
+  },
+  {
+    "file": "store.py",
+    "line": 483,
+    "function": "session",
+    "sql": "SELECT s.subject FROM sessions s JOIN users u ON u.subject=s.subject WHERE s.token_hash=? AND s.expires>? AND u.active=1",
+    "registered": true
+  },
+  {
+    "file": "store.py",
+    "line": 506,
+    "function": "projects",
+    "sql": "SELECT p.payload FROM projects p JOIN members m ON m.project_id=p.id JOIN users u ON u.subject=m.subject WHERE m.subject=? AND u.active=1 ORDER BY p.rowid DESC",
+    "registered": true
+  },
+  {
+    "file": "store.py",
+    "line": 587,
+    "function": "project",
+    "sql": "SELECT subject,role FROM members WHERE project_id=? ORDER BY subject",
+    "registered": true
+  },
+  {
+    "file": "store.py",
+    "line": 588,
+    "function": "project",
+    "sql": "SELECT payload FROM runs WHERE project_id=? ORDER BY rowid DESC",
+    "registered": true
+  },
+  {
+    "file": "store.py",
+    "line": 699,
+    "function": "run",
+    "sql": "SELECT payload FROM runs WHERE id=? AND project_id=?",
+    "registered": true
+  },
+  {
+    "file": "store.py",
+    "line": 707,
+    "function": "cancel",
+    "sql": "SELECT payload FROM runs WHERE id=? AND project_id=?",
+    "registered": true
+  },
+  {
+    "file": "store.py",
+    "line": 721,
+    "function": "recover",
+    "sql": "SELECT id,payload FROM runs WHERE status='running'",
+    "registered": true
+  },
+  {
+    "file": "store.py",
+    "line": 740,
+    "function": "_claim",
+    "sql": "SELECT * FROM runs WHERE status='queued' ORDER BY rowid",
+    "registered": true
+  },
+  {
+    "file": "store.py",
+    "line": 771,
+    "function": "should_cancel",
+    "sql": "SELECT * FROM runs WHERE id=?",
+    "registered": true
+  },
+  {
+    "file": "store.py",
+    "line": 846,
+    "function": "_finish",
+    "sql": "SELECT * FROM runs WHERE id=?",
+    "registered": true
+  },
+  {
+    "file": "store.py",
+    "line": 894,
+    "function": "snapshot",
+    "sql": "SELECT payload FROM runs WHERE project_id=? ORDER BY rowid",
+    "registered": true
+  },
+  {
+    "file": "store.py",
+    "line": 444,
+    "function": "rotate_user",
+    "sql": "SELECT 1 FROM users WHERE subject=? AND active=1",
+    "registered": true
+  },
+  {
+    "file": "store.py",
+    "line": 459,
+    "function": "preflight",
+    "sql": "SELECT subject FROM users WHERE key_hash=? AND active=1",
+    "registered": true
+  },
+  {
+    "file": "store.py",
+    "line": 474,
+    "function": "session",
+    "sql": "SELECT subject FROM users WHERE key_hash=? AND active=1",
+    "registered": true
+  },
+  {
+    "file": "store.py",
+    "line": 504,
+    "function": "projects",
+    "sql": "SELECT 1 FROM users WHERE subject=? AND active=1",
+    "registered": true
+  },
+  {
+    "file": "store.py",
+    "line": 525,
+    "function": "create_project",
+    "sql": "SELECT 1 FROM users WHERE subject=? AND active=1",
+    "registered": true
+  },
+  {
+    "file": "store.py",
+    "line": 527,
+    "function": "create_project",
+    "sql": "SELECT payload FROM projects",
+    "registered": true
+  },
+  {
+    "file": "store.py",
+    "line": 649,
+    "function": "_submit",
+    "sql": "SELECT request_hash,payload FROM runs WHERE project_id=? AND subject=? AND request_key=?",
+    "registered": true
+  },
+  {
+    "file": "store.py",
+    "line": 671,
+    "function": "_submit",
+    "sql": "SELECT request_hash,payload FROM runs WHERE project_id=? AND subject=? AND request_key=?",
+    "registered": true
+  },
+  {
+    "file": "store.py",
+    "line": 716,
+    "function": "recover",
+    "sql": "SELECT id,payload FROM runs WHERE status='queued'",
+    "registered": true
+  },
+  {
+    "file": "store.py",
+    "line": 176,
+    "function": "__init__",
+    "sql": "SELECT count(*) FROM sqlite_master WHERE name IN ('operation_authority','operation_receipts')",
+    "registered": false
+  },
+  {
+    "file": "store.py",
+    "line": 571,
+    "function": "_guarded_project",
+    "sql": "SELECT 1 FROM users WHERE subject=? AND active=1",
+    "registered": true
+  },
+  {
+    "file": "store.py",
+    "line": 595,
+    "function": "membership",
+    "sql": "SELECT role FROM members WHERE project_id=? AND subject=?",
+    "registered": true
+  },
+  {
+    "file": "store.py",
+    "line": 614,
+    "function": "_membership",
+    "sql": "SELECT 1 FROM users WHERE subject=? AND active=1",
+    "registered": true
+  },
+  {
+    "file": "store.py",
+    "line": 676,
+    "function": "_submit",
+    "sql": "SELECT count(*) FROM runs WHERE project_id=?",
+    "registered": true
+  },
+  {
+    "file": "store.py",
+    "line": 678,
+    "function": "_submit",
+    "sql": "SELECT count(*) FROM runs WHERE status IN ('queued','running')",
+    "registered": true
+  },
+  {
+    "file": "store.py",
+    "line": 731,
+    "function": "claim",
+    "sql": "SELECT id,subject FROM runs WHERE status='queued' ORDER BY rowid LIMIT 1",
+    "registered": true
+  },
+  {
+    "file": "store.py",
+    "line": 557,
+    "function": "_guarded_project",
+    "sql": "SELECT 1 FROM users WHERE subject=? AND active=1",
+    "registered": true
+  },
+  {
+    "file": "store.py",
+    "line": 559,
+    "function": "_guarded_project",
+    "sql": "SELECT payload FROM projects",
+    "registered": true
+  },
+  {
+    "file": "store.py",
+    "line": 794,
+    "function": "current_launch",
+    "sql": "SELECT * FROM runs WHERE id=?",
+    "registered": true
+  },
+  {
+    "file": "store.py",
+    "line": 817,
+    "function": "launch_run",
+    "sql": "SELECT status FROM runs WHERE id=?",
+    "registered": true
+  },
+  {
+    "file": "store.py",
+    "line": 549,
+    "function": "_guarded_project",
+    "sql": "SELECT payload FROM projects WHERE id=?",
+    "registered": true
+  },
+  {
+    "file": "finite_authority.py",
+    "line": 175,
+    "function": "validate_binding",
+    "sql": "SELECT authority_id,sequence FROM operation_authority",
+    "registered": true
+  },
+  {
+    "file": "finite_authority.py",
+    "line": 210,
+    "function": "admit",
+    "sql": "SELECT count(*) FROM sessions WHERE expires>?",
+    "registered": true
+  },
+  {
+    "file": "finite_authority.py",
+    "line": 211,
+    "function": "admit",
+    "sql": "SELECT count(*) FROM sessions WHERE expires>? AND subject=?",
+    "registered": true
+  },
+  {
+    "file": "finite_authority.py",
+    "line": 216,
+    "function": "admit",
+    "sql": "'SELECT count(*) FROM ' + table",
+    "registered": "dynamic"
+  },
+  {
+    "file": "recovery.py",
+    "line": 158,
+    "function": "database_digest",
+    "sql": "f'SELECT rowid,* FROM {table} ORDER BY rowid'",
+    "registered": "dynamic"
+  },
+  {
+    "file": "recovery.py",
+    "line": 133,
+    "function": "database_digest",
+    "sql": "SELECT type,name,tbl_name,sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' ORDER BY type,name",
+    "registered": true
+  },
+  {
+    "file": "recovery.py",
+    "line": 274,
+    "function": "restore",
+    "sql": "SELECT subject FROM users",
+    "registered": true
+  },
+  {
+    "file": "recovery.py",
+    "line": 276,
+    "function": "restore",
+    "sql": "SELECT id,payload,status FROM runs WHERE status IN ('queued','running')",
+    "registered": true
+  },
+  {
+    "file": "recovery.py",
+    "line": 301,
+    "function": "recovery_status",
+    "sql": "SELECT payload FROM runs ORDER BY rowid",
+    "registered": true
+  },
+  {
+    "file": "guarded_recovery.py",
+    "line": 104,
+    "function": "restore",
+    "sql": "SELECT subject FROM users",
+    "registered": true
+  },
+  {
+    "file": "guarded_recovery.py",
+    "line": 106,
+    "function": "restore",
+    "sql": "SELECT id,payload,status FROM runs WHERE status IN ('queued','running')",
+    "registered": true
+  },
+  {
+    "file": "storage_inventory.py",
+    "line": 36,
+    "function": "_schema",
+    "sql": "SELECT type,name,tbl_name,sql FROM sqlite_master ORDER BY name",
+    "registered": true
+  },
+  {
+    "file": "storage_inventory.py",
+    "line": 231,
+    "function": "_authority",
+    "sql": "SELECT id,payload FROM projects",
+    "registered": false
+  },
+  {
+    "file": "storage_inventory.py",
+    "line": 232,
+    "function": "_authority",
+    "sql": "SELECT id,project_id,status,payload,cancel_requested FROM runs",
+    "registered": false
+  },
+  {
+    "file": "identity.py",
+    "line": 142,
+    "function": "_active_subject",
+    "sql": "SELECT 1 FROM users WHERE subject=? AND active=1",
+    "registered": true
+  },
+  {
+    "file": "operation_guard.py",
+    "line": 337,
+    "function": "_receipts",
+    "sql": "SELECT authority_id,sequence FROM operation_authority",
+    "registered": true
+  },
+  {
+    "file": "operation_guard.py",
+    "line": 338,
+    "function": "_receipts",
+    "sql": "SELECT id,sequence,digest,outcome,essential FROM operation_receipts",
+    "registered": true
+  },
+  {
+    "file": "operation_guard.py",
+    "line": 427,
+    "function": "queued_ids",
+    "sql": "SELECT id FROM runs WHERE status='queued' LIMIT 21",
+    "registered": true
+  },
+  {
+    "file": "operation_guard.py",
+    "line": 315,
+    "function": "_receipts",
+    "sql": "SELECT authority_id,sequence FROM operation_authority",
+    "registered": true
+  },
+  {
+    "file": "operation_guard.py",
+    "line": 316,
+    "function": "_receipts",
+    "sql": "SELECT id,sequence,digest,outcome,essential FROM operation_receipts",
+    "registered": true
+  },
+  {
+    "file": "operation_guard.py",
+    "line": 421,
+    "function": "queued_ids",
+    "sql": "SELECT id FROM runs WHERE status='queued' LIMIT 21",
+    "registered": true
+  }
+]

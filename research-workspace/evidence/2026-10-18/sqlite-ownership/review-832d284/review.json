@@ -1,0 +1,83 @@
+{
+  "format": "waypoint-scoped-sqlite-independent-review-v1",
+  "candidate_commit": "832d2844bb82ff7a9e24e19a3f2c551fb9849f48",
+  "precode_commit": "4606cc6076999c6bae507bdb6beab4bbd0b0819a",
+  "disposition": "HOLD_CHANGES_REQUIRED",
+  "source_archive_sha256": "f4e76377a06f260a8ab405701b2a03f036668abec3293f70174cc8e8a5364bcc",
+  "captured_files": 517,
+  "captured_source_changes": [],
+  "resolved_findings": {
+    "R1": "Phase-two freeze-close failure prevents manifest; independent 43-control suite PASS.",
+    "R2": "Independent offline-body/spawn-primary witnesses preserve original exceptions and annotate rollback failure.",
+    "R3": "Caught cursor-close failure prevents scope success and retains process hold.",
+    "R4": "Reuse, recursive entry, wrong-thread exit rejected; rightful owner closes once and guard depth returns zero.",
+    "R5": "Diagnostic business JOIN refused by exact role statement allowlist.",
+    "R6": "Barrier and started-receipt business UPDATE refused by exact role statement allowlist.",
+    "R7": "ATTACH/UPDATE/DETACH script refused before business write; exact schema scripts covered by passing controls.",
+    "R8": "Validation bypass, mismatched guard/root and file-path override all refused before admission.",
+    "R9": "Public read rollback ends usable read capability.",
+    "R10": "Caught diagnostic proof-open failure permanently ends token diagnostic attempt; subsequent proof owner refused.",
+    "R11": "Caught write, commit and backup native acknowledgement failures preserve original error, refuse success and hold process. Commit is not retried; acknowledged visibility remains distinct from success.",
+    "R12": "Duplicate projection names refused before payload fetch."
+  },
+  "open_findings": [
+    {
+      "id": "R13",
+      "priority": "P2",
+      "title": "Require a live immediate freeze reservation for backup capability admission and use",
+      "source": "research_workspace/sqlite_ownership.py",
+      "source_lines": [
+        321,
+        325
+      ],
+      "additional_lines": [
+        [
+          381,
+          388
+        ],
+        [
+          473,
+          505
+        ]
+      ],
+      "contract": "SQLITE-OWNERSHIP-PROPOSAL.md:274-285 requires lifecycle lock, guard, validated BEGIN IMMEDIATE freeze, separate source/destination, and retention of freeze across backup/file/fingerprint phases.",
+      "witnesses": [
+        "reservation-capability-results.json",
+        "reservation-backup-results.json"
+      ],
+      "evidence": "Valid immediate control blocks another process write reservation. Before BEGIN, after commit, after rollback, or after deferred BEGIN, backup-source is admitted while a real second process can acquire BEGIN IMMEDIATE. Standalone source/destination are admitted with no freeze parent and destination creates a file. After entering correct freeze/source/destination then rolling back the parent, backup_to succeeds and produces 77824 bytes while another process can reserve writes.",
+      "impact": "Internal backup capabilities can be used without the approved frozen consistency boundary. Normal checkpoint currently follows the correct sequence; this is not evidence that the ordinary checkpoint path omits its freeze or that a remote caller can invoke this surface.",
+      "required_change": "Require an active validated same-root/same-guard BEGIN IMMEDIATE freeze parent at backup admission and use. Restrict reservation roles from deferred BEGIN, refuse commit or permanently end reservation capability, and invalidate reservation use after public rollback while preserving cleanup/error handling. Reject standalone source/destination before any file creation."
+    }
+  ],
+  "independent_validation": {
+    "prior_witnesses": 19,
+    "prior_witness_disposition": "All previously failing witnesses now reject or preserve original error as expected. Nonzero path/projection process exit codes are expected rejections, not harness failures.",
+    "prior_witness_report": "all-prior-witness-reruns.json",
+    "ownership_controls": 43,
+    "ownership_controls_result": "PASS",
+    "ownership_controls_seconds": 27.738,
+    "ownership_control_log": "43-controls.log",
+    "command_exit": 0,
+    "new_reservation_cases": 8,
+    "new_reservation_control_passes": 1,
+    "new_reservation_boundary_failures": 7,
+    "prior_R1_R2_R3_and_PR43_regressions": "Passing named ownership controls plus retained independent primary-error/cursor-close witnesses."
+  },
+  "parent_reported_validation": {
+    "qualification": "candidate-5 PASS;43 controls;20/20 deliberate regressions detected",
+    "full_suite": "427 tests PASS in78.606s; parent reported, not independently rerun in this review",
+    "qualification_source_archive_sha256": "2a38b25ed980019c0bb6e78f08e085298db104e5ed8529b34ca99a79cfb754df",
+    "qualification_report_sha256": "7f60ef32f8ebbe7f79c2310559f252a0027bf6caa421ad242a3b1cc73837b299"
+  },
+  "capability_review": "Reviewed constructor binding/options, entry/exit and thread lifecycle, execute/script role allowlists, bounded projections, commit/rollback failure state, diagnostic allowance, process hold, and backup admission/use. This bounded review does not establish absence of other defects.",
+  "preserved_boundaries": [
+    "No source/runtime/test/docs/workflow/pin modifications by reviewer",
+    "No Belay or parent pilot or accepted43 mutations",
+    "No provider or Docker actions",
+    "No historical qualification harness reruns or evidence replacement",
+    "Original source environments remain disabled; unresolved cleanup gate is not discharged",
+    "Review does not authorize merge, deployment, quota/checkpoint gates, or global quiescence claims"
+  ],
+  "gate": "Changes required on R13. New immutable candidate review plus exact-head CI and coordinating CLEAR remain required."
+}

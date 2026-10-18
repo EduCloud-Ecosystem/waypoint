@@ -1,0 +1,15 @@
+test_observation_bindings_copied_once_and_custom_adapters_refused (test_sqlite_ownership.OwnershipTests.test_observation_bindings_copied_once_and_custom_adapters_refused) ... FAIL
+
+======================================================================
+FAIL: test_observation_bindings_copied_once_and_custom_adapters_refused (test_sqlite_ownership.OwnershipTests.test_observation_bindings_copied_once_and_custom_adapters_refused)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 533, in test_observation_bindings_copied_once_and_custom_adapters_refused
+    with self.assertRaisesRegex(o.ReadBounds,"scalar bindings"):
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ReadBounds not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.139s
+
+FAILED (failures=1)

@@ -1,0 +1,8 @@
+test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation (test_sqlite_ownership.OwnershipTests.test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation) ... ok
+test_observation_bindings_copied_once_and_custom_adapters_refused (test_sqlite_ownership.OwnershipTests.test_observation_bindings_copied_once_and_custom_adapters_refused) ... ok
+test_duplicate_projection_names_refuse_before_payload_fetch (test_sqlite_ownership.OwnershipTests.test_duplicate_projection_names_refuse_before_payload_fetch) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.445s
+
+OK

@@ -1,0 +1,78 @@
+test_backup_admission_requires_live_immediate_parent (test_sqlite_ownership.OwnershipTests.test_backup_admission_requires_live_immediate_parent) ... 
+  test_backup_admission_requires_live_immediate_parent (test_sqlite_ownership.OwnershipTests.test_backup_admission_requires_live_immediate_parent) (boundary='before-begin') ... FAIL
+  test_backup_admission_requires_live_immediate_parent (test_sqlite_ownership.OwnershipTests.test_backup_admission_requires_live_immediate_parent) (boundary='deferred-begin') ... FAIL
+  test_backup_admission_requires_live_immediate_parent (test_sqlite_ownership.OwnershipTests.test_backup_admission_requires_live_immediate_parent) (boundary='after-rollback') ... FAIL
+
+======================================================================
+FAIL: test_backup_admission_requires_live_immediate_parent (test_sqlite_ownership.OwnershipTests.test_backup_admission_requires_live_immediate_parent) (boundary='before-begin')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 435, in test_backup_admission_requires_live_immediate_parent
+    refused()
+    ~~~~~~~^^
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 426, in refused
+    with o.Owner(c.root,role,guard=c.store.guard,**kwargs):pass
+         ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private<captured-source>/research_workspace/sqlite_ownership.py", line 424, in __enter__
+    self.__connection = sqlite3.connect(uri, uri=True, timeout=10)
+                        ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/mock.py", line 1176, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/mock.py", line 1180, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/mock.py", line 1241, in _execute_mock_call
+    raise effect
+AssertionError: unreserved backup opened
+
+======================================================================
+FAIL: test_backup_admission_requires_live_immediate_parent (test_sqlite_ownership.OwnershipTests.test_backup_admission_requires_live_immediate_parent) (boundary='deferred-begin')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 435, in test_backup_admission_requires_live_immediate_parent
+    refused()
+    ~~~~~~~^^
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 426, in refused
+    with o.Owner(c.root,role,guard=c.store.guard,**kwargs):pass
+         ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private<captured-source>/research_workspace/sqlite_ownership.py", line 424, in __enter__
+    self.__connection = sqlite3.connect(uri, uri=True, timeout=10)
+                        ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/mock.py", line 1176, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/mock.py", line 1180, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/mock.py", line 1241, in _execute_mock_call
+    raise effect
+AssertionError: unreserved backup opened
+
+======================================================================
+FAIL: test_backup_admission_requires_live_immediate_parent (test_sqlite_ownership.OwnershipTests.test_backup_admission_requires_live_immediate_parent) (boundary='after-rollback')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 435, in test_backup_admission_requires_live_immediate_parent
+    refused()
+    ~~~~~~~^^
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 426, in refused
+    with o.Owner(c.root,role,guard=c.store.guard,**kwargs):pass
+         ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private<captured-source>/research_workspace/sqlite_ownership.py", line 424, in __enter__
+    self.__connection = sqlite3.connect(uri, uri=True, timeout=10)
+                        ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/mock.py", line 1176, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/mock.py", line 1180, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/mock.py", line 1241, in _execute_mock_call
+    raise effect
+AssertionError: unreserved backup opened
+
+----------------------------------------------------------------------
+Ran 1 test in 1.006s
+
+FAILED (failures=3)

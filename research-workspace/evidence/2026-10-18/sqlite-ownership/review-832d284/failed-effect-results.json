@@ -1,0 +1,26 @@
+[
+  {
+    "stage": "write",
+    "caught": "write acknowledgement lost",
+    "scope_exception": "OSError('write acknowledgement lost')",
+    "business_write_committed": false,
+    "guard_state": "paused",
+    "held": true,
+    "native_calls": {
+      "commit": 0,
+      "write": 1
+    }
+  },
+  {
+    "stage": "commit",
+    "caught": "commit acknowledgement lost",
+    "scope_exception": "OSError('commit acknowledgement lost')",
+    "business_write_committed": true,
+    "guard_state": "paused",
+    "held": true,
+    "native_calls": {
+      "commit": 1,
+      "write": 1
+    }
+  }
+]

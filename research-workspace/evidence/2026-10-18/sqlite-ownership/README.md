@@ -1,12 +1,36 @@
 # Scoped SQLite ownership evidence
 
-Current runtime candidate: `5d3e06b02c0e131acdcf99f16c9cc520257ce122`.
+Current runtime candidate: `43890cbf10a02cd522da627f6ea5a841820a4762`.
+Its [full suite](full-suite-43890cb.log) passes 433 tests and
+[frozen qualification](candidate-8/report.json) passes 49 v4 controls and detects
+29 deliberately broken variants. The captured source archive SHA-256 is
+`cbb0b9242cd45d5aec1d0c356b6f39f90f7efc2ac533d068999dd90c12e75d75`.
+All 91 captured source files match the immutable runtime commit. JavaScript
+syntax checks also pass. The [final independent review](review-43890cb/review.json)
+is CLEAR for this runtime commit: R1–R15 are resolved, with 49 controls, the
+19 earlier witnesses, nine reservation checks, 32 rejected random-expression
+attempts and all three rejected string-disguise cases retained. Its review
+SHA-256 is `baea5b37f265c97480efc0e2e70ee249e28f9b6ac72312ec6e5f788db72369c7`.
+The [final runtime provenance](final-runtime-provenance.json) binds this record
+to the source and evidence. Exact final-PR-head CI and coordinating CLEAR remain
+separate merge gates. This source review does not authorize an owner merge.
+
+Earlier runtime candidate: `832d2844bb82ff7a9e24e19a3f2c551fb9849f48`.
+Its [full suite](full-suite-832d284.log) passes 427 tests and
+[frozen qualification](candidate-5/report.json) passes 43 v4 controls and detects
+20 deliberately broken variants. The captured source archive SHA-256 is
+`2a38b25ed980019c0bb6e78f08e085298db104e5ed8529b34ca99a79cfb754df`.
+[Consolidated provenance](consolidated-runtime-provenance.json) binds the results
+to the unchanged committed source. Final independent review, exact-head CI and
+coordinating CLEAR remain separate gates.
+
+Earlier candidate: `5d3e06b02c0e131acdcf99f16c9cc520257ce122`.
 Its [full suite](full-suite-5d3e06b.log) passes 419 tests and
 [frozen qualification](candidate-3/report.json) passes 35 v4 controls and detects
 ten deliberately broken variants. The captured source archive SHA-256 is
 `28fba3312a6839e83dad49460fadee87ddf50b2994267c606d74934f7a689670`.
 [Review-fix provenance](review-fixes-provenance.json) binds those results to
-the committed source; final independent review and exact-head CI remain pending.
+the committed source; its later independent HOLD review is retained below.
 
 Initial runtime candidate: `1837c55b5e851a63688a0b14ea5bcc9bcb0c20b7`.
 The approved pre-code design remains frozen at
@@ -63,6 +87,48 @@ scripts and results are retained. The new candidate enforces one-use,
 thread-bound ownership and complete statement allowlists for restricted roles.
 These are application capability-contract findings, not claimed remote exploits.
 The [earlier-head CI success](ci-d59edb4.json) does not clear the new candidate.
+
+The [consolidated review of 5d3e06b](review-5d3e06b/review.json) verified R1–R6
+and retained ten further adverse witnesses grouped as R7–R12. Those cover
+unrestricted schema scripts, guard/root/path or validation bypasses, reading
+after rollback, diagnostic retry after a caught failure, caught native effect
+failures, and duplicate projections bypassing field bounds. The exact source,
+scripts and results remain available. The later candidates include controls
+for these twelve finding groups and retain clean business-denial behavior.
+
+[Candidate 4](candidate-4/report.json) is a passing source-pinned intermediate
+script fix at `1c3a97a`; it does not address all consolidated findings. The
+`full-schema-fix` development log overlapped later source edits and is explicitly
+not exact-commit qualification. The first comprehensive-fix iteration had one
+obsolete diagnostic-test expectation; it is retained, with the corrected test
+included in the final freeze. No earlier PASS or HOLD is rewritten.
+
+The [review of 832d284](review-832d284/review.json) confirmed all 19 earlier
+witnesses were resolved but returned HOLD for R13. Backup owners trusted a
+parent role without proving that its validated immediate reservation remained
+active. Seven adverse cases and a valid reservation control are retained with
+the exact source. Candidate 6 at `d06cba9` added admission/use checks and refused
+parent rollback or exit while child owners remained active. Its
+[qualification](candidate-6/report.json) passed 46 controls and 25 deliberate
+regressions; its [full suite](full-suite-d06cba9.log) passed 430 tests.
+
+The [review of d06cba9](review-d06cba9/review.json) verified R13 and all earlier
+witnesses, then returned HOLD for R14: a nondeterministic SQL expression yielded
+a 1,000,000-byte subject through an 80-byte field limit because metadata and
+payload were separately evaluated. Candidate 7 at `abe2f11` restricts complete
+query shapes and copies scalar bindings once. Its
+[qualification](candidate-7/report.json) passed 48 controls and 28 deliberate
+regressions; its [full suite](full-suite-abe2f11.log) passed 432 tests. The first
+R14 iteration failed nine full-cap subcases because their fixture selected an
+unregistered projection; it now uses the existing production query. That
+failure log remains in `iteration-logs/`.
+
+The [review of abe2f11](review-abe2f11/review.json) rejected the original R14
+witness in all 32 attempts and verified the production query inventory, but
+returned HOLD for R15. Three custom-string witnesses disguised SQL during
+normalization and bypassed read, write or script restrictions. The following
+candidate requires plain built-in strings before normalization or effects.
+Every prior PASS, HOLD, source capture and reproduced failure remains intact.
 
 ## Acceptance boundary
 

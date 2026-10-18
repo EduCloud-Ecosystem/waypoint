@@ -1,0 +1,15 @@
+test_duplicate_projection_names_refuse_before_payload_fetch (test_sqlite_ownership.OwnershipTests.test_duplicate_projection_names_refuse_before_payload_fetch) ... FAIL
+
+======================================================================
+FAIL: test_duplicate_projection_names_refuse_before_payload_fetch (test_sqlite_ownership.OwnershipTests.test_duplicate_projection_names_refuse_before_payload_fetch)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 431, in test_duplicate_projection_names_refuse_before_payload_fetch
+    with self.assertRaisesRegex(o.ReadBounds,"projection"):db.execute(attack)
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ReadBounds not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.099s
+
+FAILED (failures=1)
