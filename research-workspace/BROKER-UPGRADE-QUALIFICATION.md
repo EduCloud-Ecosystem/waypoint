@@ -59,16 +59,34 @@ uncertain; this is not a proof that every possible writer stopped.
    synthetic unknown is sent to a provider or automatically reconciled.
 4. Native v3 and consumer v4 fixture state is explicitly outside Waypoint's
    qualification contract. The old binary refuses it without rewriting. The
-   candidate preserves/report its opaque accounting and bindings. No downgrade,
-   field stripping, native settlement or provider execution is attempted.
+   candidate's status/recovery reads leave the entire fixture ledger bytes
+   unchanged and report unresolved state. This is not field-level native or
+   consumer execution/settlement acceptance. No downgrade, field stripping,
+   native settlement or provider execution is attempted.
 5. Actual run receipts pass Waypoint's strict identity/accounting validation.
    An owned output-directory obstruction produces retained diagnostic failure
    with full conservative charge and no independently validated metrics.
    A fresh bounded-export-v2 workspace runs both existing reviewed runtimes,
    exports a verified archive, and still refuses finite restore/cutover.
 
-The report requires every named control and seven retained attempts; empty or
-partial checks cannot pass. Failure exits nonzero and retains its report, logs
+The v2 report requires every named control and seven retained attempts; empty or
+partial checks cannot pass. Before each launch it records a separate expected
+binding: the fixed scenario slot, request/project ID, request hash, reviewed
+image, broker build hash, relative state role and canonical state-path hash.
+The seven slots are ordinary baseline/replacement, guarded baseline/replacement,
+then bounded-export Python/R/diagnostic failure. Duplicate request IDs or an
+unexpected image, state or broker refuse before launch. Final status receipts
+must match those bindings and assert actual admission/execution, success with
+exit zero, verified cleanup, no unresolved liability, and exactly integer
+30 reserved/30 charged CPU seconds with `estimated_upper_bound` provenance.
+The report oracle independently requires all seven and exactly 210 charged CPU
+seconds. Boolean, string, floating-point, missing or negative charges and any
+failure marker refuse. A valid pre-admission 0/0 refusal is not evidence of a
+previously observed successful attempt's final accounting. Invalid final
+observations remain visible and cannot erase the prelaunch attempt binding.
+These checks establish accounting consistency, not independent provider truth.
+
+Failure exits nonzero and retains its report, logs
 and synthetic state. Original failed reports are never overwritten. Unit tests
 must exercise refusal and evidence-oracle sensitivity without Docker, including
 optimized Python execution; production assertions must not depend on `assert`.

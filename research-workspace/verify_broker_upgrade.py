@@ -21,6 +21,16 @@ from research_workspace.store import AccessError, Store, canonical, private_writ
 HERE = Path(__file__).resolve().parent
 PINS = HERE / "qualification/broker-upgrade/pins.json"
 MAX_ATTEMPTS = 7
+ATTEMPT_PLAN = (
+    ("ordinary-baseline", "ordinary/broker", "baseline", "python"),
+    ("ordinary-replacement", "ordinary-replacement/broker", "candidate", "python"),
+    ("guarded-baseline", "guarded/broker", "baseline", "r"),
+    ("guarded-replacement", "guarded-replacement/broker", "candidate", "python"),
+    ("export-python", "bounded-export/broker", "candidate", "python"),
+    ("export-r", "bounded-export/broker", "candidate", "r"),
+    ("diagnostic-failure", "bounded-export/broker", "candidate", "python"),
+)
+BINDING_FIELDS = ("slot", "request_id", "project_id", "image", "state_role", "state_sha256", "request_sha256", "broker_sha256")
 CSV = "group,value\n001,1\n001,3\nNA,5\n"
 BRIDGE_CHECKS = (
     "baseline_result", "candidate_read_identity", "idempotent_init_identity",
@@ -85,13 +95,70 @@ def binary_identity(path, pin):
             "source_sha256": pin["source_sha256"], "build_metadata": metadata}
 
 
+def sha256_value(value):
+    return type(value) is str and len(value) == 64 and all(c in "0123456789abcdef" for c in value)
+
+
+def settled_observation(receipt):
+    compute = receipt.get("compute")
+    return (receipt.get("admitted") is True and receipt.get("execution_started") is True
+            and receipt.get("cleanup_verified") is True and receipt.get("unresolved_liability") is False
+            and receipt.get("status") == "succeeded" and type(receipt.get("exit_code")) is int and receipt["exit_code"] == 0
+            and type(compute) is dict and set(compute) == {"reserved_cpu_seconds", "charged_cpu_seconds", "provenance"}
+            and all(type(compute[k]) is int and compute[k] == 30 for k in ("reserved_cpu_seconds", "charged_cpu_seconds"))
+            and compute["provenance"] == "estimated_upper_bound")
+
+
+def final_receipt(receipt, request):
+    validate_receipt(receipt, {"id": request["request_id"], "project_id": request["project_id"],
+                              "environment": {"image": request["image"]}})
+    if not settled_observation(receipt):
+        raise ValueError("The final receipt must retain the qualified attempt's full settled charge.")
+    return {key: copy.deepcopy(receipt[key]) for key in (
+        "request_id", "project_id", "image", "admitted", "execution_started", "cleanup_verified",
+        "unresolved_liability", "status", "exit_code", "compute")}
+
+
 def accepted(report):
-    checks = report["checks"]
-    names = [entry["name"] for entry in checks]
-    return (len(names) == len(REQUIRED) and set(names) == REQUIRED
-            and all(entry["passed"] is True for entry in checks)
-            and len(report["attempts"]) == MAX_ATTEMPTS
-            and all(entry.get("cleanup_verified") is True for entry in report["attempts"]))
+    # This checks observations against prelaunch bindings. Neither a self-edited
+    # report nor its checksums independently authenticate a provider or binary.
+    try:
+        if "failure" in report or report["format"] != "waypoint-broker-upgrade-qualification-v2":
+            return False
+        checks, attempts, expected = report["checks"], report["attempts"], report["expected_attempts"]
+        names = [entry["name"] for entry in checks]
+        if (len(names) != len(REQUIRED) or set(names) != REQUIRED or any(c["passed"] is not True for c in checks)
+                or len(attempts) != MAX_ATTEMPTS or len(expected) != MAX_ATTEMPTS):
+            return False
+        images = strict_json((HERE / "images.lock.json").read_bytes())
+        state_hashes = {}
+        for entry, binding, (slot, state_role, broker, image) in zip(attempts, expected, ATTEMPT_PLAN):
+            if (set(binding) != set(BINDING_FIELDS) or any(type(binding[k]) is not str or not binding[k] for k in BINDING_FIELDS)
+                    or any(not sha256_value(binding[k]) for k in BINDING_FIELDS if k.endswith("sha256"))
+                    or any(entry[k] != binding[k] for k in BINDING_FIELDS)
+                    or binding["slot"] != slot or binding["state_role"] != state_role or binding["image"] != images[image]
+                    or binding["broker_sha256"] != report["provenance"][broker]["sha256"]):
+                return False
+            if state_role in state_hashes and state_hashes[state_role] != binding["state_sha256"]:
+                return False
+            state_hashes[state_role] = binding["state_sha256"]
+            final = entry["final_receipt"]
+            if (not settled_observation(final) or not sha256_value(entry["final_receipt_sha256"])
+                    or any(final[k] != binding[k] for k in ("request_id", "project_id", "image"))
+                    or entry["cleanup_verified"] is not True or entry["outcome"] != final["status"]
+                    or entry["compute"] != final["compute"] or "cleanup_error_type" in entry):
+                return False
+            # Equality alone allows 30.0 == 30. Independently type-check both copies.
+            if not settled_observation({**final, "compute": entry["compute"]}):
+                return False
+        projects = [e["project_id"] for e in expected]
+        return (len({e["request_id"] for e in expected}) == MAX_ATTEMPTS
+                and len(set(state_hashes.values())) == len(state_hashes)
+                and projects[0] == projects[1] and projects[2] == projects[3] and projects[4] == projects[5] == projects[6]
+                and len(set(projects)) == 3
+                and sum(entry["compute"]["charged_cpu_seconds"] for entry in attempts) == 210)
+    except (KeyError, TypeError, ValueError, AttributeError):
+        return False
 
 
 class Audit:
@@ -99,10 +166,10 @@ class Audit:
         self.root = new_private_directory(output)
         self.private = self.root / "state.private"
         self.private.mkdir(mode=0o700)
-        self.report = {"format": "waypoint-broker-upgrade-qualification-v1", "status": "INCOMPLETE",
+        self.report = {"format": "waypoint-broker-upgrade-qualification-v2", "status": "INCOMPLETE",
                        "created_at": dt.datetime.now(dt.timezone.utc).isoformat(), "provenance": provenance,
                        "attempt_limit": MAX_ATTEMPTS, "reserved_execution_ceiling_cpu_seconds": 210,
-                       "checks": [], "attempts": [], "artifacts": {}, "fixture_boundaries": {},
+                       "checks": [], "attempts": [], "expected_attempts": [], "artifacts": {}, "fixture_boundaries": {},
                        "quota_enforced": False, "active_pin_changed": False,
                        "limitations": ["Local synthetic qualification only; no active-pin adoption or accepted-state change.",
                            "Build metadata and hashes do not independently authenticate a supplied executable.",
@@ -145,11 +212,21 @@ class Audit:
                 or (request["cpus"], request["memory_mb"], request["pids_limit"], request["timeout_seconds"], request["max_output_bytes"]) != (1, 256, 64, 30, 65536)
                 or request["image"] not in strict_json((HERE / "images.lock.json").read_bytes()).values()):
             raise ValueError("Execution exceeds the fixed qualification profile.")
-        entry = {"request_id": request["request_id"], "project_id": request["project_id"],
-                 "request_sha256": file_hash(request_path), "broker_sha256": file_hash(executable),
-                 "cleanup_verified": False, "outcome": "unknown_before_launch"}
+        slot, state_role, broker, image = ATTEMPT_PLAN[len(self.report["attempts"])]
+        images = strict_json((HERE / "images.lock.json").read_bytes())
+        state = str(Path(state).resolve())
+        binding = {"slot": slot, "request_id": request["request_id"], "project_id": request["project_id"],
+                   "image": request["image"], "state_role": Path(state).relative_to(self.private.resolve()).as_posix(),
+                   "state_sha256": digest(state.encode()), "request_sha256": file_hash(request_path), "broker_sha256": file_hash(executable)}
+        if (binding["state_role"] != state_role or binding["image"] != images[image]
+                or binding["broker_sha256"] != self.report["provenance"][broker]["sha256"]
+                or any(type(binding[k]) is not str or not binding[k] for k in ("request_id", "project_id"))
+                or request["request_id"] in {e["request_id"] for e in self.report["expected_attempts"]}):
+            raise ValueError("Execution does not match the next qualification attempt binding.")
+        entry = {**binding, "cleanup_verified": False, "outcome": "unknown_before_launch"}
+        self.report["expected_attempts"].append(copy.deepcopy(binding))
         self.report["attempts"].append(entry)
-        self.targets.append((str(executable), str(state), request, entry))
+        self.targets.append((str(executable), state, copy.deepcopy(request), entry))
         self.save()  # Before Popen; a crash never erases this attempt or authorizes retry.
 
     def call(self, executable, state, *args, allow_failure=False):
@@ -165,16 +242,21 @@ class Audit:
 
     def cleanup(self):
         complete = True
-        for executable, state, request, entry in self.targets:
+        for index, (executable, state, request, entry) in enumerate(self.targets):
             try:
+                binding = self.report["expected_attempts"][index]
+                if (any(entry[k] != binding[k] for k in BINDING_FIELDS)
+                        or any(request[k] != binding[k] for k in ("request_id", "project_id", "image"))
+                        or digest(str(Path(state).resolve()).encode()) != binding["state_sha256"]
+                        or file_hash(executable) != binding["broker_sha256"]):
+                    raise ValueError("Cleanup target differs from its prelaunch binding.")
                 receipt = self.call(executable, state, "status", "--request-id", request["request_id"])[1]
                 if not receipt.get("cleanup_verified") or receipt.get("unresolved_liability"):
                     self.call(executable, state, "cancel", "--request-id", request["request_id"])
                     receipt = self.call(executable, state, "reconcile", "--request-id", request["request_id"])[1]
-                validate_receipt(receipt, {"id": request["request_id"], "project_id": request["project_id"],
-                                         "environment": {"image": request["image"]}})
-                entry.update(cleanup_verified=receipt["cleanup_verified"] and not receipt["unresolved_liability"],
-                             outcome=receipt["status"], compute=receipt["compute"])
+                entry["final_receipt_sha256"] = digest(canonical(receipt).encode())
+                entry["final_receipt"] = final_receipt(receipt, request)
+                entry.update(cleanup_verified=True, outcome=receipt["status"], compute=copy.deepcopy(receipt["compute"]))
             except Exception as exc:
                 entry.update(cleanup_verified=False, cleanup_error_type=type(exc).__name__)
             complete = complete and entry["cleanup_verified"] is True

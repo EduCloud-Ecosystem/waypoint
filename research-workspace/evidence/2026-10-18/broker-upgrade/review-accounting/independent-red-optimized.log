@@ -1,0 +1,2 @@
+{"cleanup_returns": true, "docker_attempts_in_probe": 0, "final_charged_cpu_seconds": 0, "final_outcomes": ["failed", "failed", "failed", "failed", "failed", "failed", "failed"], "original_charged_cpu_seconds": 210, "qualification_accepted": true}
+CONFIRMED FALSE PASS: final accounting erased after the successful run checks

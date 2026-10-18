@@ -1,0 +1,3 @@
+{"broker_processes_in_probe": 0, "cleanup_returns": true, "docker_attempts_in_probe": 0, "final_charged_cpu_seconds": 0, "final_outcomes": ["failed", "failed", "failed", "failed", "failed", "failed", "failed"], "historical_report_sha256": "b59a8c9c16c5ff89d1b47a3cdc27d6b2766c7eeda40169094967fcbfc833143f", "original_charged_cpu_seconds": 210, "qualification_accepted": true, "verifier_sha256": "36c047ae0686dff90540dc8f5967bf4015551d268ea70923f4f04102e6b7ceea"}
+
+probe_exit_code=1
