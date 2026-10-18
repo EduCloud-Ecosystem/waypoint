@@ -1,0 +1,46 @@
+{
+  "counter_limit": 9223372036854775807,
+  "encoded_limits": {
+    "checkpoint_manifest": 4194304,
+    "config": 65536,
+    "project": 32768,
+    "receipt": 2097152,
+    "recovery": 65536,
+    "request": 32768,
+    "result": 65536,
+    "run": 262144
+  },
+  "export_protocol": "educloud-bounded-export-v1",
+  "format": "educloud-finite-authority-v4",
+  "guard_publication": {
+    "failure_notes": "origin_role",
+    "format": "educloud-bounded-guard-publication-v1",
+    "max_payload_bytes": 4194304,
+    "ordinary_scratch": ".operation-guard-ordinary.pending",
+    "residue": "preserve",
+    "safety_scratch": ".operation-guard-safety.pending",
+    "unresolved_essential": "refuse"
+  },
+  "path_utf8_bytes": 1024,
+  "row_limits": {
+    "members": 1024,
+    "projects": 20,
+    "runs": 1000,
+    "sessions": 256,
+    "sessions_per_subject": 8,
+    "users": 128
+  },
+  "sqlite_ownership": {
+    "close_policy": "one-attempt-preserve-error",
+    "diagnostic_read_exception": "one-existing-origin-note-attempt",
+    "format": "educloud-scoped-sqlite-v1",
+    "lock_order": "guard-before-database",
+    "offline_backup": "distinct-frozen-owner",
+    "online_immutable": false,
+    "online_read_open": "existing-ro",
+    "online_write_open": "existing-rw",
+    "raw_handle_escape": "refuse",
+    "read_result": "bounded-materialized",
+    "uncertain_owner": "process-hold"
+  }
+}
