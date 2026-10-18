@@ -223,7 +223,7 @@ class Store:
             db.execute("UPDATE runs SET cancel_requested=1 WHERE project_id=? AND status IN ('queued','running')", (project_id,))
         return project
 
-    def submit(self, project_id, subject, data, images, request_key=None):
+    def submit(self, project_id, subject, data, images, request_key=None, authorize=None):
         recipe = data.get("recipe")
         if recipe not in IDS or not images.get(IDS[recipe][0]):
             raise ValueError("That recipe's pinned runtime is unavailable.")
@@ -266,6 +266,8 @@ class Store:
                 private_write(directory / folder / file, payload)
                 (directory / folder / file).chmod(0o444)
             db.execute("INSERT INTO runs(id,project_id,subject,status,payload,request_key,request_hash) VALUES(?,?,?,?,?,?,?)", (rid, project_id, subject, "queued", canonical(run), request_key, request_hash))
+            if authorize is not None:
+                authorize(rid)
         return run
 
     def run(self, project_id, run_id, subject):
@@ -285,14 +287,20 @@ class Store:
             db.execute("UPDATE runs SET cancel_requested=1 WHERE id=?", (run_id,))
         return json.loads(row[0])
 
-    def recover(self):
+    def recover(self, *, cancel_queued=False):
         with self.transaction() as db:
+            if cancel_queued:
+                for row in db.execute("SELECT id,payload FROM runs WHERE status='queued'").fetchall():
+                    run = json.loads(row["payload"])
+                    run.update(status="cancelled", finished_at=now(), cleanup_verified=True,
+                               error="Transient identity authorization ended at restart. Submit a new run after signing in; this run was not replayed.")
+                    db.execute("UPDATE runs SET status='cancelled',payload=? WHERE id=?", (canonical(run), row["id"]))
             for row in db.execute("SELECT id,payload FROM runs WHERE status='running'").fetchall():
                 run = json.loads(row["payload"])
                 run.update(status="interrupted", finished_at=now(), error="The service restarted during execution. Operator reconciliation is required; this run was not retried.", cleanup_verified=False, compute=unknown_compute())
                 db.execute("UPDATE runs SET status='interrupted',payload=? WHERE id=?", (canonical(run), row["id"]))
 
-    def claim(self):
+    def claim(self, on_cancel=None):
         with self.transaction() as db:
             for row in db.execute("SELECT * FROM runs WHERE status='queued' ORDER BY rowid").fetchall():
                 run = json.loads(row["payload"])
@@ -305,6 +313,8 @@ class Store:
                     run.update(status="cancelled", finished_at=now(), cleanup_verified=True,
                                error="Cancelled before dispatch; access or the project run period ended.")
                     db.execute("UPDATE runs SET status='cancelled',payload=? WHERE id=?", (canonical(run), row["id"]))
+                    if on_cancel is not None:
+                        on_cancel(row["id"])
                     continue
                 run.update(status="running", started_at=now(), compute=unknown_compute())
                 db.execute("UPDATE runs SET status='running',payload=? WHERE id=?", (canonical(run), row["id"]))
@@ -322,7 +332,7 @@ class Store:
             except (AccessError, ValueError):
                 return True
 
-    def finish(self, run, result=None):
+    def finish(self, run, result=None, publication=None):
         with self.transaction() as db:
             row = db.execute("SELECT * FROM runs WHERE id=?", (run["id"],)).fetchone()
             try:
@@ -330,13 +340,17 @@ class Store:
                 allowed = not row["cancel_requested"]
             except (AccessError, ValueError):
                 allowed = False
-            if not allowed and run["status"] == "succeeded":
-                run.update(status="cancelled", metrics={}, error="Access or the project run period ended before result publication.")
-                result = None
-            if result is not None:
-                private_write(self.root / "runs" / run["id"] / "result.json", canonical(result).encode())
-            run["finished_at"] = now()
-            db.execute("UPDATE runs SET status=?,payload=? WHERE id=?", (run["status"], canonical(run), run["id"]))
+            with publication if publication is not None else contextlib.nullcontext(True) as identity_allowed:
+                if (not allowed or not identity_allowed) and run["status"] == "succeeded":
+                    run.update(status="cancelled", metrics={}, error="Access, identity or the project run period ended before result publication.")
+                    result = None
+                if result is not None:
+                    private_write(self.root / "runs" / run["id"] / "result.json", canonical(result).encode())
+                run["finished_at"] = now()
+                db.execute("UPDATE runs SET status=?,payload=? WHERE id=?", (run["status"], canonical(run), run["id"]))
+                # Commit visibility before releasing the local identity guard.
+                # The transaction context's subsequent commit has no changes.
+                db.commit()
 
     def snapshot(self, project_id, subject):
         with self.transaction() as db:

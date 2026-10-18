@@ -1,0 +1,310 @@
+{
+  "status": "PASS",
+  "observed_at_utc": "2026-10-18T03:58:51.909559+00:00",
+  "scope": "Exact generated Compose project labels and original/replacement broker owner labels only. No broad Docker cleanup.",
+  "attempts": [
+    {
+      "attempt": "a",
+      "compose_project": "waypoint-oidc-bf524ee9820a",
+      "stopped_at_utc": "2026-10-18T03:30:50.399644+00:00",
+      "resources_remaining": {
+        "containers": [],
+        "networks": [],
+        "volumes": []
+      },
+      "ledgers": [
+        {
+          "state": "state",
+          "ledger_sha256": "b86553ef56eb3369e94fca4fa6bbebe331fc880d14caff759a56f9354ff48f80",
+          "owner": "8f6b050164750ac62d38b0aa1ec1c465",
+          "owned_workloads_remaining": [],
+          "runs": [],
+          "workspace_run_counts": {},
+          "charged_cpu_seconds": 0
+        }
+      ],
+      "distinct_charged_cpu_seconds": 0
+    },
+    {
+      "attempt": "b",
+      "compose_project": "waypoint-oidc-6639ae167ded",
+      "stopped_at_utc": "2026-10-18T03:38:29.717028+00:00",
+      "resources_remaining": {
+        "containers": [],
+        "networks": [],
+        "volumes": []
+      },
+      "ledgers": [
+        {
+          "state": "state",
+          "ledger_sha256": "40c79dd1289ad4058a1105db97c3e15a8c99bee2ebad252adfb9abc855530f9e",
+          "owner": "06dedb74000644d5ed9c8559703cbcf9",
+          "owned_workloads_remaining": [],
+          "runs": [
+            {
+              "request_id": "7224f082f0cc46f886019b31a5e66dc8",
+              "status": "succeeded",
+              "cleanup_verified": true,
+              "unresolved_liability": false,
+              "compute": {
+                "reserved_cpu_seconds": 30,
+                "charged_cpu_seconds": 30,
+                "provenance": "estimated_upper_bound"
+              }
+            },
+            {
+              "request_id": "797dd0ff51b34574a8f20ae83810d3f0",
+              "status": "succeeded",
+              "cleanup_verified": true,
+              "unresolved_liability": false,
+              "compute": {
+                "reserved_cpu_seconds": 30,
+                "charged_cpu_seconds": 30,
+                "provenance": "estimated_upper_bound"
+              }
+            },
+            {
+              "request_id": "7ddf5e4b709c41eeb7536a17d3d578cf",
+              "status": "succeeded",
+              "cleanup_verified": true,
+              "unresolved_liability": false,
+              "compute": {
+                "reserved_cpu_seconds": 30,
+                "charged_cpu_seconds": 30,
+                "provenance": "estimated_upper_bound"
+              }
+            },
+            {
+              "request_id": "9f88cca8184c4f67971308c36b999b77",
+              "status": "succeeded",
+              "cleanup_verified": true,
+              "unresolved_liability": false,
+              "compute": {
+                "reserved_cpu_seconds": 30,
+                "charged_cpu_seconds": 30,
+                "provenance": "estimated_upper_bound"
+              }
+            }
+          ],
+          "workspace_run_counts": {
+            "cancelled": 2,
+            "succeeded": 3
+          },
+          "charged_cpu_seconds": 120
+        }
+      ],
+      "distinct_charged_cpu_seconds": 120
+    },
+    {
+      "attempt": "c",
+      "compose_project": "waypoint-oidc-f213e2c15c1f",
+      "stopped_at_utc": "2026-10-18T03:43:16.744295+00:00",
+      "resources_remaining": {
+        "containers": [],
+        "networks": [],
+        "volumes": []
+      },
+      "ledgers": [
+        {
+          "state": "state",
+          "ledger_sha256": "b79c7d5d8258b9b69969719eec90c80693dffee76ed6feccd268c0241ddebac3",
+          "owner": "72ccec86f489b4973ebff3879c552029",
+          "owned_workloads_remaining": [],
+          "runs": [],
+          "workspace_run_counts": {},
+          "charged_cpu_seconds": 0
+        }
+      ],
+      "distinct_charged_cpu_seconds": 0
+    },
+    {
+      "attempt": "d",
+      "compose_project": "waypoint-oidc-9114a48fbd19",
+      "stopped_at_utc": "2026-10-18T03:58:27.370083+00:00",
+      "resources_remaining": {
+        "containers": [],
+        "networks": [],
+        "volumes": []
+      },
+      "ledgers": [
+        {
+          "state": "state",
+          "ledger_sha256": "353e503b8913dee8cb929b47fe3107c0d330232d390003b9a32793bc28352627",
+          "owner": "bb8a5eec96f53c4f844e04f19b8947ff",
+          "owned_workloads_remaining": [],
+          "runs": [
+            {
+              "request_id": "49af57b7b93145de86bb1a3936533db6",
+              "status": "succeeded",
+              "cleanup_verified": true,
+              "unresolved_liability": false,
+              "compute": {
+                "reserved_cpu_seconds": 30,
+                "charged_cpu_seconds": 30,
+                "provenance": "estimated_upper_bound"
+              }
+            },
+            {
+              "request_id": "550b0c43bb374c5eb13a37e7cf14178c",
+              "status": "succeeded",
+              "cleanup_verified": true,
+              "unresolved_liability": false,
+              "compute": {
+                "reserved_cpu_seconds": 30,
+                "charged_cpu_seconds": 30,
+                "provenance": "estimated_upper_bound"
+              }
+            },
+            {
+              "request_id": "737734c6e24e45af96047c6b2e9cb7c1",
+              "status": "succeeded",
+              "cleanup_verified": true,
+              "unresolved_liability": false,
+              "compute": {
+                "reserved_cpu_seconds": 30,
+                "charged_cpu_seconds": 30,
+                "provenance": "estimated_upper_bound"
+              }
+            },
+            {
+              "request_id": "9e2e0247fda34086827b3a3a1410ac20",
+              "status": "succeeded",
+              "cleanup_verified": true,
+              "unresolved_liability": false,
+              "compute": {
+                "reserved_cpu_seconds": 30,
+                "charged_cpu_seconds": 30,
+                "provenance": "estimated_upper_bound"
+              }
+            },
+            {
+              "request_id": "c7bbdf9e40474726887b162993d44108",
+              "status": "succeeded",
+              "cleanup_verified": true,
+              "unresolved_liability": false,
+              "compute": {
+                "reserved_cpu_seconds": 30,
+                "charged_cpu_seconds": 30,
+                "provenance": "estimated_upper_bound"
+              }
+            },
+            {
+              "request_id": "f03f6c5c7c2b4c84801fb60666422295",
+              "status": "cancelled",
+              "cleanup_verified": true,
+              "unresolved_liability": false,
+              "compute": {
+                "reserved_cpu_seconds": 30,
+                "charged_cpu_seconds": 30,
+                "provenance": "estimated_upper_bound"
+              }
+            }
+          ],
+          "workspace_run_counts": {
+            "cancelled": 4,
+            "succeeded": 3
+          },
+          "charged_cpu_seconds": 180
+        },
+        {
+          "state": "replacement",
+          "ledger_sha256": "22ec7f96b7980c9510d0f761cf8ee433437de09f462bec7c5a0406439a221d2a",
+          "owner": "bb8a5eec96f53c4f844e04f19b8947ff",
+          "owned_workloads_remaining": [],
+          "runs": [
+            {
+              "request_id": "49af57b7b93145de86bb1a3936533db6",
+              "status": "succeeded",
+              "cleanup_verified": true,
+              "unresolved_liability": false,
+              "compute": {
+                "reserved_cpu_seconds": 30,
+                "charged_cpu_seconds": 30,
+                "provenance": "estimated_upper_bound"
+              }
+            },
+            {
+              "request_id": "550b0c43bb374c5eb13a37e7cf14178c",
+              "status": "succeeded",
+              "cleanup_verified": true,
+              "unresolved_liability": false,
+              "compute": {
+                "reserved_cpu_seconds": 30,
+                "charged_cpu_seconds": 30,
+                "provenance": "estimated_upper_bound"
+              }
+            },
+            {
+              "request_id": "737734c6e24e45af96047c6b2e9cb7c1",
+              "status": "succeeded",
+              "cleanup_verified": true,
+              "unresolved_liability": false,
+              "compute": {
+                "reserved_cpu_seconds": 30,
+                "charged_cpu_seconds": 30,
+                "provenance": "estimated_upper_bound"
+              }
+            },
+            {
+              "request_id": "9e2e0247fda34086827b3a3a1410ac20",
+              "status": "succeeded",
+              "cleanup_verified": true,
+              "unresolved_liability": false,
+              "compute": {
+                "reserved_cpu_seconds": 30,
+                "charged_cpu_seconds": 30,
+                "provenance": "estimated_upper_bound"
+              }
+            },
+            {
+              "request_id": "c5526b27a7644faea22377e485bbcbe6",
+              "status": "succeeded",
+              "cleanup_verified": true,
+              "unresolved_liability": false,
+              "compute": {
+                "reserved_cpu_seconds": 30,
+                "charged_cpu_seconds": 30,
+                "provenance": "estimated_upper_bound"
+              }
+            },
+            {
+              "request_id": "c7bbdf9e40474726887b162993d44108",
+              "status": "succeeded",
+              "cleanup_verified": true,
+              "unresolved_liability": false,
+              "compute": {
+                "reserved_cpu_seconds": 30,
+                "charged_cpu_seconds": 30,
+                "provenance": "estimated_upper_bound"
+              }
+            },
+            {
+              "request_id": "f03f6c5c7c2b4c84801fb60666422295",
+              "status": "cancelled",
+              "cleanup_verified": true,
+              "unresolved_liability": false,
+              "compute": {
+                "reserved_cpu_seconds": 30,
+                "charged_cpu_seconds": 30,
+                "provenance": "estimated_upper_bound"
+              }
+            }
+          ],
+          "workspace_run_counts": {
+            "cancelled": 4,
+            "succeeded": 4
+          },
+          "charged_cpu_seconds": 210
+        }
+      ],
+      "distinct_charged_cpu_seconds": 210
+    }
+  ],
+  "total_distinct_charged_cpu_seconds": 330,
+  "accounting_boundary": "Replacement contains predecessor rows; copies are not added twice. Charges are conservative upper bounds, not measured CPU utilization. No refunds.",
+  "retained": [
+    "private operator/state/checkpoint directories",
+    "Docker images"
+  ],
+  "original_source_replay": "Original failed replay bytes and cleanup gate unchanged; separate earlier reconciliation remains supplemental."
+}

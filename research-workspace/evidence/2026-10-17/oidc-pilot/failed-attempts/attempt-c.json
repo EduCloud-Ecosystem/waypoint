@@ -1,0 +1,16 @@
+{
+  "status": "FAIL",
+  "checks": [
+    {
+      "name": "configuration outage offers retry without access-key fallback",
+      "status": "PASS"
+    }
+  ],
+  "scope": "Local synthetic OIDC, real browser and private service checks.",
+  "not_run": [
+    "manual screen reader",
+    "independent human",
+    "hosted capacity",
+    "private-data admission"
+  ]
+}

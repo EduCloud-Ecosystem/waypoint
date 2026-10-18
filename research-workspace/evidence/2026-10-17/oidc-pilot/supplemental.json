@@ -1,0 +1,19 @@
+{
+  "status": "PASS",
+  "checks": [
+    {
+      "name": "mobile page has no horizontal overflow",
+      "status": "PASS"
+    }
+  ],
+  "screenshots": [
+    "desktop.png",
+    "mobile.png",
+    "signed-out.png"
+  ],
+  "visual_review": "Desktop1440px, mobile390px and signed-out screens inspected. No page overflow. This is not a manual focus-order, screen-reader or independent human acceptance.",
+  "initial_attempt": {
+    "status": "FAIL",
+    "cause": "Read-only layout expression used document outside the browser page context. Corrected page.evaluate control passed separately."
+  }
+}

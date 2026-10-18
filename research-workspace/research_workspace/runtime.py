@@ -1,6 +1,7 @@
 """Outfitter integration; the web service never executes submitted code itself."""
 
 import json
+from contextlib import nullcontext
 from pathlib import Path
 import re
 import subprocess
@@ -91,14 +92,15 @@ class Broker:
 
 
 class Worker:
-    def __init__(self, store, broker):
+    def __init__(self, store, broker, identity=None):
         self.store = store
         self.broker = broker
+        self.identity = identity
         self.stopped = threading.Event()
         self.thread = threading.Thread(target=self.loop, daemon=True, name="research-worker")
 
     def start(self):
-        self.store.recover()
+        self.store.recover(cancel_queued=self.identity is not None)
         self.thread.start()
 
     def stop(self):
@@ -107,7 +109,7 @@ class Worker:
 
     def loop(self):
         while not self.stopped.is_set():
-            run = self.store.claim()
+            run = self.store.claim(on_cancel=self.identity.release if self.identity else None)
             if run is None:
                 self.stopped.wait(0.25)
                 continue
@@ -115,10 +117,30 @@ class Worker:
                 self.execute(run)
             except Exception:
                 # Keep failures visible without leaking local paths or raw broker logs.
-                run.update(status="interrupted", error="Execution could not be reconciled. The operator must inspect the broker receipt; no automatic retry was made.")
+                run.update(status="interrupted", metrics={}, error="Execution could not be reconciled. The operator must inspect the broker receipt; no automatic retry was made.")
                 self.store.finish(run)
+            finally:
+                if self.identity:
+                    self.identity.release(run["id"])
+
+    def identity_allowed(self, run):
+        if self.identity is None:
+            return True
+        from .identity import IdentityUnavailable
+        from .store import AccessError
+        try:
+            self.identity.check_run(run["id"])
+            return True
+        except (AccessError, IdentityUnavailable):
+            return False
 
     def execute(self, run):
+        if not self.identity_allowed(run):
+            run.update(status="cancelled", error="Current identity could not be verified before dispatch. No automatic retry was made.",
+                       cleanup_verified=True, compute={"reserved_cpu_seconds": 0, "charged_cpu_seconds": 0,
+                       "provenance": "not_admitted", "unresolved_liability": False})
+            self.store.finish(run)
+            return
         directory = self.store.root / "runs" / run["id"]
         runtime, filename = IDS[run["recipe"]]
         content = (directory / "input/data.csv").read_bytes()
@@ -146,8 +168,16 @@ class Worker:
                    "max_output_bytes": 65536, "isolation": "reviewed-local", "allow_supervised_reaper": True}
         request_path = directory / "request.private.json"
         private_write(request_path, canonical(request).encode())
-        process = subprocess.Popen(self.broker.command("run", "--request", str(request_path)), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        with self.identity.publication(run["id"]) if self.identity else nullcontext(True) as authorized:
+            process = subprocess.Popen(self.broker.command("run", "--request", str(request_path)), stdout=subprocess.PIPE, stderr=subprocess.PIPE) if authorized else None
+        if process is None:
+            run.update(status="cancelled", error="Identity authorization ended before broker launch.", cleanup_verified=True,
+                       compute={"reserved_cpu_seconds": 0, "charged_cpu_seconds": 0, "provenance": "not_admitted", "unresolved_liability": False})
+            self.store.finish(run)
+            return
         cancellation_sent = False
+        identity_denied = False
+        next_identity_check = time.monotonic() + 1 if self.identity else 0
         deadline = time.monotonic() + 70
         while True:
             try:
@@ -158,7 +188,10 @@ class Worker:
                     process.kill()
                     process.communicate(timeout=5)
                     raise ValueError("Broker response deadline exceeded; retained reservation needs reconciliation.")
-                if not cancellation_sent and (self.stopped.is_set() or self.store.should_cancel(run["id"])):
+                if self.identity and time.monotonic() >= next_identity_check:
+                    identity_denied = identity_denied or not self.identity_allowed(run)
+                    next_identity_check = time.monotonic() + 1
+                if not cancellation_sent and (identity_denied or self.stopped.is_set() or self.store.should_cancel(run["id"])):
                     try:
                         self.broker.call("cancel", "--request-id", run["id"])
                     except (ValueError, subprocess.TimeoutExpired):
@@ -191,7 +224,12 @@ class Worker:
                     result = None
         else:
             run["error"] = "The bounded compute run did not complete. Its failure and reservation are retained; inspect private operator diagnostics."
-        self.store.finish(run, result)
+        # A denial is permanent for this run, even if the provider recovers or
+        # the broker subsequently reports success. Keep accounting and receipt.
+        if identity_denied or not self.identity_allowed(run):
+            run.update(status="cancelled", metrics={}, error="Current identity ended or could not be verified before publication. Compute accounting was retained; no automatic retry was made.")
+            result = None
+        self.store.finish(run, result, publication=self.identity.publication(run["id"]) if self.identity else None)
 
 
 def validate_images(images, *, require_active=True):

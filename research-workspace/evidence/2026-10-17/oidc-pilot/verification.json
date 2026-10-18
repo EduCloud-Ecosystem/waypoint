@@ -1,0 +1,308 @@
+{
+  "status": "PASS",
+  "checks": [
+    {
+      "name": "configuration outage offers retry without access-key fallback",
+      "status": "PASS"
+    },
+    {
+      "name": "owner real browser sign-in 200",
+      "status": "PASS"
+    },
+    {
+      "name": "editor real browser sign-in 200",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer real browser sign-in 200",
+      "status": "PASS"
+    },
+    {
+      "name": "outsider real browser sign-in 200",
+      "status": "PASS"
+    },
+    {
+      "name": "owner sees only provisioned project",
+      "status": "PASS"
+    },
+    {
+      "name": "owner cross-project export denied",
+      "status": "PASS"
+    },
+    {
+      "name": "editor sees only provisioned project",
+      "status": "PASS"
+    },
+    {
+      "name": "editor cross-project export denied",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer sees only provisioned project",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cross-project export denied",
+      "status": "PASS"
+    },
+    {
+      "name": "outsider sees only provisioned project",
+      "status": "PASS"
+    },
+    {
+      "name": "outsider cross-project export denied",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot submit",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot manage membership",
+      "status": "PASS"
+    },
+    {
+      "name": "summary-python admitted",
+      "status": "PASS"
+    },
+    {
+      "name": "summary-python real compute and cleanup",
+      "status": "PASS"
+    },
+    {
+      "name": "summary-r admitted",
+      "status": "PASS"
+    },
+    {
+      "name": "summary-r real compute and cleanup",
+      "status": "PASS"
+    },
+    {
+      "name": "current member export",
+      "status": "PASS"
+    },
+    {
+      "name": "editor initial export",
+      "status": "PASS"
+    },
+    {
+      "name": "owner removes editor",
+      "status": "PASS"
+    },
+    {
+      "name": "removed member immediate export denial",
+      "status": "PASS"
+    },
+    {
+      "name": "owner restores editor",
+      "status": "PASS"
+    },
+    {
+      "name": "forged identity headers cannot authenticate",
+      "status": "PASS"
+    },
+    {
+      "name": "private route unavailable /oauth2/auth",
+      "status": "PASS"
+    },
+    {
+      "name": "private route unavailable /oauth2/sign_out",
+      "status": "PASS"
+    },
+    {
+      "name": "private route unavailable /oauth2/%61uth",
+      "status": "PASS"
+    },
+    {
+      "name": "private route unavailable /idp/admin/",
+      "status": "PASS"
+    },
+    {
+      "name": "private route unavailable /idp/realms/master/",
+      "status": "PASS"
+    },
+    {
+      "name": "private route unavailable /idp/health",
+      "status": "PASS"
+    },
+    {
+      "name": "access keys cannot authenticate OIDC mode",
+      "status": "PASS"
+    },
+    {
+      "name": "workspace logout succeeds",
+      "status": "PASS"
+    },
+    {
+      "name": "signed-out cookie replay fails",
+      "status": "PASS"
+    },
+    {
+      "name": "signed-out proxy cannot begin replacement session",
+      "status": "PASS"
+    },
+    {
+      "name": "real PKCE token response has no refresh token",
+      "status": "PASS"
+    },
+    {
+      "name": "owner real browser sign-in 200",
+      "status": "PASS"
+    },
+    {
+      "name": "current owner token and cookies plus client/boundary secrets absent from runs broker export and four verified service logs",
+      "status": "PASS"
+    },
+    {
+      "name": "outsider real browser sign-in 401",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer real browser sign-in 200",
+      "status": "PASS"
+    },
+    {
+      "name": "expired real credential rejected",
+      "status": "PASS"
+    },
+    {
+      "name": "owner real browser sign-in 200",
+      "status": "PASS"
+    },
+    {
+      "name": "editor real browser sign-in 200",
+      "status": "PASS"
+    },
+    {
+      "name": "editor real browser sign-in 200",
+      "status": "PASS"
+    },
+    {
+      "name": "exact owned real compute observed running and paused",
+      "status": "PASS"
+    },
+    {
+      "name": "worker requested cancellation while real workload remained running and paused",
+      "status": "PASS"
+    },
+    {
+      "name": "revocation cancels active compute with retained charge and cleanup",
+      "status": "PASS"
+    },
+    {
+      "name": "paused owned workload absent after cancellation",
+      "status": "PASS"
+    },
+    {
+      "name": "editor real browser sign-in 200",
+      "status": "PASS"
+    },
+    {
+      "name": "queued demotion prevents broker admission",
+      "status": "PASS"
+    },
+    {
+      "name": "revoked real credential immediately denied",
+      "status": "PASS"
+    },
+    {
+      "name": "post-execution revocation suppresses publication and retains charge",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer real browser sign-in 200",
+      "status": "PASS"
+    },
+    {
+      "name": "identity outage returns JSON 503",
+      "status": "PASS"
+    },
+    {
+      "name": "worker observed identity outage before recovery",
+      "status": "PASS"
+    },
+    {
+      "name": "separate-session logout works during identity outage",
+      "status": "PASS"
+    },
+    {
+      "name": "owner real browser sign-in 200",
+      "status": "PASS"
+    },
+    {
+      "name": "outage denial stays latched after service recovery",
+      "status": "PASS"
+    },
+    {
+      "name": "owner real browser sign-in 200",
+      "status": "PASS"
+    },
+    {
+      "name": "restore preserves OIDC authority mode",
+      "status": "PASS"
+    },
+    {
+      "name": "restore invalidates previous app session",
+      "status": "PASS"
+    },
+    {
+      "name": "restore rejects old proxy cookie",
+      "status": "PASS"
+    },
+    {
+      "name": "owner real browser sign-in 200",
+      "status": "PASS"
+    },
+    {
+      "name": "fresh identity can export restored evidence",
+      "status": "PASS"
+    },
+    {
+      "name": "old proxy stays rejected after fresh reauthentication",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer real browser sign-in 200",
+      "status": "PASS"
+    },
+    {
+      "name": "restore preserves member removal",
+      "status": "PASS"
+    },
+    {
+      "name": "owner real browser sign-in 200",
+      "status": "PASS"
+    },
+    {
+      "name": "keyboard project selection and detail tab",
+      "status": "PASS"
+    },
+    {
+      "name": "keyboard membership update",
+      "status": "PASS"
+    },
+    {
+      "name": "keyboard invalid input yields visible failure",
+      "status": "PASS"
+    },
+    {
+      "name": "keyboard reviewed run succeeds",
+      "status": "PASS"
+    },
+    {
+      "name": "keyboard export download exists",
+      "status": "PASS"
+    },
+    {
+      "name": "keyboard local sign-out explains separate provider session",
+      "status": "PASS"
+    }
+  ],
+  "scope": "Local synthetic OIDC, real browser and private service checks.",
+  "not_run": [
+    "manual screen reader",
+    "independent human",
+    "hosted capacity",
+    "private-data admission"
+  ]
+}

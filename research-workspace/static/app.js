@@ -5,6 +5,7 @@
   const MAX_CSV_BYTES = 64 * 1024;
   const EXAMPLE_CSV = "group,value\nA,10\nA,11\nA,12\nA,13\nA,40\nB,20\nB,21\nB,22\nB,23\nB,60\n";
   const state = {
+    auth: { mode: "unknown" },
     subject: null,
     lastSubject: null,
     projects: [],
@@ -247,7 +248,14 @@
     $("access-key").value = "";
     for (const id of ["create-dialog", "confirm-dialog"]) if ($(id).open) $(id).close();
     formError("sign-in-error", message);
-    $("access-key").focus();
+    if (state.auth.mode === "unknown") {
+      for (const id of ["access-key", "key-label", "key-help"]) $(id).hidden = true;
+      $("access-key").required = false;
+      $("sign-in-help").textContent = "The workspace sign-in service could not be reached. Retry the connection.";
+      $("sign-in-button").textContent = "Retry connection";
+      $("access-help").textContent = "Ask the operator if the connection keeps failing.";
+    }
+    $(state.auth.mode === "key" ? "access-key" : "sign-in-button").focus();
   }
 
   async function enterWorkspace(subject) {
@@ -558,7 +566,10 @@
   }
 
   $("sign-in-form").addEventListener("submit", async (event) => {
-    event.preventDefault(); const button = $("sign-in-button"); button.disabled = true; button.textContent = "Opening workspace…"; formError("sign-in-error", "");
+    event.preventDefault();
+    if (state.auth.mode === "unknown") { boot(); return; }
+    if (state.auth.mode === "oidc") { window.location.assign(state.auth.sign_in); return; }
+    const button = $("sign-in-button"); button.disabled = true; button.textContent = "Opening workspace…"; formError("sign-in-error", "");
     const key = $("access-key").value; $("access-key").value = "";
     try { const session = await api("/api/session", { method: "POST", body: { access_key: key } }); await enterWorkspace(session.subject); }
     catch (error) { formError("sign-in-error", errorMessage(error)); }
@@ -566,7 +577,7 @@
   });
   $("sign-out").addEventListener("click", async () => {
     $("sign-out").disabled = true;
-    try { await api("/api/session", { method: "DELETE" }); showSignIn(); state.drafts.clear(); state.submissions.clear(); state.selected = null; state.detail = null; $("create-form").reset(); }
+    try { await api("/api/session", { method: "DELETE" }); showSignIn(state.auth.mode === "oidc" ? "Signed out of this workspace. Your identity-provider session may still be open. Use End identity-provider session before signing in again." : ""); state.drafts.clear(); state.submissions.clear(); state.selected = null; state.detail = null; $("create-form").reset(); }
     catch (error) { if (state.subject) showError(`Sign-out was not confirmed. ${errorMessage(error)}`); }
     finally { $("sign-out").disabled = false; }
   });
@@ -697,5 +708,31 @@
   document.addEventListener("visibilitychange", () => { if (document.hidden) stopPolling(); else { refreshProject({ quiet: true }).then(schedulePoll); } });
   window.addEventListener("pagehide", stopPolling);
 
-  api("/api/session").then((session) => enterWorkspace(session.subject)).catch((error) => showSignIn(error.status === 401 ? "" : errorMessage(error)));
+  async function boot() {
+    try {
+      state.auth = await api("/api/auth-config");
+      if (!["key", "oidc"].includes(state.auth.mode)) { state.auth = { mode: "unknown" }; throw new Error("The workspace sign-in configuration is unavailable."); }
+      if (state.auth.mode === "key") {
+        for (const id of ["access-key", "key-label", "key-help"]) $(id).hidden = false;
+        $("access-key").required = true;
+        $("sign-in-button").textContent = "Open workspace";
+        $("access-help").textContent = "Ask your workspace operator for a key and a project invitation.";
+        $("sign-in-help").textContent = "Use the access key your workspace operator provided. Your project permissions come with your account.";
+      }
+      if (state.auth.mode === "oidc") {
+        for (const id of ["access-key", "key-label", "key-help"]) $(id).hidden = true;
+        $("access-key").required = false;
+        $("sign-in-button").textContent = "Sign in with identity provider";
+        $("sign-in-help").textContent = "Sign in with your synthetic pilot account. Current project membership controls access.";
+        $("access-help").textContent = "Ask the operator to provision your identity and project membership.";
+        $("identity-sign-out").href = state.auth.sign_out;
+        $("identity-sign-out").hidden = false;
+      }
+      const returned = new URLSearchParams(window.location.search).get("signin") === "1";
+      if (returned) history.replaceState(null, "", "/");
+      const session = await api("/api/session", returned && state.auth.mode === "oidc" ? { method: "POST", body: {} } : {});
+      await enterWorkspace(session.subject);
+    } catch (error) { showSignIn(error.status === 401 && !error.message.includes("identity") ? "" : errorMessage(error)); }
+  }
+  boot();
 })();

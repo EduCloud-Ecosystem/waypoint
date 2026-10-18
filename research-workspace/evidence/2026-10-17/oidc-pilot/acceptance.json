@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "recorded_at_utc": "2026-10-18T03:59:27.126589+00:00",
+  "status": "PASS_LOCAL_SYNTHETIC_ONLY",
+  "issue": "https://github.com/EduCloud-Ecosystem/waypoint/issues/29",
+  "pull_request": "https://github.com/EduCloud-Ecosystem/waypoint/pull/33",
+  "full_browser_service_run": {
+    "status": "PASS",
+    "checks": 74,
+    "report": "verification.json",
+    "revision": "b818d02de51ec5aef418547142946b79e944ba66"
+  },
+  "provider_logout_supplement": {
+    "status": "PASS",
+    "checks": 7,
+    "report": "provider-logout.json",
+    "boundary": "Exact confirmation route added after full run. Current browser sid verified absent after confirmation; private endpoints remain unavailable."
+  },
+  "visual_supplement": {
+    "status": "PASS",
+    "report": "supplemental.json",
+    "boundary": "Screenshot inspection and mobile page-width check, not manual accessibility qualification."
+  },
+  "offline_controls": {
+    "status": "PASS",
+    "tests": 158,
+    "warnings": "ResourceWarning treated as error",
+    "javascript_syntax": "PASS",
+    "boundary": "Includes two later cleanup-race regression tests; full browser run used earlier harness but identical application files."
+  },
+  "initial_ci": "https://github.com/EduCloud-Ecosystem/waypoint/actions/runs/39094950901",
+  "final_head_gate": "Final independent review and ordinary CI must pass on the PR merge candidate. Their mutable status is checked in GitHub before merge, not inferred from this record.",
+  "cleanup": {
+    "status": "PASS",
+    "report": "cleanup.json",
+    "final_attempt_charged_cpu_seconds": 210,
+    "all_attempts_distinct_charged_cpu_seconds": 330,
+    "charge_provenance": "estimated_upper_bound",
+    "refunded_cpu_seconds": 0,
+    "private_state_and_images": "RETAINED"
+  },
+  "integrity": {
+    "prepared_application_files_matched": 18,
+    "original_source_evidence_files_matched": 79,
+    "original_source_acceptance_sha256": "3fa4cbc104d76c0937f833182896e3a55cbfe8d03aab227f088b966d4bb5f888",
+    "source_candidate_count": 4,
+    "source_candidates": "DISABLED_UNCHANGED",
+    "public_secret_canary_scan": "PASS",
+    "generated_secret_canaries_checked": 32,
+    "public_blobs_scanned": 40,
+    "jwt_pattern_scan": "PASS",
+    "raw_browser_traces_or_service_logs": "NOT_PUBLISHED"
+  },
+  "open_gates": [
+    "manual screen reader",
+    "complete keyboard focus/tab order",
+    "independent human walkthrough",
+    "hosted cohort/concurrency and overload",
+    "whole-store byte/entry/output admission",
+    "retention/deletion policy",
+    "service ownership/support",
+    "off-host recovery",
+    "private/student data approval",
+    "source candidate promotion"
+  ],
+  "boundaries": [
+    "No paid compute, live inference, hosted provisioning or institutional claim.",
+    "Belay and parent pilot worktrees untouched.",
+    "Original failed replay and cleanup gate bytes unchanged; prior reconciliation remains supplemental."
+  ],
+  "files": {
+    "README.md": "c95344bcd9579316fe3142d761250d3294198fcedefabfc8ab15feca147ca49b",
+    "cleanup.json": "2a25155ac0b94e35910cb77376585e190f716aead8ff6a5b9d31d487f9cb9f45",
+    "desktop.png": "50f3697db3d9678c3e1c71707269a077dc4b1244c7f356313703b51e5ac8f975",
+    "failed-attempts/attempt-a.json": "0a471b4af898d88ede23f66dd08128529f4cd77423d54e0435d018b9e23c2b32",
+    "failed-attempts/attempt-b.json": "5cda7b401950f739145ccb93d5ef24039e6787673f4959ae1ebfcb7116d83330",
+    "failed-attempts/attempt-c.json": "b3d7c267806f91e38b3e9d5c80ffa500b66b3166bee53785c8aa0c76de6060a3",
+    "failed-attempts/attempt-d-cold-start.json": "b3d7c267806f91e38b3e9d5c80ffa500b66b3166bee53785c8aa0c76de6060a3",
+    "keyboard-evidence.zip": "1a9bacd7de180483fd0cb3b22939f4e42eb45d48ea5bfd3abf9f1446a496c2a2",
+    "mobile.png": "6ddf387b1757c6dcfc89a5f080599b01397e8c45318edfefc81cee924b3f108b",
+    "provenance.json": "8333b0448a7ef8f948b95d03ef6107684008e9c887e0a441b8793ae2c0989347",
+    "provider-logout.json": "9a3c6777bdf684c7356e5f42c4fbe6c5543579dd696d36e1057fce04d8eb8d32",
+    "signed-out.png": "e02128d150619ae50cc379f34fee801885a2b8032a8ebdecc7c73f625e07cc47",
+    "supplemental.json": "dbd9f47695191294d65830d629a270dd8ba3513288de83da7f2429ed99041262",
+    "verification.json": "2a33cba3951f04f08cd54d142f39535808512e24f4d78dc7a0414fef75f8ab6c"
+  }
+}

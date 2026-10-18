@@ -1,5 +1,23 @@
 # CHANGELOG.md: Document history for the EduCloud hosting layer repo
 
+## 2026-10-17: Local synthetic research identity slice
+
+- Add a separate OIDC mode using the existing Keycloak/OAuth2 Proxy conventions,
+  online identity checks, opaque subject mapping and current project membership.
+- Keep queued credentials transient, cancel lost authority without replay, retain
+  compute charges, synchronize logout with launch/publication, and preserve OIDC
+  mode through coordinated recovery.
+- Add a bounded disposable stack, denial/race/lifecycle controls and real browser
+  acceptance tooling. Record scope and unresolved issue 29 gates in
+  `research-workspace/OIDC-PILOT.md`; source candidates remain disabled.
+- Belay and the parent pilot worktrees remain untouched.
+- Record 74 passing local browser/service controls, 158 offline controls,
+  retained failed attempts and the separately tested observer-cleanup fix.
+  Keep manual accessibility, hosted/private-data and storage/retention gates open.
+- Verify provider logout through its exact confirmation route, with a separately
+  retained initial routing failure and final current-session termination check.
+
+
 Records every substantive change to HOST_SESSION_BUILD.md, PLAN.1.md, and
 INTEGRATION.md, newest first within each release. Conventions: LF endings, no
 em dashes or en dashes. Maintain this file going forward: every commit that
