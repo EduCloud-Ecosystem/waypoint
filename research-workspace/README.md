@@ -150,3 +150,8 @@ These reports do not enforce admission or authorize deletion.
 The [capacity qualification contract](STORAGE-CAPACITY-CONTRACT.md) maps pinned
 writers and disposable failure controls. Whole-store quotas remain blocked by
 unknown authority, replacement, broker and destination peaks.
+
+The optional [finite logical-authority profile](FINITE-AUTHORITY.md) adds row,
+live-session and encoded-field limits to a fresh local-key store. It preserves
+safety actions and history at the limits; OIDC and restore remain explicitly
+unqualified for that profile. These limits do not establish storage capacity.

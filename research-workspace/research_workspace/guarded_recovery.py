@@ -9,6 +9,7 @@ from . import recovery as r
 from .operation_guard import GUARDED_MODES, GuardPaused, FILE, LOCK, TEMP, sync_directory
 from .runtime import Broker, strict_json
 from .store import Store, canonical, now, private_write, unknown_compute
+from . import finite_authority as finite
 
 
 def checkpoint(state, output, *, broker=None):
@@ -22,6 +23,8 @@ def checkpoint(state, output, *, broker=None):
             raise ValueError("Only an active source can create a recovery point.")
         if r.safe_root(output).is_relative_to(root):
             raise ValueError("Keep checkpoints outside the source authority directory.")
+        if store.finite:
+            finite.bounded_path(r.safe_root(output))
         target = r.fresh_directory(output, durable=True)
         with store.guard.locked(), r.frozen_db(root) as db:
             before = r.fingerprint(root, db)
@@ -41,7 +44,7 @@ def checkpoint(state, output, *, broker=None):
             r.sync_tree_directories(target)
             manifest = {"format": r.GUARD_FORMAT, "created_at": now(), "source_state": str(root),
                         "source_fingerprint": before, "broker": report, "files": r.inventory(target)}
-            payload = canonical(manifest).encode()
+            payload = store.serialized(manifest, "checkpoint_manifest").encode()
             private_write(target / "manifest.json", payload)
             sync_directory(target)
         return {"format": r.GUARD_FORMAT, "checkpoint_sha256": r.sha(payload), "created_at": manifest["created_at"],
@@ -51,6 +54,7 @@ def checkpoint(state, output, *, broker=None):
 
 def restore(checkpoint_path, output, *, trusted_sha256, broker):
     archive, manifest = r.verified_checkpoint(checkpoint_path, trusted_sha256)
+    finite.refuse_unqualified_recovery(archive)
     destination = r.safe_root(output)
     if destination.is_relative_to(archive) or destination.is_relative_to(r.safe_root(manifest["source_state"])):
         raise ValueError("Restore outside the checkpoint and original source.")
@@ -120,6 +124,7 @@ def _finish(token, store):
 
 def activate(state, source_state, checkpoint_path, *, trusted_sha256):
     archive, manifest = r.verified_checkpoint(checkpoint_path, trusted_sha256)
+    finite.refuse_unqualified_recovery(archive)
     destination, source = r.safe_root(state), r.safe_root(source_state)
     if destination == source or str(source) != manifest["source_state"]:
         raise ValueError("Activation requires the original source and a distinct replacement.")

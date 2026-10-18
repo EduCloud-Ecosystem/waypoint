@@ -1,0 +1,495 @@
+test_binding_and_profile_are_explicit_and_not_a_quota (test_finite_authority.FiniteAuthorityTests.test_binding_and_profile_are_explicit_and_not_a_quota) ... ERROR
+test_checkpoint_preserves_profile_restore_refuses_before_effects (test_finite_authority.FiniteAuthorityTests.test_checkpoint_preserves_profile_restore_refuses_before_effects) ... ERROR
+test_closed_project_history_and_idempotency_at_cap (test_finite_authority.FiniteAuthorityTests.test_closed_project_history_and_idempotency_at_cap) ... ERROR
+test_encoded_limits_use_escaped_bytes_and_precede_result_write (test_finite_authority.FiniteAuthorityTests.test_encoded_limits_use_escaped_bytes_and_precede_result_write) ... ERROR
+test_guard_profile_digest_cannot_be_stripped (test_finite_authority.FiniteAuthorityTests.test_guard_profile_digest_cannot_be_stripped) ... ERROR
+test_missing_or_changed_binding_refuses_open_and_stale_writer (test_finite_authority.FiniteAuthorityTests.test_missing_or_changed_binding_refuses_open_and_stale_writer) ... ERROR
+test_oversize_terminal_keeps_prior_record_and_guard_hold (test_finite_authority.FiniteAuthorityTests.test_oversize_terminal_keeps_prior_record_and_guard_hold) ... ERROR
+test_project_initialization_keeps_owner_membership_slot (test_finite_authority.FiniteAuthorityTests.test_project_initialization_keeps_owner_membership_slot) ... ERROR
+test_run_history_cap_idempotency_and_settlement (test_finite_authority.FiniteAuthorityTests.test_run_history_cap_idempotency_and_settlement) ... ERROR
+test_signin_cap_invalid_keys_and_last_slot_compete (test_finite_authority.FiniteAuthorityTests.test_signin_cap_invalid_keys_and_last_slot_compete) ... ERROR
+test_total_live_session_cap_and_expiry (test_finite_authority.FiniteAuthorityTests.test_total_live_session_cap_and_expiry) ... ERROR
+test_unqualified_profiles_and_oversize_paths_refuse_before_creation (test_finite_authority.FiniteAuthorityTests.test_unqualified_profiles_and_oversize_paths_refuse_before_creation) ... ERROR
+test_user_history_cap_and_competing_final_slot (test_finite_authority.FiniteAuthorityTests.test_user_history_cap_and_competing_final_slot) ... ERROR
+test_viewer_insertion_is_admission_demotion_and_removal_are_safety (test_finite_authority.FiniteAuthorityTests.test_viewer_insertion_is_admission_demotion_and_removal_are_safety) ... ERROR
+
+======================================================================
+ERROR: test_binding_and_profile_are_explicit_and_not_a_quota (test_finite_authority.FiniteAuthorityTests.test_binding_and_profile_are_explicit_and_not_a_quota)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_finite_authority.py", line 40, in setUp
+    self.project = self.store.create_project("alice", self.data, self.broker, 600, "project-request")
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/store.py", line 392, in create_project
+    return self._guarded_project(subject, data, project, broker, global_budget, request_key)
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/store.py", line 438, in _guarded_project
+    broker.init_project(project["id"], project["budget_cpu_seconds"], launch=token.launch)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_operation_guard.py", line 33, in init_project
+    launch(spawn) if launch else spawn()
+    ~~~~~~^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/operation_guard.py", line 514, in launch
+    self.guard.check(admitted=self)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/operation_guard.py", line 360, in check
+    raise GuardBusy()
+research_workspace.operation_guard.GuardBusy: Another project is being initialized. Your draft is preserved; retry the same request shortly.
+
+======================================================================
+ERROR: test_checkpoint_preserves_profile_restore_refuses_before_effects (test_finite_authority.FiniteAuthorityTests.test_checkpoint_preserves_profile_restore_refuses_before_effects)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_finite_authority.py", line 40, in setUp
+    self.project = self.store.create_project("alice", self.data, self.broker, 600, "project-request")
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/store.py", line 392, in create_project
+    return self._guarded_project(subject, data, project, broker, global_budget, request_key)
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/store.py", line 438, in _guarded_project
+    broker.init_project(project["id"], project["budget_cpu_seconds"], launch=token.launch)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_operation_guard.py", line 33, in init_project
+    launch(spawn) if launch else spawn()
+    ~~~~~~^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/operation_guard.py", line 514, in launch
+    self.guard.check(admitted=self)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/operation_guard.py", line 360, in check
+    raise GuardBusy()
+research_workspace.operation_guard.GuardBusy: Another project is being initialized. Your draft is preserved; retry the same request shortly.
+
+======================================================================
+ERROR: test_closed_project_history_and_idempotency_at_cap (test_finite_authority.FiniteAuthorityTests.test_closed_project_history_and_idempotency_at_cap)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_finite_authority.py", line 40, in setUp
+    self.project = self.store.create_project("alice", self.data, self.broker, 600, "project-request")
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/store.py", line 392, in create_project
+    return self._guarded_project(subject, data, project, broker, global_budget, request_key)
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/store.py", line 438, in _guarded_project
+    broker.init_project(project["id"], project["budget_cpu_seconds"], launch=token.launch)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_operation_guard.py", line 33, in init_project
+    launch(spawn) if launch else spawn()
+    ~~~~~~^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/operation_guard.py", line 514, in launch
+    self.guard.check(admitted=self)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/operation_guard.py", line 360, in check
+    raise GuardBusy()
+research_workspace.operation_guard.GuardBusy: Another project is being initialized. Your draft is preserved; retry the same request shortly.
+
+======================================================================
+ERROR: test_encoded_limits_use_escaped_bytes_and_precede_result_write (test_finite_authority.FiniteAuthorityTests.test_encoded_limits_use_escaped_bytes_and_precede_result_write)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_finite_authority.py", line 40, in setUp
+    self.project = self.store.create_project("alice", self.data, self.broker, 600, "project-request")
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/store.py", line 392, in create_project
+    return self._guarded_project(subject, data, project, broker, global_budget, request_key)
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/store.py", line 438, in _guarded_project
+    broker.init_project(project["id"], project["budget_cpu_seconds"], launch=token.launch)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_operation_guard.py", line 33, in init_project
+    launch(spawn) if launch else spawn()
+    ~~~~~~^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/operation_guard.py", line 514, in launch
+    self.guard.check(admitted=self)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/operation_guard.py", line 360, in check
+    raise GuardBusy()
+research_workspace.operation_guard.GuardBusy: Another project is being initialized. Your draft is preserved; retry the same request shortly.
+
+======================================================================
+ERROR: test_guard_profile_digest_cannot_be_stripped (test_finite_authority.FiniteAuthorityTests.test_guard_profile_digest_cannot_be_stripped)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_finite_authority.py", line 40, in setUp
+    self.project = self.store.create_project("alice", self.data, self.broker, 600, "project-request")
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/store.py", line 392, in create_project
+    return self._guarded_project(subject, data, project, broker, global_budget, request_key)
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/store.py", line 438, in _guarded_project
+    broker.init_project(project["id"], project["budget_cpu_seconds"], launch=token.launch)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_operation_guard.py", line 33, in init_project
+    launch(spawn) if launch else spawn()
+    ~~~~~~^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/operation_guard.py", line 514, in launch
+    self.guard.check(admitted=self)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/operation_guard.py", line 360, in check
+    raise GuardBusy()
+research_workspace.operation_guard.GuardBusy: Another project is being initialized. Your draft is preserved; retry the same request shortly.
+
+======================================================================
+ERROR: test_missing_or_changed_binding_refuses_open_and_stale_writer (test_finite_authority.FiniteAuthorityTests.test_missing_or_changed_binding_refuses_open_and_stale_writer)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_finite_authority.py", line 40, in setUp
+    self.project = self.store.create_project("alice", self.data, self.broker, 600, "project-request")
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/store.py", line 392, in create_project
+    return self._guarded_project(subject, data, project, broker, global_budget, request_key)
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/store.py", line 438, in _guarded_project
+    broker.init_project(project["id"], project["budget_cpu_seconds"], launch=token.launch)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_operation_guard.py", line 33, in init_project
+    launch(spawn) if launch else spawn()
+    ~~~~~~^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/operation_guard.py", line 514, in launch
+    self.guard.check(admitted=self)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/operation_guard.py", line 360, in check
+    raise GuardBusy()
+research_workspace.operation_guard.GuardBusy: Another project is being initialized. Your draft is preserved; retry the same request shortly.
+
+======================================================================
+ERROR: test_oversize_terminal_keeps_prior_record_and_guard_hold (test_finite_authority.FiniteAuthorityTests.test_oversize_terminal_keeps_prior_record_and_guard_hold)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_finite_authority.py", line 40, in setUp
+    self.project = self.store.create_project("alice", self.data, self.broker, 600, "project-request")
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/store.py", line 392, in create_project
+    return self._guarded_project(subject, data, project, broker, global_budget, request_key)
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/store.py", line 438, in _guarded_project
+    broker.init_project(project["id"], project["budget_cpu_seconds"], launch=token.launch)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_operation_guard.py", line 33, in init_project
+    launch(spawn) if launch else spawn()
+    ~~~~~~^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/operation_guard.py", line 514, in launch
+    self.guard.check(admitted=self)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/operation_guard.py", line 360, in check
+    raise GuardBusy()
+research_workspace.operation_guard.GuardBusy: Another project is being initialized. Your draft is preserved; retry the same request shortly.
+
+======================================================================
+ERROR: test_project_initialization_keeps_owner_membership_slot (test_finite_authority.FiniteAuthorityTests.test_project_initialization_keeps_owner_membership_slot)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_finite_authority.py", line 40, in setUp
+    self.project = self.store.create_project("alice", self.data, self.broker, 600, "project-request")
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/store.py", line 392, in create_project
+    return self._guarded_project(subject, data, project, broker, global_budget, request_key)
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/store.py", line 438, in _guarded_project
+    broker.init_project(project["id"], project["budget_cpu_seconds"], launch=token.launch)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_operation_guard.py", line 33, in init_project
+    launch(spawn) if launch else spawn()
+    ~~~~~~^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/operation_guard.py", line 514, in launch
+    self.guard.check(admitted=self)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/operation_guard.py", line 360, in check
+    raise GuardBusy()
+research_workspace.operation_guard.GuardBusy: Another project is being initialized. Your draft is preserved; retry the same request shortly.
+
+======================================================================
+ERROR: test_run_history_cap_idempotency_and_settlement (test_finite_authority.FiniteAuthorityTests.test_run_history_cap_idempotency_and_settlement)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_finite_authority.py", line 40, in setUp
+    self.project = self.store.create_project("alice", self.data, self.broker, 600, "project-request")
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/store.py", line 392, in create_project
+    return self._guarded_project(subject, data, project, broker, global_budget, request_key)
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/store.py", line 438, in _guarded_project
+    broker.init_project(project["id"], project["budget_cpu_seconds"], launch=token.launch)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_operation_guard.py", line 33, in init_project
+    launch(spawn) if launch else spawn()
+    ~~~~~~^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/operation_guard.py", line 514, in launch
+    self.guard.check(admitted=self)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/operation_guard.py", line 360, in check
+    raise GuardBusy()
+research_workspace.operation_guard.GuardBusy: Another project is being initialized. Your draft is preserved; retry the same request shortly.
+
+======================================================================
+ERROR: test_signin_cap_invalid_keys_and_last_slot_compete (test_finite_authority.FiniteAuthorityTests.test_signin_cap_invalid_keys_and_last_slot_compete)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_finite_authority.py", line 40, in setUp
+    self.project = self.store.create_project("alice", self.data, self.broker, 600, "project-request")
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/store.py", line 392, in create_project
+    return self._guarded_project(subject, data, project, broker, global_budget, request_key)
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/store.py", line 438, in _guarded_project
+    broker.init_project(project["id"], project["budget_cpu_seconds"], launch=token.launch)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_operation_guard.py", line 33, in init_project
+    launch(spawn) if launch else spawn()
+    ~~~~~~^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/operation_guard.py", line 514, in launch
+    self.guard.check(admitted=self)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/operation_guard.py", line 360, in check
+    raise GuardBusy()
+research_workspace.operation_guard.GuardBusy: Another project is being initialized. Your draft is preserved; retry the same request shortly.
+
+======================================================================
+ERROR: test_total_live_session_cap_and_expiry (test_finite_authority.FiniteAuthorityTests.test_total_live_session_cap_and_expiry)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_finite_authority.py", line 40, in setUp
+    self.project = self.store.create_project("alice", self.data, self.broker, 600, "project-request")
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/store.py", line 392, in create_project
+    return self._guarded_project(subject, data, project, broker, global_budget, request_key)
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/store.py", line 438, in _guarded_project
+    broker.init_project(project["id"], project["budget_cpu_seconds"], launch=token.launch)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_operation_guard.py", line 33, in init_project
+    launch(spawn) if launch else spawn()
+    ~~~~~~^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/operation_guard.py", line 514, in launch
+    self.guard.check(admitted=self)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/operation_guard.py", line 360, in check
+    raise GuardBusy()
+research_workspace.operation_guard.GuardBusy: Another project is being initialized. Your draft is preserved; retry the same request shortly.
+
+======================================================================
+ERROR: test_unqualified_profiles_and_oversize_paths_refuse_before_creation (test_finite_authority.FiniteAuthorityTests.test_unqualified_profiles_and_oversize_paths_refuse_before_creation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_finite_authority.py", line 40, in setUp
+    self.project = self.store.create_project("alice", self.data, self.broker, 600, "project-request")
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/store.py", line 392, in create_project
+    return self._guarded_project(subject, data, project, broker, global_budget, request_key)
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/store.py", line 438, in _guarded_project
+    broker.init_project(project["id"], project["budget_cpu_seconds"], launch=token.launch)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_operation_guard.py", line 33, in init_project
+    launch(spawn) if launch else spawn()
+    ~~~~~~^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/operation_guard.py", line 514, in launch
+    self.guard.check(admitted=self)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/operation_guard.py", line 360, in check
+    raise GuardBusy()
+research_workspace.operation_guard.GuardBusy: Another project is being initialized. Your draft is preserved; retry the same request shortly.
+
+======================================================================
+ERROR: test_user_history_cap_and_competing_final_slot (test_finite_authority.FiniteAuthorityTests.test_user_history_cap_and_competing_final_slot)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_finite_authority.py", line 40, in setUp
+    self.project = self.store.create_project("alice", self.data, self.broker, 600, "project-request")
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/store.py", line 392, in create_project
+    return self._guarded_project(subject, data, project, broker, global_budget, request_key)
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/store.py", line 438, in _guarded_project
+    broker.init_project(project["id"], project["budget_cpu_seconds"], launch=token.launch)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_operation_guard.py", line 33, in init_project
+    launch(spawn) if launch else spawn()
+    ~~~~~~^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/operation_guard.py", line 514, in launch
+    self.guard.check(admitted=self)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/operation_guard.py", line 360, in check
+    raise GuardBusy()
+research_workspace.operation_guard.GuardBusy: Another project is being initialized. Your draft is preserved; retry the same request shortly.
+
+======================================================================
+ERROR: test_viewer_insertion_is_admission_demotion_and_removal_are_safety (test_finite_authority.FiniteAuthorityTests.test_viewer_insertion_is_admission_demotion_and_removal_are_safety)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_finite_authority.py", line 40, in setUp
+    self.project = self.store.create_project("alice", self.data, self.broker, 600, "project-request")
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/store.py", line 392, in create_project
+    return self._guarded_project(subject, data, project, broker, global_budget, request_key)
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/store.py", line 438, in _guarded_project
+    broker.init_project(project["id"], project["budget_cpu_seconds"], launch=token.launch)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_operation_guard.py", line 33, in init_project
+    launch(spawn) if launch else spawn()
+    ~~~~~~^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/operation_guard.py", line 514, in launch
+    self.guard.check(admitted=self)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/operation_guard.py", line 360, in check
+    raise GuardBusy()
+research_workspace.operation_guard.GuardBusy: Another project is being initialized. Your draft is preserved; retry the same request shortly.
+
+----------------------------------------------------------------------
+Ran 14 tests in 0.247s
+
+FAILED (errors=14)
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 566, in _exitfunc
+    f()
+    ~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 490, in __call__
+    return info.func(*info.args, **(info.kwargs or {}))
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py", line 961, in _cleanup
+    _warnings.warn(warn_message, ResourceWarning)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmpa_g0ogwn'>
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 566, in _exitfunc
+    f()
+    ~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 490, in __call__
+    return info.func(*info.args, **(info.kwargs or {}))
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py", line 961, in _cleanup
+    _warnings.warn(warn_message, ResourceWarning)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmp9ci7sdjd'>
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 566, in _exitfunc
+    f()
+    ~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 490, in __call__
+    return info.func(*info.args, **(info.kwargs or {}))
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py", line 961, in _cleanup
+    _warnings.warn(warn_message, ResourceWarning)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmpbjhqi16s'>
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 566, in _exitfunc
+    f()
+    ~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 490, in __call__
+    return info.func(*info.args, **(info.kwargs or {}))
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py", line 961, in _cleanup
+    _warnings.warn(warn_message, ResourceWarning)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmpe4zmfr1k'>
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 566, in _exitfunc
+    f()
+    ~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 490, in __call__
+    return info.func(*info.args, **(info.kwargs or {}))
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py", line 961, in _cleanup
+    _warnings.warn(warn_message, ResourceWarning)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmpuc7gunab'>
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 566, in _exitfunc
+    f()
+    ~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 490, in __call__
+    return info.func(*info.args, **(info.kwargs or {}))
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py", line 961, in _cleanup
+    _warnings.warn(warn_message, ResourceWarning)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmp2wt7xp4f'>
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 566, in _exitfunc
+    f()
+    ~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 490, in __call__
+    return info.func(*info.args, **(info.kwargs or {}))
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py", line 961, in _cleanup
+    _warnings.warn(warn_message, ResourceWarning)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmpeqa8leos'>
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 566, in _exitfunc
+    f()
+    ~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 490, in __call__
+    return info.func(*info.args, **(info.kwargs or {}))
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py", line 961, in _cleanup
+    _warnings.warn(warn_message, ResourceWarning)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmp2zg88_vy'>
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 566, in _exitfunc
+    f()
+    ~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 490, in __call__
+    return info.func(*info.args, **(info.kwargs or {}))
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py", line 961, in _cleanup
+    _warnings.warn(warn_message, ResourceWarning)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmpourr1lhd'>
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 566, in _exitfunc
+    f()
+    ~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 490, in __call__
+    return info.func(*info.args, **(info.kwargs or {}))
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py", line 961, in _cleanup
+    _warnings.warn(warn_message, ResourceWarning)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmpga5yoqw2'>
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 566, in _exitfunc
+    f()
+    ~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 490, in __call__
+    return info.func(*info.args, **(info.kwargs or {}))
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py", line 961, in _cleanup
+    _warnings.warn(warn_message, ResourceWarning)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmp8htcq2x6'>
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 566, in _exitfunc
+    f()
+    ~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 490, in __call__
+    return info.func(*info.args, **(info.kwargs or {}))
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py", line 961, in _cleanup
+    _warnings.warn(warn_message, ResourceWarning)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmp9ozoy_5k'>
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 566, in _exitfunc
+    f()
+    ~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 490, in __call__
+    return info.func(*info.args, **(info.kwargs or {}))
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py", line 961, in _cleanup
+    _warnings.warn(warn_message, ResourceWarning)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmp7rd1odh_'>
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 566, in _exitfunc
+    f()
+    ~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 490, in __call__
+    return info.func(*info.args, **(info.kwargs or {}))
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py", line 961, in _cleanup
+    _warnings.warn(warn_message, ResourceWarning)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmpobdi6lu0'>

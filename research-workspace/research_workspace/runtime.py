@@ -195,7 +195,7 @@ class Worker:
             raise GuardPaused("missing_run_intent")
         if token:
             token.effect()
-        private_write(request_path, canonical(request).encode())
+        private_write(request_path, self.store.serialized(request, "request").encode())
         process = None
         def spawn():
             nonlocal process
@@ -237,7 +237,7 @@ class Worker:
         if process.returncode != 0:
             raise ValueError("The broker process failed; its receipt is not an accepted outcome.")
         receipt = validate_receipt(strict_json(stdout), run)
-        private_write(directory / "receipt.private.json", canonical(receipt).encode())
+        private_write(directory / "receipt.private.json", self.store.serialized(receipt, "receipt").encode())
         compute = receipt.get("compute", {})
         run["compute"] = {key: compute[key] for key in ("reserved_cpu_seconds", "charged_cpu_seconds", "provenance") if key in compute}
         run["compute"]["unresolved_liability"] = bool(receipt.get("unresolved_liability", True))

@@ -1,5 +1,14 @@
 # CHANGELOG.md: Document history for the EduCloud hosting layer repo
 
+## 2026-10-18: Fresh finite logical authority
+
+- Add an explicit local-key profile with version-bound row/session and encoded
+  record limits, retaining historical rows and tighter existing limits.
+- Preserve safety actions at caps and valid interruption holds; reject mismatched
+  database authority before access and refuse finite restore/cutover before effects.
+- Retain source-pinned v1 capacity controls, original review failures, disabled
+  source candidates and unknown whole-store capacity; no quota or migration.
+
 ## 2026-10-17: Storage capacity contract qualification
 
 - Pin the Waypoint and Outfitter writer contracts and connect disposable capacity

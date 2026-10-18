@@ -44,6 +44,8 @@ class Identity:
     """All sessions and queued authorizations disappear on process restart."""
 
     def __init__(self, config, store, *, clock=time.time):
+        if store.finite:
+            raise ValueError("This finite disposable profile supports local keys; a finite OIDC profile is not qualified.")
         required = {"issuer", "audience", "client_id", "client_secret", "proxy_auth_url",
                     "introspection_url", "boundary_secret", "public_origin", "subjects",
                     "cookie_name", "proxy_cookie_name"}

@@ -10,6 +10,7 @@ import re
 import secrets
 import stat
 import threading
+from . import finite_authority as finite
 
 
 FORMAT = "educloud-operation-guard-v1"
@@ -22,7 +23,7 @@ MAX_OPERATIONS = 4096
 KINDS = {"initialize", "mutation", "submit", "project", "claim", "run", "settle", "recover"}
 TERMINAL = {"committed", "refused"}
 PHASES = {"prepared", "effect", "uncertain"}
-GUARDED_MODES = {"local-guarded-public-data-v1", "local-guarded-synthetic-oidc-v1"}
+GUARDED_MODES = {"local-guarded-public-data-v1", "local-guarded-synthetic-oidc-v1", finite.MODE}
 SCHEMA = (
     "CREATE TABLE operation_authority(authority_id TEXT PRIMARY KEY, sequence INTEGER NOT NULL, barrier TEXT NOT NULL)",
     "CREATE TABLE operation_receipts(id TEXT PRIMARY KEY, sequence INTEGER UNIQUE NOT NULL, digest TEXT NOT NULL, outcome TEXT NOT NULL, essential INTEGER NOT NULL)",
@@ -92,8 +93,12 @@ class Lease:
 class Guard:
     def __init__(self, root, binding, connect=None):
         self.root = Path(root).resolve()
-        if (not isinstance(binding, dict) or set(binding) != {"format", "authority_id"}
-                or binding["format"] != FORMAT or not re.fullmatch(r"[a-f0-9]{32}", str(binding["authority_id"]))):
+        self.finite = isinstance(binding, dict) and binding.get("format") == finite.GUARD_FORMAT
+        keys = {"format", "authority_id"} | ({"logical_authority_sha256"} if self.finite else set())
+        if (not isinstance(binding, dict) or set(binding) != keys
+                or binding["format"] != (finite.GUARD_FORMAT if self.finite else FORMAT)
+                or not re.fullmatch(r"[a-f0-9]{32}", str(binding["authority_id"]))
+                or (self.finite and binding["logical_authority_sha256"] != finite.profile_digest())):
             raise GuardPaused("invalid_binding")
         self.binding = dict(binding)
         self.connect = connect
@@ -101,8 +106,10 @@ class Guard:
             self.lease = _registry.setdefault(str(self.root), Lease())
 
     @classmethod
-    def create(cls, root, connect=None):
-        binding = {"format": FORMAT, "authority_id": secrets.token_hex(16)}
+    def create(cls, root, connect=None, *, finite_profile=False):
+        binding = {"format": finite.GUARD_FORMAT if finite_profile else FORMAT, "authority_id": secrets.token_hex(16)}
+        if finite_profile:
+            binding["logical_authority_sha256"] = finite.profile_digest()
         guard = cls(root, binding, connect)
         fd = os.open(guard.root / LOCK, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
         try:
@@ -165,7 +172,7 @@ class Guard:
         try:
             data = json.loads(read(self.root / FILE), object_pairs_hook=pairs,
                               parse_constant=lambda _: (_ for _ in ()).throw(ValueError("nonfinite")))
-            if (set(data) != {"format", "authority_id", "generation", "sequence", "operations"}
+            if (set(data) != set(self.binding) | {"generation", "sequence", "operations"}
                     or any(data[k] != v for k, v in self.binding.items())
                     or type(data["generation"]) is not int or not 0 <= data["generation"] < 2**63
                     or type(data["sequence"]) is not int or not 0 <= data["sequence"] < 2**63
@@ -191,6 +198,8 @@ class Guard:
             raise GuardPaused("invalid_authority") from exc
 
     def save(self, data):
+        if self.finite and (data["generation"] >= finite.COUNTER_LIMIT or data["sequence"] > finite.COUNTER_LIMIT):
+            raise GuardPaused("intent_limit")
         data["generation"] += 1
         payload = encode(data)
         if len(payload) > MAX_BYTES:
@@ -231,6 +240,11 @@ class Guard:
         try:
             db.execute("PRAGMA query_only=ON")
             self.validate_schema(db)
+            version = db.execute("PRAGMA user_version").fetchone()[0]
+            if self.finite:
+                finite.validate_binding(self.root, self.binding, db)
+            elif version != 0:
+                raise GuardPaused("unsupported_schema")
             authority = db.execute("SELECT authority_id,sequence FROM operation_authority").fetchmany(2)
             rows = db.execute("SELECT id,sequence,digest,outcome,essential FROM operation_receipts").fetchmany(MAX_OPERATIONS + 2)
             if len(rows) > MAX_OPERATIONS + 1 or len({row[0] for row in rows}) != len(rows):
@@ -315,6 +329,8 @@ class Guard:
         can_submit = ordinary + reserved + 2 <= MAX_OPERATIONS
         if not can_project:
             reason = reason or "intent_limit"
+        if self.finite and (data["generation"] >= finite.COUNTER_LIMIT or data["sequence"] >= finite.COUNTER_LIMIT):
+            reason = reason or "intent_limit"
         return {"guard_enabled": True, "state": "paused" if reason else "ready",
                 "reason": reason, "quota_enforced": False,
                 "can_create_project": can_project and not reason,
@@ -342,7 +358,7 @@ class Guard:
             raise GuardPaused(state["reason"])
         if not essential and any(token.kind == "project" for token in self.lease.active.values()):
             # Normal overlap is a retryable conflict, never a permanent failure.
-            if kind in {"project", "claim"}:
+            if kind in {"project", "claim"} or (self.finite and not owns_slot):
                 raise GuardBusy()
         return data
 
@@ -389,6 +405,8 @@ class Guard:
                     return Operation(self, oid, kind, borrowed=True)
                 del data["operations"][oid]
             identity = secrets.token_hex(16)
+            if self.finite and data["sequence"] >= finite.COUNTER_LIMIT:
+                raise GuardPaused("intent_limit")
             data["sequence"] += 1
             data["operations"][identity] = {"kind": kind, "phase": "prepared", "resource_id": resource_id,
                 "subject": subject, "request_key": request_key, "request_hash": digest, "owner": BOOT, "reason": None,

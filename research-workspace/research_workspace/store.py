@@ -14,6 +14,7 @@ import uuid
 
 from .recipes import IDS, digest, parse_csv, recipe_bytes
 from .operation_guard import Guard, GuardPaused, GuardBusy, APPLICATION_ID, GUARDED_MODES, SCHEMA, FILE, LOCK, TEMP, sync_directory
+from . import finite_authority as finite
 
 
 def now():
@@ -82,8 +83,20 @@ class Store:
     def __init__(self, root, create=False, *, guarded=False, config=None, subject=None, resume=True):
         self.root = Path(root).resolve()
         self.guard = None
+        self.finite = bool(create and isinstance(config, dict) and
+                           (config.get("mode") == finite.MODE or "logical_authority" in config))
+        self._initializing = create
         self.initial_key = None
         bootstrap = None
+        if self.finite:
+            if not guarded:
+                raise finite.InvalidProfile("The finite profile requires guarded initialization.")
+            if "operation_guard" in config:
+                raise finite.InvalidProfile("Fresh initialization cannot reuse an authority binding.")
+            finite.bounded_path(self.root)
+            proposed = {"format": finite.GUARD_FORMAT, "authority_id": "0" * 32,
+                        "logical_authority_sha256": finite.profile_digest()}
+            finite.validate_config({**config, "operation_guard": proposed}, binding=proposed)
         if create:
             if self.root.exists() and any(self.root.iterdir()):
                 raise ValueError("Initialization requires a fresh empty state directory.")
@@ -97,7 +110,7 @@ class Store:
                 if not isinstance(config, dict) or config.get("mode") not in GUARDED_MODES or subject is None:
                     raise ValueError("Guarded initialization requires an explicit fresh profile and subject.")
                 identifier(subject)
-                self.guard = Guard.create(self.root, self._connect)
+                self.guard = Guard.create(self.root, self._connect, finite_profile=self.finite)
                 bootstrap = self.guard.begin("initialize", subject=subject, request=config, bootstrap=True)
             try:
                 (self.root / "runs").mkdir(mode=0o700)
@@ -117,11 +130,15 @@ class Store:
                         for statement in SCHEMA:
                             db.execute(statement)
                         db.execute(f"PRAGMA application_id={APPLICATION_ID}")
+                        if self.finite:
+                            db.execute(f"PRAGMA user_version={finite.USER_VERSION}")
                         db.execute("INSERT INTO operation_authority VALUES(?,0,?)", (self.guard.binding["authority_id"], uuid.uuid4().hex))
                         bootstrap.register(db)
                         db.commit()
                         bootstrap.effect()
                         config = {**config, "operation_guard": self.guard.binding}
+                        if self.finite:
+                            finite.validate_config(config, binding=self.guard.binding)
                         private_write(self.root / "config.json", canonical(config).encode())
                         self.initial_key = secrets.token_urlsafe(32)
                         db.execute("INSERT INTO users VALUES(?,?,1)", (subject, digest(self.initial_key.encode())))
@@ -139,17 +156,31 @@ class Store:
         elif not (self.root / "workspace.sqlite3").is_file() or not (self.root / "config.json").is_file():
             raise ValueError("Workspace authority is missing. Restore it; do not reinitialize existing state.")
 
+        self._initializing = False
         if not create:
-            config = json.loads((self.root / "config.json").read_bytes())
             with contextlib.closing(sqlite3.connect((self.root / "workspace.sqlite3").as_uri() + "?mode=ro", uri=True)) as probe:
                 guarded_db = probe.execute("PRAGMA application_id").fetchone()[0] == APPLICATION_ID
                 guarded_tables = probe.execute("SELECT count(*) FROM sqlite_master WHERE name IN ('operation_authority','operation_receipts')").fetchone()[0]
+                version = probe.execute("PRAGMA user_version").fetchone()[0]
+            config = finite.read_config(self.root) if version else json.loads((self.root / "config.json").read_bytes())
             evidence = guarded_db or guarded_tables or any((self.root / name).exists() for name in (FILE, LOCK)) or any(self.root.glob(TEMP + "*"))
             binding = config.get("operation_guard")
+            finite_evidence = (version or "logical_authority" in config or config.get("mode") == finite.MODE
+                               or isinstance(binding, dict) and binding.get("format") == finite.GUARD_FORMAT)
+            if finite_evidence:
+                if version != finite.USER_VERSION or not isinstance(binding, dict) or binding.get("format") != finite.GUARD_FORMAT:
+                    raise finite.InvalidProfile("Missing or unsupported finite authority binding.")
+                finite.validate_config(config, binding=binding)
+                self.finite = True
             if binding is not None or evidence or config.get("mode") in GUARDED_MODES:
                 if not guarded_db or guarded_tables != 2 or binding is None or config.get("mode") not in GUARDED_MODES | {"recovery-held", "retired"}:
                     raise GuardPaused("missing_binding")
                 self.guard = Guard(self.root, binding, self._connect)
+                if self.finite:
+                    # A profile mismatch is not an uncertainty hold that safety
+                    # writes may bypass. Validate outside the resume catch.
+                    self.guard.load()
+                    self.guard.receipts()
                 try:
                     if resume:
                         self.guard.resume()
@@ -161,6 +192,20 @@ class Store:
         db = sqlite3.connect(self.root / "workspace.sqlite3", timeout=10)
         try:
             db.row_factory = sqlite3.Row
+            if not self._initializing:
+                version = db.execute("PRAGMA user_version").fetchone()[0]
+                if self.finite:
+                    finite.validate_binding(self.root, self.guard.binding, db)
+                    self.guard.load()
+                elif version:
+                    raise finite.InvalidProfile("Unsupported database authority profile.")
+                else:
+                    config_path = self.root / "config.json"
+                    config = json.loads(config_path.read_bytes()) if config_path.exists() else {}
+                    binding = config.get("operation_guard")
+                    if ("logical_authority" in config or config.get("mode") == finite.MODE
+                            or isinstance(binding, dict) and binding.get("format") == finite.GUARD_FORMAT):
+                        raise finite.InvalidProfile("A finite profile cannot use an unrestricted open store.")
             db.execute("PRAGMA foreign_keys=ON")
             db.execute("PRAGMA journal_mode=WAL")
             db.execute("PRAGMA synchronous=FULL")
@@ -178,10 +223,16 @@ class Store:
     def operation_status(self):
         return self.guard.status() if self.guard else {"guard_enabled": False, "state": "ready", "reason": None, "quota_enforced": False}
 
+    def serialized(self, value, kind):
+        return finite.bounded(value, kind).decode() if self.finite else canonical(value)
+
     @contextlib.contextmanager
-    def transaction(self, *, essential=False, operation=None, keep=False, kind="mutation", resource_id="workspace", subject="operator", request=None, request_key=None):
+    def transaction(self, *, essential=False, operation=None, keep=False, kind="mutation", resource_id="workspace", subject="operator", request=None, request_key=None, preflight=None):
         if self.guard:
             with self.guard.locked():
+                if self.finite and preflight is not None:
+                    with contextlib.closing(self.connect()) as probe:
+                        preflight(probe)
                 token = operation or self.guard.begin(kind, resource_id=resource_id, subject=subject, request=request,
                                                        request_key=request_key, essential=essential)
                 raw = None
@@ -190,6 +241,8 @@ class Store:
                     raw = self._connect()
                     raw.execute("BEGIN IMMEDIATE")
                     self.guard.validate_schema(raw)
+                    if self.finite and preflight is not None:
+                        preflight(raw)
                     config_path = self.root / "config.json"
                     if config_path.exists() and json.loads(config_path.read_bytes()).get("mode") in ("recovery-held", "retired"):
                         raise ValueError("This workspace is held or retired for recovery; mutations are disabled.")
@@ -240,7 +293,8 @@ class Store:
     def add_user(self, subject):
         identifier(subject)
         key = secrets.token_urlsafe(32)
-        with self.transaction(subject=subject, request={"action": "add-user", "subject": subject}) as db:
+        with self.transaction(subject=subject, request={"action": "add-user", "subject": subject},
+                              preflight=lambda db: finite.admit(db, users=1)) as db:
             if db.execute("SELECT 1 FROM users WHERE subject=?", (subject,)).fetchone():
                 raise ValueError("This subject already exists; existing credentials were preserved.")
             db.execute("INSERT INTO users VALUES(?,?,1)", (subject, digest(key.encode())))
@@ -263,6 +317,25 @@ class Store:
         return key
 
     def session(self, key=None, token=None):
+        if self.finite and key is not None:
+            if not isinstance(key, str) or len(key) > 256:
+                raise AccessError("Sign in with a valid access key.")
+            sampled = None
+            def preflight(db):
+                nonlocal sampled
+                if sampled is None:
+                    sampled = time.time()
+                row = db.execute("SELECT subject FROM users WHERE key_hash=? AND active=1", (digest(key.encode()),)).fetchone()
+                if row is None:
+                    raise AccessError("Sign in with a valid access key.")
+                finite.admit(db, subject=row["subject"], sampled_time=sampled, sessions=1)
+                return row
+            with self.transaction(request={"action": "sign-in"}, preflight=preflight) as db:
+                row = preflight(db)
+                token = secrets.token_urlsafe(32)
+                db.execute("DELETE FROM sessions WHERE expires<=?", (sampled,))
+                db.execute("INSERT INTO sessions VALUES(?,?,?)", (digest(token.encode()), row["subject"], sampled+28800))
+                return row["subject"], token
         with self.transaction(essential=True) if key is not None else contextlib.closing(self.connect()) as db:
             if key is not None:
                 if not isinstance(key, str) or len(key) > 256:
@@ -314,6 +387,7 @@ class Store:
         project = dict(id=uuid.uuid4().hex, name=name, question=question, success_criterion=criterion,
                        owner=subject, created_at=now(), ends_at=end.astimezone(dt.timezone.utc).isoformat(),
                        budget_cpu_seconds=budget, status="active")
+        self.serialized(project, "project")
         if self.guard:
             return self._guarded_project(subject, data, project, broker, global_budget, request_key)
         with self.transaction() as db:
@@ -323,7 +397,7 @@ class Store:
             if committed+budget > global_budget:
                 raise ValueError("The workspace's finite project allocation is exhausted. Ask the operator.")
             broker.init_project(project["id"], budget)
-            db.execute("INSERT INTO projects VALUES(?,?)", (project["id"], canonical(project)))
+            db.execute("INSERT INTO projects VALUES(?,?)", (project["id"], self.serialized(project, "project")))
             db.execute("INSERT INTO members VALUES(?,?,?)", (project["id"], subject, "owner"))
         return project
 
@@ -343,6 +417,9 @@ class Store:
                         self._access(db, intent["resource_id"], subject)
                         return json.loads(db.execute("SELECT payload FROM projects WHERE id=?", (intent["resource_id"],)).fetchone()[0])
                 raise GuardPaused("existing_intent")
+            if self.finite:
+                with contextlib.closing(self.connect()) as db:
+                    finite.admit(db, projects=1, members=1)
             token = self.guard.begin("project", resource_id=project["id"], subject=subject, request=data, request_key=request_key)
             try:
                 with self.transaction(operation=token, keep=True) as db:
@@ -351,6 +428,8 @@ class Store:
                     committed = sum(json.loads(row[0])["budget_cpu_seconds"] for row in db.execute("SELECT payload FROM projects"))
                     if committed + project["budget_cpu_seconds"] > global_budget:
                         raise ValueError("The workspace's finite project allocation is exhausted. Ask the operator.")
+                    if self.finite:
+                        finite.admit(db, projects=1, members=1)
             except BaseException:
                 token.release()
                 raise
@@ -360,7 +439,9 @@ class Store:
             with self.transaction(operation=token) as db:
                 if not db.execute("SELECT 1 FROM users WHERE subject=? AND active=1", (subject,)).fetchone():
                     raise AccessError("This identity is no longer active; project initialization requires reconciliation.")
-                db.execute("INSERT INTO projects VALUES(?,?)", (project["id"], canonical(project)))
+                if self.finite:
+                    finite.admit(db, projects=1, members=1)
+                db.execute("INSERT INTO projects VALUES(?,?)", (project["id"], self.serialized(project, "project")))
                 db.execute("INSERT INTO members VALUES(?,?,?)", (project["id"], subject, "owner"))
             return project
         except BaseException:
@@ -377,8 +458,19 @@ class Store:
             return dict(project=project, role=role, members=members, runs=runs)
 
     def membership(self, project_id, actor, subject, role=None):
+        if self.finite:
+            with self.guard.locked():
+                with contextlib.closing(self.connect()) as db:
+                    existing = db.execute("SELECT role FROM members WHERE project_id=? AND subject=?", (project_id, subject)).fetchone()
+                return self._membership(project_id, actor, subject, role,
+                                        insertion=existing is None and role is not None)
+        return self._membership(project_id, actor, subject, role)
+
+    def _membership(self, project_id, actor, subject, role=None, *, insertion=False):
         identifier(subject)
-        with self.transaction(essential=role in (None, "viewer"), resource_id=project_id, subject=actor, request={"action": "membership", "subject": subject, "role": role}) as db:
+        with self.transaction(essential=role in (None, "viewer") and not insertion, resource_id=project_id, subject=actor,
+                              request={"action": "membership", "subject": subject, "role": role},
+                              preflight=(lambda db: finite.admit(db, members=1)) if insertion else None) as db:
             project, _ = self._access(db, project_id, actor, {"owner"})
             if subject == project["owner"]:
                 raise ValueError("The project owner cannot be removed or demoted.")
@@ -398,7 +490,7 @@ class Store:
         with self.transaction(essential=True, resource_id=project_id, subject=subject, request={"action": "close-project"}) as db:
             project, _ = self._access(db, project_id, subject, {"owner"})
             project["status"] = "closed"
-            db.execute("UPDATE projects SET payload=? WHERE id=?", (canonical(project), project_id))
+            db.execute("UPDATE projects SET payload=? WHERE id=?", (self.serialized(project, "project"), project_id))
             db.execute("UPDATE runs SET cancel_requested=1 WHERE project_id=? AND status IN ('queued','running')", (project_id,))
         return project
 
@@ -440,7 +532,9 @@ class Store:
                    recipe_sha256=digest(source), environment={"image": images[runtime], "runtime": runtime,
                    "runner": "outfitter-docker-v1", "specification": environment}, parameters={}, metrics={}, error="", cleanup_verified=False,
                    compute={"reserved_cpu_seconds": 0, "charged_cpu_seconds": 0, "provenance": "not_admitted", "unresolved_liability": False})
-        with (self.transaction(kind="submit", resource_id=rid, subject=subject, request={"project_id": project_id, "request_hash": request_hash}) if self.guard else self.transaction()) as db:
+        self.serialized(run, "run")
+        with (self.transaction(kind="submit", resource_id=rid, subject=subject, request={"project_id": project_id, "request_hash": request_hash},
+                               preflight=lambda db: finite.admit(db, runs=1)) if self.guard else self.transaction()) as db:
             self._access(db, project_id, subject, {"owner", "editor"}, active=True)
             if request_key:
                 previous = db.execute("SELECT request_hash,payload FROM runs WHERE project_id=? AND subject=? AND request_key=?", (project_id, subject, request_key)).fetchone()
@@ -463,7 +557,7 @@ class Store:
             if self.guard:
                 sync_directory(directory)
                 sync_directory(directory.parent)
-            db.execute("INSERT INTO runs(id,project_id,subject,status,payload,request_key,request_hash) VALUES(?,?,?,?,?,?,?)", (rid, project_id, subject, "queued", canonical(run), request_key, request_hash))
+            db.execute("INSERT INTO runs(id,project_id,subject,status,payload,request_key,request_hash) VALUES(?,?,?,?,?,?,?)", (rid, project_id, subject, "queued", self.serialized(run, "run"), request_key, request_hash))
             if authorize is not None:
                 authorize(rid)
         return run
@@ -492,11 +586,11 @@ class Store:
                     run = json.loads(row["payload"])
                     run.update(status="cancelled", finished_at=now(), cleanup_verified=True,
                                error="Transient identity authorization ended at restart. Submit a new run after signing in; this run was not replayed.")
-                    db.execute("UPDATE runs SET status='cancelled',payload=? WHERE id=?", (canonical(run), row["id"]))
+                    db.execute("UPDATE runs SET status='cancelled',payload=? WHERE id=?", (self.serialized(run, "run"), row["id"]))
             for row in db.execute("SELECT id,payload FROM runs WHERE status='running'").fetchall():
                 run = json.loads(row["payload"])
                 run.update(status="interrupted", finished_at=now(), error="The service restarted during execution. Operator reconciliation is required; this run was not retried.", cleanup_verified=False, compute=unknown_compute())
-                db.execute("UPDATE runs SET status='interrupted',payload=? WHERE id=?", (canonical(run), row["id"]))
+                db.execute("UPDATE runs SET status='interrupted',payload=? WHERE id=?", (self.serialized(run, "run"), row["id"]))
 
     def claim(self, on_cancel=None):
         if self.guard:
@@ -522,7 +616,7 @@ class Store:
                 if not allowed:
                     run.update(status="cancelled", finished_at=now(), cleanup_verified=True,
                                error="Cancelled before dispatch; access or the project run period ended.")
-                    db.execute("UPDATE runs SET status='cancelled',payload=? WHERE id=?", (canonical(run), row["id"]))
+                    db.execute("UPDATE runs SET status='cancelled',payload=? WHERE id=?", (self.serialized(run, "run"), row["id"]))
                     if on_cancel is not None:
                         on_cancel(row["id"])
                     if operation is not None:
@@ -532,7 +626,7 @@ class Store:
                         return None
                     continue
                 run.update(status="running", started_at=now(), compute=unknown_compute())
-                db.execute("UPDATE runs SET status='running',payload=? WHERE id=?", (canonical(run), row["id"]))
+                db.execute("UPDATE runs SET status='running',payload=? WHERE id=?", (self.serialized(run, "run"), row["id"]))
                 return run
         return None
 
@@ -622,8 +716,8 @@ class Store:
                     run.update(status="cancelled", metrics={}, error="Access, identity or the project run period ended before result publication.")
                     result = None
                 run["finished_at"] = now()
-                payload = canonical(run)
-                result_payload = canonical(result).encode() if result is not None else None
+                payload = self.serialized(run, "run")
+                result_payload = self.serialized(result, "result").encode() if result is not None else None
                 if len(payload.encode()) > 262144 or (result_payload is not None and len(result_payload) > 65536):
                     raise ValueError("The final run record exceeds its bounded publication allowance.")
                 if result_payload is not None:
