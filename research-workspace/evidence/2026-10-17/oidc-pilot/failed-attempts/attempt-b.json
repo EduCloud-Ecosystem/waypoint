@@ -1,0 +1,188 @@
+{
+  "status": "FAIL",
+  "checks": [
+    {
+      "name": "owner real browser sign-in 200",
+      "status": "PASS"
+    },
+    {
+      "name": "editor real browser sign-in 200",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer real browser sign-in 200",
+      "status": "PASS"
+    },
+    {
+      "name": "outsider real browser sign-in 200",
+      "status": "PASS"
+    },
+    {
+      "name": "owner sees only provisioned project",
+      "status": "PASS"
+    },
+    {
+      "name": "owner cross-project export denied",
+      "status": "PASS"
+    },
+    {
+      "name": "editor sees only provisioned project",
+      "status": "PASS"
+    },
+    {
+      "name": "editor cross-project export denied",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer sees only provisioned project",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cross-project export denied",
+      "status": "PASS"
+    },
+    {
+      "name": "outsider sees only provisioned project",
+      "status": "PASS"
+    },
+    {
+      "name": "outsider cross-project export denied",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot submit",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot manage membership",
+      "status": "PASS"
+    },
+    {
+      "name": "summary-python admitted",
+      "status": "PASS"
+    },
+    {
+      "name": "summary-python real compute and cleanup",
+      "status": "PASS"
+    },
+    {
+      "name": "summary-r admitted",
+      "status": "PASS"
+    },
+    {
+      "name": "summary-r real compute and cleanup",
+      "status": "PASS"
+    },
+    {
+      "name": "current member export",
+      "status": "PASS"
+    },
+    {
+      "name": "editor initial export",
+      "status": "PASS"
+    },
+    {
+      "name": "owner removes editor",
+      "status": "PASS"
+    },
+    {
+      "name": "removed member immediate export denial",
+      "status": "PASS"
+    },
+    {
+      "name": "owner restores editor",
+      "status": "PASS"
+    },
+    {
+      "name": "forged identity headers cannot authenticate",
+      "status": "PASS"
+    },
+    {
+      "name": "private route unavailable /oauth2/auth",
+      "status": "PASS"
+    },
+    {
+      "name": "private route unavailable /oauth2/sign_out",
+      "status": "PASS"
+    },
+    {
+      "name": "private route unavailable /oauth2/%61uth",
+      "status": "PASS"
+    },
+    {
+      "name": "private route unavailable /idp/admin/",
+      "status": "PASS"
+    },
+    {
+      "name": "private route unavailable /idp/realms/master/",
+      "status": "PASS"
+    },
+    {
+      "name": "private route unavailable /idp/health",
+      "status": "PASS"
+    },
+    {
+      "name": "access keys cannot authenticate OIDC mode",
+      "status": "PASS"
+    },
+    {
+      "name": "workspace logout succeeds",
+      "status": "PASS"
+    },
+    {
+      "name": "signed-out cookie replay fails",
+      "status": "PASS"
+    },
+    {
+      "name": "signed-out proxy cannot begin replacement session",
+      "status": "PASS"
+    },
+    {
+      "name": "real PKCE token response has no refresh token",
+      "status": "PASS"
+    },
+    {
+      "name": "owner real browser sign-in 200",
+      "status": "PASS"
+    },
+    {
+      "name": "credentials absent from runs broker export and service logs",
+      "status": "PASS"
+    },
+    {
+      "name": "outsider real browser sign-in 401",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer real browser sign-in 200",
+      "status": "PASS"
+    },
+    {
+      "name": "expired real credential rejected",
+      "status": "PASS"
+    },
+    {
+      "name": "owner real browser sign-in 200",
+      "status": "PASS"
+    },
+    {
+      "name": "editor real browser sign-in 200",
+      "status": "PASS"
+    },
+    {
+      "name": "queued demotion prevents broker admission",
+      "status": "PASS"
+    },
+    {
+      "name": "revoked real credential immediately denied",
+      "status": "PASS"
+    }
+  ],
+  "scope": "Local synthetic OIDC, real browser and private service checks.",
+  "not_run": [
+    "manual screen reader",
+    "independent human",
+    "hosted capacity",
+    "private-data admission"
+  ]
+}

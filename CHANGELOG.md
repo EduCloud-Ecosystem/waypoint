@@ -11,6 +11,11 @@
   acceptance tooling. Record scope and unresolved issue 29 gates in
   `research-workspace/OIDC-PILOT.md`; source candidates remain disabled.
 - Belay and the parent pilot worktrees remain untouched.
+- Record 74 passing local browser/service controls, 158 offline controls,
+  retained failed attempts and the separately tested observer-cleanup fix.
+  Keep manual accessibility, hosted/private-data and storage/retention gates open.
+- Verify provider logout through its exact confirmation route, with a separately
+  retained initial routing failure and final current-session termination check.
 
 
 Records every substantive change to HOST_SESSION_BUILD.md, PLAN.1.md, and

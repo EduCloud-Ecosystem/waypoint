@@ -120,20 +120,34 @@ recipe, runtime image, source candidate or parent pilot worktree.
 
 ## Readiness and retained attempts
 
-Final evidence is recorded separately under `evidence/2026-10-17/oidc-pilot/`.
+The [acceptance record](evidence/2026-10-17/oidc-pilot/acceptance.json)
+records 74 passing real-browser/service checks and 158 offline controls.
+The full browser run used application and harness revision `b818d02`.
+A later harness-only observer cleanup fix has two targeted failure-path
+regressions; it did not change the 18 prepared application files. Desktop/mobile
+inspection and a separate provider-logout control supplement the full run.
 The initial attempt omitted Keycloak's `basic` scope; current identity validation
 correctly denied the resulting token without `sub`/`auth_time`. A browser-harness
 attempt sent an empty JSON body, and a later short-token control initially
 failed to restore the lifespan because Keycloak preserves omitted attributes.
 Those attempts remain failures. The corrected generator includes `basic`; the
 harness sends JSON data and explicitly restores the 600-second lifetime.
+Two cold-start attempts reached the application before Keycloak was ready.
+They remain failed attempts; the corrected harness waits for the exact provider
+issuer and private proxy readiness before opening the browser. A screenshot
+supplement initially used the wrong browser execution context; the corrected
+read-only layout check passed separately.
+The separate provider sign-out initially failed at Keycloak's confirmation
+POST. The generator now exposes that exact `logout/logout-confirm` path. A
+supplemental real-browser control verifies removal of the current browser's
+exact provider session ID and continued denial of private provider endpoints.
 
 | Gate | Scope / status |
 | --- | --- |
 | Local synthetic identity and authorization | Final measured results in the acceptance record |
 | Existing key mode, Python/R and recovery regression controls | Automated controls and ordinary CI |
 | Source candidate promotion | NOT RUN; four disabled candidates |
-| Manual screen reader and new human walkthrough | NOT RUN |
+| Manual screen reader, complete focus/tab order and new human walkthrough | NOT RUN |
 | Store-wide byte/inode/output limits and retention/deletion | OPEN in issue 29 |
 | Intended hosted cohort/concurrency and overload envelope | NOT RUN |
 | Service owner, support, recovery targets, off-host backups | OPEN |
@@ -148,6 +162,7 @@ preserved. Its separate later resource/accounting observation remains in
 - [Keycloak OIDC endpoints and confidential-client introspection](https://www.keycloak.org/securing-apps/oidc-layers)
 - [Keycloak fixed hostname and backchannels](https://www.keycloak.org/server/hostname)
 - [Keycloak reverse-proxy path exposure](https://www.keycloak.org/server/reverseproxy)
+- [Keycloak logout confirmation implementation](https://github.com/keycloak/keycloak/blob/main/services/src/main/java/org/keycloak/protocol/oidc/endpoints/LogoutEndpoint.java)
 - [OAuth2 Proxy configuration, nonce/PKCE, cookies and logging](https://oauth2-proxy.github.io/oauth2-proxy/configuration/overview/)
 - [OAuth2 Proxy endpoint and sign-out behavior](https://oauth2-proxy.github.io/oauth2-proxy/features/endpoints/)
 

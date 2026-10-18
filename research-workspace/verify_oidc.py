@@ -204,10 +204,11 @@ sys.exit(result.returncode)
         owner=ledger['owner']
         hold=self.root/'state/hold-cancel'; hold.touch()
         event=subprocess.Popen(['docker','events','--filter','event=start','--filter','label=org.educloud.outfitter.owner='+owner,'--format','{{json .}}'],stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,text=True)
-        observed={}; ready=threading.Event()
+        observed={}; ready=threading.Event(); stopping=threading.Event(); pause_lock=threading.Lock()
         def pause_owned():
             try:
                 for line in event.stdout:
+                    if stopping.is_set(): return
                     record=json.loads(line); cid=record.get('Actor',{}).get('ID') or record.get('id')
                     attrs=record.get('Actor',{}).get('Attributes',{}); rid=attrs.get('org.educloud.outfitter.request','')
                     if attrs.get('org.educloud.outfitter.owner')!=owner or len(rid)!=32 or not all(c in '0123456789abcdef' for c in rid): continue
@@ -217,11 +218,13 @@ sys.exit(result.returncode)
                     if check.returncode: continue
                     obj=json.loads(check.stdout)[0]
                     if obj['Config']['Labels'].get('org.educloud.outfitter.owner')!=owner: continue
-                    observed.update(cid=cid,rid=rid)
-                    paused=subprocess.run(['docker','pause',cid],capture_output=True,timeout=5)
-                    if paused.returncode: continue
-                    check=json.loads(subprocess.run(['docker','inspect',cid],capture_output=True,text=True,check=True,timeout=5).stdout)[0]
-                    observed.update(cid=cid,rid=rid,running=check['State']['Running'],paused=check['State']['Paused'])
+                    with pause_lock:
+                        if stopping.is_set(): return
+                        observed.update(cid=cid,rid=rid)
+                        paused=subprocess.run(['docker','pause',cid],capture_output=True,timeout=5)
+                        if paused.returncode: continue
+                        check=json.loads(subprocess.run(['docker','inspect',cid],capture_output=True,text=True,check=True,timeout=5).stdout)[0]
+                        observed.update(cid=cid,rid=rid,running=check['State']['Running'],paused=check['State']['Paused'])
                     ready.set(); return
             except Exception:
                 ready.set()
@@ -245,12 +248,24 @@ sys.exit(result.returncode)
                 if subprocess.run(['docker','inspect',observed['cid']],capture_output=True,timeout=3).returncode: break
                 time.sleep(0.1)
         finally:
-            event.terminate(); event.wait(timeout=5)
-            thread.join(timeout=5)
-            if event.stdout: event.stdout.close()
-            hold.unlink(missing_ok=True)
-            if observed.get('cid'):
-                subprocess.run(['docker','unpause',observed['cid']],capture_output=True,timeout=5)
+            stopping.set()
+            try:
+                event.terminate()
+                try: event.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    event.kill(); event.wait(timeout=5)
+            finally:
+                # Stop and serialize against the only pause call before cleanup.
+                # Even an event-reader failure cannot skip exact-owned unpause.
+                try:
+                    with pause_lock:
+                        if observed.get('cid'):
+                            subprocess.run(['docker','unpause',observed['cid']],capture_output=True,timeout=5)
+                finally:
+                    hold.unlink(missing_ok=True)
+                    thread.join(timeout=20)
+                    if not thread.is_alive() and event.stdout: event.stdout.close()
+                if thread.is_alive(): raise RuntimeError('Owned event reader did not terminate.')
         self.use('owner'); row=self.wait_run(self.operator['projects'][0],rid)['body']
         self.check('revocation cancels active compute with retained charge and cleanup',row['status']=='cancelled' and not row['metrics'] and row['cleanup_verified'] and row['compute']['charged_cpu_seconds']==30)
         if observed.get('cid'):
@@ -357,6 +372,28 @@ sys.exit(result.returncode)
         self.check('keyboard export download exists',(self.root/'keyboard-evidence.zip').is_file())
         self.browser('await page.getByRole("button",{name:"Sign out",exact:true}).press("Enter"); await page.getByRole("link",{name:"End identity-provider session"}).waitFor();')
         self.check('keyboard local sign-out explains separate provider session',self.browser('return (await page.locator("#sign-in-error").innerText()).includes("identity-provider session may still be open");'))
+        self.provider_logout_control()
+
+    def provider_logout_control(self):
+        cookie='; '.join(c['name']+'='+c['value'] for c in self.cookies['owner'])
+        sid=self.private('''req=u.Request(identity['proxy_auth_url'],headers={'Cookie':VALUES['cookie']})
+with u.urlopen(req,timeout=5) as response: access=response.headers['X-Auth-Request-Access-Token']
+data=p.urlencode({'token':access,'client_id':identity['client_id'],'client_secret':identity['client_secret']}).encode()
+print(json.dumps(request('POST',identity['introspection_url'],data).get('sid')))
+''',{'cookie':cookie})
+        body="print(json.dumps([x['id'] for x in admin('GET','/users/'+VALUES['sub']+'/sessions')]))"
+        values={'sub':self.operator['users']['owner']['sub']}
+        before=set(self.private(body,values,admin=True))
+        self.cli_call('snapshot')
+        self.browser('await page.getByRole("link",{name:"End identity-provider session"}).press("Enter"); await page.getByRole("button",{name:"Logout",exact:true}).waitFor();')
+        self.cli_call('snapshot')
+        self.browser('await page.getByRole("button",{name:"Logout",exact:true}).press("Enter"); await page.getByRole("button",{name:"Sign in with identity provider"}).waitFor();')
+        after=set(self.private(body,values,admin=True))
+        self.check('separate provider logout removes exact current provider session',bool(sid) and sid in before and sid not in after)
+        self.check('provider logout returns to signed-out workspace',self.api('/api/session')['status']==401)
+        base='/idp/realms/'+self.manifest['realm']+'/protocol/openid-connect/'
+        for suffix in ['token','token/introspect','userinfo','logout/private']:
+            self.check('private provider endpoint remains unavailable '+suffix,self.api(base+suffix)['status']==404)
 
     def run(self):
         self.ready()

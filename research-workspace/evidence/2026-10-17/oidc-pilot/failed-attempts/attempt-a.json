@@ -1,0 +1,64 @@
+{
+  "status": "FAIL",
+  "checks": [
+    {
+      "name": "owner real browser sign-in 200",
+      "status": "PASS"
+    },
+    {
+      "name": "editor real browser sign-in 200",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer real browser sign-in 200",
+      "status": "PASS"
+    },
+    {
+      "name": "outsider real browser sign-in 200",
+      "status": "PASS"
+    },
+    {
+      "name": "owner sees only provisioned project",
+      "status": "PASS"
+    },
+    {
+      "name": "owner cross-project export denied",
+      "status": "PASS"
+    },
+    {
+      "name": "editor sees only provisioned project",
+      "status": "PASS"
+    },
+    {
+      "name": "editor cross-project export denied",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer sees only provisioned project",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cross-project export denied",
+      "status": "PASS"
+    },
+    {
+      "name": "outsider sees only provisioned project",
+      "status": "PASS"
+    },
+    {
+      "name": "outsider cross-project export denied",
+      "status": "PASS"
+    },
+    {
+      "name": "viewer cannot submit",
+      "status": "FAIL"
+    }
+  ],
+  "scope": "Local synthetic OIDC, real browser and private service checks.",
+  "not_run": [
+    "manual screen reader",
+    "independent human",
+    "hosted capacity",
+    "private-data admission"
+  ]
+}

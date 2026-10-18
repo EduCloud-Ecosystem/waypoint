@@ -118,7 +118,7 @@ def prepare(root, broker, linux_broker):
         'idp': {'rule': f'PathPrefix(`/idp/realms/{realm}/protocol/openid-connect/`) || PathPrefix(`/idp/realms/{realm}/login-actions/`) || PathPrefix(`/idp/resources/`)', 'priority': 10, 'service': 'keycloak'}}
     # Only browser endpoints pass the public issuer route. Introspection/token/userinfo
     # stay private; the catch-all app returns 404 for those paths.
-    routes['idp']['rule'] = f'Path(`/idp/realms/{realm}/protocol/openid-connect/auth`) || Path(`/idp/realms/{realm}/protocol/openid-connect/logout`) || PathPrefix(`/idp/realms/{realm}/login-actions/`) || PathPrefix(`/idp/resources/`)'
+    routes['idp']['rule'] = f'Path(`/idp/realms/{realm}/protocol/openid-connect/auth`) || Path(`/idp/realms/{realm}/protocol/openid-connect/logout`) || Path(`/idp/realms/{realm}/protocol/openid-connect/logout/logout-confirm`) || PathPrefix(`/idp/realms/{realm}/login-actions/`) || PathPrefix(`/idp/resources/`)'
     dynamic = {'http': {'routers': routes, 'middlewares': {'boundary': {'headers': {'customRequestHeaders': strip}}},
         'services': {key: {'loadBalancer': {'servers': [{'url': url}]}} for key, url in
                      {'app': 'http://app:18765', 'proxy': 'http://oauth2-proxy:4180', 'keycloak': 'http://keycloak:8080'}.items()}}}

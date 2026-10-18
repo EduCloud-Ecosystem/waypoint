@@ -1,0 +1,49 @@
+{
+  "pins": {
+    "docker": "docker@sha256:9190b0613792e658a7783cf14b2d5ace5941bb68ede7276922ea36ee457d76ad",
+    "keycloak": "quay.io/keycloak/keycloak@sha256:0aae0de7fca85525f727d3354df17896092de8bb26ae4c12d89c77e5df8cbce4",
+    "proxy": "quay.io/oauth2-proxy/oauth2-proxy@sha256:10a1165743a192e1940b4708fb9647027185ce11a681a1c5519b442ff7f1f561",
+    "python": "python@sha256:229a2c5bfa27522db7815ea81f9bed70af17ccb9de9fc7ad142b1877b5830d36",
+    "traefik": "traefik@sha256:aaf0f6185419a50c74651448c1a5bf4606bd2d2ddb7b8749eed505d55bf8b8ea"
+  },
+  "budget_cpu_seconds": 600,
+  "broker_sha256": "1e3ac23eba26b30434a8fe41f3d735ea4d939eb4ab6316703eef524495be1100",
+  "linux_broker_sha256": "e548c129811331583f5578f8b2c4c6bbd3dfaac304d9e1ecd1285a8d14c9d3f8",
+  "source_sha256": {
+    "recipes/archive/recipe-r-v1.R": "91db760044f6879d8171d34db57d5138e9255ce4d16bf489c919990dc65da3fd",
+    "recipes/recipe.R": "a3c06effab96558d8a09068adbfaf2650a3d9ab82b608ea63437dc9076fe3957",
+    "recipes/recipe.py": "549f064aaaa36ee8259f1f8e2902d0dfb15d071fcb6d9b60e52b266a7bbdb922",
+    "research_workspace/__init__.py": "d8cd56bc22ee978af2e94c63e5f3ac755934c728209cd5b3cceea7b2bc3af6e5",
+    "research_workspace/__main__.py": "3b06f7d40c9200184c046784e354b71577ffcff74f25670fb0f836ef4eaeda28",
+    "research_workspace/catalog.py": "3ea03e99bd71d61138c4278c72896d79debea1a930770adcfaf8f36eb9c68686",
+    "research_workspace/evidence.py": "017bc96e79a05592852f851cdbf0b59e65501d974261eb726099293b6e81ed7d",
+    "research_workspace/identity.py": "3f5c6c01e776be26fbd5bc94bbdc4d2d839c6412cc4fc7566560b3da34d86d61",
+    "research_workspace/recipes.py": "c157564229c562cc5fe5ee315e3cb2be74d5588d830e0de6d4c2e7caead2114f",
+    "research_workspace/recovery.py": "df825083922ec44689b12208a76abd39af88b20bde30734a273953d7542ec335",
+    "research_workspace/reproduction.py": "a00e771b2712c4ae289098418856f3580a3d8fd5396724ecdbd685a9bff8041d",
+    "research_workspace/runtime.py": "07e550e0c040b6c23c39cc80ce75639d6658ffe2e94dc6af84899f8d622b9b91",
+    "research_workspace/server.py": "4a66155e1d3cb5995504e024938d4afb1b85dd29f0f1e884d10458c82fcf272b",
+    "research_workspace/store.py": "ce7dfd7455573c6828acef7f1fc2b6644a18767c80d0432add29d596b84544ac",
+    "static/app.js": "d9fa55a783c05ae2e718c707dd6a091a8fb57ec8450b7b6ee0f7578b3622fc41",
+    "static/favicon.svg": "883b41d4da89db464d88edfa1737edc53672e4c839d3e2fba93d1469479817cb",
+    "static/index.html": "faaaec7bd8ca8ace4439064161929d43b377c5874a71d8e07547250d6086e816",
+    "static/styles.css": "6f7e6a1834808a476b0ab7a34a5c4601a1370ebb62e141763c601fd6c939f048"
+  },
+  "application_revision": "b818d02de51ec5aef418547142946b79e944ba66",
+  "acceptance_harness_revision": "b818d02de51ec5aef418547142946b79e944ba66",
+  "application_source_match": true,
+  "application_file_count": 18,
+  "broker_source_revision": "5827c84e9952cc67b85e91ceff4282e0ead6923b",
+  "observed_versions": {
+    "keycloak": "Keycloak 26.6.4\nJVM: 21.0.11 (Red Hat, Inc. OpenJDK 64-Bit Server VM 21.0.11+10-LTS)\nOS: Linux 7.2.9-orbstack-00391-g2b298d05fbd4 aarch64",
+    "proxy": "oauth2-proxy v7.15.3 (built with go1.26.4)",
+    "traefik": "Version:      3.6.2\nCodename:     ramequin\nGo version:   go1.24.10\nBuilt:        2025-11-18T16:13:04Z\nOS/Arch:      linux/arm64",
+    "docker_cli": "Docker version 28.5.1, build e180ab8",
+    "python": "Python 3.12.13"
+  },
+  "scope": "One local native ARM64 owned synthetic stack; no hosted capacity or image promotion claim.",
+  "later_harness_patch": "Only observer stop/pause/unpause failure handling changed after this full run; two targeted failure-path regressions pass. Application and prepared image bytes did not change.",
+  "later_ingress_patch": "Expose only the provider logout/logout-confirm path. Applied to the owned ingress and verified separately in provider-logout.json; full74 run remains unchanged.",
+  "final_harness_sha256": "f1f9583de561872761bc944f5ae5fcb0c79f780c9d3148dfea0e1e990269ef29",
+  "final_generator_sha256": "6483427ac4802768e9095924ab2522ca83ad88d3ea36d32f8cf46bcf313a226a"
+}

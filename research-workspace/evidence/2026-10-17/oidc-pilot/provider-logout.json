@@ -1,0 +1,40 @@
+{
+  "status": "PASS",
+  "checks": [
+    {
+      "name": "owner real browser sign-in 200",
+      "status": "PASS"
+    },
+    {
+      "name": "separate provider logout removes exact current provider session",
+      "status": "PASS"
+    },
+    {
+      "name": "provider logout returns to signed-out workspace",
+      "status": "PASS"
+    },
+    {
+      "name": "private provider endpoint remains unavailable token",
+      "status": "PASS"
+    },
+    {
+      "name": "private provider endpoint remains unavailable token/introspect",
+      "status": "PASS"
+    },
+    {
+      "name": "private provider endpoint remains unavailable userinfo",
+      "status": "PASS"
+    },
+    {
+      "name": "private provider endpoint remains unavailable logout/private",
+      "status": "PASS"
+    }
+  ],
+  "initial_attempt": {
+    "status": "FAIL",
+    "observed_path": "logout/logout-confirm",
+    "http_status": 403,
+    "cause": "Exact confirmation endpoint missing from generated ingress allowlist."
+  },
+  "intermediate_observation": "Initial correction observed one owner session removal. Final control identifies the current browser sid through private introspection and verifies that exact sid disappears."
+}

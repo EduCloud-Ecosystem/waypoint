@@ -1,9 +1,12 @@
 import json
+import io
 from pathlib import Path
 import tempfile
 import unittest
+import threading
 from unittest.mock import Mock, patch
 import pilot_oidc as pilot
+import verify_oidc as verify
 
 
 class LifecycleTests(unittest.TestCase):
@@ -40,3 +43,58 @@ class LifecycleTests(unittest.TestCase):
             pilot.stop(self.root)
         self.assertEqual((self.root/'stopped.json').read_bytes(),before)
         self.assertEqual(compose.call_count,2)
+
+
+class ObserverCleanupTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory(); self.root = Path(self.tmp.name)
+        self.rid = 'a' * 32
+        state = self.root / 'state'; (state / 'broker').mkdir(parents=True)
+        (state / 'broker/ledger.json').write_text(json.dumps({'owner':'owned'}))
+        run = state / 'runs' / self.rid; run.mkdir(parents=True)
+        (run / 'request.private.json').write_text(json.dumps({'project_id':'project'}))
+        self.subject = object.__new__(verify.Pilot)
+        self.subject.root = self.root; self.subject.state_name = 'state'
+        self.subject.operator = {'projects':['project'], 'users':{'editor':{'sub':'editor'}}}
+        self.subject.login = Mock(); self.subject.check = Mock()
+        record = {'Actor':{'ID':'exact-owned-container','Attributes':{
+            'org.educloud.outfitter.owner':'owned', 'org.educloud.outfitter.request':self.rid}}}
+        self.event = Mock(); self.event.stdout = io.StringIO(json.dumps(record)+'\n')
+        self.inspection = json.dumps([{'Config':{'Labels':{'org.educloud.outfitter.owner':'owned'}},
+                                      'State':{'Running':True,'Paused':True}}])
+    def tearDown(self): self.tmp.cleanup()
+
+    def test_teardown_error_cannot_skip_unpause(self):
+        paused = threading.Event(); calls = []
+        def run(args, **kwargs):
+            calls.append(args)
+            if args[1] == 'pause': paused.set()
+            return Mock(returncode=0, stdout=self.inspection)
+        def submit(*args):
+            self.assertTrue(paused.wait(2))
+            return {'body':{'id':self.rid}}
+        self.subject.api = submit
+        self.subject.private = Mock(side_effect=RuntimeError('injected provider control failure'))
+        self.event.terminate.side_effect = RuntimeError('injected observer teardown failure')
+        with patch.object(verify.subprocess, 'Popen', return_value=self.event), patch.object(verify.subprocess, 'run', side_effect=run):
+            with self.assertRaisesRegex(RuntimeError, 'observer teardown'):
+                self.subject.active_compute_revocation()
+        self.assertIn(['docker','unpause','exact-owned-container'], calls)
+        self.assertFalse((self.root/'state/hold-cancel').exists())
+
+    def test_inflight_inspection_cannot_pause_after_cleanup_starts(self):
+        inspecting = threading.Event(); release = threading.Event(); calls = []
+        def run(args, **kwargs):
+            calls.append(args)
+            inspecting.set(); self.assertTrue(release.wait(2))
+            return Mock(returncode=0, stdout=self.inspection)
+        def submit(*args):
+            self.assertTrue(inspecting.wait(2))
+            raise RuntimeError('injected submit failure')
+        self.subject.api = submit
+        self.event.terminate.side_effect = release.set
+        with patch.object(verify.subprocess, 'Popen', return_value=self.event), patch.object(verify.subprocess, 'run', side_effect=run):
+            with self.assertRaisesRegex(RuntimeError, 'submit failure'):
+                self.subject.active_compute_revocation()
+        self.assertFalse(any(args[1] == 'pause' for args in calls))
+        self.assertFalse((self.root/'state/hold-cancel').exists())
