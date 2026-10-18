@@ -1,5 +1,15 @@
 # CHANGELOG.md: Document history for the EduCloud hosting layer repo
 
+## 2026-10-17: Bounded broker response observation
+
+- Drain broker stdout/stderr incrementally for both control calls and worker
+  execution; reject overflow and late responses while retaining uncertain work.
+- Preserve identity/cancellation polling and distinguish acceptance deadlines
+  from bounded callback and observer teardown latency.
+- Test real endless producers, exact limits, quiet/closed-pipe processes,
+  failed callbacks and late callbacks. Whole-store storage admission remains open.
+
+
 ## 2026-10-17: Read-only research storage inventory
 
 - Add bounded offline storage-status and retention-plan reports that count all

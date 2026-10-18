@@ -83,12 +83,12 @@ class ReviewRegressions(unittest.TestCase):
         }
 
     def execute_receipt(self, run, receipt, *, before_return=None, returncode=0):
-        def communicate(timeout=None):
+        def collect(process, **kwargs):
             if before_return:
                 before_return()
             return json.dumps(receipt).encode(), b""
-        process = SimpleNamespace(communicate=communicate, returncode=returncode)
-        with patch("research_workspace.runtime.subprocess.Popen", return_value=process):
+        process = SimpleNamespace(returncode=returncode)
+        with patch("research_workspace.runtime.subprocess.Popen", return_value=process), patch("research_workspace.runtime.collect", side_effect=collect):
             Worker(self.store, self.broker).execute(run)
 
     def test_queued_and_cancelled_runs_export_with_explicit_accounting(self):
@@ -202,19 +202,14 @@ class ReviewRegressions(unittest.TestCase):
     def test_broker_deadline_terminates_observation_without_refunding_unknown_work(self):
         self.submit()
         run = self.store.claim()
-        class StalledProcess:
-            killed = False
-            def communicate(self, timeout=None):
-                if self.killed:
-                    return b"", b""
-                raise subprocess.TimeoutExpired("test-broker", timeout)
-            def kill(self):
-                self.killed = True
-        process = StalledProcess()
-        with patch("research_workspace.runtime.subprocess.Popen", return_value=process), patch("research_workspace.runtime.time.monotonic", side_effect=[0, 71]):
-            with self.assertRaises(ValueError):
+        import sys
+        self.broker.command = lambda *args: [sys.executable, '-c', 'import time; time.sleep(30)']
+        from research_workspace.bounded_process import collect
+        def short_deadline(process, **kwargs):
+            return collect(process, timeout=0.05)
+        with patch("research_workspace.runtime.collect", side_effect=short_deadline):
+            with self.assertRaisesRegex(ValueError, 'deadline'):
                 Worker(self.store, self.broker).execute(run)
-        self.assertTrue(process.killed)
         saved = self.store.run(self.pid, run["id"], "owner")
         self.assertIs(saved["compute"]["unresolved_liability"], True)
         self.assertIsNone(saved["compute"]["charged_cpu_seconds"])

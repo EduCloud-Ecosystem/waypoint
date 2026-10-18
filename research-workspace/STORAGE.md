@@ -105,7 +105,15 @@ possible at full admission.
 Uncertain commit/fsync/rename, orphan input, result-before-commit, broker-init and
 worker-death outcomes must retain their reservations and stop dispatch visibly.
 Restart cannot manufacture fresh storage/compute allowance or replay work.
-Both broker call paths need incrementally capped output reads. Checkpoints,
+Both broker call paths now drain output incrementally with 256 KiB stdout and
+64 KiB stderr caps. Control-call acceptance has a 20-second deadline and worker
+receipt acceptance has a 70-second deadline. Identity/cancellation callbacks keep
+their own bounded latency; caller return may include the in-progress callback
+and up to five seconds of observer teardown. Overflow or timeout stops the CLI
+observer and retains uncertain provider accounting. These are memory/output
+observation bounds, not a whole-store capacity guarantee.
+
+Checkpoints,
 held restores and explicit migrations must retain policy, reservations and
 protected artifacts, with destination preflight before copying and before source
 sealing. External backup/replay outputs need their own peak-capacity admission.
