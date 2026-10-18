@@ -1,0 +1,10 @@
+{
+  "format": "finite-encoding-rationale-v1",
+  "request_conservative_model_bytes": 12836,
+  "request_enforced_ceiling": 32768,
+  "model": "1024 raw UTF-8 path bytes per root, maximal six-byte JSON escapes, both derived paths, 32-character IDs, longest current reviewed image, conservative command fields; no filesystem or provider execution.",
+  "collector_stdout_ceiling": 262144,
+  "conservative_sixfold_encoding": 1572864,
+  "receipt_enforced_ceiling": 2097152,
+  "limits_are": "Serialized logical bytes, not physical storage capacity"
+}

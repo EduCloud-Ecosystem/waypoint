@@ -20,6 +20,7 @@ import tempfile
 from .runtime import Broker, strict_json
 from .store import Store, canonical, now, private_write, unknown_compute
 from .operation_guard import APPLICATION_ID, SCHEMA, FILE, LOCK, TEMP, GUARDED_MODES, sync_directory
+from . import finite_authority as finite
 
 FORMAT = "educloud-private-checkpoint-v1"
 GUARD_FORMAT = "educloud-private-checkpoint-v2"
@@ -128,6 +129,9 @@ def frozen_db(root):
 def database_digest(db):
     schema = [tuple(row) for row in db.execute("SELECT type,name,tbl_name,sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' ORDER BY type,name")]
     guarded = db.execute("PRAGMA application_id").fetchone()[0] == APPLICATION_ID
+    version = db.execute("PRAGMA user_version").fetchone()[0]
+    if version not in (0, finite.USER_VERSION) or (version and not guarded):
+        raise ValueError("Unsupported database profile for recovery.")
     tables = TABLES + ("operation_authority", "operation_receipts") if guarded else TABLES
     if guarded:
         from .storage_inventory import SCHEMA_SQL, _schema
@@ -140,6 +144,8 @@ def database_digest(db):
     if db.execute("PRAGMA quick_check").fetchone()[0] != "ok":
         raise ValueError("The workspace database failed its integrity check.")
     digest = hashlib.sha256(canonical(schema).encode())
+    if version:
+        digest.update(canonical({"user_version": version, "logical_authority": finite.profile_digest()}).encode())
     for table in tables:
         digest.update(table.encode())
         for row in db.execute(f"SELECT rowid,* FROM {table} ORDER BY rowid"):
@@ -239,6 +245,7 @@ def verified_checkpoint(checkpoint_path, expected):
 
 def restore(checkpoint_path, output, *, trusted_sha256, broker):
     source, manifest = verified_checkpoint(checkpoint_path, trusted_sha256)
+    finite.refuse_unqualified_recovery(source)
     if manifest["format"] == GUARD_FORMAT:
         from .guarded_recovery import restore as guarded_restore
         return guarded_restore(checkpoint_path, output, trusted_sha256=trusted_sha256, broker=broker)
@@ -295,6 +302,7 @@ def recovery_status(state):
 
 def activate(state, source_state, checkpoint_path, *, trusted_sha256):
     archive, manifest = verified_checkpoint(checkpoint_path, trusted_sha256)
+    finite.refuse_unqualified_recovery(archive)
     if manifest["format"] == GUARD_FORMAT:
         from .guarded_recovery import activate as guarded_activate
         return guarded_activate(state, source_state, checkpoint_path, trusted_sha256=trusted_sha256)

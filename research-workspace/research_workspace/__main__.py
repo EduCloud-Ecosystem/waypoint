@@ -36,6 +36,7 @@ def main():
     init = commands.add_parser("init", help="Create fresh private local authority")
     init.add_argument("--state", required=True)
     init.add_argument("--operation-guard", action="store_true", help="Explicit fresh disposable operation-guard profile; no quota enforcement or migration")
+    init.add_argument("--finite-authority", action="store_true", help="Fresh opt-in local key profile with logical row/field limits; no storage quota")
     init.add_argument("--broker", required=True)
     init.add_argument("--subject", default="researcher")
     init.add_argument("--python-image")
@@ -88,8 +89,11 @@ def main():
         broker = Broker(args.broker, Path(args.state) / "broker")
         config = {"version": 1, "mode": "local-public-data", "broker": broker.executable,
                   "images": images, "total_budget_cpu_seconds": args.total_budget_cpu_seconds}
-        if args.operation_guard:
+        if args.operation_guard or args.finite_authority:
             config["mode"] = "local-guarded-public-data-v1"
+            if args.finite_authority:
+                from . import finite_authority as finite
+                config.update(mode=finite.MODE, logical_authority=finite.profile())
             store = Store(args.state, create=True, guarded=True, config=config, subject=args.subject)
             key = store.initial_key
         else:

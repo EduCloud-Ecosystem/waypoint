@@ -1,0 +1,242 @@
+test_database_authority_identity_is_required_before_safety (test_finite_authority.FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety) ... 
+  test_database_authority_identity_is_required_before_safety (test_finite_authority.FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety) (operation=<function FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety.<locals>.<lambda> at 0x105b4f110>, mutation='DELETE FROM operation_authority') ... FAIL
+  test_database_authority_identity_is_required_before_safety (test_finite_authority.FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety) (operation=<bound method Store.connect of <research_workspace.store.Store object at 0x106a85a90>>, mutation='DELETE FROM operation_authority') ... FAIL
+  test_database_authority_identity_is_required_before_safety (test_finite_authority.FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety) (operation=<function FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety.<locals>.<lambda> at 0x105b4e980>, mutation='DELETE FROM operation_authority') ... FAIL
+  test_database_authority_identity_is_required_before_safety (test_finite_authority.FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety) (operation=<function FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety.<locals>.<lambda> at 0x106b38040>, mutation='DELETE FROM operation_authority') ... FAIL
+  test_database_authority_identity_is_required_before_safety (test_finite_authority.FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety) (operation=<function FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety.<locals>.<lambda> at 0x106b380f0>, mutation='DELETE FROM operation_authority') ... ERROR
+  test_database_authority_identity_is_required_before_safety (test_finite_authority.FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety) (operation=<function FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety.<locals>.<lambda> at 0x106b38930>, mutation="UPDATE operation_authority SET authority_id='wrong'") ... FAIL
+  test_database_authority_identity_is_required_before_safety (test_finite_authority.FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety) (operation=<bound method Store.connect of <research_workspace.store.Store object at 0x106a85a90>>, mutation="UPDATE operation_authority SET authority_id='wrong'") ... FAIL
+  test_database_authority_identity_is_required_before_safety (test_finite_authority.FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety) (operation=<function FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety.<locals>.<lambda> at 0x106b39c70>, mutation="UPDATE operation_authority SET authority_id='wrong'") ... FAIL
+  test_database_authority_identity_is_required_before_safety (test_finite_authority.FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety) (operation=<function FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety.<locals>.<lambda> at 0x106b39e80>, mutation="UPDATE operation_authority SET authority_id='wrong'") ... FAIL
+  test_database_authority_identity_is_required_before_safety (test_finite_authority.FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety) (operation=<function FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety.<locals>.<lambda> at 0x106b383b0>, mutation="UPDATE operation_authority SET authority_id='wrong'") ... ERROR
+  test_database_authority_identity_is_required_before_safety (test_finite_authority.FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety) (operation=<function FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety.<locals>.<lambda> at 0x106b39fe0>, mutation="INSERT INTO operation_authority VALUES('extra',0,'barrier')") ... FAIL
+  test_database_authority_identity_is_required_before_safety (test_finite_authority.FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety) (operation=<bound method Store.connect of <research_workspace.store.Store object at 0x106a85a90>>, mutation="INSERT INTO operation_authority VALUES('extra',0,'barrier')") ... FAIL
+  test_database_authority_identity_is_required_before_safety (test_finite_authority.FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety) (operation=<function FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety.<locals>.<lambda> at 0x106b3a140>, mutation="INSERT INTO operation_authority VALUES('extra',0,'barrier')") ... FAIL
+  test_database_authority_identity_is_required_before_safety (test_finite_authority.FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety) (operation=<function FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety.<locals>.<lambda> at 0x106b39dd0>, mutation="INSERT INTO operation_authority VALUES('extra',0,'barrier')") ... FAIL
+  test_database_authority_identity_is_required_before_safety (test_finite_authority.FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety) (operation=<function FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety.<locals>.<lambda> at 0x106b39d20>, mutation="INSERT INTO operation_authority VALUES('extra',0,'barrier')") ... ERROR
+test_all_recovery_entrypoints_reject_db_marker_before_effects (test_finite_authority.FiniteAuthorityTests.test_all_recovery_entrypoints_reject_db_marker_before_effects) ... 
+  test_all_recovery_entrypoints_reject_db_marker_before_effects (test_finite_authority.FiniteAuthorityTests.test_all_recovery_entrypoints_reject_db_marker_before_effects) (function='research_workspace.guarded_recovery.restore') ... FAIL
+  test_all_recovery_entrypoints_reject_db_marker_before_effects (test_finite_authority.FiniteAuthorityTests.test_all_recovery_entrypoints_reject_db_marker_before_effects) (function='research_workspace.recovery.activate') ... FAIL
+  test_all_recovery_entrypoints_reject_db_marker_before_effects (test_finite_authority.FiniteAuthorityTests.test_all_recovery_entrypoints_reject_db_marker_before_effects) (function='research_workspace.guarded_recovery.activate') ... FAIL
+
+======================================================================
+ERROR: test_database_authority_identity_is_required_before_safety (test_finite_authority.FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety) (operation=<function FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety.<locals>.<lambda> at 0x106b380f0>, mutation='DELETE FROM operation_authority')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_finite_authority.py", line 322, in test_database_authority_identity_is_required_before_safety
+    value = operation()
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_finite_authority.py", line 319, in <lambda>
+    lambda: self.store.cancel(self.pid, run["id"], "alice")):
+            ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/store.py", line 575, in cancel
+    self._access(db, project_id, subject, {"owner", "editor"})
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/store.py", line 365, in _access
+    raise AccessError("You do not have access to this project or action.")
+research_workspace.store.AccessError: You do not have access to this project or action.
+
+======================================================================
+ERROR: test_database_authority_identity_is_required_before_safety (test_finite_authority.FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety) (operation=<function FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety.<locals>.<lambda> at 0x106b383b0>, mutation="UPDATE operation_authority SET authority_id='wrong'")
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_finite_authority.py", line 322, in test_database_authority_identity_is_required_before_safety
+    value = operation()
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_finite_authority.py", line 319, in <lambda>
+    lambda: self.store.cancel(self.pid, run["id"], "alice")):
+            ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/store.py", line 575, in cancel
+    self._access(db, project_id, subject, {"owner", "editor"})
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/store.py", line 365, in _access
+    raise AccessError("You do not have access to this project or action.")
+research_workspace.store.AccessError: You do not have access to this project or action.
+
+======================================================================
+ERROR: test_database_authority_identity_is_required_before_safety (test_finite_authority.FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety) (operation=<function FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety.<locals>.<lambda> at 0x106b39d20>, mutation="INSERT INTO operation_authority VALUES('extra',0,'barrier')")
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_finite_authority.py", line 322, in test_database_authority_identity_is_required_before_safety
+    value = operation()
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_finite_authority.py", line 319, in <lambda>
+    lambda: self.store.cancel(self.pid, run["id"], "alice")):
+            ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/store.py", line 575, in cancel
+    self._access(db, project_id, subject, {"owner", "editor"})
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/store.py", line 365, in _access
+    raise AccessError("You do not have access to this project or action.")
+research_workspace.store.AccessError: You do not have access to this project or action.
+
+======================================================================
+FAIL: test_database_authority_identity_is_required_before_safety (test_finite_authority.FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety) (operation=<function FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety.<locals>.<lambda> at 0x105b4f110>, mutation='DELETE FROM operation_authority')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_finite_authority.py", line 321, in test_database_authority_identity_is_required_before_safety
+    with self.assertRaises(f.InvalidProfile):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+AssertionError: InvalidProfile not raised
+
+======================================================================
+FAIL: test_database_authority_identity_is_required_before_safety (test_finite_authority.FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety) (operation=<bound method Store.connect of <research_workspace.store.Store object at 0x106a85a90>>, mutation='DELETE FROM operation_authority')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_finite_authority.py", line 321, in test_database_authority_identity_is_required_before_safety
+    with self.assertRaises(f.InvalidProfile):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+AssertionError: InvalidProfile not raised
+
+======================================================================
+FAIL: test_database_authority_identity_is_required_before_safety (test_finite_authority.FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety) (operation=<function FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety.<locals>.<lambda> at 0x105b4e980>, mutation='DELETE FROM operation_authority')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_finite_authority.py", line 321, in test_database_authority_identity_is_required_before_safety
+    with self.assertRaises(f.InvalidProfile):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+AssertionError: InvalidProfile not raised
+
+======================================================================
+FAIL: test_database_authority_identity_is_required_before_safety (test_finite_authority.FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety) (operation=<function FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety.<locals>.<lambda> at 0x106b38040>, mutation='DELETE FROM operation_authority')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_finite_authority.py", line 321, in test_database_authority_identity_is_required_before_safety
+    with self.assertRaises(f.InvalidProfile):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+AssertionError: InvalidProfile not raised
+
+======================================================================
+FAIL: test_database_authority_identity_is_required_before_safety (test_finite_authority.FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety) (operation=<function FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety.<locals>.<lambda> at 0x106b38930>, mutation="UPDATE operation_authority SET authority_id='wrong'")
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_finite_authority.py", line 321, in test_database_authority_identity_is_required_before_safety
+    with self.assertRaises(f.InvalidProfile):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+AssertionError: InvalidProfile not raised
+
+======================================================================
+FAIL: test_database_authority_identity_is_required_before_safety (test_finite_authority.FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety) (operation=<bound method Store.connect of <research_workspace.store.Store object at 0x106a85a90>>, mutation="UPDATE operation_authority SET authority_id='wrong'")
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_finite_authority.py", line 321, in test_database_authority_identity_is_required_before_safety
+    with self.assertRaises(f.InvalidProfile):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+AssertionError: InvalidProfile not raised
+
+======================================================================
+FAIL: test_database_authority_identity_is_required_before_safety (test_finite_authority.FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety) (operation=<function FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety.<locals>.<lambda> at 0x106b39c70>, mutation="UPDATE operation_authority SET authority_id='wrong'")
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_finite_authority.py", line 321, in test_database_authority_identity_is_required_before_safety
+    with self.assertRaises(f.InvalidProfile):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+AssertionError: InvalidProfile not raised
+
+======================================================================
+FAIL: test_database_authority_identity_is_required_before_safety (test_finite_authority.FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety) (operation=<function FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety.<locals>.<lambda> at 0x106b39e80>, mutation="UPDATE operation_authority SET authority_id='wrong'")
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_finite_authority.py", line 321, in test_database_authority_identity_is_required_before_safety
+    with self.assertRaises(f.InvalidProfile):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+AssertionError: InvalidProfile not raised
+
+======================================================================
+FAIL: test_database_authority_identity_is_required_before_safety (test_finite_authority.FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety) (operation=<function FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety.<locals>.<lambda> at 0x106b39fe0>, mutation="INSERT INTO operation_authority VALUES('extra',0,'barrier')")
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_finite_authority.py", line 321, in test_database_authority_identity_is_required_before_safety
+    with self.assertRaises(f.InvalidProfile):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+AssertionError: InvalidProfile not raised
+
+======================================================================
+FAIL: test_database_authority_identity_is_required_before_safety (test_finite_authority.FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety) (operation=<bound method Store.connect of <research_workspace.store.Store object at 0x106a85a90>>, mutation="INSERT INTO operation_authority VALUES('extra',0,'barrier')")
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_finite_authority.py", line 321, in test_database_authority_identity_is_required_before_safety
+    with self.assertRaises(f.InvalidProfile):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+AssertionError: InvalidProfile not raised
+
+======================================================================
+FAIL: test_database_authority_identity_is_required_before_safety (test_finite_authority.FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety) (operation=<function FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety.<locals>.<lambda> at 0x106b3a140>, mutation="INSERT INTO operation_authority VALUES('extra',0,'barrier')")
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_finite_authority.py", line 321, in test_database_authority_identity_is_required_before_safety
+    with self.assertRaises(f.InvalidProfile):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+AssertionError: InvalidProfile not raised
+
+======================================================================
+FAIL: test_database_authority_identity_is_required_before_safety (test_finite_authority.FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety) (operation=<function FiniteAuthorityTests.test_database_authority_identity_is_required_before_safety.<locals>.<lambda> at 0x106b39dd0>, mutation="INSERT INTO operation_authority VALUES('extra',0,'barrier')")
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_finite_authority.py", line 321, in test_database_authority_identity_is_required_before_safety
+    with self.assertRaises(f.InvalidProfile):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+AssertionError: InvalidProfile not raised
+
+======================================================================
+FAIL: test_all_recovery_entrypoints_reject_db_marker_before_effects (test_finite_authority.FiniteAuthorityTests.test_all_recovery_entrypoints_reject_db_marker_before_effects) (function='research_workspace.guarded_recovery.restore')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_finite_authority.py", line 358, in test_all_recovery_entrypoints_reject_db_marker_before_effects
+    function(backup, destination, trusted_sha256=trusted, broker="unused")
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/guarded_recovery.py", line 68, in restore
+    root = r.fresh_directory(output, durable=True)
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/mock.py", line 1176, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/mock.py", line 1180, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/mock.py", line 1241, in _execute_mock_call
+    raise effect
+AssertionError: destination creation reached
+
+======================================================================
+FAIL: test_all_recovery_entrypoints_reject_db_marker_before_effects (test_finite_authority.FiniteAuthorityTests.test_all_recovery_entrypoints_reject_db_marker_before_effects) (function='research_workspace.recovery.activate')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_finite_authority.py", line 360, in test_all_recovery_entrypoints_reject_db_marker_before_effects
+    function(destination, self.root, backup, trusted_sha256=trusted)
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/recovery.py", line 307, in activate
+    return guarded_activate(state, source_state, checkpoint_path, trusted_sha256=trusted_sha256)
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/guarded_recovery.py", line 139, in activate
+    lifecycle.enter_context(r.offline(path))
+                            ~~~~~~~~~^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/mock.py", line 1176, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/mock.py", line 1180, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/mock.py", line 1241, in _execute_mock_call
+    raise effect
+AssertionError: source/replacement lock reached
+
+======================================================================
+FAIL: test_all_recovery_entrypoints_reject_db_marker_before_effects (test_finite_authority.FiniteAuthorityTests.test_all_recovery_entrypoints_reject_db_marker_before_effects) (function='research_workspace.guarded_recovery.activate')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_finite_authority.py", line 360, in test_all_recovery_entrypoints_reject_db_marker_before_effects
+    function(destination, self.root, backup, trusted_sha256=trusted)
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/guarded_recovery.py", line 139, in activate
+    lifecycle.enter_context(r.offline(path))
+                            ~~~~~~~~~^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/mock.py", line 1176, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/mock.py", line 1180, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/mock.py", line 1241, in _execute_mock_call
+    raise effect
+AssertionError: source/replacement lock reached
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.187s
+
+FAILED (failures=15, errors=3)

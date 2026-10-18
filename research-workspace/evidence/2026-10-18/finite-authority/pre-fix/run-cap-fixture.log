@@ -1,0 +1,39 @@
+test_binding_and_profile_are_explicit_and_not_a_quota (test_finite_authority.FiniteAuthorityTests.test_binding_and_profile_are_explicit_and_not_a_quota) ... ok
+test_checkpoint_preserves_profile_restore_refuses_before_effects (test_finite_authority.FiniteAuthorityTests.test_checkpoint_preserves_profile_restore_refuses_before_effects) ... ok
+test_closed_project_history_and_idempotency_at_cap (test_finite_authority.FiniteAuthorityTests.test_closed_project_history_and_idempotency_at_cap) ... ok
+test_encoded_limits_use_escaped_bytes_and_precede_result_write (test_finite_authority.FiniteAuthorityTests.test_encoded_limits_use_escaped_bytes_and_precede_result_write) ... ok
+test_guard_profile_digest_cannot_be_stripped (test_finite_authority.FiniteAuthorityTests.test_guard_profile_digest_cannot_be_stripped) ... ok
+test_missing_or_changed_binding_refuses_open_and_stale_writer (test_finite_authority.FiniteAuthorityTests.test_missing_or_changed_binding_refuses_open_and_stale_writer) ... ok
+test_oversize_terminal_keeps_prior_record_and_guard_hold (test_finite_authority.FiniteAuthorityTests.test_oversize_terminal_keeps_prior_record_and_guard_hold) ... ok
+test_project_initialization_keeps_owner_membership_slot (test_finite_authority.FiniteAuthorityTests.test_project_initialization_keeps_owner_membership_slot) ... ok
+test_run_history_cap_idempotency_and_settlement (test_finite_authority.FiniteAuthorityTests.test_run_history_cap_idempotency_and_settlement) ... ERROR
+test_signin_cap_invalid_keys_and_last_slot_compete (test_finite_authority.FiniteAuthorityTests.test_signin_cap_invalid_keys_and_last_slot_compete) ... ok
+test_total_live_session_cap_and_expiry (test_finite_authority.FiniteAuthorityTests.test_total_live_session_cap_and_expiry) ... ok
+test_unqualified_profiles_and_oversize_paths_refuse_before_creation (test_finite_authority.FiniteAuthorityTests.test_unqualified_profiles_and_oversize_paths_refuse_before_creation) ... ok
+test_user_history_cap_and_competing_final_slot (test_finite_authority.FiniteAuthorityTests.test_user_history_cap_and_competing_final_slot) ... ok
+test_viewer_insertion_is_admission_demotion_and_removal_are_safety (test_finite_authority.FiniteAuthorityTests.test_viewer_insertion_is_admission_demotion_and_removal_are_safety) ... ok
+
+======================================================================
+ERROR: test_run_history_cap_idempotency_and_settlement (test_finite_authority.FiniteAuthorityTests.test_run_history_cap_idempotency_and_settlement)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_finite_authority.py", line 241, in test_run_history_cap_idempotency_and_settlement
+    with self.assertRaises(f.LogicalLimit): self.submit("overflow")
+                                            ~~~~~~~~~~~^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/tests/test_operation_guard.py", line 88, in submit
+    return self.store.submit(self.pid, "alice", {"recipe": "summary-python", "condition": "baseline", "csv": CSV}, IMAGES, key)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/store.py", line 500, in submit
+    return self._submit(project_id, subject, data, images, request_key, authorize)
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/store.py", line 517, in _submit
+    self._access(db, project_id, subject, {"owner", "editor"}, active=True)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-finite-authority/research-workspace/research_workspace/store.py", line 368, in _access
+    raise ValueError("This project is closed or its run period has ended.")
+ValueError: This project is closed or its run period has ended.
+
+----------------------------------------------------------------------
+Ran 14 tests in 0.637s
+
+FAILED (errors=1)

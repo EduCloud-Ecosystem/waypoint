@@ -1,0 +1,21 @@
+{
+  "format": "waypoint-finite-authority-manifest-v1",
+  "sha256": {
+    "research-workspace/evidence/2026-10-18/finite-authority/README.md": "28bdb8bdf8ed65ff0425ba3f6d44b43c83060480ade6473a8f9f144a593580ba",
+    "research-workspace/evidence/2026-10-18/finite-authority/acceptance.json": "d78864f12b557e8ad96a5164911fcbe8ed1cdc8a5fc813f5f10d41aa07690015",
+    "research-workspace/evidence/2026-10-18/finite-authority/encoding.json": "9c703488c14f6cdc4f0af319bd9b254f5df24d85b2b04b889a13a877e277a647",
+    "research-workspace/evidence/2026-10-18/finite-authority/finite-controls.log": "7c62a367d64fd88542d7a419df75dcebcf089dd99b1c43bb32a5532988a83cdc",
+    "research-workspace/evidence/2026-10-18/finite-authority/pre-fix/combined-caps-fixture.log": "23822f7a5b46c6b08e673c2a9765759c3fe2aad3451671d2ba6ac55c13e05b4f",
+    "research-workspace/evidence/2026-10-18/finite-authority/pre-fix/initial-fixture.log": "b22fbf82b66dcf18a1b8a729c6a0f1cca1212ed152b284d6a46c962362995f19",
+    "research-workspace/evidence/2026-10-18/finite-authority/pre-fix/initial-suite.log": "fc9581ddd7ec7f34e4b37cd8b21137f98f40cd0e4fcd6cbee8886ac401a4f44e",
+    "research-workspace/evidence/2026-10-18/finite-authority/pre-fix/review-regressions.log": "3a35ecf977c455b841c959ad6be1e24e15a0c1646ba652348f5b5f25c34a272d",
+    "research-workspace/evidence/2026-10-18/finite-authority/pre-fix/run-cap-fixture.log": "9da1701110efa7479fafc52b4509a018d4837a103e7c817af884feb513ff9a2b",
+    "research-workspace/evidence/2026-10-18/finite-authority/pre-fix/source/research_workspace/finite_authority.py": "c1d95a112bff3bfc4d7fa248dec26bda1380974d4a3d6ea51ca36a5f0d349fb5",
+    "research-workspace/evidence/2026-10-18/finite-authority/pre-fix/source/research_workspace/guarded_recovery.py": "c713bad9280ad0e1af24b1599ed25133e38ff44e5eb5b766692ce17c79e9d623",
+    "research-workspace/evidence/2026-10-18/finite-authority/pre-fix/source/research_workspace/operation_guard.py": "4810e1d72e94f7a35e4f51ecd21d053818ce81913797fce5dce21f3c4017e86f",
+    "research-workspace/evidence/2026-10-18/finite-authority/pre-fix/source/research_workspace/recovery.py": "45c1b2e5e64fcfd8bae9682e1bf247f3b497d40c886884ee60fd5b79f0afa063",
+    "research-workspace/evidence/2026-10-18/finite-authority/pre-fix/source/research_workspace/store.py": "531f870f5b0634c6d202f04e09f2b8beb3bb8e32b838f2d36cf84a9e367b0324",
+    "research-workspace/evidence/2026-10-18/finite-authority/pre-fix/source/tests/test_finite_authority.py": "d99dc5063904844ec532d0e895689be60217608b2ad07ca5208ea20177ccee45",
+    "research-workspace/evidence/2026-10-18/finite-authority/suite.log": "84b9882a3d007bbd0f458ef2f9914c6333f9d5c9f383e01d8c4d001de05fe709"
+  }
+}
