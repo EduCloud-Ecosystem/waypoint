@@ -1,0 +1,146 @@
+{
+  "base_os_built_from_source": false,
+  "bit_identical_images": "NOT CLAIMED",
+  "builder": "waypoint-source-96b3d1107037",
+  "builder_stopped": true,
+  "builds": [],
+  "buildx_version": "github.com/docker/buildx v0.37.2 2d379c0c3f22da0d2759d132a0ec81ca949098f0",
+  "docker_version": {
+    "Client": {
+      "ApiVersion": "1.54",
+      "Arch": "arm64",
+      "BuildTime": "Wed Jun  3 17:16:33 2026",
+      "Context": "orbstack",
+      "DefaultAPIVersion": "1.54",
+      "GitCommit": "d1c06ef6b4",
+      "GoVersion": "go1.26.4",
+      "Os": "darwin",
+      "Platform": {
+        "Name": "Docker Engine - Community"
+      },
+      "Version": "29.5.3"
+    },
+    "Server": {
+      "ApiVersion": "1.56",
+      "Arch": "arm64",
+      "BuildTime": "2026-09-30T19:32:49.000000000+00:00",
+      "Components": [
+        {
+          "Details": {
+            "ApiVersion": "1.56",
+            "Arch": "arm64",
+            "BuildTime": "Wed Sep 30 19:32:49 2026",
+            "Experimental": "true",
+            "GitCommit": "8af9fe3",
+            "GoVersion": "go1.26.8",
+            "KernelVersion": "7.2.9-orbstack-00391-g2b298d05fbd4",
+            "MinAPIVersion": "1.40",
+            "Module": "github.com/moby/moby/v2",
+            "ModuleVersion": "v2.0.0+unknown",
+            "Os": "linux"
+          },
+          "Name": "Engine",
+          "Version": "29.8.2"
+        },
+        {
+          "Details": {
+            "GitCommit": "ee2735368117d2eb259779949d5e75cdafec9761"
+          },
+          "Name": "containerd",
+          "Version": "v2.3.6"
+        },
+        {
+          "Details": {
+            "GitCommit": "29dd3dc2b13b4123162e5fe132504bb4b15569f1"
+          },
+          "Name": "runc",
+          "Version": "1.5.2"
+        },
+        {
+          "Details": {
+            "GitCommit": "de40ad0"
+          },
+          "Name": "docker-init",
+          "Version": "0.19.0"
+        }
+      ],
+      "Experimental": true,
+      "GitCommit": "8af9fe3",
+      "GoVersion": "go1.26.8",
+      "KernelVersion": "7.2.9-orbstack-00391-g2b298d05fbd4",
+      "MinAPIVersion": "1.40",
+      "Os": "linux",
+      "Platform": {
+        "Name": "Docker Engine - Community"
+      },
+      "Version": "29.8.2"
+    }
+  },
+  "failure": "Command exceeded its absolute time bound.",
+  "independent_human_second_machine": "NOT RUN",
+  "input_hashes": {
+    "Dockerfile": "15fc1c64825096f1971a102a5a6817c62f1880ef99ce4c9c0730f6a49aac5d84",
+    "build.sh": "abaee159ed424c15d855389a5505fc52538390cf11e1653607c97e7df17a417b",
+    "inputs.json": "88f08691e3a637310cc4fd263265729c51f34af2e3a84164857a4ae7f2a6b85e"
+  },
+  "inputs": {
+    "base_images": {
+      "linux/amd64": "debian@sha256:a4672c0cb26fbdde88e38fa2dfb6c681942306680e41e4378b28770b6e79ee91",
+      "linux/arm64": "debian@sha256:a1b86db52ce3daef089e45aabe36dfec4091f82464c25c1fdcf03de197cbe82a"
+    },
+    "buildkit_image": "moby/buildkit@sha256:cec9f139f45e93c5c69c60f8b07cfad9f43f4ef6b6a6cd917527fea5ff2e3dea",
+    "debian_snapshot": "20261006T000000Z",
+    "limits": {
+      "build_seconds": 1200,
+      "builder_cpus": 2,
+      "builder_memory_bytes": 3221225472,
+      "log_bytes": 16777216,
+      "make_jobs": 2,
+      "maximum_repetitions": 2,
+      "minimum_free_bytes": 12884901888
+    },
+    "runtimes": {
+      "python": {
+        "additional_packages": [],
+        "checksum_provenance": "Published SHA-256 on the official Python 3.12.15 release page; independently matched downloaded bytes on 2026-10-17.",
+        "sha256": "c2c4321961fab0fb999d66e0cecf521c2ab3994c7992873ea99e306c1094fd5a",
+        "standard_library": [
+          "csv",
+          "json",
+          "sys"
+        ],
+        "url": "https://www.python.org/ftp/python/3.12.15/Python-3.12.15.tar.xz",
+        "version": "3.12.15"
+      },
+      "r": {
+        "additional_packages": [],
+        "checksum_provenance": "SHA-256 computed from the official CRAN HTTPS source download on 2026-10-17. No independent upstream SHA-256 signature verification is claimed.",
+        "sha256": "e4149581e151f3f1bc5edd6475e24ca1e2f452c08b6a22c29b570ce8abfe5783",
+        "standard_library": [
+          "base",
+          "utils"
+        ],
+        "url": "https://cran.r-project.org/src/base/R-4/R-4.6.1.tar.xz",
+        "version": "4.6.1"
+      }
+    },
+    "schema_version": 1,
+    "status": "candidate"
+  },
+  "observed_at": "2026-10-17T22:36:27.776458+00:00",
+  "platform": "linux/arm64",
+  "preflight": {
+    "docker_architecture": "aarch64",
+    "docker_cpus": 8,
+    "docker_memory_bytes": 8392929280,
+    "docker_server_version": "29.8.2",
+    "host_free_bytes": 39770329088
+  },
+  "promotion": "DISABLED",
+  "repetitions": 1,
+  "runner_sha256": "5ea882495e9b789fa4004a101b273757ff291dbe8e31bf85a1db499ec91fc992",
+  "schema_version": 1,
+  "source_revision": "59db07cccc528816406777aabe0c38315a6c24b7",
+  "status": "FAIL",
+  "tracked_changes": ""
+}

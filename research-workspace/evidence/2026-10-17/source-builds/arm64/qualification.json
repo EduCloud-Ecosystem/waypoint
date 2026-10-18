@@ -1,0 +1,37 @@
+{
+  "build_report_sha256": "15dcfcbcc79c114a6a2bc557197e9e0e7a87b7339e79c5ee1dc0bc4d0160ea2f",
+  "independent_human_second_machine": "NOT RUN",
+  "promotion": "DISABLED",
+  "runs": [
+    {
+      "bundles": {
+        "first-project": {
+          "bundle_sha256": "e944652033082bc847dbfc525814860947104d050dfed7a04f05a5f7d961c7cb",
+          "file_count": 19,
+          "gaps": [],
+          "project_id": "9af1d8478a694dbd922fa4a8990503e8",
+          "run_count": 4,
+          "valid": true,
+          "warning": "Descriptive, provisional evidence only. Integrity and lineage checks do not establish scientific validity, independent reproduction, or authenticity."
+        },
+        "second-project": {
+          "bundle_sha256": "39d6a24d1b61c1eba2143c3ceae0c757d0162f3c8edbcefa8cf7f0cedc935eef",
+          "file_count": 19,
+          "gaps": [],
+          "project_id": "c0f953e958934bed92ab9eef510af11c",
+          "run_count": 4,
+          "valid": true,
+          "warning": "Descriptive, provisional evidence only. Integrity and lineage checks do not establish scientific validity, independent reproduction, or authenticity."
+        }
+      },
+      "checks_passed": 49,
+      "images": {
+        "python": "sha256:e028545ad6c8c393b8441ff67af0b6fef40aa828cfd010549e48935bf4686458",
+        "r": "sha256:ba0f81935cb7e0b5742833dbdb826e8c713572702879d8ab3d384bf6551e4235"
+      },
+      "repetition": 1,
+      "status": "PASS"
+    }
+  ],
+  "status": "PASS"
+}

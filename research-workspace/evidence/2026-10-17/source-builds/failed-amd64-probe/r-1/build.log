@@ -1,0 +1,1877 @@
+#0 building with "waypoint-source-1f8d2c9e002b" instance using docker-container driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 1.61kB done
+#1 WARN: InvalidDefaultArgInFrom: Default value for ARG ${BASE_IMAGE} results in empty or invalid base image name (line 2)
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/debian@sha256:a4672c0cb26fbdde88e38fa2dfb6c681942306680e41e4378b28770b6e79ee91
+#2 DONE 0.0s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
+#3 DONE 0.0s
+
+#4 [1/5] FROM docker.io/library/debian@sha256:a4672c0cb26fbdde88e38fa2dfb6c681942306680e41e4378b28770b6e79ee91
+#4 resolve docker.io/library/debian@sha256:a4672c0cb26fbdde88e38fa2dfb6c681942306680e41e4378b28770b6e79ee91 done
+#4 CACHED
+
+#5 [internal] load build context
+#5 transferring context: 30.97MB 0.2s done
+#5 DONE 0.2s
+
+#6 [2/5] RUN rm -f /etc/apt/sources.list.d/debian.sources     && printf 'deb [check-valid-until=no] http://snapshot.debian.org/archive/debian/%s/ bookworm main\n' "20261006T000000Z" > /etc/apt/sources.list     && printf 'deb [check-valid-until=no] http://snapshot.debian.org/archive/debian-security/%s/ bookworm-security main\n' "20261006T000000Z" >> /etc/apt/sources.list     && apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=30 update     && apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=30 install -y --no-install-recommends        ca-certificates gcc g++ gfortran make libc6-dev pkg-config xz-utils        zlib1g-dev libbz2-dev liblzma-dev libpcre2-dev libcurl4-openssl-dev        libreadline-dev libssl-dev libffi-dev libsqlite3-dev libncurses-dev        libdeflate-dev libzstd-dev     && mkdir -p /usr/local/share/waypoint-build     && dpkg-query -W -f='${binary:Package}\t${Version}\t${Architecture}\n' | LC_ALL=C sort > /usr/local/share/waypoint-build/packages.tsv     && rm -rf /var/lib/apt/lists/*
+#6 0.163 Get:1 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm InRelease [151 kB]
+#6 0.197 Get:2 http://snapshot.debian.org/archive/debian-security/20261006T000000Z bookworm-security InRelease [34.8 kB]
+#6 0.280 Get:3 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 Packages [8790 kB]
+#6 0.414 Get:4 http://snapshot.debian.org/archive/debian-security/20261006T000000Z bookworm-security/main amd64 Packages [349 kB]
+#6 1.055 Fetched 9325 kB in 1s (9480 kB/s)
+#6 1.055 Reading package lists...
+#6 1.415 Reading package lists...
+#6 1.765 Building dependency tree...
+#6 1.853 Reading state information...
+#6 1.948 The following additional packages will be installed:
+#6 1.948   binutils binutils-common binutils-x86-64-linux-gnu cpp cpp-12 g++-12 gcc-12
+#6 1.948   gfortran-12 libasan8 libatomic1 libbinutils libbrotli1 libc-dev-bin libcc1-0
+#6 1.948   libcrypt-dev libctf-nobfd0 libctf0 libcurl4 libdeflate0 libgcc-12-dev
+#6 1.948   libgfortran-12-dev libgfortran5 libgomp1 libgprofng0 libgssapi-krb5-2
+#6 1.948   libisl23 libitm1 libjansson4 libk5crypto3 libkeyutils1 libkrb5-3
+#6 1.948   libkrb5support0 libldap-2.5-0 liblsan0 libmpc3 libmpfr6 libncurses6
+#6 1.948   libncursesw6 libnghttp2-14 libnsl-dev libnsl2 libpcre2-16-0 libpcre2-32-0
+#6 1.948   libpcre2-posix3 libpkgconf3 libpsl5 libquadmath0 libreadline8 librtmp1
+#6 1.948   libsasl2-2 libsasl2-modules-db libsqlite3-0 libssh2-1 libssl3
+#6 1.948   libstdc++-12-dev libtirpc-common libtirpc-dev libtirpc3 libtsan2 libubsan1
+#6 1.948   linux-libc-dev openssl pkgconf pkgconf-bin readline-common rpcsvc-proto
+#6 1.949 Suggested packages:
+#6 1.949   binutils-doc cpp-doc gcc-12-locales cpp-12-doc g++-multilib g++-12-multilib
+#6 1.949   gcc-12-doc gcc-multilib manpages-dev autoconf automake libtool flex bison
+#6 1.949   gdb gcc-doc gcc-12-multilib gfortran-multilib gfortran-doc
+#6 1.949   gfortran-12-multilib gfortran-12-doc libcoarrays-dev glibc-doc libcurl4-doc
+#6 1.949   libidn-dev libkrb5-dev libldap2-dev librtmp-dev libssh2-1-dev krb5-doc
+#6 1.949   krb5-user liblzma-doc ncurses-doc readline-doc sqlite3-doc libssl-doc
+#6 1.949   libstdc++-12-doc make-doc
+#6 1.949 Recommended packages:
+#6 1.949   bzip2-doc manpages manpages-dev libc-devtools krb5-locales libldap-common
+#6 1.949   libgpm2 publicsuffix libsasl2-modules
+#6 2.203 The following NEW packages will be installed:
+#6 2.203   binutils binutils-common binutils-x86-64-linux-gnu ca-certificates cpp
+#6 2.203   cpp-12 g++ g++-12 gcc gcc-12 gfortran gfortran-12 libasan8 libatomic1
+#6 2.203   libbinutils libbrotli1 libbz2-dev libc-dev-bin libc6-dev libcc1-0
+#6 2.203   libcrypt-dev libctf-nobfd0 libctf0 libcurl4 libcurl4-openssl-dev
+#6 2.203   libdeflate-dev libdeflate0 libffi-dev libgcc-12-dev libgfortran-12-dev
+#6 2.203   libgfortran5 libgomp1 libgprofng0 libgssapi-krb5-2 libisl23 libitm1
+#6 2.203   libjansson4 libk5crypto3 libkeyutils1 libkrb5-3 libkrb5support0
+#6 2.203   libldap-2.5-0 liblsan0 liblzma-dev libmpc3 libmpfr6 libncurses-dev
+#6 2.203   libncurses6 libncursesw6 libnghttp2-14 libnsl-dev libnsl2 libpcre2-16-0
+#6 2.203   libpcre2-32-0 libpcre2-dev libpcre2-posix3 libpkgconf3 libpsl5 libquadmath0
+#6 2.203   libreadline-dev libreadline8 librtmp1 libsasl2-2 libsasl2-modules-db
+#6 2.203   libsqlite3-0 libsqlite3-dev libssh2-1 libssl-dev libssl3 libstdc++-12-dev
+#6 2.203   libtirpc-common libtirpc-dev libtirpc3 libtsan2 libubsan1 libzstd-dev
+#6 2.203   linux-libc-dev make openssl pkg-config pkgconf pkgconf-bin readline-common
+#6 2.203   rpcsvc-proto xz-utils zlib1g-dev
+#6 12.05 0 upgraded, 86 newly installed, 0 to remove and 1 not upgraded.
+#6 12.05 Need to get 90.7 MB of archives.
+#6 12.05 After this operation, 352 MB of additional disk space will be used.
+#6 12.05 Get:1 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 readline-common all 8.2-1.3 [69.0 kB]
+#6 12.06 Get:2 http://snapshot.debian.org/archive/debian-security/20261006T000000Z bookworm-security/main amd64 libssl3 amd64 3.0.22-1~deb12u1 [2039 kB]
+#6 12.11 Get:3 http://snapshot.debian.org/archive/debian-security/20261006T000000Z bookworm-security/main amd64 openssl amd64 3.0.22-1~deb12u1 [1442 kB]
+#6 12.12 Get:4 http://snapshot.debian.org/archive/debian-security/20261006T000000Z bookworm-security/main amd64 ca-certificates all 20250419~deb12u1 [162 kB]
+#6 12.12 Get:5 http://snapshot.debian.org/archive/debian-security/20261006T000000Z bookworm-security/main amd64 xz-utils amd64 5.4.1-1+deb12u2 [471 kB]
+#6 12.12 Get:6 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 binutils-common amd64 2.40-2 [2487 kB]
+#6 12.14 Get:7 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libbinutils amd64 2.40-2 [572 kB]
+#6 12.14 Get:8 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libctf-nobfd0 amd64 2.40-2 [153 kB]
+#6 12.14 Get:9 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libctf0 amd64 2.40-2 [89.8 kB]
+#6 12.14 Get:10 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libgprofng0 amd64 2.40-2 [812 kB]
+#6 12.14 Get:11 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libjansson4 amd64 2.14-2 [40.8 kB]
+#6 12.14 Get:12 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 binutils-x86-64-linux-gnu amd64 2.40-2 [2246 kB]
+#6 12.16 Get:13 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 binutils amd64 2.40-2 [65.0 kB]
+#6 12.16 Get:14 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libisl23 amd64 0.25-1.1 [683 kB]
+#6 12.16 Get:15 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libmpfr6 amd64 4.2.0-1 [701 kB]
+#6 12.16 Get:16 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libmpc3 amd64 1.3.1-1 [51.5 kB]
+#6 12.16 Get:17 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 cpp-12 amd64 12.2.0-14+deb12u1 [9768 kB]
+#6 12.26 Get:18 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 cpp amd64 4:12.2.0-3 [6836 B]
+#6 12.26 Get:19 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libcc1-0 amd64 12.2.0-14+deb12u1 [41.7 kB]
+#6 12.26 Get:20 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libgomp1 amd64 12.2.0-14+deb12u1 [116 kB]
+#6 12.26 Get:21 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libitm1 amd64 12.2.0-14+deb12u1 [26.1 kB]
+#6 12.26 Get:22 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libatomic1 amd64 12.2.0-14+deb12u1 [9376 B]
+#6 12.26 Get:23 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libasan8 amd64 12.2.0-14+deb12u1 [2193 kB]
+#6 12.29 Get:24 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 liblsan0 amd64 12.2.0-14+deb12u1 [969 kB]
+#6 12.30 Get:25 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libtsan2 amd64 12.2.0-14+deb12u1 [2197 kB]
+#6 12.30 Get:26 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libubsan1 amd64 12.2.0-14+deb12u1 [883 kB]
+#6 12.31 Get:27 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libquadmath0 amd64 12.2.0-14+deb12u1 [145 kB]
+#6 12.31 Get:28 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libgcc-12-dev amd64 12.2.0-14+deb12u1 [2437 kB]
+#6 12.37 Get:29 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 gcc-12 amd64 12.2.0-14+deb12u1 [19.3 MB]
+#6 12.47 Get:30 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 gcc amd64 4:12.2.0-3 [5216 B]
+#6 12.47 Get:31 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libc-dev-bin amd64 2.36-9+deb12u14 [48.1 kB]
+#6 12.47 Get:32 http://snapshot.debian.org/archive/debian-security/20261006T000000Z bookworm-security/main amd64 linux-libc-dev amd64 6.1.187-1 [2357 kB]
+#6 12.47 Get:33 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libcrypt-dev amd64 1:4.4.33-2 [118 kB]
+#6 12.47 Get:34 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libkrb5support0 amd64 1.20.1-2+deb12u5 [33.2 kB]
+#6 12.48 Get:35 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libk5crypto3 amd64 1.20.1-2+deb12u5 [79.7 kB]
+#6 12.48 Get:36 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libkeyutils1 amd64 1.6.3-2 [8808 B]
+#6 12.48 Get:37 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libkrb5-3 amd64 1.20.1-2+deb12u5 [332 kB]
+#6 12.48 Get:38 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libgssapi-krb5-2 amd64 1.20.1-2+deb12u5 [135 kB]
+#6 12.48 Get:39 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libtirpc-common all 1.3.3+ds-1 [14.0 kB]
+#6 12.48 Get:40 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libtirpc3 amd64 1.3.3+ds-1 [85.2 kB]
+#6 12.49 Get:41 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libnsl2 amd64 1.3.0-2 [39.5 kB]
+#6 12.49 Get:42 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libtirpc-dev amd64 1.3.3+ds-1 [191 kB]
+#6 12.49 Get:43 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libnsl-dev amd64 1.3.0-2 [66.4 kB]
+#6 12.49 Get:44 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 rpcsvc-proto amd64 1.4.3-1 [63.3 kB]
+#6 12.49 Get:45 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libc6-dev amd64 2.36-9+deb12u14 [1904 kB]
+#6 12.54 Get:46 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libstdc++-12-dev amd64 12.2.0-14+deb12u1 [2047 kB]
+#6 12.55 Get:47 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 g++-12 amd64 12.2.0-14+deb12u1 [10.7 MB]
+#6 12.58 Get:48 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 g++ amd64 4:12.2.0-3 [1356 B]
+#6 12.58 Get:49 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libgfortran5 amd64 12.2.0-14+deb12u1 [793 kB]
+#6 12.58 Get:50 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libgfortran-12-dev amd64 12.2.0-14+deb12u1 [834 kB]
+#6 12.58 Get:51 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 gfortran-12 amd64 12.2.0-14+deb12u1 [10.2 MB]
+#6 12.61 Get:52 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 gfortran amd64 4:12.2.0-3 [1428 B]
+#6 12.61 Get:53 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libbrotli1 amd64 1.0.9-2+b6 [275 kB]
+#6 12.61 Get:54 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libbz2-dev amd64 1.0.8-5+b1 [30.9 kB]
+#6 12.69 Get:55 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libsasl2-modules-db amd64 2.1.28+dfsg-10 [20.3 kB]
+#6 12.69 Get:56 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libsasl2-2 amd64 2.1.28+dfsg-10 [59.7 kB]
+#6 12.69 Get:57 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libldap-2.5-0 amd64 2.5.13+dfsg-5 [183 kB]
+#6 12.69 Get:58 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libnghttp2-14 amd64 1.52.0-1+deb12u3 [72.4 kB]
+#6 12.69 Get:59 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libpsl5 amd64 0.21.2-1 [58.7 kB]
+#6 12.69 Get:60 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 librtmp1 amd64 2.4+20151223.gitfa8646d.1-2+b2 [60.8 kB]
+#6 12.69 Get:61 http://snapshot.debian.org/archive/debian-security/20261006T000000Z bookworm-security/main amd64 libssh2-1 amd64 1.10.0-3+deb12u1 [176 kB]
+#6 12.69 Get:62 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libcurl4 amd64 7.88.1-10+deb12u15 [392 kB]
+#6 12.70 Get:63 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libcurl4-openssl-dev amd64 7.88.1-10+deb12u15 [493 kB]
+#6 12.71 Get:64 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libdeflate0 amd64 1.14-1 [61.4 kB]
+#6 12.71 Get:65 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libdeflate-dev amd64 1.14-1 [53.3 kB]
+#6 12.71 Get:66 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libffi-dev amd64 3.4.4-1 [59.4 kB]
+#6 12.71 Get:67 http://snapshot.debian.org/archive/debian-security/20261006T000000Z bookworm-security/main amd64 liblzma-dev amd64 5.4.1-1+deb12u2 [260 kB]
+#6 12.71 Get:68 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libncurses6 amd64 6.4-4 [103 kB]
+#6 12.71 Get:69 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libncursesw6 amd64 6.4-4 [134 kB]
+#6 12.72 Get:70 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libncurses-dev amd64 6.4-4 [349 kB]
+#6 12.72 Get:71 http://snapshot.debian.org/archive/debian-security/20261006T000000Z bookworm-security/main amd64 libpcre2-16-0 amd64 10.42-1+deb12u2 [245 kB]
+#6 12.72 Get:72 http://snapshot.debian.org/archive/debian-security/20261006T000000Z bookworm-security/main amd64 libpcre2-32-0 amd64 10.42-1+deb12u2 [235 kB]
+#6 12.72 Get:73 http://snapshot.debian.org/archive/debian-security/20261006T000000Z bookworm-security/main amd64 libpcre2-posix3 amd64 10.42-1+deb12u2 [55.6 kB]
+#6 12.73 Get:74 http://snapshot.debian.org/archive/debian-security/20261006T000000Z bookworm-security/main amd64 libpcre2-dev amd64 10.42-1+deb12u2 [752 kB]
+#6 12.73 Get:75 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libpkgconf3 amd64 1.8.1-1 [36.1 kB]
+#6 12.73 Get:76 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libreadline8 amd64 8.2-1.3 [166 kB]
+#6 12.73 Get:77 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libreadline-dev amd64 8.2-1.3 [151 kB]
+#6 12.74 Get:78 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libsqlite3-0 amd64 3.40.1-2+deb12u2 [839 kB]
+#6 13.22 Get:79 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libsqlite3-dev amd64 3.40.1-2+deb12u2 [1025 kB]
+#6 14.23 Get:80 http://snapshot.debian.org/archive/debian-security/20261006T000000Z bookworm-security/main amd64 libssl-dev amd64 3.0.22-1~deb12u1 [2450 kB]
+#6 14.25 Get:81 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 libzstd-dev amd64 1.5.4+dfsg2-5 [354 kB]
+#6 14.26 Get:82 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 make amd64 4.3-4.1 [396 kB]
+#6 14.26 Get:83 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 pkgconf-bin amd64 1.8.1-1 [29.5 kB]
+#6 14.26 Get:84 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 pkgconf amd64 1.8.1-1 [25.9 kB]
+#6 14.26 Get:85 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 pkg-config amd64 1.8.1-1 [13.7 kB]
+#6 14.26 Get:86 http://snapshot.debian.org/archive/debian/20261006T000000Z bookworm/main amd64 zlib1g-dev amd64 1:1.2.13.dfsg-1 [916 kB]
+#6 14.35 debconf: delaying package configuration, since apt-utils is not installed
+#6 14.37 Fetched 90.7 MB in 12s (7522 kB/s)
+#6 14.38 Selecting previously unselected package readline-common.
+#6 14.38 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 6096 files and directories currently installed.)
+#6 14.38 Preparing to unpack .../00-readline-common_8.2-1.3_all.deb ...
+#6 14.38 Unpacking readline-common (8.2-1.3) ...
+#6 14.40 Selecting previously unselected package libssl3:amd64.
+#6 14.40 Preparing to unpack .../01-libssl3_3.0.22-1~deb12u1_amd64.deb ...
+#6 14.40 Unpacking libssl3:amd64 (3.0.22-1~deb12u1) ...
+#6 14.50 Selecting previously unselected package openssl.
+#6 14.50 Preparing to unpack .../02-openssl_3.0.22-1~deb12u1_amd64.deb ...
+#6 14.50 Unpacking openssl (3.0.22-1~deb12u1) ...
+#6 14.58 Selecting previously unselected package ca-certificates.
+#6 14.58 Preparing to unpack .../03-ca-certificates_20250419~deb12u1_all.deb ...
+#6 14.58 Unpacking ca-certificates (20250419~deb12u1) ...
+#6 14.61 Selecting previously unselected package xz-utils.
+#6 14.61 Preparing to unpack .../04-xz-utils_5.4.1-1+deb12u2_amd64.deb ...
+#6 14.61 Unpacking xz-utils (5.4.1-1+deb12u2) ...
+#6 14.65 Selecting previously unselected package binutils-common:amd64.
+#6 14.65 Preparing to unpack .../05-binutils-common_2.40-2_amd64.deb ...
+#6 14.65 Unpacking binutils-common:amd64 (2.40-2) ...
+#6 14.79 Selecting previously unselected package libbinutils:amd64.
+#6 14.79 Preparing to unpack .../06-libbinutils_2.40-2_amd64.deb ...
+#6 14.79 Unpacking libbinutils:amd64 (2.40-2) ...
+#6 14.83 Selecting previously unselected package libctf-nobfd0:amd64.
+#6 14.83 Preparing to unpack .../07-libctf-nobfd0_2.40-2_amd64.deb ...
+#6 14.83 Unpacking libctf-nobfd0:amd64 (2.40-2) ...
+#6 14.85 Selecting previously unselected package libctf0:amd64.
+#6 14.85 Preparing to unpack .../08-libctf0_2.40-2_amd64.deb ...
+#6 14.85 Unpacking libctf0:amd64 (2.40-2) ...
+#6 14.87 Selecting previously unselected package libgprofng0:amd64.
+#6 14.87 Preparing to unpack .../09-libgprofng0_2.40-2_amd64.deb ...
+#6 14.87 Unpacking libgprofng0:amd64 (2.40-2) ...
+#6 14.93 Selecting previously unselected package libjansson4:amd64.
+#6 14.93 Preparing to unpack .../10-libjansson4_2.14-2_amd64.deb ...
+#6 14.93 Unpacking libjansson4:amd64 (2.14-2) ...
+#6 14.94 Selecting previously unselected package binutils-x86-64-linux-gnu.
+#6 14.94 Preparing to unpack .../11-binutils-x86-64-linux-gnu_2.40-2_amd64.deb ...
+#6 14.94 Unpacking binutils-x86-64-linux-gnu (2.40-2) ...
+#6 15.08 Selecting previously unselected package binutils.
+#6 15.08 Preparing to unpack .../12-binutils_2.40-2_amd64.deb ...
+#6 15.08 Unpacking binutils (2.40-2) ...
+#6 15.10 Selecting previously unselected package libisl23:amd64.
+#6 15.10 Preparing to unpack .../13-libisl23_0.25-1.1_amd64.deb ...
+#6 15.10 Unpacking libisl23:amd64 (0.25-1.1) ...
+#6 15.15 Selecting previously unselected package libmpfr6:amd64.
+#6 15.15 Preparing to unpack .../14-libmpfr6_4.2.0-1_amd64.deb ...
+#6 15.15 Unpacking libmpfr6:amd64 (4.2.0-1) ...
+#6 15.18 Selecting previously unselected package libmpc3:amd64.
+#6 15.18 Preparing to unpack .../15-libmpc3_1.3.1-1_amd64.deb ...
+#6 15.18 Unpacking libmpc3:amd64 (1.3.1-1) ...
+#6 15.20 Selecting previously unselected package cpp-12.
+#6 15.20 Preparing to unpack .../16-cpp-12_12.2.0-14+deb12u1_amd64.deb ...
+#6 15.20 Unpacking cpp-12 (12.2.0-14+deb12u1) ...
+#6 15.61 Selecting previously unselected package cpp.
+#6 15.62 Preparing to unpack .../17-cpp_4%3a12.2.0-3_amd64.deb ...
+#6 15.62 Unpacking cpp (4:12.2.0-3) ...
+#6 15.63 Selecting previously unselected package libcc1-0:amd64.
+#6 15.63 Preparing to unpack .../18-libcc1-0_12.2.0-14+deb12u1_amd64.deb ...
+#6 15.63 Unpacking libcc1-0:amd64 (12.2.0-14+deb12u1) ...
+#6 15.64 Selecting previously unselected package libgomp1:amd64.
+#6 15.64 Preparing to unpack .../19-libgomp1_12.2.0-14+deb12u1_amd64.deb ...
+#6 15.65 Unpacking libgomp1:amd64 (12.2.0-14+deb12u1) ...
+#6 15.66 Selecting previously unselected package libitm1:amd64.
+#6 15.66 Preparing to unpack .../20-libitm1_12.2.0-14+deb12u1_amd64.deb ...
+#6 15.66 Unpacking libitm1:amd64 (12.2.0-14+deb12u1) ...
+#6 15.68 Selecting previously unselected package libatomic1:amd64.
+#6 15.68 Preparing to unpack .../21-libatomic1_12.2.0-14+deb12u1_amd64.deb ...
+#6 15.68 Unpacking libatomic1:amd64 (12.2.0-14+deb12u1) ...
+#6 15.69 Selecting previously unselected package libasan8:amd64.
+#6 15.69 Preparing to unpack .../22-libasan8_12.2.0-14+deb12u1_amd64.deb ...
+#6 15.69 Unpacking libasan8:amd64 (12.2.0-14+deb12u1) ...
+#6 15.81 Selecting previously unselected package liblsan0:amd64.
+#6 15.81 Preparing to unpack .../23-liblsan0_12.2.0-14+deb12u1_amd64.deb ...
+#6 15.81 Unpacking liblsan0:amd64 (12.2.0-14+deb12u1) ...
+#6 15.88 Selecting previously unselected package libtsan2:amd64.
+#6 15.88 Preparing to unpack .../24-libtsan2_12.2.0-14+deb12u1_amd64.deb ...
+#6 15.88 Unpacking libtsan2:amd64 (12.2.0-14+deb12u1) ...
+#6 16.00 Selecting previously unselected package libubsan1:amd64.
+#6 16.00 Preparing to unpack .../25-libubsan1_12.2.0-14+deb12u1_amd64.deb ...
+#6 16.00 Unpacking libubsan1:amd64 (12.2.0-14+deb12u1) ...
+#6 16.06 Selecting previously unselected package libquadmath0:amd64.
+#6 16.06 Preparing to unpack .../26-libquadmath0_12.2.0-14+deb12u1_amd64.deb ...
+#6 16.06 Unpacking libquadmath0:amd64 (12.2.0-14+deb12u1) ...
+#6 16.08 Selecting previously unselected package libgcc-12-dev:amd64.
+#6 16.08 Preparing to unpack .../27-libgcc-12-dev_12.2.0-14+deb12u1_amd64.deb ...
+#6 16.08 Unpacking libgcc-12-dev:amd64 (12.2.0-14+deb12u1) ...
+#6 16.21 Selecting previously unselected package gcc-12.
+#6 16.21 Preparing to unpack .../28-gcc-12_12.2.0-14+deb12u1_amd64.deb ...
+#6 16.21 Unpacking gcc-12 (12.2.0-14+deb12u1) ...
+#6 16.84 Selecting previously unselected package gcc.
+#6 16.85 Preparing to unpack .../29-gcc_4%3a12.2.0-3_amd64.deb ...
+#6 16.85 Unpacking gcc (4:12.2.0-3) ...
+#6 16.86 Selecting previously unselected package libc-dev-bin.
+#6 16.86 Preparing to unpack .../30-libc-dev-bin_2.36-9+deb12u14_amd64.deb ...
+#6 16.86 Unpacking libc-dev-bin (2.36-9+deb12u14) ...
+#6 16.87 Selecting previously unselected package linux-libc-dev:amd64.
+#6 16.87 Preparing to unpack .../31-linux-libc-dev_6.1.187-1_amd64.deb ...
+#6 16.87 Unpacking linux-libc-dev:amd64 (6.1.187-1) ...
+#6 17.01 Selecting previously unselected package libcrypt-dev:amd64.
+#6 17.01 Preparing to unpack .../32-libcrypt-dev_1%3a4.4.33-2_amd64.deb ...
+#6 17.01 Unpacking libcrypt-dev:amd64 (1:4.4.33-2) ...
+#6 17.03 Selecting previously unselected package libkrb5support0:amd64.
+#6 17.03 Preparing to unpack .../33-libkrb5support0_1.20.1-2+deb12u5_amd64.deb ...
+#6 17.03 Unpacking libkrb5support0:amd64 (1.20.1-2+deb12u5) ...
+#6 17.05 Selecting previously unselected package libk5crypto3:amd64.
+#6 17.05 Preparing to unpack .../34-libk5crypto3_1.20.1-2+deb12u5_amd64.deb ...
+#6 17.05 Unpacking libk5crypto3:amd64 (1.20.1-2+deb12u5) ...
+#6 17.08 Selecting previously unselected package libkeyutils1:amd64.
+#6 17.08 Preparing to unpack .../35-libkeyutils1_1.6.3-2_amd64.deb ...
+#6 17.08 Unpacking libkeyutils1:amd64 (1.6.3-2) ...
+#6 17.09 Selecting previously unselected package libkrb5-3:amd64.
+#6 17.09 Preparing to unpack .../36-libkrb5-3_1.20.1-2+deb12u5_amd64.deb ...
+#6 17.09 Unpacking libkrb5-3:amd64 (1.20.1-2+deb12u5) ...
+#6 17.12 Selecting previously unselected package libgssapi-krb5-2:amd64.
+#6 17.13 Preparing to unpack .../37-libgssapi-krb5-2_1.20.1-2+deb12u5_amd64.deb ...
+#6 17.13 Unpacking libgssapi-krb5-2:amd64 (1.20.1-2+deb12u5) ...
+#6 17.14 Selecting previously unselected package libtirpc-common.
+#6 17.14 Preparing to unpack .../38-libtirpc-common_1.3.3+ds-1_all.deb ...
+#6 17.15 Unpacking libtirpc-common (1.3.3+ds-1) ...
+#6 17.16 Selecting previously unselected package libtirpc3:amd64.
+#6 17.16 Preparing to unpack .../39-libtirpc3_1.3.3+ds-1_amd64.deb ...
+#6 17.16 Unpacking libtirpc3:amd64 (1.3.3+ds-1) ...
+#6 17.17 Selecting previously unselected package libnsl2:amd64.
+#6 17.18 Preparing to unpack .../40-libnsl2_1.3.0-2_amd64.deb ...
+#6 17.18 Unpacking libnsl2:amd64 (1.3.0-2) ...
+#6 17.19 Selecting previously unselected package libtirpc-dev:amd64.
+#6 17.19 Preparing to unpack .../41-libtirpc-dev_1.3.3+ds-1_amd64.deb ...
+#6 17.19 Unpacking libtirpc-dev:amd64 (1.3.3+ds-1) ...
+#6 17.22 Selecting previously unselected package libnsl-dev:amd64.
+#6 17.22 Preparing to unpack .../42-libnsl-dev_1.3.0-2_amd64.deb ...
+#6 17.22 Unpacking libnsl-dev:amd64 (1.3.0-2) ...
+#6 17.23 Selecting previously unselected package rpcsvc-proto.
+#6 17.23 Preparing to unpack .../43-rpcsvc-proto_1.4.3-1_amd64.deb ...
+#6 17.23 Unpacking rpcsvc-proto (1.4.3-1) ...
+#6 17.25 Selecting previously unselected package libc6-dev:amd64.
+#6 17.25 Preparing to unpack .../44-libc6-dev_2.36-9+deb12u14_amd64.deb ...
+#6 17.25 Unpacking libc6-dev:amd64 (2.36-9+deb12u14) ...
+#6 17.37 Selecting previously unselected package libstdc++-12-dev:amd64.
+#6 17.37 Preparing to unpack .../45-libstdc++-12-dev_12.2.0-14+deb12u1_amd64.deb ...
+#6 17.37 Unpacking libstdc++-12-dev:amd64 (12.2.0-14+deb12u1) ...
+#6 17.51 Selecting previously unselected package g++-12.
+#6 17.52 Preparing to unpack .../46-g++-12_12.2.0-14+deb12u1_amd64.deb ...
+#6 17.52 Unpacking g++-12 (12.2.0-14+deb12u1) ...
+#6 17.96 Selecting previously unselected package g++.
+#6 17.96 Preparing to unpack .../47-g++_4%3a12.2.0-3_amd64.deb ...
+#6 17.96 Unpacking g++ (4:12.2.0-3) ...
+#6 17.98 Selecting previously unselected package libgfortran5:amd64.
+#6 17.98 Preparing to unpack .../48-libgfortran5_12.2.0-14+deb12u1_amd64.deb ...
+#6 17.98 Unpacking libgfortran5:amd64 (12.2.0-14+deb12u1) ...
+#6 18.03 Selecting previously unselected package libgfortran-12-dev:amd64.
+#6 18.03 Preparing to unpack .../49-libgfortran-12-dev_12.2.0-14+deb12u1_amd64.deb ...
+#6 18.03 Unpacking libgfortran-12-dev:amd64 (12.2.0-14+deb12u1) ...
+#6 18.09 Selecting previously unselected package gfortran-12.
+#6 18.09 Preparing to unpack .../50-gfortran-12_12.2.0-14+deb12u1_amd64.deb ...
+#6 18.09 Unpacking gfortran-12 (12.2.0-14+deb12u1) ...
+#6 19.00 Selecting previously unselected package gfortran.
+#6 19.00 Preparing to unpack .../51-gfortran_4%3a12.2.0-3_amd64.deb ...
+#6 19.01 Unpacking gfortran (4:12.2.0-3) ...
+#6 19.03 Selecting previously unselected package libbrotli1:amd64.
+#6 19.03 Preparing to unpack .../52-libbrotli1_1.0.9-2+b6_amd64.deb ...
+#6 19.03 Unpacking libbrotli1:amd64 (1.0.9-2+b6) ...
+#6 19.05 Selecting previously unselected package libbz2-dev:amd64.
+#6 19.06 Preparing to unpack .../53-libbz2-dev_1.0.8-5+b1_amd64.deb ...
+#6 19.06 Unpacking libbz2-dev:amd64 (1.0.8-5+b1) ...
+#6 19.07 Selecting previously unselected package libsasl2-modules-db:amd64.
+#6 19.07 Preparing to unpack .../54-libsasl2-modules-db_2.1.28+dfsg-10_amd64.deb ...
+#6 19.07 Unpacking libsasl2-modules-db:amd64 (2.1.28+dfsg-10) ...
+#6 19.08 Selecting previously unselected package libsasl2-2:amd64.
+#6 19.08 Preparing to unpack .../55-libsasl2-2_2.1.28+dfsg-10_amd64.deb ...
+#6 19.09 Unpacking libsasl2-2:amd64 (2.1.28+dfsg-10) ...
+#6 19.10 Selecting previously unselected package libldap-2.5-0:amd64.
+#6 19.10 Preparing to unpack .../56-libldap-2.5-0_2.5.13+dfsg-5_amd64.deb ...
+#6 19.10 Unpacking libldap-2.5-0:amd64 (2.5.13+dfsg-5) ...
+#6 19.12 Selecting previously unselected package libnghttp2-14:amd64.
+#6 19.12 Preparing to unpack .../57-libnghttp2-14_1.52.0-1+deb12u3_amd64.deb ...
+#6 19.13 Unpacking libnghttp2-14:amd64 (1.52.0-1+deb12u3) ...
+#6 19.14 Selecting previously unselected package libpsl5:amd64.
+#6 19.14 Preparing to unpack .../58-libpsl5_0.21.2-1_amd64.deb ...
+#6 19.14 Unpacking libpsl5:amd64 (0.21.2-1) ...
+#6 19.16 Selecting previously unselected package librtmp1:amd64.
+#6 19.16 Preparing to unpack .../59-librtmp1_2.4+20151223.gitfa8646d.1-2+b2_amd64.deb ...
+#6 19.16 Unpacking librtmp1:amd64 (2.4+20151223.gitfa8646d.1-2+b2) ...
+#6 19.18 Selecting previously unselected package libssh2-1:amd64.
+#6 19.18 Preparing to unpack .../60-libssh2-1_1.10.0-3+deb12u1_amd64.deb ...
+#6 19.18 Unpacking libssh2-1:amd64 (1.10.0-3+deb12u1) ...
+#6 19.20 Selecting previously unselected package libcurl4:amd64.
+#6 19.20 Preparing to unpack .../61-libcurl4_7.88.1-10+deb12u15_amd64.deb ...
+#6 19.21 Unpacking libcurl4:amd64 (7.88.1-10+deb12u15) ...
+#6 19.24 Selecting previously unselected package libcurl4-openssl-dev:amd64.
+#6 19.24 Preparing to unpack .../62-libcurl4-openssl-dev_7.88.1-10+deb12u15_amd64.deb ...
+#6 19.24 Unpacking libcurl4-openssl-dev:amd64 (7.88.1-10+deb12u15) ...
+#6 19.28 Selecting previously unselected package libdeflate0:amd64.
+#6 19.28 Preparing to unpack .../63-libdeflate0_1.14-1_amd64.deb ...
+#6 19.28 Unpacking libdeflate0:amd64 (1.14-1) ...
+#6 19.29 Selecting previously unselected package libdeflate-dev:amd64.
+#6 19.29 Preparing to unpack .../64-libdeflate-dev_1.14-1_amd64.deb ...
+#6 19.29 Unpacking libdeflate-dev:amd64 (1.14-1) ...
+#6 19.31 Selecting previously unselected package libffi-dev:amd64.
+#6 19.31 Preparing to unpack .../65-libffi-dev_3.4.4-1_amd64.deb ...
+#6 19.31 Unpacking libffi-dev:amd64 (3.4.4-1) ...
+#6 19.32 Selecting previously unselected package liblzma-dev:amd64.
+#6 19.32 Preparing to unpack .../66-liblzma-dev_5.4.1-1+deb12u2_amd64.deb ...
+#6 19.33 Unpacking liblzma-dev:amd64 (5.4.1-1+deb12u2) ...
+#6 19.40 Selecting previously unselected package libncurses6:amd64.
+#6 19.40 Preparing to unpack .../67-libncurses6_6.4-4_amd64.deb ...
+#6 19.40 Unpacking libncurses6:amd64 (6.4-4) ...
+#6 19.42 Selecting previously unselected package libncursesw6:amd64.
+#6 19.42 Preparing to unpack .../68-libncursesw6_6.4-4_amd64.deb ...
+#6 19.42 Unpacking libncursesw6:amd64 (6.4-4) ...
+#6 19.47 Selecting previously unselected package libncurses-dev:amd64.
+#6 19.47 Preparing to unpack .../69-libncurses-dev_6.4-4_amd64.deb ...
+#6 19.47 Unpacking libncurses-dev:amd64 (6.4-4) ...
+#6 19.51 Selecting previously unselected package libpcre2-16-0:amd64.
+#6 19.51 Preparing to unpack .../70-libpcre2-16-0_10.42-1+deb12u2_amd64.deb ...
+#6 19.51 Unpacking libpcre2-16-0:amd64 (10.42-1+deb12u2) ...
+#6 19.54 Selecting previously unselected package libpcre2-32-0:amd64.
+#6 19.54 Preparing to unpack .../71-libpcre2-32-0_10.42-1+deb12u2_amd64.deb ...
+#6 19.54 Unpacking libpcre2-32-0:amd64 (10.42-1+deb12u2) ...
+#6 19.56 Selecting previously unselected package libpcre2-posix3:amd64.
+#6 19.56 Preparing to unpack .../72-libpcre2-posix3_10.42-1+deb12u2_amd64.deb ...
+#6 19.56 Unpacking libpcre2-posix3:amd64 (10.42-1+deb12u2) ...
+#6 19.58 Selecting previously unselected package libpcre2-dev:amd64.
+#6 19.58 Preparing to unpack .../73-libpcre2-dev_10.42-1+deb12u2_amd64.deb ...
+#6 19.58 Unpacking libpcre2-dev:amd64 (10.42-1+deb12u2) ...
+#6 19.63 Selecting previously unselected package libpkgconf3:amd64.
+#6 19.63 Preparing to unpack .../74-libpkgconf3_1.8.1-1_amd64.deb ...
+#6 19.64 Unpacking libpkgconf3:amd64 (1.8.1-1) ...
+#6 19.65 Selecting previously unselected package libreadline8:amd64.
+#6 19.65 Preparing to unpack .../75-libreadline8_8.2-1.3_amd64.deb ...
+#6 19.65 Unpacking libreadline8:amd64 (8.2-1.3) ...
+#6 19.67 Selecting previously unselected package libreadline-dev:amd64.
+#6 19.67 Preparing to unpack .../76-libreadline-dev_8.2-1.3_amd64.deb ...
+#6 19.67 Unpacking libreadline-dev:amd64 (8.2-1.3) ...
+#6 19.69 Selecting previously unselected package libsqlite3-0:amd64.
+#6 19.69 Preparing to unpack .../77-libsqlite3-0_3.40.1-2+deb12u2_amd64.deb ...
+#6 19.69 Unpacking libsqlite3-0:amd64 (3.40.1-2+deb12u2) ...
+#6 19.74 Selecting previously unselected package libsqlite3-dev:amd64.
+#6 19.74 Preparing to unpack .../78-libsqlite3-dev_3.40.1-2+deb12u2_amd64.deb ...
+#6 19.74 Unpacking libsqlite3-dev:amd64 (3.40.1-2+deb12u2) ...
+#6 19.79 Selecting previously unselected package libssl-dev:amd64.
+#6 19.79 Preparing to unpack .../79-libssl-dev_3.0.22-1~deb12u1_amd64.deb ...
+#6 19.80 Unpacking libssl-dev:amd64 (3.0.22-1~deb12u1) ...
+#6 19.92 Selecting previously unselected package libzstd-dev:amd64.
+#6 19.92 Preparing to unpack .../80-libzstd-dev_1.5.4+dfsg2-5_amd64.deb ...
+#6 19.92 Unpacking libzstd-dev:amd64 (1.5.4+dfsg2-5) ...
+#6 19.95 Selecting previously unselected package make.
+#6 19.96 Preparing to unpack .../81-make_4.3-4.1_amd64.deb ...
+#6 19.96 Unpacking make (4.3-4.1) ...
+#6 19.99 Selecting previously unselected package pkgconf-bin.
+#6 19.99 Preparing to unpack .../82-pkgconf-bin_1.8.1-1_amd64.deb ...
+#6 19.99 Unpacking pkgconf-bin (1.8.1-1) ...
+#6 20.00 Selecting previously unselected package pkgconf:amd64.
+#6 20.01 Preparing to unpack .../83-pkgconf_1.8.1-1_amd64.deb ...
+#6 20.04 Unpacking pkgconf:amd64 (1.8.1-1) ...
+#6 20.05 Selecting previously unselected package pkg-config:amd64.
+#6 20.06 Preparing to unpack .../84-pkg-config_1.8.1-1_amd64.deb ...
+#6 20.06 Unpacking pkg-config:amd64 (1.8.1-1) ...
+#6 20.07 Selecting previously unselected package zlib1g-dev:amd64.
+#6 20.07 Preparing to unpack .../85-zlib1g-dev_1%3a1.2.13.dfsg-1_amd64.deb ...
+#6 20.07 Unpacking zlib1g-dev:amd64 (1:1.2.13.dfsg-1) ...
+#6 20.10 Setting up libkeyutils1:amd64 (1.6.3-2) ...
+#6 20.10 Setting up libpsl5:amd64 (0.21.2-1) ...
+#6 20.11 Setting up libzstd-dev:amd64 (1.5.4+dfsg2-5) ...
+#6 20.11 Setting up libtirpc-common (1.3.3+ds-1) ...
+#6 20.11 Setting up libbrotli1:amd64 (1.0.9-2+b6) ...
+#6 20.11 Setting up libsqlite3-0:amd64 (3.40.1-2+deb12u2) ...
+#6 20.11 Setting up binutils-common:amd64 (2.40-2) ...
+#6 20.11 Setting up libssl3:amd64 (3.0.22-1~deb12u1) ...
+#6 20.12 Setting up libnghttp2-14:amd64 (1.52.0-1+deb12u3) ...
+#6 20.12 Setting up libdeflate0:amd64 (1.14-1) ...
+#6 20.12 Setting up linux-libc-dev:amd64 (6.1.187-1) ...
+#6 20.12 Setting up libctf-nobfd0:amd64 (2.40-2) ...
+#6 20.12 Setting up libgomp1:amd64 (12.2.0-14+deb12u1) ...
+#6 20.12 Setting up libffi-dev:amd64 (3.4.4-1) ...
+#6 20.12 Setting up libpcre2-16-0:amd64 (10.42-1+deb12u2) ...
+#6 20.13 Setting up libjansson4:amd64 (2.14-2) ...
+#6 20.13 Setting up libkrb5support0:amd64 (1.20.1-2+deb12u5) ...
+#6 20.13 Setting up libsasl2-modules-db:amd64 (2.1.28+dfsg-10) ...
+#6 20.13 Setting up libpcre2-32-0:amd64 (10.42-1+deb12u2) ...
+#6 20.13 Setting up libpkgconf3:amd64 (1.8.1-1) ...
+#6 20.13 Setting up rpcsvc-proto (1.4.3-1) ...
+#6 20.13 Setting up make (4.3-4.1) ...
+#6 20.14 Setting up libmpfr6:amd64 (4.2.0-1) ...
+#6 20.14 Setting up librtmp1:amd64 (2.4+20151223.gitfa8646d.1-2+b2) ...
+#6 20.14 Setting up libncurses6:amd64 (6.4-4) ...
+#6 20.14 Setting up xz-utils (5.4.1-1+deb12u2) ...
+#6 20.14 update-alternatives: using /usr/bin/xz to provide /usr/bin/lzma (lzma) in auto mode
+#6 20.14 update-alternatives: warning: skip creation of /usr/share/man/man1/lzma.1.gz because associated file /usr/share/man/man1/xz.1.gz (of link group lzma) doesn't exist
+#6 20.14 update-alternatives: warning: skip creation of /usr/share/man/man1/unlzma.1.gz because associated file /usr/share/man/man1/unxz.1.gz (of link group lzma) doesn't exist
+#6 20.14 update-alternatives: warning: skip creation of /usr/share/man/man1/lzcat.1.gz because associated file /usr/share/man/man1/xzcat.1.gz (of link group lzma) doesn't exist
+#6 20.14 update-alternatives: warning: skip creation of /usr/share/man/man1/lzmore.1.gz because associated file /usr/share/man/man1/xzmore.1.gz (of link group lzma) doesn't exist
+#6 20.14 update-alternatives: warning: skip creation of /usr/share/man/man1/lzless.1.gz because associated file /usr/share/man/man1/xzless.1.gz (of link group lzma) doesn't exist
+#6 20.14 update-alternatives: warning: skip creation of /usr/share/man/man1/lzdiff.1.gz because associated file /usr/share/man/man1/xzdiff.1.gz (of link group lzma) doesn't exist
+#6 20.14 update-alternatives: warning: skip creation of /usr/share/man/man1/lzcmp.1.gz because associated file /usr/share/man/man1/xzcmp.1.gz (of link group lzma) doesn't exist
+#6 20.14 update-alternatives: warning: skip creation of /usr/share/man/man1/lzgrep.1.gz because associated file /usr/share/man/man1/xzgrep.1.gz (of link group lzma) doesn't exist
+#6 20.14 update-alternatives: warning: skip creation of /usr/share/man/man1/lzegrep.1.gz because associated file /usr/share/man/man1/xzegrep.1.gz (of link group lzma) doesn't exist
+#6 20.14 update-alternatives: warning: skip creation of /usr/share/man/man1/lzfgrep.1.gz because associated file /usr/share/man/man1/xzfgrep.1.gz (of link group lzma) doesn't exist
+#6 20.15 Setting up libquadmath0:amd64 (12.2.0-14+deb12u1) ...
+#6 20.15 Setting up libssl-dev:amd64 (3.0.22-1~deb12u1) ...
+#6 20.15 Setting up libmpc3:amd64 (1.3.1-1) ...
+#6 20.15 Setting up libatomic1:amd64 (12.2.0-14+deb12u1) ...
+#6 20.15 Setting up pkgconf-bin (1.8.1-1) ...
+#6 20.15 Setting up libncursesw6:amd64 (6.4-4) ...
+#6 20.15 Setting up libk5crypto3:amd64 (1.20.1-2+deb12u5) ...
+#6 20.16 Setting up libsasl2-2:amd64 (2.1.28+dfsg-10) ...
+#6 20.16 Setting up libgfortran5:amd64 (12.2.0-14+deb12u1) ...
+#6 20.16 Setting up liblzma-dev:amd64 (5.4.1-1+deb12u2) ...
+#6 20.16 Setting up libubsan1:amd64 (12.2.0-14+deb12u1) ...
+#6 20.16 Setting up libpcre2-posix3:amd64 (10.42-1+deb12u2) ...
+#6 20.16 Setting up libcrypt-dev:amd64 (1:4.4.33-2) ...
+#6 20.17 Setting up libasan8:amd64 (12.2.0-14+deb12u1) ...
+#6 20.17 Setting up libssh2-1:amd64 (1.10.0-3+deb12u1) ...
+#6 20.17 Setting up libkrb5-3:amd64 (1.20.1-2+deb12u5) ...
+#6 20.17 Setting up libtsan2:amd64 (12.2.0-14+deb12u1) ...
+#6 20.17 Setting up libbinutils:amd64 (2.40-2) ...
+#6 20.18 Setting up libisl23:amd64 (0.25-1.1) ...
+#6 20.18 Setting up libc-dev-bin (2.36-9+deb12u14) ...
+#6 20.18 Setting up openssl (3.0.22-1~deb12u1) ...
+#6 20.18 Setting up libdeflate-dev:amd64 (1.14-1) ...
+#6 20.18 Setting up readline-common (8.2-1.3) ...
+#6 20.19 Setting up libcc1-0:amd64 (12.2.0-14+deb12u1) ...
+#6 20.19 Setting up liblsan0:amd64 (12.2.0-14+deb12u1) ...
+#6 20.19 Setting up libitm1:amd64 (12.2.0-14+deb12u1) ...
+#6 20.19 Setting up libctf0:amd64 (2.40-2) ...
+#6 20.20 Setting up cpp-12 (12.2.0-14+deb12u1) ...
+#6 20.20 Setting up libreadline8:amd64 (8.2-1.3) ...
+#6 20.20 Setting up libldap-2.5-0:amd64 (2.5.13+dfsg-5) ...
+#6 20.20 Setting up pkgconf:amd64 (1.8.1-1) ...
+#6 20.20 Setting up ca-certificates (20250419~deb12u1) ...
+#6 20.26 debconf: unable to initialize frontend: Dialog
+#6 20.26 debconf: (TERM is not set, so the dialog frontend is not usable.)
+#6 20.26 debconf: falling back to frontend: Readline
+#6 20.26 debconf: unable to initialize frontend: Readline
+#6 20.26 debconf: (Can't locate Term/ReadLine.pm in @INC (you may need to install the Term::ReadLine module) (@INC contains: /etc/perl /usr/local/lib/x86_64-linux-gnu/perl/5.36.0 /usr/local/share/perl/5.36.0 /usr/lib/x86_64-linux-gnu/perl5/5.36 /usr/share/perl5 /usr/lib/x86_64-linux-gnu/perl-base /usr/lib/x86_64-linux-gnu/perl/5.36 /usr/share/perl/5.36 /usr/local/lib/site_perl) at /usr/share/perl5/Debconf/FrontEnd/Readline.pm line 7.)
+#6 20.26 debconf: falling back to frontend: Teletype
+#6 20.65 Updating certificates in /etc/ssl/certs...
+#6 21.21 150 added, 0 removed; done.
+#6 21.23 Setting up libgprofng0:amd64 (2.40-2) ...
+#6 21.23 Setting up libgcc-12-dev:amd64 (12.2.0-14+deb12u1) ...
+#6 21.24 Setting up libgssapi-krb5-2:amd64 (1.20.1-2+deb12u5) ...
+#6 21.24 Setting up pkg-config:amd64 (1.8.1-1) ...
+#6 21.24 Setting up cpp (4:12.2.0-3) ...
+#6 21.24 Setting up libcurl4:amd64 (7.88.1-10+deb12u15) ...
+#6 21.25 Setting up binutils-x86-64-linux-gnu (2.40-2) ...
+#6 21.25 Setting up libtirpc3:amd64 (1.3.3+ds-1) ...
+#6 21.25 Setting up libgfortran-12-dev:amd64 (12.2.0-14+deb12u1) ...
+#6 21.25 Setting up binutils (2.40-2) ...
+#6 21.25 Setting up libtirpc-dev:amd64 (1.3.3+ds-1) ...
+#6 21.25 Setting up gcc-12 (12.2.0-14+deb12u1) ...
+#6 21.26 Setting up libcurl4-openssl-dev:amd64 (7.88.1-10+deb12u15) ...
+#6 21.26 Setting up libnsl2:amd64 (1.3.0-2) ...
+#6 21.26 Setting up gcc (4:12.2.0-3) ...
+#6 21.26 Setting up libnsl-dev:amd64 (1.3.0-2) ...
+#6 21.27 Setting up libc6-dev:amd64 (2.36-9+deb12u14) ...
+#6 21.27 Setting up libbz2-dev:amd64 (1.0.8-5+b1) ...
+#6 21.27 Setting up libncurses-dev:amd64 (6.4-4) ...
+#6 21.27 Setting up libpcre2-dev:amd64 (10.42-1+deb12u2) ...
+#6 21.27 Setting up libstdc++-12-dev:amd64 (12.2.0-14+deb12u1) ...
+#6 21.27 Setting up libreadline-dev:amd64 (8.2-1.3) ...
+#6 21.28 Setting up gfortran-12 (12.2.0-14+deb12u1) ...
+#6 21.28 Setting up libsqlite3-dev:amd64 (3.40.1-2+deb12u2) ...
+#6 21.28 Setting up zlib1g-dev:amd64 (1:1.2.13.dfsg-1) ...
+#6 21.31 Setting up g++-12 (12.2.0-14+deb12u1) ...
+#6 21.32 Setting up gfortran (4:12.2.0-3) ...
+#6 21.32 update-alternatives: using /usr/bin/gfortran to provide /usr/bin/f95 (f95) in auto mode
+#6 21.32 update-alternatives: using /usr/bin/gfortran to provide /usr/bin/f77 (f77) in auto mode
+#6 21.32 Setting up g++ (4:12.2.0-3) ...
+#6 21.32 update-alternatives: using /usr/bin/g++ to provide /usr/bin/c++ (c++) in auto mode
+#6 21.33 Processing triggers for libc-bin (2.36-9+deb12u14) ...
+#6 21.34 Processing triggers for ca-certificates (20250419~deb12u1) ...
+#6 21.34 Updating certificates in /etc/ssl/certs...
+#6 21.78 0 added, 0 removed; done.
+#6 21.78 Running hooks in /etc/ca-certificates/update.d...
+#6 21.78 done.
+#6 DONE 22.8s
+
+#7 [3/5] COPY source.tar.xz build.sh inputs.json /build-inputs/
+#7 DONE 0.2s
+
+#8 [4/5] RUN --network=none sh /build-inputs/build.sh "r"
+#8 16.92 make[1]: Entering directory '/build-source/m4'
+#8 16.92 make[1]: Nothing to be done for 'R'.
+#8 16.92 make[1]: Leaving directory '/build-source/m4'
+#8 16.92 make[1]: Entering directory '/build-source/tools'
+#8 16.92 make[1]: Nothing to be done for 'R'.
+#8 16.92 make[1]: Leaving directory '/build-source/tools'
+#8 16.93 make[1]: Entering directory '/build-source/doc'
+#8 16.93 make[2]: Entering directory '/build-source/doc/html'
+#8 16.93 make[2]: Leaving directory '/build-source/doc/html'
+#8 16.93 make[2]: Entering directory '/build-source/doc/manual'
+#8 16.93 make[2]: Nothing to be done for 'R'.
+#8 16.93 make[2]: Leaving directory '/build-source/doc/manual'
+#8 16.94 make[1]: Leaving directory '/build-source/doc'
+#8 16.94 make[1]: Entering directory '/build-source/etc'
+#8 16.94 make[1]: Leaving directory '/build-source/etc'
+#8 16.94 make[1]: Entering directory '/build-source/share'
+#8 16.94 make[1]: Leaving directory '/build-source/share'
+#8 16.94 make[1]: Entering directory '/build-source/src'
+#8 16.95 make[2]: Entering directory '/build-source/src/scripts'
+#8 16.95 make[3]: Entering directory '/build-source/src/scripts'
+#8 16.95 mkdir -p -- ../../bin
+#8 16.98 make[3]: Leaving directory '/build-source/src/scripts'
+#8 16.99 make[2]: Leaving directory '/build-source/src/scripts'
+#8 16.99 make[2]: Entering directory '/build-source/src/include'
+#8 16.99 mkdir -p -- ../../include
+#8 17.04 make[3]: Entering directory '/build-source/src/include/R_ext'
+#8 17.04 mkdir -p -- ../../../include/R_ext
+#8 17.12 make[3]: Leaving directory '/build-source/src/include/R_ext'
+#8 17.12 make[2]: Leaving directory '/build-source/src/include'
+#8 17.12 make[2]: Entering directory '/build-source/src/extra'
+#8 17.12 make[3]: Entering directory '/build-source/src/extra/blas'
+#8 17.13 make[3]: Entering directory '/build-source/src/extra/tre'
+#8 17.13 make[4]: Entering directory '/build-source/src/extra/blas'
+#8 17.13 gfortran  -fpic  -g -O2  -c blas.f -o blas.o
+#8 17.13 make[4]: Entering directory '/build-source/src/extra/tre'
+#8 17.13 making regcomp.d from regcomp.c
+#8 17.14 making regerror.d from regerror.c
+#8 17.16 making regexec.d from regexec.c
+#8 17.17 making tre-ast.d from tre-ast.c
+#8 17.18 making tre-compile.d from tre-compile.c
+#8 17.20 making tre-match-approx.d from tre-match-approx.c
+#8 17.21 making tre-match-backtrack.d from tre-match-backtrack.c
+#8 17.22 making tre-match-parallel.d from tre-match-parallel.c
+#8 17.24 making tre-mem.d from tre-mem.c
+#8 17.25 making tre-parse.d from tre-parse.c
+#8 17.26 making tre-stack.d from tre-stack.c
+#8 17.28 make[4]: Leaving directory '/build-source/src/extra/tre'
+#8 17.28 make[4]: Entering directory '/build-source/src/extra/tre'
+#8 17.28 gcc -I. -I. -I../../../src/include -I../../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c regcomp.c -o regcomp.o
+#8 17.33 gcc -I. -I. -I../../../src/include -I../../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c regerror.c -o regerror.o
+#8 17.36 gcc -I. -I. -I../../../src/include -I../../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c regexec.c -o regexec.o
+#8 17.44 gcc -I. -I. -I../../../src/include -I../../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c tre-ast.c -o tre-ast.o
+#8 17.48 gcc -I. -I. -I../../../src/include -I../../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c tre-compile.c -o tre-compile.o
+#8 17.89 gcc -I. -I. -I../../../src/include -I../../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c tre-match-approx.c -o tre-match-approx.o
+#8 18.21 gcc -I. -I. -I../../../src/include -I../../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c tre-match-backtrack.c -o tre-match-backtrack.o
+#8 18.41 gcc -I. -I. -I../../../src/include -I../../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c tre-match-parallel.c -o tre-match-parallel.o
+#8 18.57 gcc -I. -I. -I../../../src/include -I../../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c tre-mem.c -o tre-mem.o
+#8 18.61 gcc -I. -I. -I../../../src/include -I../../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c tre-parse.c -o tre-parse.o
+#8 18.78 gfortran  -fpic  -g -O2  -c  blas2.f90 -o blas2.o
+#8 18.81 gfortran  -fpic  -g -O2  -c cmplxblas.f -o cmplxblas.o
+#8 18.92 gcc -I. -I. -I../../../src/include -I../../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c tre-stack.c -o tre-stack.o
+#8 18.97 ar -cr libtre.a regcomp.o regerror.o regexec.o tre-ast.o tre-compile.o tre-match-approx.o tre-match-backtrack.o tre-match-parallel.o tre-mem.o tre-parse.o tre-stack.o
+#8 18.97 ranlib libtre.a
+#8 18.98 make[4]: Leaving directory '/build-source/src/extra/tre'
+#8 18.98 make[3]: Leaving directory '/build-source/src/extra/tre'
+#8 18.98 gfortran  -fpic  -g -O2  -c  cmplxblas2.f90 -o cmplxblas2.o
+#8 21.45 gcc -shared -fopenmp -L/usr/local/lib -o libRblas.so blas.o blas2.o  cmplxblas.o cmplxblas2.o -lgfortran -lm -lquadmath
+#8 21.47 make[4]: Leaving directory '/build-source/src/extra/blas'
+#8 21.48 make[4]: Entering directory '/build-source/src/extra/blas'
+#8 21.48 mkdir -p -- /build-source/lib
+#8 21.48 make[4]: Leaving directory '/build-source/src/extra/blas'
+#8 21.48 make[3]: Leaving directory '/build-source/src/extra/blas'
+#8 21.48 make[2]: Leaving directory '/build-source/src/extra'
+#8 21.49 make[2]: Entering directory '/build-source/src/appl'
+#8 21.49 making integrate.d from integrate.c
+#8 21.49 making interv.d from interv.c
+#8 21.50 making maxcol.d from maxcol.c
+#8 21.50 making optim.d from optim.c
+#8 21.51 making pretty.d from pretty.c
+#8 21.52 making uncmin.d from uncmin.c
+#8 21.54 make[3]: Entering directory '/build-source/src/appl'
+#8 21.54 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c integrate.c -o integrate.o
+#8 21.54 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c interv.c -o interv.o
+#8 21.58 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c maxcol.c -o maxcol.o
+#8 21.63 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c optim.c -o optim.o
+#8 21.79 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c pretty.c -o pretty.o
+#8 21.86 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c uncmin.c -o uncmin.o
+#8 22.48 gfortran  -fPIE  -g -O2  -c dpbfa.f -o dpbfa.o
+#8 22.62 gfortran  -fPIE  -g -O2  -c dpbsl.f -o dpbsl.o
+#8 22.63 gfortran  -fPIE  -g -O2  -c dpoco.f -o dpoco.o
+#8 22.65 gfortran  -fPIE  -g -O2  -c dpodi.f -o dpodi.o
+#8 22.68 gfortran  -fPIE  -g -O2  -c dpofa.f -o dpofa.o
+#8 22.69 gfortran  -fPIE  -g -O2  -c dposl.f -o dposl.o
+#8 22.72 gfortran  -fPIE  -g -O2  -c dqrdc.f -o dqrdc.o
+#8 22.78 gfortran  -fPIE  -g -O2  -c dqrdc2.f -o dqrdc2.o
+#8 22.84 gfortran  -fPIE  -g -O2  -c dqrls.f -o dqrls.o
+#8 22.88 gfortran  -fPIE  -g -O2  -c dqrsl.f -o dqrsl.o
+#8 22.88 gfortran  -fPIE  -g -O2  -c dqrutl.f -o dqrutl.o
+#8 22.92 gfortran  -fPIE  -g -O2  -c dsvdc.f -o dsvdc.o
+#8 22.95 gfortran  -fPIE  -g -O2  -c dtrco.f -o dtrco.o
+#8 23.00 gfortran  -fPIE  -g -O2  -c dtrsl.f -o dtrsl.o
+#8 23.11 ar -cr libappl.a integrate.o interv.o maxcol.o optim.o pretty.o uncmin.o dpbfa.o dpbsl.o dpoco.o dpodi.o dpofa.o dposl.o dqrdc.o dqrdc2.o dqrls.o dqrsl.o dqrutl.o dsvdc.o dtrco.o dtrsl.o 
+#8 23.11 ranlib libappl.a
+#8 23.12 make[3]: Leaving directory '/build-source/src/appl'
+#8 23.12 make[2]: Leaving directory '/build-source/src/appl'
+#8 23.12 make[2]: Entering directory '/build-source/src/nmath'
+#8 23.13 making mlutils.d from mlutils.c
+#8 23.13 making d1mach.d from d1mach.c
+#8 23.14 making i1mach.d from i1mach.c
+#8 23.14 making fmax2.d from fmax2.c
+#8 23.15 making fmin2.d from fmin2.c
+#8 23.15 making fprec.d from fprec.c
+#8 23.16 making fround.d from fround.c
+#8 23.16 making ftrunc.d from ftrunc.c
+#8 23.17 making sign.d from sign.c
+#8 23.17 making fsign.d from fsign.c
+#8 23.18 making imax2.d from imax2.c
+#8 23.18 making imin2.d from imin2.c
+#8 23.20 making chebyshev.d from chebyshev.c
+#8 23.20 making log1p.d from log1p.c
+#8 23.21 making lgammacor.d from lgammacor.c
+#8 23.21 making gammalims.d from gammalims.c
+#8 23.22 making stirlerr.d from stirlerr.c
+#8 23.22 making bd0.d from bd0.c
+#8 23.23 making gamma.d from gamma.c
+#8 23.23 making lgamma.d from lgamma.c
+#8 23.24 making gamma_cody.d from gamma_cody.c
+#8 23.24 making beta.d from beta.c
+#8 23.25 making lbeta.d from lbeta.c
+#8 23.25 making polygamma.d from polygamma.c
+#8 23.26 making cospi.d from cospi.c
+#8 23.26 making bessel_i.d from bessel_i.c
+#8 23.27 making bessel_j.d from bessel_j.c
+#8 23.27 making bessel_k.d from bessel_k.c
+#8 23.29 making bessel_y.d from bessel_y.c
+#8 23.29 making choose.d from choose.c
+#8 23.30 making snorm.d from snorm.c
+#8 23.30 making sexp.d from sexp.c
+#8 23.31 making dgamma.d from dgamma.c
+#8 23.31 making pgamma.d from pgamma.c
+#8 23.32 making qgamma.d from qgamma.c
+#8 23.32 making rgamma.d from rgamma.c
+#8 23.33 making dbeta.d from dbeta.c
+#8 23.33 making pbeta.d from pbeta.c
+#8 23.34 making qbeta.d from qbeta.c
+#8 23.34 making rbeta.d from rbeta.c
+#8 23.35 making dunif.d from dunif.c
+#8 23.36 making punif.d from punif.c
+#8 23.37 making qunif.d from qunif.c
+#8 23.37 making runif.d from runif.c
+#8 23.38 making dnorm.d from dnorm.c
+#8 23.38 making pnorm.d from pnorm.c
+#8 23.39 making qnorm.d from qnorm.c
+#8 23.39 making rnorm.d from rnorm.c
+#8 23.40 making dlnorm.d from dlnorm.c
+#8 23.40 making plnorm.d from plnorm.c
+#8 23.41 making qlnorm.d from qlnorm.c
+#8 23.42 making rlnorm.d from rlnorm.c
+#8 23.43 making df.d from df.c
+#8 23.43 making pf.d from pf.c
+#8 23.44 making qf.d from qf.c
+#8 23.44 making rf.d from rf.c
+#8 23.45 making dnf.d from dnf.c
+#8 23.45 making dt.d from dt.c
+#8 23.46 making pt.d from pt.c
+#8 23.47 making qt.d from qt.c
+#8 23.48 making rt.d from rt.c
+#8 23.48 making dnt.d from dnt.c
+#8 23.49 making dchisq.d from dchisq.c
+#8 23.49 making pchisq.d from pchisq.c
+#8 23.50 making qchisq.d from qchisq.c
+#8 23.50 making rchisq.d from rchisq.c
+#8 23.51 making rnchisq.d from rnchisq.c
+#8 23.51 making dbinom.d from dbinom.c
+#8 23.52 making pbinom.d from pbinom.c
+#8 23.52 making qbinom.d from qbinom.c
+#8 23.53 making rbinom.d from rbinom.c
+#8 23.53 making rmultinom.d from rmultinom.c
+#8 23.55 making dcauchy.d from dcauchy.c
+#8 23.55 making pcauchy.d from pcauchy.c
+#8 23.56 making qcauchy.d from qcauchy.c
+#8 23.57 making rcauchy.d from rcauchy.c
+#8 23.58 making dexp.d from dexp.c
+#8 23.58 making pexp.d from pexp.c
+#8 23.59 making qexp.d from qexp.c
+#8 23.59 making rexp.d from rexp.c
+#8 23.60 making dgeom.d from dgeom.c
+#8 23.60 making pgeom.d from pgeom.c
+#8 23.61 making qgeom.d from qgeom.c
+#8 23.61 making rgeom.d from rgeom.c
+#8 23.62 making dhyper.d from dhyper.c
+#8 23.62 making phyper.d from phyper.c
+#8 23.63 making qhyper.d from qhyper.c
+#8 23.63 making rhyper.d from rhyper.c
+#8 23.65 making dnbinom.d from dnbinom.c
+#8 23.65 making pnbinom.d from pnbinom.c
+#8 23.66 making qnbinom.d from qnbinom.c
+#8 23.66 making qnbinom_mu.d from qnbinom_mu.c
+#8 23.67 making rnbinom.d from rnbinom.c
+#8 23.68 making dpois.d from dpois.c
+#8 23.68 making ppois.d from ppois.c
+#8 23.69 making qpois.d from qpois.c
+#8 23.69 making rpois.d from rpois.c
+#8 23.70 making dweibull.d from dweibull.c
+#8 23.71 making pweibull.d from pweibull.c
+#8 23.71 making qweibull.d from qweibull.c
+#8 23.72 making rweibull.d from rweibull.c
+#8 23.72 making dlogis.d from dlogis.c
+#8 23.73 making plogis.d from plogis.c
+#8 23.73 making qlogis.d from qlogis.c
+#8 23.74 making rlogis.d from rlogis.c
+#8 23.75 making dnchisq.d from dnchisq.c
+#8 23.76 making pnchisq.d from pnchisq.c
+#8 23.76 making qnchisq.d from qnchisq.c
+#8 23.77 making dnbeta.d from dnbeta.c
+#8 23.77 making pnbeta.d from pnbeta.c
+#8 23.78 making qnbeta.d from qnbeta.c
+#8 23.78 making pnf.d from pnf.c
+#8 23.79 making pnt.d from pnt.c
+#8 23.79 making qnf.d from qnf.c
+#8 23.80 making qnt.d from qnt.c
+#8 23.80 making ptukey.d from ptukey.c
+#8 23.82 making qtukey.d from qtukey.c
+#8 23.82 making toms708.d from toms708.c
+#8 23.83 making wilcox.d from wilcox.c
+#8 23.83 making signrank.d from signrank.c
+#8 23.85 make[3]: Entering directory '/build-source/src/nmath'
+#8 23.85 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c mlutils.c -o mlutils.o
+#8 23.85 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c d1mach.c -o d1mach.o
+#8 23.88 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c i1mach.c -o i1mach.o
+#8 23.88 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c fmax2.c -o fmax2.o
+#8 23.91 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c fmin2.c -o fmin2.o
+#8 23.91 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c fprec.c -o fprec.o
+#8 23.94 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c fround.c -o fround.o
+#8 23.96 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c ftrunc.c -o ftrunc.o
+#8 23.98 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c sign.c -o sign.o
+#8 23.99 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c fsign.c -o fsign.o
+#8 24.02 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c imax2.c -o imax2.o
+#8 24.02 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c imin2.c -o imin2.o
+#8 24.05 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c chebyshev.c -o chebyshev.o
+#8 24.05 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c log1p.c -o log1p.o
+#8 24.07 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c lgammacor.c -o lgammacor.o
+#8 24.09 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c gammalims.c -o gammalims.o
+#8 24.10 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c stirlerr.c -o stirlerr.o
+#8 24.12 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c bd0.c -o bd0.o
+#8 24.15 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c gamma.c -o gamma.o
+#8 24.18 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c lgamma.c -o lgamma.o
+#8 24.20 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c gamma_cody.c -o gamma_cody.o
+#8 24.22 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c beta.c -o beta.o
+#8 24.24 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c lbeta.c -o lbeta.o
+#8 24.26 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c polygamma.c -o polygamma.o
+#8 24.28 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c cospi.c -o cospi.o
+#8 24.33 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c bessel_i.c -o bessel_i.o
+#8 24.39 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c bessel_j.c -o bessel_j.o
+#8 24.44 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c bessel_k.c -o bessel_k.o
+#8 24.52 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c bessel_y.c -o bessel_y.o
+#8 24.56 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c choose.c -o choose.o
+#8 24.62 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c snorm.c -o snorm.o
+#8 24.64 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c sexp.c -o sexp.o
+#8 24.67 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c dgamma.c -o dgamma.o
+#8 24.70 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c pgamma.c -o pgamma.o
+#8 24.71 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c qgamma.c -o qgamma.o
+#8 24.79 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c rgamma.c -o rgamma.o
+#8 24.83 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c dbeta.c -o dbeta.o
+#8 24.85 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c pbeta.c -o pbeta.o
+#8 24.87 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c qbeta.c -o qbeta.o
+#8 24.90 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c rbeta.c -o rbeta.o
+#8 24.95 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c dunif.c -o dunif.o
+#8 24.99 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c punif.c -o punif.o
+#8 25.02 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c qunif.c -o qunif.o
+#8 25.05 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c runif.c -o runif.o
+#8 25.06 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c dnorm.c -o dnorm.o
+#8 25.09 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c pnorm.c -o pnorm.o
+#8 25.10 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c qnorm.c -o qnorm.o
+#8 25.16 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c rnorm.c -o rnorm.o
+#8 25.16 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c dlnorm.c -o dlnorm.o
+#8 25.19 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c plnorm.c -o plnorm.o
+#8 25.19 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c qlnorm.c -o qlnorm.o
+#8 25.22 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c rlnorm.c -o rlnorm.o
+#8 25.23 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c df.c -o df.o
+#8 25.26 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c pf.c -o pf.o
+#8 25.27 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c qf.c -o qf.o
+#8 25.29 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c rf.c -o rf.o
+#8 25.30 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c dnf.c -o dnf.o
+#8 25.33 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c dt.c -o dt.o
+#8 25.34 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c pt.c -o pt.o
+#8 25.38 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c qt.c -o qt.o
+#8 25.40 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c rt.c -o rt.o
+#8 25.43 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c dnt.c -o dnt.o
+#8 25.47 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c dchisq.c -o dchisq.o
+#8 25.47 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c pchisq.c -o pchisq.o
+#8 25.50 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c qchisq.c -o qchisq.o
+#8 25.50 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c rchisq.c -o rchisq.o
+#8 25.53 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c rnchisq.c -o rnchisq.o
+#8 25.53 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c dbinom.c -o dbinom.o
+#8 25.57 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c pbinom.c -o pbinom.o
+#8 25.59 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c qbinom.c -o qbinom.o
+#8 25.61 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c rbinom.c -o rbinom.o
+#8 25.66 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c rmultinom.c -o rmultinom.o
+#8 25.68 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c dcauchy.c -o dcauchy.o
+#8 25.71 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c pcauchy.c -o pcauchy.o
+#8 25.71 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c qcauchy.c -o qcauchy.o
+#8 25.75 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c rcauchy.c -o rcauchy.o
+#8 25.75 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c dexp.c -o dexp.o
+#8 25.78 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c pexp.c -o pexp.o
+#8 25.78 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c qexp.c -o qexp.o
+#8 25.82 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c rexp.c -o rexp.o
+#8 25.82 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c dgeom.c -o dgeom.o
+#8 25.85 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c pgeom.c -o pgeom.o
+#8 25.86 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c qgeom.c -o qgeom.o
+#8 25.89 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c rgeom.c -o rgeom.o
+#8 25.90 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c dhyper.c -o dhyper.o
+#8 25.92 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c phyper.c -o phyper.o
+#8 25.94 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c qhyper.c -o qhyper.o
+#8 25.97 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c rhyper.c -o rhyper.o
+#8 25.99 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c dnbinom.c -o dnbinom.o
+#8 26.06 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c pnbinom.c -o pnbinom.o
+#8 26.06 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c qnbinom.c -o qnbinom.o
+#8 26.11 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c qnbinom_mu.c -o qnbinom_mu.o
+#8 26.13 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c rnbinom.c -o rnbinom.o
+#8 26.17 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c dpois.c -o dpois.o
+#8 26.18 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c ppois.c -o ppois.o
+#8 26.21 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c qpois.c -o qpois.o
+#8 26.21 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c rpois.c -o rpois.o
+#8 26.27 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c dweibull.c -o dweibull.o
+#8 26.28 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c pweibull.c -o pweibull.o
+#8 26.31 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c qweibull.c -o qweibull.o
+#8 26.32 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c rweibull.c -o rweibull.o
+#8 26.35 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c dlogis.c -o dlogis.o
+#8 26.35 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c plogis.c -o plogis.o
+#8 26.39 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c qlogis.c -o qlogis.o
+#8 26.39 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c rlogis.c -o rlogis.o
+#8 26.42 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c dnchisq.c -o dnchisq.o
+#8 26.43 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c pnchisq.c -o pnchisq.o
+#8 26.47 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c qnchisq.c -o qnchisq.o
+#8 26.51 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c dnbeta.c -o dnbeta.o
+#8 26.53 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c pnbeta.c -o pnbeta.o
+#8 26.56 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c qnbeta.c -o qnbeta.o
+#8 26.60 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c pnf.c -o pnf.o
+#8 26.60 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c pnt.c -o pnt.o
+#8 26.64 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c qnf.c -o qnf.o
+#8 26.67 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c qnt.c -o qnt.o
+#8 26.67 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c ptukey.c -o ptukey.o
+#8 26.72 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c qtukey.c -o qtukey.o
+#8 26.75 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c toms708.c -o toms708.o
+#8 26.77 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c wilcox.c -o wilcox.o
+#8 26.88 gcc -I. -I../../src/include -I../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c signrank.c -o signrank.o
+#8 27.16 ar -cr libnmath.a mlutils.o d1mach.o i1mach.o fmax2.o fmin2.o fprec.o fround.o ftrunc.o sign.o fsign.o imax2.o imin2.o chebyshev.o log1p.o lgammacor.o gammalims.o stirlerr.o bd0.o gamma.o lgamma.o gamma_cody.o beta.o lbeta.o polygamma.o cospi.o bessel_i.o bessel_j.o bessel_k.o bessel_y.o choose.o snorm.o sexp.o dgamma.o pgamma.o qgamma.o rgamma.o dbeta.o pbeta.o qbeta.o rbeta.o dunif.o punif.o qunif.o runif.o dnorm.o pnorm.o qnorm.o rnorm.o dlnorm.o plnorm.o qlnorm.o rlnorm.o df.o pf.o qf.o rf.o dnf.o dt.o pt.o qt.o rt.o dnt.o dchisq.o pchisq.o qchisq.o rchisq.o rnchisq.o dbinom.o pbinom.o qbinom.o rbinom.o rmultinom.o dcauchy.o pcauchy.o qcauchy.o rcauchy.o dexp.o pexp.o qexp.o rexp.o dgeom.o pgeom.o qgeom.o rgeom.o dhyper.o phyper.o qhyper.o rhyper.o dnbinom.o pnbinom.o qnbinom.o qnbinom_mu.o rnbinom.o dpois.o ppois.o qpois.o rpois.o dweibull.o pweibull.o qweibull.o rweibull.o dlogis.o plogis.o qlogis.o rlogis.o dnchisq.o pnchisq.o qnchisq.o dnbeta.o pnbeta.o qnbeta.o pnf.o pnt.o qnf.o qnt.o ptukey.o qtukey.o toms708.o wilcox.o signrank.o
+#8 27.18 ranlib libnmath.a
+#8 27.23 make[3]: Leaving directory '/build-source/src/nmath'
+#8 27.23 make[2]: Leaving directory '/build-source/src/nmath'
+#8 27.24 make[2]: Entering directory '/build-source/src/unix'
+#8 27.38 config.status: creating src/unix/Makefile
+#8 27.39 making Rembedded.d from Rembedded.c
+#8 27.39 making dynload.d from dynload.c
+#8 27.41 making system.d from system.c
+#8 27.41 making sys-unix.d from sys-unix.c
+#8 27.43 making sys-std.d from sys-std.c
+#8 27.43 making X11.d from X11.c
+#8 27.46 make[3]: Entering directory '/build-source/src/unix'
+#8 27.46 gcc -I. -I../../src/include -I../../src/include  -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c Rembedded.c -o Rembedded.o
+#8 27.46 gcc -I. -I../../src/include -I../../src/include  -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c dynload.c -o dynload.o
+#8 27.50 gcc -I. -I../../src/include -I../../src/include  -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c system.c -o system.o
+#8 27.52 gcc -I. -I../../src/include -I../../src/include  -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2   -c ./sys-unix.c -o sys-unix.o
+#8 27.64 gcc -I. -I../../src/include -I../../src/include  -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c sys-std.c -o sys-std.o
+#8 27.72 gcc -I. -I../../src/include -I../../src/include  -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c X11.c -o X11.o
+#8 27.80 ar -cr libunix.a Rembedded.o dynload.o system.o sys-unix.o sys-std.o X11.o
+#8 27.81 ranlib libunix.a
+#8 27.81 make[3]: Leaving directory '/build-source/src/unix'
+#8 27.82 make[3]: Entering directory '/build-source/src/unix'
+#8 27.82 gcc -I. -I../../src/include -I../../src/include  -I/usr/local/include -DHAVE_CONFIG_H    -g -O2  -L/usr/local/lib -DR_HOME='"/build-source"' \
+#8 27.82   -o Rscript ./Rscript.c
+#8 27.91 make[3]: Leaving directory '/build-source/src/unix'
+#8 27.91 make[2]: Leaving directory '/build-source/src/unix'
+#8 27.91 make[2]: Entering directory '/build-source/src/main'
+#8 28.06 config.status: creating src/main/Makefile
+#8 28.07 making CommandLineArgs.d from CommandLineArgs.c
+#8 28.07 making Rdynload.d from Rdynload.c
+#8 28.09 making Renviron.d from Renviron.c
+#8 28.09 making RNG.d from RNG.c
+#8 28.11 making agrep.d from agrep.c
+#8 28.11 making altclasses.d from altclasses.c
+#8 28.13 making altrep.d from altrep.c
+#8 28.14 making apply.d from apply.c
+#8 28.15 making arithmetic.d from arithmetic.c
+#8 28.15 making array.d from array.c
+#8 28.17 making attrib.d from attrib.c
+#8 28.17 making bind.d from bind.c
+#8 28.19 making builtin.d from builtin.c
+#8 28.19 making character.d from character.c
+#8 28.21 making clippath.d from clippath.c
+#8 28.21 making coerce.d from coerce.c
+#8 28.23 making colors.d from colors.c
+#8 28.23 making complex.d from complex.c
+#8 28.25 making connections.d from connections.c
+#8 28.26 making context.d from context.c
+#8 28.28 making cum.d from cum.c
+#8 28.28 making dcf.d from dcf.c
+#8 28.30 making datetime.d from datetime.c
+#8 28.30 making debug.d from debug.c
+#8 28.32 making deparse.d from deparse.c
+#8 28.32 making devices.d from devices.c
+#8 28.34 making dotcode.d from dotcode.c
+#8 28.34 making dounzip.d from dounzip.c
+#8 28.36 making dstruct.d from dstruct.c
+#8 28.37 making duplicate.d from duplicate.c
+#8 28.38 making edit.d from edit.c
+#8 28.39 making engine.d from engine.c
+#8 28.41 making envir.d from envir.c
+#8 28.41 making errors.d from errors.c
+#8 28.43 making eval.d from eval.c
+#8 28.44 making flexiblas.d from flexiblas.c
+#8 28.46 making format.d from format.c
+#8 28.46 making gevents.d from gevents.c
+#8 28.48 making gram.d from gram.c
+#8 28.48 making gram-ex.d from gram-ex.c
+#8 28.50 making graphics.d from graphics.c
+#8 28.50 making grep.d from grep.c
+#8 28.52 making identical.d from identical.c
+#8 28.52 making inlined.d from inlined.c
+#8 28.53 making inspect.d from inspect.c
+#8 28.54 making internet.d from internet.c
+#8 28.55 making iosupport.d from iosupport.c
+#8 28.56 making lapack.d from lapack.c
+#8 28.57 making list.d from list.c
+#8 28.58 making localecharset.d from localecharset.c
+#8 28.59 making logic.d from logic.c
+#8 28.59 making machine.d from machine.c
+#8 28.61 making main.d from main.c
+#8 28.61 making mapply.d from mapply.c
+#8 28.63 making mask.d from mask.c
+#8 28.63 making match.d from match.c
+#8 28.65 making memory.d from memory.c
+#8 28.65 making names.d from names.c
+#8 28.67 making objects.d from objects.c
+#8 28.67 making options.d from options.c
+#8 28.69 making paste.d from paste.c
+#8 28.69 making patterns.d from patterns.c
+#8 28.71 making platform.d from platform.c
+#8 28.71 making plot.d from plot.c
+#8 28.73 making plot3d.d from plot3d.c
+#8 28.74 making plotmath.d from plotmath.c
+#8 28.76 making print.d from print.c
+#8 28.77 making printarray.d from printarray.c
+#8 28.77 making printvector.d from printvector.c
+#8 28.79 making printutils.d from printutils.c
+#8 28.79 making qsort.d from qsort.c
+#8 28.81 making radixsort.d from radixsort.c
+#8 28.81 making random.d from random.c
+#8 28.83 making raw.d from raw.c
+#8 28.83 making registration.d from registration.c
+#8 28.84 making relop.d from relop.c
+#8 28.85 making rlocale.d from rlocale.c
+#8 28.87 making saveload.d from saveload.c
+#8 28.87 making scan.d from scan.c
+#8 28.89 making seq.d from seq.c
+#8 28.90 making serialize.d from serialize.c
+#8 28.91 making sort.d from sort.c
+#8 28.92 making source.d from source.c
+#8 28.93 making split.d from split.c
+#8 28.94 making sprintf.d from sprintf.c
+#8 28.95 making startup.d from startup.c
+#8 28.96 making subassign.d from subassign.c
+#8 28.97 making subscript.d from subscript.c
+#8 28.98 making subset.d from subset.c
+#8 28.99 making summary.d from summary.c
+#8 29.00 making sysutils.d from sysutils.c
+#8 29.01 making times.d from times.c
+#8 29.03 making unique.d from unique.c
+#8 29.03 making util.d from util.c
+#8 29.05 making version.d from version.c
+#8 29.06 making g_alab_her.d from g_alab_her.c
+#8 29.07 making g_cntrlify.d from g_cntrlify.c
+#8 29.08 making g_fontdb.d from g_fontdb.c
+#8 29.09 making g_her_glyph.d from g_her_glyph.c
+#8 29.10 making Rmain.d from Rmain.c
+#8 29.10 making alloca.d from alloca.c
+#8 29.11 making mkdtemp.d from mkdtemp.c
+#8 29.11 making strdup.d from strdup.c
+#8 29.12 making strncasecmp.d from strncasecmp.c
+#8 29.14 make[3]: Entering directory '/build-source/src/main'
+#8 29.14 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c Rmain.c -o Rmain.o
+#8 29.14 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c CommandLineArgs.c -o CommandLineArgs.o
+#8 29.16 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c Rdynload.c -o Rdynload.o
+#8 29.24 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c Renviron.c -o Renviron.o
+#8 29.37 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c RNG.c -o RNG.o
+#8 29.60 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c agrep.c -o agrep.o
+#8 29.64 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c altclasses.c -o altclasses.o
+#8 30.06 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c altrep.c -o altrep.o
+#8 30.12 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c apply.c -o apply.o
+#8 30.40 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c arithmetic.c -o arithmetic.o
+#8 30.43 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c array.c -o array.o
+#8 31.69 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c attrib.c -o attrib.o
+#8 31.91 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c bind.c -o bind.o
+#8 32.62 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c builtin.c -o builtin.o
+#8 32.87 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c character.c -o character.o
+#8 33.09 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c clippath.c -o clippath.o
+#8 33.14 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c coerce.c -o coerce.o
+#8 33.58 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c colors.c -o colors.o
+#8 33.63 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c complex.c -o complex.o
+#8 34.09 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c connections.c -o connections.o
+#8 34.35 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c context.c -o context.o
+#8 34.59 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c cum.c -o cum.o
+#8 34.75 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c dcf.c -o dcf.o
+#8 34.92 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c datetime.c -o datetime.o
+#8 35.90 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c debug.c -o debug.o
+#8 36.00 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c deparse.c -o deparse.o
+#8 36.07 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c devices.c -o devices.o
+#8 36.27 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c dotcode.c -o dotcode.o
+#8 36.65 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c dounzip.c -o dounzip.o
+#8 37.00 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c dstruct.c -o dstruct.o
+#8 37.00 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c duplicate.c -o duplicate.o
+#8 37.07 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c edit.c -o edit.o
+#8 37.17 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c engine.c -o engine.o
+#8 37.33 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c envir.c -o envir.o
+#8 38.16 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c errors.c -o errors.o
+#8 38.86 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c eval.c -o eval.o
+#8 38.90 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c flexiblas.c -o flexiblas.o
+#8 38.95 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c format.c -o format.o
+#8 39.12 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c gevents.c -o gevents.o
+#8 39.25 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c gram.c -o gram.o
+#8 40.53 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c gram-ex.c -o gram-ex.o
+#8 40.57 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c graphics.c -o graphics.o
+#8 40.64 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c grep.c -o grep.o
+#8 42.06 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c identical.c -o identical.o
+#8 42.23 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c inlined.c -o inlined.o
+#8 42.69 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c inspect.c -o inspect.o
+#8 42.91 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c internet.c -o internet.o
+#8 43.10 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c iosupport.c -o iosupport.o
+#8 43.20 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c lapack.c -o lapack.o
+#8 43.31 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c list.c -o list.o
+#8 43.31 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c localecharset.c -o localecharset.o
+#8 43.37 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c logic.c -o logic.o
+#8 43.38 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c machine.c -o machine.o
+#8 43.57 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c main.c -o main.o
+#8 43.71 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c mapply.c -o mapply.o
+#8 43.83 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c mask.c -o mask.o
+#8 43.85 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c match.c -o match.o
+#8 43.89 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c memory.c -o memory.o
+#8 44.04 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c names.c -o names.o
+#8 44.20 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c objects.c -o objects.o
+#8 44.78 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c options.c -o options.o
+#8 45.13 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c paste.c -o paste.o
+#8 45.49 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c patterns.c -o patterns.o
+#8 45.63 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c platform.c -o platform.o
+#8 45.80 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c plot.c -o plot.o
+#8 45.93 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c plot3d.c -o plot3d.o
+#8 46.19 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c plotmath.c -o plotmath.o
+#8 46.44 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c print.c -o print.o
+#8 46.87 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c printarray.c -o printarray.o
+#8 47.10 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c printvector.c -o printvector.o
+#8 47.23 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c printutils.c -o printutils.o
+#8 47.38 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c qsort.c -o qsort.o
+#8 47.48 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c radixsort.c -o radixsort.o
+#8 47.59 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c random.c -o random.o
+#8 47.93 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c raw.c -o raw.o
+#8 48.07 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c registration.c -o registration.o
+#8 48.12 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c relop.c -o relop.o
+#8 48.23 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c rlocale.c -o rlocale.o
+#8 48.31 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c saveload.c -o saveload.o
+#8 48.87 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c scan.c -o scan.o
+#8 48.94 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c seq.c -o seq.o
+#8 49.33 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c serialize.c -o serialize.o
+#8 49.80 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c sort.c -o sort.o
+#8 50.20 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c source.c -o source.o
+#8 50.37 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c split.c -o split.o
+#8 50.53 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c sprintf.c -o sprintf.o
+#8 50.70 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c startup.c -o startup.o
+#8 50.79 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c subassign.c -o subassign.o
+#8 50.79 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c subscript.c -o subscript.o
+#8 51.27 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c subset.c -o subset.o
+#8 51.92 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c summary.c -o summary.o
+#8 52.00 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c sysutils.c -o sysutils.o
+#8 52.53 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c times.c -o times.o
+#8 52.56 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c unique.c -o unique.o
+#8 52.59 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c util.c -o util.o
+#8 53.51 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c version.c -o version.o
+#8 53.59 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c g_alab_her.c -o g_alab_her.o
+#8 53.73 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c g_cntrlify.c -o g_cntrlify.o
+#8 53.87 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c g_fontdb.c -o g_fontdb.o
+#8 53.90 gcc -I../../src/extra -I/usr/include/tirpc -I. -I../../src/include -I../../src/include  -I/usr/local/include -I../../src/nmath -DHAVE_CONFIG_H   -fopenmp  -g -O2  -c g_her_glyph.c -o g_her_glyph.o
+#8 53.92 gfortran  -fPIE  -g -O2  -c xxxpr.f -o xxxpr.o
+#8 53.97 gcc -Wl,--export-dynamic -fopenmp    -L/usr/local/lib -o R.bin Rmain.o CommandLineArgs.o Rdynload.o Renviron.o RNG.o agrep.o altclasses.o altrep.o apply.o arithmetic.o array.o attrib.o bind.o builtin.o character.o clippath.o coerce.o colors.o complex.o connections.o context.o cum.o dcf.o datetime.o debug.o deparse.o devices.o dotcode.o dounzip.o dstruct.o duplicate.o edit.o engine.o envir.o errors.o eval.o flexiblas.o format.o gevents.o gram.o gram-ex.o graphics.o grep.o identical.o inlined.o inspect.o internet.o iosupport.o lapack.o list.o localecharset.o logic.o machine.o main.o mapply.o mask.o match.o memory.o names.o objects.o options.o paste.o patterns.o platform.o plot.o plot3d.o plotmath.o print.o printarray.o printvector.o printutils.o qsort.o radixsort.o random.o raw.o registration.o relop.o rlocale.o saveload.o scan.o seq.o serialize.o sort.o source.o split.o sprintf.o startup.o subassign.o subscript.o subset.o summary.o sysutils.o times.o unique.o util.o version.o g_alab_her.o g_cntrlify.o g_fontdb.o g_her_glyph.o xxxpr.o   `ls ../unix/*.o ../appl/*.o ../nmath/*.o` ../extra/tre/libtre.a    -L"../../lib" -lRblas -lgfortran -lm -lquadmath    -lpcre2-8 -ldeflate -lzstd -llzma -lbz2 -lz -ltirpc -lrt -ldl -lm 
+#8 54.15 make[4]: Entering directory '/build-source/src/main'
+#8 54.15 mkdir -p -- /build-source/bin/exec
+#8 54.16 make[4]: Leaving directory '/build-source/src/main'
+#8 54.16 make[3]: Leaving directory '/build-source/src/main'
+#8 54.16 make[2]: Leaving directory '/build-source/src/main'
+#8 54.16 make[2]: Entering directory '/build-source/src/modules'
+#8 54.16 make[3]: Entering directory '/build-source/src/modules/internet'
+#8 54.16 make[3]: Entering directory '/build-source/src/modules/lapack'
+#8 54.17 making Rhttpd.d from Rhttpd.c
+#8 54.17 making Lapack.d from Lapack.c
+#8 54.19 making Rsock.d from Rsock.c
+#8 54.19 make[4]: Entering directory '/build-source/src/modules/lapack'
+#8 54.19 gfortran -fpic  -g -O2 -msse2 -mfpmath=sse  -c dlamch.f -o dlamch.o
+#8 54.21 making internet.d from internet.c
+#8 54.21 gfortran  -fpic  -g -O2  -c dlapack.f -o dlapack.o
+#8 54.23 making libcurl.d from libcurl.c
+#8 54.25 making sock.d from sock.c
+#8 54.27 making sockconn.d from sockconn.c
+#8 54.30 make[4]: Entering directory '/build-source/src/modules/internet'
+#8 54.30 gcc -I. -I../../../src/include -I../../../src/include  -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp -fpic  -g -O2   -fvisibility=hidden -c Rhttpd.c -o Rhttpd.o
+#8 54.66 gcc -I. -I../../../src/include -I../../../src/include  -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp -fpic  -g -O2   -fvisibility=hidden -c Rsock.c -o Rsock.o
+#8 54.81 gcc -I. -I../../../src/include -I../../../src/include  -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp -fpic  -g -O2   -fvisibility=hidden -c internet.c -o internet.o
+#8 54.91 gcc -I. -I../../../src/include -I../../../src/include  -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp -fpic  -g -O2   -fvisibility=hidden -c libcurl.c -o libcurl.o
+#8 55.34 gcc -I. -I../../../src/include -I../../../src/include  -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp -fpic  -g -O2   -fvisibility=hidden -c sock.c -o sock.o
+#8 55.41 gcc -I. -I../../../src/include -I../../../src/include  -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp -fpic  -g -O2   -fvisibility=hidden -c sockconn.c -o sockconn.o
+#8 55.51 gcc -shared  -L/usr/local/lib -o internet.so Rhttpd.o Rsock.o internet.o libcurl.o sock.o sockconn.o -lcurl   
+#8 55.53 make[5]: Entering directory '/build-source/src/modules/internet'
+#8 55.53 mkdir -p -- /build-source/modules
+#8 55.54 make[5]: Leaving directory '/build-source/src/modules/internet'
+#8 55.54 make[4]: Leaving directory '/build-source/src/modules/internet'
+#8 55.54 make[3]: Leaving directory '/build-source/src/modules/internet'
+#8 55.54 gfortran  -fpic  -g -O2  -c cmplx.f -o cmplx.o
+#8 69.26 gfortran  -fpic  -g -O2  -c  la_constants.f90 -o la_constants.o
+#8 69.27 gfortran  -fpic  -g -O2  -c  dlartg.f90 -o dlartg.o
+#8 69.29 gfortran  -fpic  -g -O2  -c  la_xisnan.f90 -o la_xisnan.o
+#8 69.31 gfortran  -fpic  -g -O2  -c  zlartg.f90 -o zlartg.o
+#8 69.35 gfortran  -fpic  -g -O2  -c  zlassq.f90 -o zlassq.o
+#8 69.38 gfortran  -fpic  -g -O2  -c  dlassq.f90 -o dlassq.o
+#8 82.25 gcc -shared -fopenmp -L/usr/local/lib -o libRlapack.so dlamch.o dlapack.o cmplx.o dlartg.o dlassq.o la_constants.o la_xisnan.o zlartg.o zlassq.o    -L"../../../lib" -lRblas -lgfortran -lm -lquadmath 
+#8 82.31 make[4]: Leaving directory '/build-source/src/modules/lapack'
+#8 82.32 make[4]: Entering directory '/build-source/src/modules/lapack'
+#8 82.32 gcc -I. -I../../../src/include -I../../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp -fpic  -g -O2  -c Lapack.c -o Lapack.o
+#8 82.32 gcc -I. -I../../../src/include -I../../../src/include -I/usr/local/include -DHAVE_CONFIG_H   -fopenmp -fpic  -g -O2  -c  ../../main/flexiblas.c -o flexiblas.o
+#8 83.18 gcc -shared  -L/usr/local/lib -o lapack.so  Lapack.o  flexiblas.o   -L"../../../lib" -lRlapack -L"../../../lib" -lRblas -lgfortran -lm -lquadmath
+#8 83.21 make[5]: Entering directory '/build-source/src/modules/lapack'
+#8 83.22 /build-source/lib/libRlapack.so is unchanged
+#8 83.22 make[5]: Leaving directory '/build-source/src/modules/lapack'
+#8 83.22 make[4]: Leaving directory '/build-source/src/modules/lapack'
+#8 83.22 make[3]: Leaving directory '/build-source/src/modules/lapack'
+#8 83.22 make[2]: Leaving directory '/build-source/src/modules'
+#8 83.23 make[2]: Entering directory '/build-source/src/library'
+#8 83.23 mkdir -p -- ../../library
+#8 83.23 make[3]: Entering directory '/build-source/src/library/profile'
+#8 83.23 building system startup profile
+#8 83.24 mkdir -p -- ../../../library/base/R
+#8 83.24 make[3]: Leaving directory '/build-source/src/library/profile'
+#8 83.24 make[3]: Entering directory '/build-source/src/library/translations'
+#8 83.24 building package 'translations'
+#8 83.25 mkdir -p -- ../../../library/translations
+#8 83.25 make[4]: Entering directory '/build-source/src/library/translations'
+#8 83.25 make[4]: Leaving directory '/build-source/src/library/translations'
+#8 83.29 make[3]: Leaving directory '/build-source/src/library/translations'
+#8 83.29 make[3]: Entering directory '/build-source/src/library/base'
+#8 83.29 building package 'base'
+#8 83.29 make[4]: Entering directory '/build-source/src/library/base'
+#8 83.30 mkdir -p -- ../../../library/base/demo
+#8 83.31 make[4]: Leaving directory '/build-source/src/library/base'
+#8 83.31 make[3]: Leaving directory '/build-source/src/library/base'
+#8 83.32 make[3]: Entering directory '/build-source/src/library/tools'
+#8 83.32 building package 'tools'
+#8 83.32 mkdir -p -- ../../../library/tools
+#8 83.32 mkdir -p -- ../../../library/tools/misc
+#8 83.33 make[4]: Entering directory '/build-source/src/library/tools'
+#8 83.33 mkdir -p -- ../../../library/tools/R
+#8 83.34 make[4]: Leaving directory '/build-source/src/library/tools'
+#8 83.35 make[4]: Entering directory '/build-source/src/library/tools'
+#8 83.35 make[5]: Entering directory '/build-source/src/library/tools/src'
+#8 83.35 making text.d from text.c
+#8 83.35 making init.d from init.c
+#8 83.37 making Rmd5.d from Rmd5.c
+#8 83.37 making md5.d from md5.c
+#8 83.38 making signals.d from signals.c
+#8 83.38 making install.d from install.c
+#8 83.40 making getfmts.d from getfmts.c
+#8 83.40 making http.d from http.c
+#8 83.41 making gramLatex.d from gramLatex.c
+#8 83.42 making gramRd.d from gramRd.c
+#8 83.44 making pdscan.d from pdscan.c
+#8 83.44 making Rsha256.d from Rsha256.c
+#8 83.46 making sha256.d from sha256.c
+#8 83.46 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H -I../../../../src/main  -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c text.c -o text.o
+#8 83.47 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H -I../../../../src/main  -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c init.c -o init.o
+#8 83.50 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H -I../../../../src/main  -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c Rmd5.c -o Rmd5.o
+#8 83.56 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H -I../../../../src/main  -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c md5.c -o md5.o
+#8 83.57 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H -I../../../../src/main  -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c signals.c -o signals.o
+#8 83.63 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H -I../../../../src/main  -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c install.c -o install.o
+#8 83.67 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H -I../../../../src/main  -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c getfmts.c -o getfmts.o
+#8 83.73 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H -I../../../../src/main  -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c http.c -o http.o
+#8 83.75 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H -I../../../../src/main  -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c gramLatex.c -o gramLatex.o
+#8 83.78 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H -I../../../../src/main  -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c gramRd.c -o gramRd.o
+#8 84.26 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H -I../../../../src/main  -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c pdscan.c -o pdscan.o
+#8 84.32 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H -I../../../../src/main  -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c Rsha256.c -o Rsha256.o
+#8 84.39 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H -I../../../../src/main  -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c sha256.c -o sha256.o
+#8 84.54 gcc -shared -L/usr/local/lib -o tools.so text.o init.o Rmd5.o md5.o signals.o install.o getfmts.o http.o gramLatex.o gramRd.o pdscan.o Rsha256.o sha256.o
+#8 84.56 make[6]: Entering directory '/build-source/src/library/tools/src'
+#8 84.57 mkdir -p -- ../../../../library/tools/libs
+#8 84.57 make[6]: Leaving directory '/build-source/src/library/tools/src'
+#8 84.57 make[5]: Leaving directory '/build-source/src/library/tools/src'
+#8 84.57 make[4]: Leaving directory '/build-source/src/library/tools'
+#8 84.58 make[4]: Entering directory '/build-source/src/library/tools'
+#8 84.58 installing 'sysdata.rda'
+#8 84.74 make[4]: Leaving directory '/build-source/src/library/tools'
+#8 84.90 make[3]: Leaving directory '/build-source/src/library/tools'
+#8 84.90 make[3]: Entering directory '/build-source/src/library/compiler'
+#8 84.90 building package 'compiler'
+#8 84.91 mkdir -p -- ../../../library/compiler
+#8 84.91 make[4]: Entering directory '/build-source/src/library/compiler'
+#8 84.91 mkdir -p -- ../../../library/compiler/R
+#8 85.07 make[4]: Leaving directory '/build-source/src/library/compiler'
+#8 85.07 make[4]: Entering directory '/build-source/src/library/compiler'
+#8 85.08 byte-compiling package 'compiler'
+#8 87.71 make[4]: Leaving directory '/build-source/src/library/compiler'
+#8 87.71 make[3]: Leaving directory '/build-source/src/library/compiler'
+#8 87.71 make[3]: Entering directory '/build-source/src/library/base'
+#8 87.71 byte-compiling package 'base'
+#8 92.98 make[3]: Leaving directory '/build-source/src/library/base'
+#8 92.98 make[3]: Entering directory '/build-source/src/library/tools'
+#8 92.99 byte-compiling package 'tools'
+#8 104.3 make[3]: Leaving directory '/build-source/src/library/tools'
+#8 104.3 make[3]: Entering directory '/build-source/src/library/utils'
+#8 104.3 building package 'utils'
+#8 104.3 mkdir -p -- ../../../library/utils
+#8 104.3 mkdir -p -- ../../../library/utils/doc
+#8 104.3 make[4]: Entering directory '/build-source/src/library/utils'
+#8 104.3 mkdir -p -- ../../../library/utils/R
+#8 104.3 mkdir -p -- ../../../library/utils/Sweave
+#8 104.3 mkdir -p -- ../../../library/utils/misc
+#8 104.3 make[4]: Leaving directory '/build-source/src/library/utils'
+#8 104.3 make[4]: Entering directory '/build-source/src/library/utils'
+#8 104.3 make[5]: Entering directory '/build-source/src/library/utils/src'
+#8 104.3 making init.d from init.c
+#8 104.3 making io.d from io.c
+#8 104.3 making size.d from size.c
+#8 104.4 making sock.d from sock.c
+#8 104.4 making stubs.d from stubs.c
+#8 104.4 making utils.d from utils.c
+#8 104.4 making hashtab.d from hashtab.c
+#8 104.4 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H -I../../../../src/main  -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c init.c -o init.o
+#8 104.4 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H -I../../../../src/main  -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c io.c -o io.o
+#8 104.4 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H -I../../../../src/main  -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c size.c -o size.o
+#8 104.6 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H -I../../../../src/main  -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c sock.c -o sock.o
+#8 104.6 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H -I../../../../src/main  -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c stubs.c -o stubs.o
+#8 104.7 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H -I../../../../src/main  -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c utils.c -o utils.o
+#8 104.8 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H -I../../../../src/main  -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c hashtab.c -o hashtab.o
+#8 105.0 gcc -shared -L/usr/local/lib -o utils.so init.o io.o size.o sock.o stubs.o utils.o hashtab.o
+#8 105.0 make[6]: Entering directory '/build-source/src/library/utils/src'
+#8 105.0 mkdir -p -- ../../../../library/utils/libs
+#8 105.0 make[6]: Leaving directory '/build-source/src/library/utils/src'
+#8 105.0 make[5]: Leaving directory '/build-source/src/library/utils/src'
+#8 105.0 make[4]: Leaving directory '/build-source/src/library/utils'
+#8 105.0 make[4]: Entering directory '/build-source/src/library/utils'
+#8 105.0 installing 'sysdata.rda'
+#8 105.0 make[4]: Leaving directory '/build-source/src/library/utils'
+#8 105.0 make[4]: Entering directory '/build-source/src/library/utils'
+#8 105.0 byte-compiling package 'utils'
+#8 109.8 make[4]: Leaving directory '/build-source/src/library/utils'
+#8 109.8 make[3]: Leaving directory '/build-source/src/library/utils'
+#8 109.8 make[3]: Entering directory '/build-source/src/library/grDevices'
+#8 109.8 building package 'grDevices'
+#8 109.8 mkdir -p -- ../../../library/grDevices
+#8 109.8 make[4]: Entering directory '/build-source/src/library/grDevices'
+#8 109.8 mkdir -p -- ../../../library/grDevices/R
+#8 109.8 mkdir -p -- ../../../library/grDevices/afm
+#8 109.9 mkdir -p -- ../../../library/grDevices/enc
+#8 110.0 mkdir -p -- ../../../library/grDevices/fonts/Roboto
+#8 110.0 mkdir -p -- ../../../library/grDevices/fonts/Montserrat/static
+#8 110.0 mkdir -p -- ../../../library/grDevices/icc
+#8 110.0 make[4]: Leaving directory '/build-source/src/library/grDevices'
+#8 110.0 make[4]: Entering directory '/build-source/src/library/grDevices'
+#8 110.0 make[5]: Entering directory '/build-source/src/library/grDevices/src'
+#8 110.0 making axis_scales.d from axis_scales.c
+#8 110.0 making chull.d from chull.c
+#8 110.0 making devices.d from devices.c
+#8 110.0 making init.d from init.c
+#8 110.0 making stubs.d from stubs.c
+#8 110.0 making colors.d from colors.c
+#8 110.0 making clippath.d from clippath.c
+#8 110.0 making patterns.d from patterns.c
+#8 110.1 making mask.d from mask.c
+#8 110.1 making group.d from group.c
+#8 110.1 making devCairo.d from devCairo.c
+#8 110.1 making devPicTeX.d from devPicTeX.c
+#8 110.1 making devPS.d from devPS.c
+#8 110.1 making devQuartz.d from devQuartz.c
+#8 110.1 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include    -fpic  -g -O2  -c axis_scales.c -o axis_scales.o
+#8 110.1 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include    -fpic  -g -O2  -c chull.c -o chull.o
+#8 110.2 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include    -fpic  -g -O2  -c devices.c -o devices.o
+#8 110.2 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include    -fpic  -g -O2  -c init.c -o init.o
+#8 110.3 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include    -fpic  -g -O2  -c stubs.c -o stubs.o
+#8 110.3 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include    -fpic  -g -O2  -c colors.c -o colors.o
+#8 110.4 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include    -fpic  -g -O2  -c clippath.c -o clippath.o
+#8 110.4 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include    -fpic  -g -O2  -c patterns.c -o patterns.o
+#8 110.4 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include    -fpic  -g -O2  -c mask.c -o mask.o
+#8 110.5 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include    -fpic  -g -O2  -c group.c -o group.o
+#8 110.5 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include    -fpic  -g -O2  -c devCairo.c -o devCairo.o
+#8 110.6 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include    -fpic  -g -O2  -c devPicTeX.c -o devPicTeX.o
+#8 110.7 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include    -fpic  -g -O2  -c devPS.c -o devPS.o
+#8 110.7 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include    -fpic  -g -O2  -c devQuartz.c -o devQuartz.o
+#8 112.7 gcc -shared -L/usr/local/lib -o grDevices.so axis_scales.o chull.o devices.o init.o stubs.o colors.o clippath.o patterns.o mask.o group.o devCairo.o devPicTeX.o devPS.o devQuartz.o -lz
+#8 112.8 make[6]: Entering directory '/build-source/src/library/grDevices/src'
+#8 112.8 mkdir -p -- ../../../../library/grDevices/libs
+#8 112.8 make[6]: Leaving directory '/build-source/src/library/grDevices/src'
+#8 112.8 make[5]: Leaving directory '/build-source/src/library/grDevices/src'
+#8 112.8 make[4]: Leaving directory '/build-source/src/library/grDevices'
+#8 112.8 make[4]: Entering directory '/build-source/src/library/grDevices'
+#8 112.8 byte-compiling package 'grDevices'
+#8 113.9 make[4]: Leaving directory '/build-source/src/library/grDevices'
+#8 114.2 make[3]: Leaving directory '/build-source/src/library/grDevices'
+#8 114.2 make[3]: Entering directory '/build-source/src/library/graphics'
+#8 114.2 building package 'graphics'
+#8 114.2 mkdir -p -- ../../../library/graphics
+#8 114.2 make[4]: Entering directory '/build-source/src/library/graphics'
+#8 114.2 mkdir -p -- ../../../library/graphics/R
+#8 114.3 make[4]: Leaving directory '/build-source/src/library/graphics'
+#8 114.3 make[4]: Entering directory '/build-source/src/library/graphics'
+#8 114.3 make[5]: Entering directory '/build-source/src/library/graphics/src'
+#8 114.3 making init.d from init.c
+#8 114.3 making base.d from base.c
+#8 114.3 making graphics.d from graphics.c
+#8 114.3 making par.d from par.c
+#8 114.3 making plot.d from plot.c
+#8 114.3 making plot3d.d from plot3d.c
+#8 114.3 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H -I../../../../src/main  -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c init.c -o init.o
+#8 114.3 making stem.d from stem.c
+#8 114.4 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H -I../../../../src/main  -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c base.c -o base.o
+#8 114.4 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H -I../../../../src/main  -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c graphics.c -o graphics.o
+#8 114.5 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H -I../../../../src/main  -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c par.c -o par.o
+#8 115.0 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H -I../../../../src/main  -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c plot.c -o plot.o
+#8 115.1 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H -I../../../../src/main  -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c plot3d.c -o plot3d.o
+#8 116.2 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H -I../../../../src/main  -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c stem.c -o stem.o
+#8 116.9 gcc -shared -L/usr/local/lib -o graphics.so init.o base.o graphics.o par.o plot.o plot3d.o stem.o
+#8 117.0 make[6]: Entering directory '/build-source/src/library/graphics/src'
+#8 117.0 mkdir -p -- ../../../../library/graphics/libs
+#8 117.0 make[6]: Leaving directory '/build-source/src/library/graphics/src'
+#8 117.0 make[5]: Leaving directory '/build-source/src/library/graphics/src'
+#8 117.0 make[4]: Leaving directory '/build-source/src/library/graphics'
+#8 117.0 make[4]: Entering directory '/build-source/src/library/graphics'
+#8 117.0 byte-compiling package 'graphics'
+#8 118.7 make[4]: Leaving directory '/build-source/src/library/graphics'
+#8 118.7 make[3]: Leaving directory '/build-source/src/library/graphics'
+#8 118.7 make[3]: Entering directory '/build-source/src/library/stats'
+#8 118.7 building package 'stats'
+#8 118.7 mkdir -p -- ../../../library/stats
+#8 118.7 mkdir -p -- ../../../library/stats/doc
+#8 118.7 make[4]: Entering directory '/build-source/src/library/stats'
+#8 118.7 mkdir -p -- ../../../library/stats/R
+#8 118.8 make[4]: Leaving directory '/build-source/src/library/stats'
+#8 118.8 make[4]: Entering directory '/build-source/src/library/stats'
+#8 118.8 make[5]: Entering directory '/build-source/src/library/stats/src'
+#8 118.8 making init.d from init.c
+#8 118.8 making kmeans.d from kmeans.c
+#8 118.8 making ansari.d from ansari.c
+#8 118.8 making bandwidths.d from bandwidths.c
+#8 118.8 making chisqsim.d from chisqsim.c
+#8 118.8 making d2x2xk.d from d2x2xk.c
+#8 118.8 making fexact.d from fexact.c
+#8 118.8 making kendall.d from kendall.c
+#8 118.8 making ks.d from ks.c
+#8 118.8 making line.d from line.c
+#8 118.9 making smooth.d from smooth.c
+#8 118.9 making prho.d from prho.c
+#8 118.9 making swilk.d from swilk.c
+#8 118.9 making ksmooth.d from ksmooth.c
+#8 118.9 making loessc.d from loessc.c
+#8 118.9 making monoSpl.d from monoSpl.c
+#8 118.9 making isoreg.d from isoreg.c
+#8 118.9 making Srunmed.d from Srunmed.c
+#8 118.9 making dblcen.d from dblcen.c
+#8 118.9 making distance.d from distance.c
+#8 118.9 making hclust-utils.d from hclust-utils.c
+#8 118.9 making nls.d from nls.c
+#8 118.9 making rWishart.d from rWishart.c
+#8 118.9 making HoltWinters.d from HoltWinters.c
+#8 119.0 making PPsum.d from PPsum.c
+#8 119.0 making arima.d from arima.c
+#8 119.0 making burg.d from burg.c
+#8 119.0 making filter.d from filter.c
+#8 119.0 making mAR.d from mAR.c
+#8 119.0 making pacf.d from pacf.c
+#8 119.0 making starma.d from starma.c
+#8 119.0 making stl.d from stl.c
+#8 119.0 making port.d from port.c
+#8 119.0 making family.d from family.c
+#8 119.0 making sbart.d from sbart.c
+#8 119.0 making approx.d from approx.c
+#8 119.0 making loglin.d from loglin.c
+#8 119.1 making lowess.d from lowess.c
+#8 119.1 making massdist.d from massdist.c
+#8 119.1 making splines.d from splines.c
+#8 119.1 making lm.d from lm.c
+#8 119.1 making complete_cases.d from complete_cases.c
+#8 119.1 making cov.d from cov.c
+#8 119.1 making deriv.d from deriv.c
+#8 119.1 making fft.d from fft.c
+#8 119.1 making fourier.d from fourier.c
+#8 119.1 making model.d from model.c
+#8 119.1 making optim.d from optim.c
+#8 119.1 making optimize.d from optimize.c
+#8 119.1 making integrate.d from integrate.c
+#8 119.2 making random.d from random.c
+#8 119.2 making distn.d from distn.c
+#8 119.2 making zeroin.d from zeroin.c
+#8 119.2 making rcont.d from rcont.c
+#8 119.2 making influence.d from influence.c
+#8 119.2 making permdist.d from permdist.c
+#8 119.2 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c init.c -o init.o
+#8 119.2 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c kmeans.c -o kmeans.o
+#8 119.2 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c ansari.c -o ansari.o
+#8 119.3 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c bandwidths.c -o bandwidths.o
+#8 119.3 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c chisqsim.c -o chisqsim.o
+#8 119.4 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c d2x2xk.c -o d2x2xk.o
+#8 119.4 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c fexact.c -o fexact.o
+#8 119.4 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c kendall.c -o kendall.o
+#8 119.5 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c ks.c -o ks.o
+#8 119.6 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c line.c -o line.o
+#8 119.7 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c smooth.c -o smooth.o
+#8 119.8 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c prho.c -o prho.o
+#8 119.9 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c swilk.c -o swilk.o
+#8 120.0 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c ksmooth.c -o ksmooth.o
+#8 120.0 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c loessc.c -o loessc.o
+#8 120.1 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c monoSpl.c -o monoSpl.o
+#8 120.2 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c isoreg.c -o isoreg.o
+#8 120.2 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c Srunmed.c -o Srunmed.o
+#8 120.2 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c dblcen.c -o dblcen.o
+#8 120.3 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c distance.c -o distance.o
+#8 120.4 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c hclust-utils.c -o hclust-utils.o
+#8 120.4 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c nls.c -o nls.o
+#8 120.4 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c rWishart.c -o rWishart.o
+#8 120.5 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c HoltWinters.c -o HoltWinters.o
+#8 120.5 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c PPsum.c -o PPsum.o
+#8 120.6 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c arima.c -o arima.o
+#8 120.6 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c burg.c -o burg.o
+#8 120.6 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c filter.c -o filter.o
+#8 120.7 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c mAR.c -o mAR.o
+#8 121.2 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c pacf.c -o pacf.o
+#8 121.4 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c starma.c -o starma.o
+#8 121.4 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c stl.c -o stl.o
+#8 121.6 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c port.c -o port.o
+#8 121.7 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c family.c -o family.o
+#8 121.8 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c sbart.c -o sbart.o
+#8 121.8 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c approx.c -o approx.o
+#8 121.9 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c loglin.c -o loglin.o
+#8 121.9 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c lowess.c -o lowess.o
+#8 122.0 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c massdist.c -o massdist.o
+#8 122.0 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c splines.c -o splines.o
+#8 122.0 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c lm.c -o lm.o
+#8 122.1 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c complete_cases.c -o complete_cases.o
+#8 122.2 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c cov.c -o cov.o
+#8 122.2 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c deriv.c -o deriv.o
+#8 122.7 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c fft.c -o fft.o
+#8 123.0 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c fourier.c -o fourier.o
+#8 123.0 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c model.c -o model.o
+#8 123.1 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c optim.c -o optim.o
+#8 123.4 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c optimize.c -o optimize.o
+#8 123.7 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c integrate.c -o integrate.o
+#8 123.7 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c random.c -o random.o
+#8 123.9 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c distn.c -o distn.o
+#8 124.1 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c zeroin.c -o zeroin.o
+#8 124.2 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c rcont.c -o rcont.o
+#8 124.2 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c influence.c -o influence.o
+#8 124.2 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fopenmp -fvisibility=hidden -fpic  -g -O2  -c permdist.c -o permdist.o
+#8 124.3 gfortran -fvisibility=hidden -fpic  -g -O2  -c bsplvd.f -o bsplvd.o
+#8 124.3 gfortran -fvisibility=hidden -fpic  -g -O2  -c bvalue.f -o bvalue.o
+#8 124.3 gfortran -fvisibility=hidden -fpic  -g -O2  -c bvalus.f -o bvalus.o
+#8 124.3 gfortran -fvisibility=hidden -fpic  -g -O2  -c loessf.f -o loessf.o
+#8 124.4 gfortran -fvisibility=hidden -fpic  -g -O2  -c ppr.f -o ppr.o
+#8 124.9 gfortran -fvisibility=hidden -fpic  -g -O2  -c qsbart.f -o qsbart.o
+#8 124.9 gfortran -fvisibility=hidden -fpic  -g -O2  -c sgram.f -o sgram.o
+#8 125.0 gfortran -fvisibility=hidden -fpic  -g -O2  -c sinerp.f -o sinerp.o
+#8 125.0 gfortran -fvisibility=hidden -fpic  -g -O2  -c sslvrg.f -o sslvrg.o
+#8 125.1 gfortran -fvisibility=hidden -fpic  -g -O2  -c stxwx.f -o stxwx.o
+#8 125.1 gfortran -fvisibility=hidden -fpic  -g -O2  -c hclust.f -o hclust.o
+#8 125.2 gfortran -fvisibility=hidden -fpic  -g -O2  -c kmns.f -o kmns.o
+#8 125.2 gfortran -fvisibility=hidden -fpic  -g -O2  -c eureka.f -o eureka.o
+#8 125.3 gfortran -fpic  -g -O2 -msse2 -mfpmath=sse  -c portsrc.f -o portsrc.o
+#8 125.4 gfortran -fvisibility=hidden -fpic  -g -O2  -c lminfl.f -o lminfl.o
+#8 127.3 gcc -shared -L/usr/local/lib -o stats.so init.o kmeans.o ansari.o bandwidths.o chisqsim.o d2x2xk.o fexact.o kendall.o ks.o line.o smooth.o prho.o swilk.o ksmooth.o loessc.o monoSpl.o isoreg.o Srunmed.o dblcen.o distance.o hclust-utils.o nls.o rWishart.o HoltWinters.o PPsum.o arima.o burg.o filter.o mAR.o pacf.o starma.o stl.o port.o family.o sbart.o approx.o loglin.o lowess.o massdist.o splines.o lm.o complete_cases.o cov.o deriv.o fft.o fourier.o model.o optim.o optimize.o integrate.o random.o distn.o zeroin.o rcont.o influence.o permdist.o bsplvd.o bvalue.o bvalus.o loessf.o ppr.o qsbart.o sgram.o sinerp.o sslvrg.o stxwx.o hclust.o kmns.o eureka.o portsrc.o lminfl.o -fopenmp -L../../../../lib -lRlapack -L../../../../lib -lRblas -lgfortran -lm -lquadmath
+#8 127.4 make[6]: Entering directory '/build-source/src/library/stats/src'
+#8 127.4 mkdir -p -- ../../../../library/stats/libs
+#8 127.4 make[6]: Leaving directory '/build-source/src/library/stats/src'
+#8 127.4 make[5]: Leaving directory '/build-source/src/library/stats/src'
+#8 127.4 make[4]: Leaving directory '/build-source/src/library/stats'
+#8 127.4 make[4]: Entering directory '/build-source/src/library/stats'
+#8 127.4 byte-compiling package 'stats'
+#8 136.8 make[4]: Leaving directory '/build-source/src/library/stats'
+#8 136.8 make[3]: Leaving directory '/build-source/src/library/stats'
+#8 136.8 make[3]: Entering directory '/build-source/src/library/datasets'
+#8 136.8 building package 'datasets'
+#8 136.8 mkdir -p -- ../../../library/datasets
+#8 136.8 make[4]: Entering directory '/build-source/src/library/datasets'
+#8 136.8 make[4]: Leaving directory '/build-source/src/library/datasets'
+#8 136.8 mkdir -p -- ../../../library/datasets/data
+#8 137.2 make[3]: Leaving directory '/build-source/src/library/datasets'
+#8 137.2 make[3]: Entering directory '/build-source/src/library/methods'
+#8 137.2 building package 'methods'
+#8 137.2 mkdir -p -- ../../../library/methods
+#8 137.2 make[4]: Entering directory '/build-source/src/library/methods'
+#8 137.2 mkdir -p -- ../../../library/methods/R
+#8 137.3 make[4]: Leaving directory '/build-source/src/library/methods'
+#8 137.3 make[4]: Entering directory '/build-source/src/library/methods'
+#8 137.3 make[5]: Entering directory '/build-source/src/library/methods/src'
+#8 137.3 making do_substitute_direct.d from do_substitute_direct.c
+#8 137.3 making init.d from init.c
+#8 137.3 making methods_list_dispatch.d from methods_list_dispatch.c
+#8 137.3 making slot.d from slot.c
+#8 137.3 making class_support.d from class_support.c
+#8 137.3 making tests.d from tests.c
+#8 137.3 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c do_substitute_direct.c -o do_substitute_direct.o
+#8 137.3 making utils.d from utils.c
+#8 137.3 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c init.c -o init.o
+#8 137.4 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c methods_list_dispatch.c -o methods_list_dispatch.o
+#8 137.4 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c slot.c -o slot.o
+#8 137.4 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c class_support.c -o class_support.o
+#8 137.5 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c tests.c -o tests.o
+#8 137.5 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c utils.c -o utils.o
+#8 137.7 gcc -shared -L/usr/local/lib -o methods.so do_substitute_direct.o init.o methods_list_dispatch.o slot.o class_support.o tests.o utils.o
+#8 137.7 make[6]: Entering directory '/build-source/src/library/methods/src'
+#8 137.7 mkdir -p -- ../../../../library/methods/libs
+#8 137.8 make[6]: Leaving directory '/build-source/src/library/methods/src'
+#8 137.8 make[5]: Leaving directory '/build-source/src/library/methods/src'
+#8 137.8 make[4]: Leaving directory '/build-source/src/library/methods'
+#8 137.8 make[4]: Entering directory '/build-source/src/library/methods'
+#8 137.8 byte-compiling package 'methods'
+#8 137.9 initializing class and method definitions ... done
+#8 145.7 make[4]: Leaving directory '/build-source/src/library/methods'
+#8 145.7 make[3]: Leaving directory '/build-source/src/library/methods'
+#8 145.7 make[3]: Entering directory '/build-source/src/library/grid'
+#8 145.7 building package 'grid'
+#8 145.7 mkdir -p -- ../../../library/grid
+#8 145.7 mkdir -p -- ../../../library/grid/doc
+#8 145.7 make[4]: Entering directory '/build-source/src/library/grid'
+#8 145.7 mkdir -p -- ../../../library/grid/R
+#8 145.7 make[4]: Leaving directory '/build-source/src/library/grid'
+#8 145.7 make[4]: Entering directory '/build-source/src/library/grid'
+#8 145.7 make[5]: Entering directory '/build-source/src/library/grid/src'
+#8 145.7 making clippath.d from clippath.c
+#8 145.7 making gpar.d from gpar.c
+#8 145.7 making grid.d from grid.c
+#8 145.7 making just.d from just.c
+#8 145.7 making layout.d from layout.c
+#8 145.7 making mask.d from mask.c
+#8 145.8 making matrix.d from matrix.c
+#8 145.8 making path.d from path.c
+#8 145.8 making register.d from register.c
+#8 145.8 making state.d from state.c
+#8 145.8 making typeset.d from typeset.c
+#8 145.8 making unit.d from unit.c
+#8 145.8 making util.d from util.c
+#8 145.8 making viewport.d from viewport.c
+#8 145.8 gcc -I"../../../../include" -DNDEBUG   -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c clippath.c -o clippath.o
+#8 145.8 gcc -I"../../../../include" -DNDEBUG   -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c gpar.c -o gpar.o
+#8 145.8 gcc -I"../../../../include" -DNDEBUG   -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c grid.c -o grid.o
+#8 146.0 gcc -I"../../../../include" -DNDEBUG   -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c just.c -o just.o
+#8 146.1 gcc -I"../../../../include" -DNDEBUG   -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c layout.c -o layout.o
+#8 146.2 gcc -I"../../../../include" -DNDEBUG   -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c mask.c -o mask.o
+#8 146.3 gcc -I"../../../../include" -DNDEBUG   -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c matrix.c -o matrix.o
+#8 146.3 gcc -I"../../../../include" -DNDEBUG   -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c path.c -o path.o
+#8 146.4 gcc -I"../../../../include" -DNDEBUG   -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c register.c -o register.o
+#8 146.4 gcc -I"../../../../include" -DNDEBUG   -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c state.c -o state.o
+#8 146.5 gcc -I"../../../../include" -DNDEBUG   -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c typeset.c -o typeset.o
+#8 146.5 gcc -I"../../../../include" -DNDEBUG   -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c unit.c -o unit.o
+#8 146.8 gcc -I"../../../../include" -DNDEBUG   -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c util.c -o util.o
+#8 146.9 gcc -I"../../../../include" -DNDEBUG   -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c viewport.c -o viewport.o
+#8 147.0 gcc -shared -L/usr/local/lib -o grid.so clippath.o gpar.o grid.o just.o layout.o mask.o matrix.o path.o register.o state.o typeset.o unit.o util.o viewport.o
+#8 147.0 make[6]: Entering directory '/build-source/src/library/grid/src'
+#8 147.0 mkdir -p -- ../../../../library/grid/libs
+#8 147.0 make[6]: Leaving directory '/build-source/src/library/grid/src'
+#8 147.0 make[5]: Leaving directory '/build-source/src/library/grid/src'
+#8 147.0 make[4]: Leaving directory '/build-source/src/library/grid'
+#8 147.1 make[4]: Entering directory '/build-source/src/library/grid'
+#8 147.1 byte-compiling package 'grid'
+#8 149.4 make[4]: Leaving directory '/build-source/src/library/grid'
+#8 149.4 make[3]: Leaving directory '/build-source/src/library/grid'
+#8 149.4 make[3]: Entering directory '/build-source/src/library/splines'
+#8 149.4 building package 'splines'
+#8 149.4 mkdir -p -- ../../../library/splines
+#8 149.4 make[4]: Entering directory '/build-source/src/library/splines'
+#8 149.4 mkdir -p -- ../../../library/splines/R
+#8 149.5 make[4]: Leaving directory '/build-source/src/library/splines'
+#8 149.5 make[4]: Entering directory '/build-source/src/library/splines'
+#8 149.5 make[5]: Entering directory '/build-source/src/library/splines/src'
+#8 149.5 gcc -I"../../../../include" -DNDEBUG   -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c splines.c -o splines.o
+#8 149.5 making splines.d from splines.c
+#8 149.6 gcc -shared -L/usr/local/lib -o splines.so splines.o
+#8 149.6 make[6]: Entering directory '/build-source/src/library/splines/src'
+#8 149.6 mkdir -p -- ../../../../library/splines/libs
+#8 149.6 make[6]: Leaving directory '/build-source/src/library/splines/src'
+#8 149.6 make[5]: Leaving directory '/build-source/src/library/splines/src'
+#8 149.6 make[4]: Leaving directory '/build-source/src/library/splines'
+#8 149.6 make[4]: Entering directory '/build-source/src/library/splines'
+#8 149.6 byte-compiling package 'splines'
+#8 149.9 make[4]: Leaving directory '/build-source/src/library/splines'
+#8 149.9 make[3]: Leaving directory '/build-source/src/library/splines'
+#8 149.9 make[3]: Entering directory '/build-source/src/library/stats4'
+#8 149.9 building package 'stats4'
+#8 149.9 mkdir -p -- ../../../library/stats4
+#8 149.9 make[4]: Entering directory '/build-source/src/library/stats4'
+#8 149.9 mkdir -p -- ../../../library/stats4/R
+#8 150.0 make[4]: Leaving directory '/build-source/src/library/stats4'
+#8 150.0 make[4]: Entering directory '/build-source/src/library/stats4'
+#8 150.0 byte-compiling package 'stats4'
+#8 150.5 make[4]: Leaving directory '/build-source/src/library/stats4'
+#8 150.5 make[3]: Leaving directory '/build-source/src/library/stats4'
+#8 150.5 make[3]: Entering directory '/build-source/src/library/tcltk'
+#8 150.5 building package 'tcltk'
+#8 150.5 mkdir -p -- ../../../library/tcltk/R
+#8 150.5 make[4]: Entering directory '/build-source/src/library/tcltk'
+#8 150.5 mkdir -p -- ../../../library/tcltk/exec
+#8 150.5 make[4]: Leaving directory '/build-source/src/library/tcltk'
+#8 150.5 make[3]: Leaving directory '/build-source/src/library/tcltk'
+#8 150.5 make[3]: Entering directory '/build-source/src/library/parallel'
+#8 150.5 building package 'parallel'
+#8 150.5 mkdir -p -- ../../../library/parallel
+#8 150.5 mkdir -p -- ../../../library/parallel/doc
+#8 150.5 make[4]: Entering directory '/build-source/src/library/parallel'
+#8 150.5 mkdir -p -- ../../../library/parallel/R
+#8 150.6 make[4]: Leaving directory '/build-source/src/library/parallel'
+#8 150.6 make[4]: Entering directory '/build-source/src/library/parallel'
+#8 150.6 make[5]: Entering directory '/build-source/src/library/parallel/src'
+#8 150.6 making init.d from init.c
+#8 150.6 making rngstream.d from rngstream.c
+#8 150.6 making fork.d from fork.c
+#8 150.6 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c init.c -o init.o
+#8 150.6 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c rngstream.c -o rngstream.o
+#8 150.6 gcc -I"../../../../include" -DNDEBUG -I../../../include -I../../../../src/include -DHAVE_CONFIG_H  -I/usr/local/include   -fvisibility=hidden -fpic  -g -O2  -c fork.c -o fork.o
+#8 150.9 gcc -shared -L/usr/local/lib -o parallel.so init.o rngstream.o fork.o
+#8 150.9 make[6]: Entering directory '/build-source/src/library/parallel/src'
+#8 150.9 mkdir -p -- ../../../../library/parallel/libs
+#8 150.9 make[6]: Leaving directory '/build-source/src/library/parallel/src'
+#8 150.9 make[5]: Leaving directory '/build-source/src/library/parallel/src'
+#8 150.9 make[4]: Leaving directory '/build-source/src/library/parallel'
+#8 150.9 make[4]: Entering directory '/build-source/src/library/parallel'
+#8 151.0 byte-compiling package 'parallel'
+#8 151.4 make[4]: Leaving directory '/build-source/src/library/parallel'
+#8 151.4 make[3]: Leaving directory '/build-source/src/library/parallel'
+#8 151.4 make[3]: Entering directory '/build-source/src/library/base'
+#8 151.5 make[3]: Leaving directory '/build-source/src/library/base'
+#8 151.5 installing parsed NAMESPACE files
+#8 151.6 installing R bibliographies
+#8 151.9 installing R dictionaries
+#8 151.9 make[2]: Leaving directory '/build-source/src/library'
+#8 151.9 make[1]: Leaving directory '/build-source/src'
+#8 151.9 make[1]: Entering directory '/build-source/tests'
+#8 151.9 make[1]: Nothing to be done for 'R'.
+#8 151.9 make[1]: Leaving directory '/build-source/tests'
+#8 151.9 you should 'make docs' now ...
+#8 151.9 make[1]: Entering directory '/build-source/doc'
+#8 151.9 make[1]: Entering directory '/build-source/src/library'
+#8 151.9 'pdflatex' is needed to make vignettes but is missing on your system.
+#8 151.9 make[1]: Leaving directory '/build-source/src/library'
+#8 152.0 make[1]: Entering directory '/build-source'
+#8 152.0 configuring Java ...
+#8 152.0 
+#8 152.0 *** Cannot find any Java interpreter
+#8 152.0 *** Please make sure 'java' is on your PATH or set JAVA_HOME correspondingly
+#8 152.0 make[1]: [Makefile:87: stamp-java] Error 1 (ignored)
+#8 152.0 make[1]: Leaving directory '/build-source'
+#8 153.0 creating doc/NEWS
+#8 154.0 'pdflatex' is needed to make NEWS.pdf but is missing on your system.
+#8 155.0 make[2]: Entering directory '/build-source/doc/manual'
+#8 155.0 creating doc/manual/version.texi
+#8 155.0 'texi2any' v6.8 or later needed to make HTML docs but missing on your system.
+#8 155.0 file R-FAQ.html will be missing and linked from CRAN
+#8 155.1 'texi2any' v6.8 or later needed to make HTML docs but missing on your system.
+#8 155.1 file R-admin.html will be missing and linked from CRAN
+#8 155.1 'texi2any' v6.8 or later needed to make HTML docs but missing on your system.
+#8 155.1 file R-data.html will be missing and linked from CRAN
+#8 155.1 'texi2any' v6.8 or later needed to make HTML docs but missing on your system.
+#8 155.1 file R-exts.html will be missing and linked from CRAN
+#8 155.1 'texi2any' v6.8 or later needed to make HTML docs but missing on your system.
+#8 155.1 file R-intro.html will be missing and linked from CRAN
+#8 155.1 'texi2any' v6.8 or later needed to make HTML docs but missing on your system.
+#8 155.1 file R-ints.html will be missing and linked from CRAN
+#8 155.1 'texi2any' v6.8 or later needed to make HTML docs but missing on your system.
+#8 155.1 file R-lang.html will be missing and linked from CRAN
+#8 155.1 make[3]: Entering directory '/build-source/doc/html'
+#8 155.1 make[3]: Leaving directory '/build-source/doc/html'
+#8 155.1 make[2]: Leaving directory '/build-source/doc/manual'
+#8 155.1 make[1]: Leaving directory '/build-source/doc'
+#8 155.1 make[1]: Entering directory '/build-source/src/library'
+#8 155.1 make[2]: Entering directory '/build-source/src/library'
+#8 155.1 installing parsed Rd
+#8 155.1 make[3]: Entering directory '/build-source/src/library'
+#8 158.9   base
+#8 159.4   stats
+#8 159.6   utils
+#8 160.2   methods
+#8 160.5   graphics
+#8 160.7   grDevices
+#8 161.0   grid
+#8 161.3   tools
+#8 161.4   tcltk
+#8 161.5   splines
+#8 161.6   stats4
+#8 161.6   compiler
+#8 161.8   parallel
+#8 162.1   datasets
+#8 162.1 make[3]: Leaving directory '/build-source/src/library'
+#8 162.1 make[2]: Leaving directory '/build-source/src/library'
+#8 162.1 make[2]: Entering directory '/build-source/src/library'
+#8 162.2 building/updating package metadata ...
+#8 164.5 make[2]: Leaving directory '/build-source/src/library'
+#8 164.5 make[2]: Entering directory '/build-source/src/library'
+#8 164.5 writing package indices
+#8 164.5 make[3]: Entering directory '/build-source/src/library'
+#8 164.9 make[3]: Leaving directory '/build-source/src/library'
+#8 164.9 make[2]: Leaving directory '/build-source/src/library'
+#8 164.9 make[1]: Leaving directory '/build-source/src/library'
+#8 164.9 mkdir -p -- /usr/local/lib/R
+#8 164.9 make[1]: Entering directory '/build-source/m4'
+#8 164.9 make[1]: Nothing to be done for 'install'.
+#8 164.9 make[1]: Leaving directory '/build-source/m4'
+#8 164.9 make[1]: Entering directory '/build-source/tools'
+#8 164.9 make[1]: Nothing to be done for 'install'.
+#8 164.9 make[1]: Leaving directory '/build-source/tools'
+#8 164.9 make[1]: Entering directory '/build-source/doc'
+#8 164.9 installing doc ...
+#8 165.0 mkdir -p -- /usr/local/lib/R/doc
+#8 165.0 mkdir -p -- /usr/local/share/man/man1
+#8 165.0 make[2]: Entering directory '/build-source/doc/html'
+#8 165.0 installing doc/html ...
+#8 165.0 mkdir -p -- /usr/local/lib/R/doc/html
+#8 165.1 make[2]: Leaving directory '/build-source/doc/html'
+#8 165.1 make[2]: Entering directory '/build-source/doc/manual'
+#8 165.1 installing doc/manual ...
+#8 165.1 mkdir -p -- /usr/local/lib/R/doc/manual
+#8 165.1 mkdir -p -- /usr/local/lib/R/doc/manual/images
+#8 165.1 make[2]: Leaving directory '/build-source/doc/manual'
+#8 165.1 make[1]: Leaving directory '/build-source/doc'
+#8 165.2 make[1]: Entering directory '/build-source/etc'
+#8 165.2 mkdir -p -- /usr/local/lib/R/etc
+#8 165.2 installing etc ...
+#8 165.2 make[1]: Leaving directory '/build-source/etc'
+#8 165.2 make[1]: Entering directory '/build-source/share'
+#8 165.2 installing share ...
+#8 165.2 mkdir -p -- /usr/local/lib/R/share
+#8 165.2 mkdir -p -- /usr/local/lib/R/share/R
+#8 165.2 mkdir -p -- /usr/local/lib/R/share/bibliographies
+#8 165.2 mkdir -p -- /usr/local/lib/R/share/dictionaries
+#8 165.2 mkdir -p -- /usr/local/lib/R/share/encodings
+#8 165.2 mkdir -p -- /usr/local/lib/R/share/java
+#8 165.2 mkdir -p -- /usr/local/lib/R/share/licenses
+#8 165.2 mkdir -p -- /usr/local/lib/R/share/make
+#8 165.2 mkdir -p -- /usr/local/lib/R/share/Rd
+#8 165.2 mkdir -p -- /usr/local/lib/R/share/Rd/macros
+#8 165.2 mkdir -p -- /usr/local/lib/R/share/sh
+#8 165.2 mkdir -p -- /usr/local/lib/R/share/texmf
+#8 165.2 mkdir -p -- /usr/local/lib/R/share/texmf/bibtex/bib
+#8 165.2 mkdir -p -- /usr/local/lib/R/share/texmf/bibtex/bst
+#8 165.2 mkdir -p -- /usr/local/lib/R/share/texmf/tex/latex
+#8 165.3 make[1]: Leaving directory '/build-source/share'
+#8 165.3 make[1]: Entering directory '/build-source/src'
+#8 165.3 make[2]: Entering directory '/build-source/src/scripts'
+#8 165.3 mkdir -p -- /usr/local/lib/R/bin
+#8 165.4 make[2]: Leaving directory '/build-source/src/scripts'
+#8 165.4 make[2]: Entering directory '/build-source/src/include'
+#8 165.4 mkdir -p -- /usr/local/lib/R/include
+#8 165.4 make[3]: Entering directory '/build-source/src/include/R_ext'
+#8 165.4 mkdir -p -- /usr/local/lib/R/include/R_ext
+#8 165.4 make[3]: Leaving directory '/build-source/src/include/R_ext'
+#8 165.4 make[2]: Leaving directory '/build-source/src/include'
+#8 165.4 make[2]: Entering directory '/build-source/src/extra'
+#8 165.4 make[3]: Entering directory '/build-source/src/extra/blas'
+#8 165.4 mkdir -p -- /usr/local/lib/R/lib
+#8 165.4 make[3]: Leaving directory '/build-source/src/extra/blas'
+#8 165.4 make[3]: Entering directory '/build-source/src/extra/tre'
+#8 165.4 make[3]: Nothing to be done for 'install'.
+#8 165.4 make[3]: Leaving directory '/build-source/src/extra/tre'
+#8 165.4 make[3]: Entering directory '/build-source/src/extra/tzone'
+#8 165.4 make[3]: Nothing to be done for 'install'.
+#8 165.4 make[3]: Leaving directory '/build-source/src/extra/tzone'
+#8 165.4 make[3]: Entering directory '/build-source/src/extra/xdr'
+#8 165.4 make[3]: Nothing to be done for 'install'.
+#8 165.4 make[3]: Leaving directory '/build-source/src/extra/xdr'
+#8 165.4 make[3]: Entering directory '/build-source/src/extra/intl'
+#8 165.4 make[3]: Nothing to be done for 'install'.
+#8 165.4 make[3]: Leaving directory '/build-source/src/extra/intl'
+#8 165.4 make[2]: Leaving directory '/build-source/src/extra'
+#8 165.4 make[2]: Entering directory '/build-source/src/appl'
+#8 165.4 make[2]: Nothing to be done for 'install'.
+#8 165.4 make[2]: Leaving directory '/build-source/src/appl'
+#8 165.5 make[2]: Entering directory '/build-source/src/nmath'
+#8 165.5 make[2]: Nothing to be done for 'install'.
+#8 165.5 make[2]: Leaving directory '/build-source/src/nmath'
+#8 165.5 make[2]: Entering directory '/build-source/src/unix'
+#8 165.5 gcc -I. -I../../src/include -I../../src/include  -I/usr/local/include -DHAVE_CONFIG_H    -g -O2  -L/usr/local/lib -DR_HOME='"/usr/local/lib/R"' \
+#8 165.5   -o Rscript ./Rscript.c
+#8 165.6 make[2]: Leaving directory '/build-source/src/unix'
+#8 165.6 make[2]: Entering directory '/build-source/src/main'
+#8 165.6 mkdir -p -- /usr/local/lib/R/bin/exec
+#8 165.6 make[3]: Entering directory '/build-source/src/main'
+#8 165.6 make[3]: Leaving directory '/build-source/src/main'
+#8 165.6 make[2]: Leaving directory '/build-source/src/main'
+#8 165.6 make[2]: Entering directory '/build-source/src/modules'
+#8 165.6 make[3]: Entering directory '/build-source/src/modules/internet'
+#8 165.6 mkdir -p -- /usr/local/lib/R/modules
+#8 165.6 make[3]: Leaving directory '/build-source/src/modules/internet'
+#8 165.6 make[3]: Entering directory '/build-source/src/modules/lapack'
+#8 165.6 make[3]: Leaving directory '/build-source/src/modules/lapack'
+#8 165.6 make[2]: Leaving directory '/build-source/src/modules'
+#8 165.6 make[2]: Entering directory '/build-source/src/library'
+#8 165.6 mkdir -p -- /usr/local/lib/R/library
+#8 165.6 installing packages ...
+#8 165.7   building HTML index ...
+#8 165.7 make[2]: Leaving directory '/build-source/src/library'
+#8 165.7 make[1]: Leaving directory '/build-source/src'
+#8 165.7 make[1]: Entering directory '/build-source/tests'
+#8 165.7 make[1]: Nothing to be done for 'install'.
+#8 165.7 make[1]: Leaving directory '/build-source/tests'
+#8 165.8 4.6.1 
+#8 DONE 167.1s
+
+#9 [5/5] WORKDIR /tmp
+#9 DONE 0.0s
+
+#10 exporting to docker image format
+#10 exporting layers
+#10 exporting layers 10.4s done
+#10 exporting manifest sha256:771cc28ac7d34618bc8ece14d211583bcda476814a11d85b2006aa5c09c6ac3a done
+#10 exporting config sha256:7eb7f7005bb01e131275c386623c730e8738b98919ca15387325b2e36c8ddfc4 done
+#10 sending tarball
+#10 ...
+
+#11 importing to docker
+#11 loading layer 3aa347f035f0 557.06kB / 115.36MB
+#11 loading layer 254005aa9b60 327.68kB / 30.97MB
+#11 loading layer b34a3cecd8da 393.22kB / 39.30MB
+#11 loading layer 5f70bf18a086 32B / 32B
+#11 loading layer 3aa347f035f0 115.36MB / 115.36MB 5.9s done
+#11 loading layer 254005aa9b60 30.97MB / 30.97MB 1.3s done
+#11 loading layer b34a3cecd8da 39.30MB / 39.30MB 1.0s done
+#11 loading layer 5f70bf18a086 32B / 32B 0.0s done
+#11 DONE 5.9s
+
+#10 exporting to docker image format
+#10 sending tarball 6.7s done
+#10 DONE 17.1s
+
+#12 resolving provenance for metadata file
+#12 DONE 0.0s
+
+ [33m1 warning found (use docker --debug to expand):
+[0m - InvalidDefaultArgInFrom: Default value for ARG ${BASE_IMAGE} results in empty or invalid base image name (line 2)

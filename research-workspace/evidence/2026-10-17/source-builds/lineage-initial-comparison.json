@@ -1,0 +1,18 @@
+{
+  "status": "FAIL",
+  "boundary": "Initial recipe-only comparison changed input too, so it was rejected as an isolated lineage control. The separate recipe-lineage/evidence.zip rerun holds the archived input, condition and image fixed.",
+  "left_run_id": "ba0af6162a9c4de6a1cf8f11ea46cfd0",
+  "right_run_id": "761448c8b290473db41e14c32108de09",
+  "left_lineage": {
+    "input_sha256": "31b266eec3e380098d5d033309f1389928950951a2b2b3443c4646afa236112f",
+    "recipe_sha256": "91db760044f6879d8171d34db57d5138e9255ce4d16bf489c919990dc65da3fd",
+    "parameters_sha256": "adabfb371980c8bc7964f4ef66fd9a57d9a03ac51257d4990ead16434709948a",
+    "environment_sha256": "66552c76ae51a49f4f290c52105aabad2003f13dbbc67a5efd038369020404e5"
+  },
+  "right_lineage": {
+    "input_sha256": "054ee89fec327e9a9292e1008d465c3190cfe3819a259ddce2d32e9e5a6a5360",
+    "recipe_sha256": "a3c06effab96558d8a09068adbfaf2650a3d9ab82b608ea63437dc9076fe3957",
+    "parameters_sha256": "adabfb371980c8bc7964f4ef66fd9a57d9a03ac51257d4990ead16434709948a",
+    "environment_sha256": "66552c76ae51a49f4f290c52105aabad2003f13dbbc67a5efd038369020404e5"
+  }
+}

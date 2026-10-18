@@ -1,0 +1,37 @@
+{
+  "build_report_sha256": "008905dda84c6bb9654b3d7f50842b918db112b732db97eeb544d444d8add741",
+  "independent_human_second_machine": "NOT RUN",
+  "promotion": "DISABLED",
+  "runs": [
+    {
+      "bundles": {
+        "first-project": {
+          "bundle_sha256": "c270927db6cd13a67f9b12e7bf130a90641930ef9cc14846788ffc7648fe182b",
+          "file_count": 19,
+          "gaps": [],
+          "project_id": "ef4680d461234966a34bd9bfa5987d22",
+          "run_count": 4,
+          "valid": true,
+          "warning": "Descriptive, provisional evidence only. Integrity and lineage checks do not establish scientific validity, independent reproduction, or authenticity."
+        },
+        "second-project": {
+          "bundle_sha256": "6ef12c8ce94291fd6481056af0152aa3af349aeca4f9ddcf1051dd6d4071b981",
+          "file_count": 19,
+          "gaps": [],
+          "project_id": "92d64ba8d5a54e248acc1eb7c5a23320",
+          "run_count": 4,
+          "valid": true,
+          "warning": "Descriptive, provisional evidence only. Integrity and lineage checks do not establish scientific validity, independent reproduction, or authenticity."
+        }
+      },
+      "checks_passed": 49,
+      "images": {
+        "python": "sha256:a0e50e4755ce77300a83f288779ab92274a96b6d8b24ac34f2cc24fdadb58a5e",
+        "r": "sha256:be7cf46517584c92ab06b04b049afa234992a2e0bb4a290c3822d53cc2a2bdad"
+      },
+      "repetition": 1,
+      "status": "PASS"
+    }
+  ],
+  "status": "PASS"
+}

@@ -1,0 +1,71 @@
+{
+  "buildx.build.provenance": {
+    "builder": {
+      "id": ""
+    },
+    "buildType": "https://mobyproject.org/buildkit@v1",
+    "materials": [
+      {
+        "uri": "pkg:docker/debian?digest=sha256:a1b86db52ce3daef089e45aabe36dfec4091f82464c25c1fdcf03de197cbe82a\u0026platform=linux%2Farm64",
+        "digest": {
+          "sha256": "a1b86db52ce3daef089e45aabe36dfec4091f82464c25c1fdcf03de197cbe82a"
+        }
+      }
+    ],
+    "invocation": {
+      "configSource": {
+        "entryPoint": "Dockerfile"
+      },
+      "parameters": {
+        "frontend": "dockerfile.v0",
+        "args": {
+          "build-arg:BASE_IMAGE": "debian@sha256:a1b86db52ce3daef089e45aabe36dfec4091f82464c25c1fdcf03de197cbe82a",
+          "build-arg:RUNTIME": "python",
+          "build-arg:SNAPSHOT": "20261006T000000Z",
+          "no-cache": ""
+        },
+        "locals": [
+          {
+            "name": "context"
+          },
+          {
+            "name": "dockerfile"
+          }
+        ],
+        "root": {
+          "configSource": {
+            "path": "Dockerfile"
+          },
+          "request": {
+            "args": {
+              "build-arg:BASE_IMAGE": "debian@sha256:a1b86db52ce3daef089e45aabe36dfec4091f82464c25c1fdcf03de197cbe82a",
+              "build-arg:RUNTIME": "python",
+              "build-arg:SNAPSHOT": "20261006T000000Z",
+              "no-cache": ""
+            }
+          }
+        },
+        "compatibilityVersion": 30
+      },
+      "environment": {
+        "dockerfileVersion": "1.27.0",
+        "platform": "linux/arm64"
+      }
+    }
+  },
+  "buildx.build.ref": "waypoint-source-2bef78a9ece3/waypoint-source-2bef78a9ece30/ssgd4kirx6kt8kgvmf6a997v2",
+  "containerimage.descriptor": {
+    "mediaType": "application/vnd.oci.image.manifest.v1+json",
+    "digest": "sha256:e028545ad6c8c393b8441ff67af0b6fef40aa828cfd010549e48935bf4686458",
+    "size": 1250,
+    "annotations": {
+      "org.opencontainers.image.created": "2026-10-17T22:25:35Z"
+    },
+    "platform": {
+      "architecture": "arm64",
+      "os": "linux"
+    }
+  },
+  "containerimage.digest": "sha256:e028545ad6c8c393b8441ff67af0b6fef40aa828cfd010549e48935bf4686458",
+  "image.name": "docker.io/library/waypoint-source-python:waypoint-source-2bef78a9ece3-1"
+}

@@ -207,12 +207,16 @@ def _validate_records(project: dict, runs: list[dict]):
                 raise ValueError(f"Invalid {field}")
         environment = run["environment"]
         if environment != {} or run["status"] == "succeeded":
-            _keys(environment, _ENV_FIELDS, "environment")
+            fields = _ENV_FIELDS | {"specification"} if isinstance(environment, dict) and "specification" in environment else _ENV_FIELDS
+            _keys(environment, fields, "environment")
             if not isinstance(environment["image"], str) or not _IMAGE.fullmatch(environment["image"]):
                 raise ValueError("Environment requires an immutable image SHA-256")
             runtime = "python" if run["recipe"] == "summary-python" else "r"
             if environment["runtime"] != runtime or environment["runner"] != "outfitter-docker-v1":
                 raise ValueError("Environment does not match the reviewed recipe")
+            if "specification" in environment:
+                from .catalog import validate_snapshot
+                validate_snapshot(environment["specification"], run["recipe"], run["recipe_sha256"], environment["image"])
         _keys(run["parameters"], frozenset(), "parameters")
         _metrics(run["metrics"], run["condition"], empty=run["status"] != "succeeded")
         if run["error"] is not None:
@@ -251,6 +255,9 @@ def _allowed_paths(runs: list[dict]) -> tuple[set[str], set[str]]:
 
 
 def _file_cap(name: str) -> int:
+    if name == "runs.json":
+        # Up to 100 bounded catalog snapshots; total archive limits still apply.
+        return 2 * 1024 * 1024
     if name.endswith("/input.csv"):
         return MAX_INPUT_BYTES
     if name.endswith(("/recipe.py", "/recipe.R")):
@@ -299,6 +306,16 @@ def _validate_files(runs: list[dict], files: dict[str, bytes]):
                 raise ValueError("Run metrics do not match result.json")
 
 
+def lineage(run):
+    """Separate input, method, condition/parameters and image identities."""
+    return {
+        "input_sha256": run["input_sha256"],
+        "recipe_sha256": run["recipe_sha256"],
+        "parameters_sha256": _hash(_canonical({"condition": run["condition"], "parameters": run["parameters"]})),
+        "environment_sha256": _hash(_canonical({key: run["environment"].get(key) for key in ("image", "runtime", "runner")})),
+    }
+
+
 def _comparison(runs: list[dict], files: dict[str, bytes]) -> dict:
     gaps = []
     for run in runs:
@@ -319,9 +336,9 @@ def _comparison(runs: list[dict], files: dict[str, bytes]) -> dict:
             gaps.append({"run_id": None, "code": "condition_without_successful_run", "condition": condition})
     return {
         "format": FORMAT,
-        "runs": [{field: r[field] for field in (
+        "runs": [{**{field: r[field] for field in (
             "id", "condition", "recipe", "status", "input_sha256", "recipe_sha256", "metrics"
-        )} for r in runs],
+        )}, **({"lineage": lineage(r)} if "specification" in r["environment"] else {})} for r in runs],
         "gaps": gaps,
         "warning": WARNING,
     }

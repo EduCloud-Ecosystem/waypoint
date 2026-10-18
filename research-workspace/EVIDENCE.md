@@ -123,3 +123,12 @@ declarations, member/total size limits, header disagreement, and hidden data.
 These are archive and lineage checks. They do not stand in for actual Docker
 execution, browser acceptance, an independent researcher's reproduction, or a
 second study's scientific validation.
+
+New run records may include `environment.specification`, a complete catalog
+snapshot with declared dependencies and build provenance. Their comparison rows
+include four separate lineage hashes (input, recipe, condition/parameters and
+runtime image). The optional extension uses the same evidence writer/verifier;
+older bundles retain their exact deterministic derived files and still verify.
+`runs.json` is bounded to 2 MiB to accommodate up to 100 snapshots, within the
+existing 16 MiB total archive bound. A snapshot grants no replay authority.
+See [source-build qualification](SOURCE-BUILDS.md).

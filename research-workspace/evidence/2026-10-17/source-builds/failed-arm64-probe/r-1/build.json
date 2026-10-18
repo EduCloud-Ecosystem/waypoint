@@ -1,0 +1,58 @@
+{
+  "architecture": "arm64",
+  "base_image": "debian@sha256:a1b86db52ce3daef089e45aabe36dfec4091f82464c25c1fdcf03de197cbe82a",
+  "command": [
+    "docker",
+    "buildx",
+    "build",
+    "--builder",
+    "waypoint-source-2bef78a9ece3",
+    "--platform",
+    "linux/arm64",
+    "--no-cache",
+    "--pull",
+    "--provenance=false",
+    "--load",
+    "--progress=plain",
+    "--metadata-file",
+    "/Users/gregchism/Documents/Codex/2026-10-17/waypoint-source-builds-attempt1/r-1/metadata.json",
+    "--tag",
+    "waypoint-source-r:waypoint-source-2bef78a9ece3-1",
+    "--build-arg",
+    "BASE_IMAGE=debian@sha256:a1b86db52ce3daef089e45aabe36dfec4091f82464c25c1fdcf03de197cbe82a",
+    "--build-arg",
+    "SNAPSHOT=20261006T000000Z",
+    "--build-arg",
+    "RUNTIME=r",
+    "/Users/gregchism/Documents/Codex/2026-10-17/waypoint-source-builds-attempt1/r-1/context"
+  ],
+  "context_sha256": {
+    "Dockerfile": "15fc1c64825096f1971a102a5a6817c62f1880ef99ce4c9c0730f6a49aac5d84",
+    "build.sh": "abaee159ed424c15d855389a5505fc52538390cf11e1653607c97e7df17a417b",
+    "inputs.json": "88f08691e3a637310cc4fd263265729c51f34af2e3a84164857a4ae7f2a6b85e",
+    "source.tar.xz": "e4149581e151f3f1bc5edd6475e24ca1e2f452c08b6a22c29b570ce8abfe5783"
+  },
+  "image": "sha256:ba0f81935cb7e0b5742833dbdb826e8c713572702879d8ab3d384bf6551e4235",
+  "image_id": "sha256:ba0f81935cb7e0b5742833dbdb826e8c713572702879d8ab3d384bf6551e4235",
+  "log_sha256": "7513e831c7ec9512ce54cf71e2db022d7b697d6815da92508006d389bd391a09",
+  "oci_config_digest": null,
+  "oci_manifest_digest": "sha256:ba0f81935cb7e0b5742833dbdb826e8c713572702879d8ab3d384bf6551e4235",
+  "os": "linux",
+  "platform": "linux/arm64",
+  "preflight": {
+    "docker_architecture": "aarch64",
+    "docker_cpus": 8,
+    "docker_memory_bytes": 8392929280,
+    "docker_server_version": "29.8.2",
+    "host_free_bytes": 41933832192
+  },
+  "repetition": 1,
+  "repo_digests": [
+    "waypoint-source-r@sha256:ba0f81935cb7e0b5742833dbdb826e8c713572702879d8ab3d384bf6551e4235"
+  ],
+  "runtime": "r",
+  "runtime_version": "4.6.1",
+  "seconds": 563.866,
+  "size": 723037254,
+  "status": "FAIL"
+}

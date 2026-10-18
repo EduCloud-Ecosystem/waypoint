@@ -1,0 +1,5 @@
+{
+  "status": "PASS",
+  "source_record_sha256": "359079f7cea9fc76fdb0827a3cd2a6c305a30a782f2a669ade07649ec8686a87",
+  "boundary": "Review of recorded paired probe outputs. Initial assertion expected R_TempDir on stderr; this Rscript version reports failure to create its -e temporary file on stdout. Original record is retained unchanged. No additional build or execution is claimed."
+}

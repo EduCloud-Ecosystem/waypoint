@@ -1,0 +1,34 @@
+{
+  "status": "PASS",
+  "old_run_id": "ba0af6162a9c4de6a1cf8f11ea46cfd0",
+  "new_run_id": "1cd492ea309f4946ae9e97a5d1a67e31",
+  "changed_fields": [
+    "recipe_sha256"
+  ],
+  "old_lineage": {
+    "input_sha256": "31b266eec3e380098d5d033309f1389928950951a2b2b3443c4646afa236112f",
+    "recipe_sha256": "91db760044f6879d8171d34db57d5138e9255ce4d16bf489c919990dc65da3fd",
+    "parameters_sha256": "adabfb371980c8bc7964f4ef66fd9a57d9a03ac51257d4990ead16434709948a",
+    "environment_sha256": "66552c76ae51a49f4f290c52105aabad2003f13dbbc67a5efd038369020404e5"
+  },
+  "new_lineage": {
+    "input_sha256": "31b266eec3e380098d5d033309f1389928950951a2b2b3443c4646afa236112f",
+    "recipe_sha256": "a3c06effab96558d8a09068adbfaf2650a3d9ab82b608ea63437dc9076fe3957",
+    "parameters_sha256": "adabfb371980c8bc7964f4ef66fd9a57d9a03ac51257d4990ead16434709948a",
+    "environment_sha256": "66552c76ae51a49f4f290c52105aabad2003f13dbbc67a5efd038369020404e5"
+  },
+  "cleanup_verified": true,
+  "bundle_sha256": "4e6b316883fb9e463ebde907b42af2980ba65659fa5e6b1d81321f5429986362",
+  "source_hashes": {
+    "research_workspace/__init__.py": "d8cd56bc22ee978af2e94c63e5f3ac755934c728209cd5b3cceea7b2bc3af6e5",
+    "research_workspace/__main__.py": "3b06f7d40c9200184c046784e354b71577ffcff74f25670fb0f836ef4eaeda28",
+    "research_workspace/catalog.py": "3ea03e99bd71d61138c4278c72896d79debea1a930770adcfaf8f36eb9c68686",
+    "research_workspace/evidence.py": "017bc96e79a05592852f851cdbf0b59e65501d974261eb726099293b6e81ed7d",
+    "research_workspace/recipes.py": "c157564229c562cc5fe5ee315e3cb2be74d5588d830e0de6d4c2e7caead2114f",
+    "research_workspace/recovery.py": "2bcfa9f26150243949fbdac4b5c0f10e4cf7c3b042f099f85f561c5b041df0b5",
+    "research_workspace/reproduction.py": "a00e771b2712c4ae289098418856f3580a3d8fd5396724ecdbd685a9bff8041d",
+    "research_workspace/runtime.py": "5067d93086ab6edc85b0e40708ff5878adf5514f458efd851505c03579c33b02",
+    "research_workspace/server.py": "6347077c5397d7bac64144ff1808b26e05501e116a1250d354ce35ab77dcff59",
+    "research_workspace/store.py": "cf95ac74919fce527f382617655646e9ac03611c665b1fba1dbdd84e4165260b"
+  }
+}

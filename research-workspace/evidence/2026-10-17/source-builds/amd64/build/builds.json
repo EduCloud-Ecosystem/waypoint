@@ -1,0 +1,259 @@
+{
+  "base_os_built_from_source": false,
+  "bit_identical_images": "NOT CLAIMED",
+  "builder": "waypoint-source-caef64b13af5",
+  "builder_stopped": true,
+  "builds": [
+    {
+      "architecture": "amd64",
+      "base_image": "debian@sha256:a4672c0cb26fbdde88e38fa2dfb6c681942306680e41e4378b28770b6e79ee91",
+      "command": [
+        "docker",
+        "buildx",
+        "build",
+        "--builder",
+        "waypoint-source-caef64b13af5",
+        "--platform",
+        "linux/amd64",
+        "--no-cache",
+        "--pull",
+        "--provenance=false",
+        "--load",
+        "--progress=plain",
+        "--metadata-file",
+        "/home/runner/work/_temp/source-builds/python-1/metadata.json",
+        "--tag",
+        "waypoint-source-python:waypoint-source-caef64b13af5-1",
+        "--build-arg",
+        "BASE_IMAGE=debian@sha256:a4672c0cb26fbdde88e38fa2dfb6c681942306680e41e4378b28770b6e79ee91",
+        "--build-arg",
+        "SNAPSHOT=20261006T000000Z",
+        "--build-arg",
+        "RUNTIME=python",
+        "/home/runner/work/_temp/source-builds/python-1/context"
+      ],
+      "context_sha256": {
+        "Dockerfile": "15fc1c64825096f1971a102a5a6817c62f1880ef99ce4c9c0730f6a49aac5d84",
+        "build.sh": "abaee159ed424c15d855389a5505fc52538390cf11e1653607c97e7df17a417b",
+        "inputs.json": "88f08691e3a637310cc4fd263265729c51f34af2e3a84164857a4ae7f2a6b85e",
+        "source.tar.xz": "c2c4321961fab0fb999d66e0cecf521c2ab3994c7992873ea99e306c1094fd5a"
+      },
+      "image": "sha256:a0e50e4755ce77300a83f288779ab92274a96b6d8b24ac34f2cc24fdadb58a5e",
+      "image_id": "sha256:a0e50e4755ce77300a83f288779ab92274a96b6d8b24ac34f2cc24fdadb58a5e",
+      "log_sha256": "6a2330eddb70d571927c855d5faf204145bbab6899c914742c69d131f4ff7ff0",
+      "observed_runtime_version": "3.12.15",
+      "oci_config_digest": "sha256:a0e50e4755ce77300a83f288779ab92274a96b6d8b24ac34f2cc24fdadb58a5e",
+      "oci_manifest_digest": "sha256:83bc862a4c5be3bfd09be2b7efbc0517c9f79f9bf363d74a97c06da29c9f59e3",
+      "os": "linux",
+      "package_inventory_sha256": "003d35b6d096b1054e87155aa6c845579108776386b81d35dd154e3ba2264ff0",
+      "platform": "linux/amd64",
+      "preflight": {
+        "docker_architecture": "x86_64",
+        "docker_cpus": 4,
+        "docker_memory_bytes": 16766414848,
+        "docker_server_version": "28.0.4",
+        "host_free_bytes": 91726835712
+      },
+      "repetition": 1,
+      "repo_digests": [],
+      "runtime": "python",
+      "runtime_version": "3.12.15",
+      "seconds": 182.86,
+      "size": 782358191,
+      "status": "PASS"
+    },
+    {
+      "architecture": "amd64",
+      "base_image": "debian@sha256:a4672c0cb26fbdde88e38fa2dfb6c681942306680e41e4378b28770b6e79ee91",
+      "command": [
+        "docker",
+        "buildx",
+        "build",
+        "--builder",
+        "waypoint-source-caef64b13af5",
+        "--platform",
+        "linux/amd64",
+        "--no-cache",
+        "--pull",
+        "--provenance=false",
+        "--load",
+        "--progress=plain",
+        "--metadata-file",
+        "/home/runner/work/_temp/source-builds/r-1/metadata.json",
+        "--tag",
+        "waypoint-source-r:waypoint-source-caef64b13af5-1",
+        "--build-arg",
+        "BASE_IMAGE=debian@sha256:a4672c0cb26fbdde88e38fa2dfb6c681942306680e41e4378b28770b6e79ee91",
+        "--build-arg",
+        "SNAPSHOT=20261006T000000Z",
+        "--build-arg",
+        "RUNTIME=r",
+        "/home/runner/work/_temp/source-builds/r-1/context"
+      ],
+      "context_sha256": {
+        "Dockerfile": "15fc1c64825096f1971a102a5a6817c62f1880ef99ce4c9c0730f6a49aac5d84",
+        "build.sh": "abaee159ed424c15d855389a5505fc52538390cf11e1653607c97e7df17a417b",
+        "inputs.json": "88f08691e3a637310cc4fd263265729c51f34af2e3a84164857a4ae7f2a6b85e",
+        "source.tar.xz": "e4149581e151f3f1bc5edd6475e24ca1e2f452c08b6a22c29b570ce8abfe5783"
+      },
+      "image": "sha256:be7cf46517584c92ab06b04b049afa234992a2e0bb4a290c3822d53cc2a2bdad",
+      "image_id": "sha256:be7cf46517584c92ab06b04b049afa234992a2e0bb4a290c3822d53cc2a2bdad",
+      "log_sha256": "b69731d9445630aa8437ae2eee3745ccee78fb9afc0a230dde37c1e6b98d25f6",
+      "observed_runtime_version": "4.6.1",
+      "oci_config_digest": "sha256:be7cf46517584c92ab06b04b049afa234992a2e0bb4a290c3822d53cc2a2bdad",
+      "oci_manifest_digest": "sha256:85319b3719a4efd909b1093f28b186d64019bd86ebd9792d6edcece3642551c7",
+      "os": "linux",
+      "package_inventory_sha256": "003d35b6d096b1054e87155aa6c845579108776386b81d35dd154e3ba2264ff0",
+      "platform": "linux/amd64",
+      "preflight": {
+        "docker_architecture": "x86_64",
+        "docker_cpus": 4,
+        "docker_memory_bytes": 16766414848,
+        "docker_server_version": "28.0.4",
+        "host_free_bytes": 89764769792
+      },
+      "repetition": 1,
+      "repo_digests": [],
+      "runtime": "r",
+      "runtime_version": "4.6.1",
+      "seconds": 251.404,
+      "size": 496569614,
+      "status": "PASS"
+    }
+  ],
+  "buildx_version": "github.com/docker/buildx v0.38.0 0dbe87f36ed472fe36b6796c3f70b4210a731fc5",
+  "docker_version": {
+    "Client": {
+      "ApiVersion": "1.48",
+      "Arch": "amd64",
+      "BuildTime": "Tue Mar 25 15:07:16 2025",
+      "Context": "default",
+      "DefaultAPIVersion": "1.48",
+      "GitCommit": "b8034c0",
+      "GoVersion": "go1.23.7",
+      "Os": "linux",
+      "Platform": {
+        "Name": "Docker Engine - Community"
+      },
+      "Version": "28.0.4"
+    },
+    "Server": {
+      "ApiVersion": "1.48",
+      "Arch": "amd64",
+      "BuildTime": "2025-03-25T15:07:16.000000000+00:00",
+      "Components": [
+        {
+          "Details": {
+            "ApiVersion": "1.48",
+            "Arch": "amd64",
+            "BuildTime": "Tue Mar 25 15:07:16 2025",
+            "Experimental": "false",
+            "GitCommit": "6430e49",
+            "GoVersion": "go1.23.7",
+            "KernelVersion": "6.17.0-1022-azure",
+            "MinAPIVersion": "1.24",
+            "Os": "linux"
+          },
+          "Name": "Engine",
+          "Version": "28.0.4"
+        },
+        {
+          "Details": {
+            "GitCommit": "f2551031d7276a770f65f98c9b52e57e7dad07e8"
+          },
+          "Name": "containerd",
+          "Version": "v2.4.1"
+        },
+        {
+          "Details": {
+            "GitCommit": "v1.5.2-0-g29dd3dc2"
+          },
+          "Name": "runc",
+          "Version": "1.5.2"
+        },
+        {
+          "Details": {
+            "GitCommit": "de40ad0"
+          },
+          "Name": "docker-init",
+          "Version": "0.19.0"
+        }
+      ],
+      "GitCommit": "6430e49",
+      "GoVersion": "go1.23.7",
+      "KernelVersion": "6.17.0-1022-azure",
+      "MinAPIVersion": "1.24",
+      "Os": "linux",
+      "Platform": {
+        "Name": "Docker Engine - Community"
+      },
+      "Version": "28.0.4"
+    }
+  },
+  "independent_human_second_machine": "NOT RUN",
+  "input_hashes": {
+    "Dockerfile": "15fc1c64825096f1971a102a5a6817c62f1880ef99ce4c9c0730f6a49aac5d84",
+    "build.sh": "abaee159ed424c15d855389a5505fc52538390cf11e1653607c97e7df17a417b",
+    "inputs.json": "88f08691e3a637310cc4fd263265729c51f34af2e3a84164857a4ae7f2a6b85e"
+  },
+  "inputs": {
+    "base_images": {
+      "linux/amd64": "debian@sha256:a4672c0cb26fbdde88e38fa2dfb6c681942306680e41e4378b28770b6e79ee91",
+      "linux/arm64": "debian@sha256:a1b86db52ce3daef089e45aabe36dfec4091f82464c25c1fdcf03de197cbe82a"
+    },
+    "buildkit_image": "moby/buildkit@sha256:cec9f139f45e93c5c69c60f8b07cfad9f43f4ef6b6a6cd917527fea5ff2e3dea",
+    "debian_snapshot": "20261006T000000Z",
+    "limits": {
+      "build_seconds": 1200,
+      "builder_cpus": 2,
+      "builder_memory_bytes": 3221225472,
+      "log_bytes": 16777216,
+      "make_jobs": 2,
+      "maximum_repetitions": 2,
+      "minimum_free_bytes": 12884901888
+    },
+    "runtimes": {
+      "python": {
+        "additional_packages": [],
+        "checksum_provenance": "Published SHA-256 on the official Python 3.12.15 release page; independently matched downloaded bytes on 2026-10-17.",
+        "sha256": "c2c4321961fab0fb999d66e0cecf521c2ab3994c7992873ea99e306c1094fd5a",
+        "standard_library": [
+          "csv",
+          "json",
+          "sys"
+        ],
+        "url": "https://www.python.org/ftp/python/3.12.15/Python-3.12.15.tar.xz",
+        "version": "3.12.15"
+      },
+      "r": {
+        "additional_packages": [],
+        "checksum_provenance": "SHA-256 computed from the official CRAN HTTPS source download on 2026-10-17. No independent upstream SHA-256 signature verification is claimed.",
+        "sha256": "e4149581e151f3f1bc5edd6475e24ca1e2f452c08b6a22c29b570ce8abfe5783",
+        "standard_library": [
+          "base",
+          "utils"
+        ],
+        "url": "https://cran.r-project.org/src/base/R-4/R-4.6.1.tar.xz",
+        "version": "4.6.1"
+      }
+    },
+    "schema_version": 1,
+    "status": "candidate"
+  },
+  "observed_at": "2026-10-17T22:33:23.516388+00:00",
+  "platform": "linux/amd64",
+  "preflight": {
+    "docker_architecture": "x86_64",
+    "docker_cpus": 4,
+    "docker_memory_bytes": 16766414848,
+    "docker_server_version": "28.0.4",
+    "host_free_bytes": 91978625024
+  },
+  "promotion": "DISABLED",
+  "repetitions": 1,
+  "runner_sha256": "d8f663336e7f6688f2ef6af17f4a6c0ba2ba609a89dede52fef11051fc243cce",
+  "schema_version": 1,
+  "source_revision": "7a84e1a0cb22f5074618e267c023f5cd7562b032",
+  "status": "PASS",
+  "tracked_changes": ""
+}

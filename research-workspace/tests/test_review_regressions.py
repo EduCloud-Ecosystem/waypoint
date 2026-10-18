@@ -53,6 +53,22 @@ class ReviewRegressions(unittest.TestCase):
             "recipe": "summary-python", "condition": "baseline", "csv": CSV, "parameters": {},
         }, {"python": IMAGE})
 
+    def test_candidate_blocks_admission_and_queued_dispatch(self):
+        from research_workspace import catalog
+        entry = next(e for e in catalog.list_environments() if e['id'] == 'summary-python-v1')
+        entry.pop('available')
+        entry['status'] = 'candidate'
+        with patch.object(catalog, 'resolve_environment', return_value=entry):
+            with self.assertRaises(ValueError):
+                self.submit()
+        self.assertEqual(self.store.project(self.pid, 'owner')['runs'], [])
+        self.submit()
+        run = self.store.claim()
+        with patch.object(catalog, 'resolve_environment', return_value=entry), patch('subprocess.Popen') as dispatch:
+            with self.assertRaises(ValueError):
+                Worker(self.store, self.broker).execute(run)
+            dispatch.assert_not_called()
+
     def receipt(self, run):
         return {
             "schema_version": 1, "request_id": run["id"], "project_id": self.pid,

@@ -341,3 +341,16 @@ CLAUDE.md to HOST_SESSION_BUILD.md and from PLAN.md to PLAN.1.md.
   onboarding contract deliberately shaped like a container contract. That
   contract is why the Coolify pivot required no rework of the onboarding
   concept: a Coolify application IS the contract, enforced by software.
+
+## 2026-10-17: Research source-build qualification
+
+Add pinned Python/R source construction, bounded clean native builds, disabled
+candidate environments and two-project full-matrix qualification for issue 27.
+New study exports retain dependency/build specifications and separate lineage
+hashes while preserving exact historical browser-bundle verification/replay.
+Independent-human, second-machine and promotion gates remain explicit.
+
+Native ARM64 and AMD64 source construction and both 49-check fixture matrices
+pass with a hash-indexed acceptance record, preserved failures and immutable
+recipe/image candidate IDs. Historical replay passes; one earlier local Docker
+cleanup remains an explicit unresolved operator gate. All 136 controls pass.

@@ -1,0 +1,714 @@
+checking build system type... x86_64-pc-linux-gnu
+checking host system type... x86_64-pc-linux-gnu
+loading site script './config.site'
+loading build-specific script './config.site'
+checking for pwd... /usr/bin/pwd
+checking whether builddir is srcdir... yes
+checking whether ln -s works... yes
+checking for ar... ar
+checking for a BSD-compatible install... /usr/bin/install -c
+checking for sed... /usr/bin/sed
+checking for which... /usr/bin/which
+checking for less... no
+checking for more... /usr/bin/more
+checking for gtar... no
+checking for gnutar... no
+checking for tar... /usr/bin/tar
+checking for tex... no
+checking for pdftex... no
+configure: WARNING: you cannot build PDF versions of the R manuals
+checking for pdflatex... no
+configure: WARNING: you cannot build PDF versions of vignettes and help pages
+checking for makeindex... no
+checking for texi2any... no
+configure: WARNING: you cannot build info or HTML versions of the R manuals
+checking for texi2dvi... no
+checking for kpsewhich... no
+checking for latex inconsolata package... checking for unzip... no
+checking for zip... no
+checking for gzip... /usr/bin/gzip
+checking for bzip2... no
+checking for xdg-open... no
+checking for firefox... no
+checking for mozilla... no
+checking for epiphany... no
+checking for galeon... no
+checking for opera... no
+checking for kfmclient... no
+checking for gnome-moz-remote... no
+checking for open... no
+checking for lynx... no
+checking for links... no
+configure: WARNING: I could not determine a browser
+checking for xdg-open... no
+checking for acroread... no
+checking for acroread4... no
+checking for evince... no
+checking for atril... no
+checking for xpdf... no
+checking for gv... no
+checking for gnome-gv... no
+checking for ggv... no
+checking for okular... no
+checking for kpdf... no
+checking for open... no
+checking for gpdf... no
+checking for kghostview... no
+configure: WARNING: I could not determine a PDF viewer
+checking for working aclocal... missing
+checking for working autoconf... missing
+checking for working autoheader... missing
+checking for bison... no
+checking for byacc... no
+checking for yacc... no
+checking for notangle... false
+checking for realpath... /usr/bin/realpath
+checking for pkg-config... /usr/bin/pkg-config
+checking for gcc... gcc
+checking whether the C compiler works... yes
+checking for C compiler default output file name... a.out
+checking for suffix of executables... 
+checking whether we are cross compiling... no
+checking for suffix of object files... o
+checking whether the compiler supports GNU C... yes
+checking whether gcc accepts -g... yes
+checking for gcc option to enable C11 features... none needed
+checking for stdio.h... yes
+checking for stdlib.h... yes
+checking for string.h... yes
+checking for inttypes.h... yes
+checking for stdint.h... yes
+checking for strings.h... yes
+checking for sys/stat.h... yes
+checking for sys/types.h... yes
+checking for unistd.h... yes
+checking for wchar.h... yes
+checking for minix/config.h... no
+checking for sys/time.h... yes
+checking for sys/param.h... yes
+checking whether it is safe to define __EXTENSIONS__... yes
+checking whether _XOPEN_SOURCE should be defined... no
+checking whether gcc is a C23 compiler... no
+checking whether gcc -std=gnu23 is a C23 compiler... no
+checking whether gcc -std=gnu2x is a C23 compiler... no
+configure: WARNING: C23 support is unavailable
+checking how to run the C preprocessor... gcc -E
+looking for a modern Fortran compiler
+checking for gfortran... gfortran
+checking whether the compiler supports GNU Fortran... yes
+checking whether gfortran accepts -g... yes
+checking for g++... g++
+checking whether the compiler supports GNU C++... yes
+checking whether g++ accepts -g... yes
+checking for g++ option to enable C++11 features... none needed
+checking whether g++ -g -O2 can compile C++ code... yes
+checking how to run the C++ preprocessor... g++ -E
+checking whether __attribute__((visibility())) is supported... yes
+checking whether gcc accepts -fvisibility... yes
+checking whether g++ accepts -fvisibility... yes
+checking whether gfortran accepts -fvisibility... yes
+checking for gcc... gcc
+checking whether the compiler supports GNU Objective C... no
+checking whether gcc accepts -g... no
+checking whether gcc -std=gnu17 is a C17 compiler... yes
+checking whether gcc -std=gnu90 is a C90 compiler... yes
+checking whether gcc -std=gnu99 is a C99 compiler... yes
+checking how to print strings... printf
+checking for a sed that does not truncate output... (cached) /usr/bin/sed
+checking for grep that handles long lines and -e... /usr/bin/grep
+checking for egrep... /usr/bin/grep -E
+checking for fgrep... /usr/bin/grep -F
+checking for ld used by gcc... /usr/bin/ld
+checking if the linker (/usr/bin/ld) is GNU ld... yes
+checking for BSD- or MS-compatible name lister (nm)... /usr/bin/nm -B
+checking the name lister (/usr/bin/nm -B) interface... BSD nm
+checking the maximum length of command line arguments... 3145728
+checking how to convert x86_64-pc-linux-gnu file names to x86_64-pc-linux-gnu format... func_convert_file_noop
+checking how to convert x86_64-pc-linux-gnu file names to toolchain format... func_convert_file_noop
+checking for /usr/bin/ld option to reload object files... -r
+checking for objdump... objdump
+checking how to recognize dependent libraries... pass_all
+checking for dlltool... no
+checking how to associate runtime and link libraries... printf %s\n
+checking for archiver @FILE support... @
+checking for strip... strip
+checking for ranlib... ranlib
+checking for gawk... no
+checking for mawk... mawk
+checking command to parse /usr/bin/nm -B output from gcc object... ok
+checking for sysroot... no
+checking for a working dd... /usr/bin/dd
+checking how to truncate binary pipes... /usr/bin/dd bs=4096 count=1
+./configure: line 12766: /usr/bin/file: No such file or directory
+checking for mt... no
+checking if : is a manifest tool... no
+checking for dlfcn.h... yes
+checking for objdir... .libs
+checking if gcc supports -fno-rtti -fno-exceptions... no
+checking for gcc option to produce PIC... -fPIC -DPIC
+checking if gcc PIC flag -fPIC -DPIC works... yes
+checking if gcc static flag -static works... yes
+checking if gcc supports -c -o file.o... yes
+checking if gcc supports -c -o file.o... (cached) yes
+checking whether the gcc linker (/usr/bin/ld) supports shared libraries... yes
+checking whether -lc should be explicitly linked in... no
+checking dynamic linker characteristics... GNU/Linux ld.so
+checking how to hardcode library paths into programs... immediate
+checking whether stripping libraries is possible... yes
+checking if libtool supports shared libraries... yes
+checking whether to build shared libraries... yes
+checking whether to build static libraries... no
+checking how to run the C++ preprocessor... g++ -E
+checking for ld used by g++... /usr/bin/ld
+checking if the linker (/usr/bin/ld) is GNU ld... yes
+checking whether the g++ linker (/usr/bin/ld) supports shared libraries... yes
+checking for g++ option to produce PIC... -fPIC -DPIC
+checking if g++ PIC flag -fPIC -DPIC works... yes
+checking if g++ static flag -static works... yes
+checking if g++ supports -c -o file.o... yes
+checking if g++ supports -c -o file.o... (cached) yes
+checking whether the g++ linker (/usr/bin/ld) supports shared libraries... yes
+checking dynamic linker characteristics... (cached) GNU/Linux ld.so
+checking how to hardcode library paths into programs... immediate
+checking if libtool supports shared libraries... yes
+checking whether to build shared libraries... yes
+checking whether to build static libraries... no
+checking for gfortran option to produce PIC... -fPIC
+checking if gfortran PIC flag -fPIC works... yes
+checking if gfortran static flag -static works... yes
+checking if gfortran supports -c -o file.o... yes
+checking if gfortran supports -c -o file.o... (cached) yes
+checking whether the gfortran linker (/usr/bin/ld) supports shared libraries... yes
+checking dynamic linker characteristics... (cached) GNU/Linux ld.so
+checking how to hardcode library paths into programs... immediate
+checking for cos in -lm... yes
+checking for sin in -lm... yes
+checking for dlopen in -ldl... yes
+checking for dirent.h that defines DIR... yes
+checking for library containing opendir... none required
+checking for sys/wait.h that is POSIX.1 compatible... yes
+checking for dlfcn.h... (cached) yes
+checking for fcntl.h... yes
+checking for glob.h... yes
+checking for grp.h... yes
+checking for pwd.h... yes
+checking for sched.h... yes
+checking for strings.h... (cached) yes
+checking for sys/resource.h... yes
+checking for sys/select.h... yes
+checking for sys/socket.h... yes
+checking for sys/stat.h... (cached) yes
+checking for sys/time.h... (cached) yes
+checking for sys/times.h... yes
+checking for sys/utsname.h... yes
+checking for unistd.h... (cached) yes
+checking for utime.h... yes
+checking for arpa/inet.h... yes
+checking for elf.h... yes
+checking for features.h... yes
+checking for floatingpoint.h... no
+checking for langinfo.h... yes
+checking for netdb.h... yes
+checking for netinet/in.h... yes
+checking for sys/param.h... (cached) yes
+checking for stdalign.h... yes
+checking for errno.h... yes
+checking for inttypes.h... (cached) yes
+checking for limits.h... yes
+checking for locale.h... yes
+checking for stdarg.h... yes
+checking for stdbool.h... yes
+checking for stdint.h... (cached) yes
+checking for string.h... (cached) yes
+checking for gcc options needed to detect all undeclared functions... none needed
+checking whether setjmp.h is POSIX.1 compatible... yes
+checking whether sigsetjmp is declared... yes
+checking whether siglongjmp is declared... yes
+checking for egrep -e... (cached) /usr/bin/grep -E
+checking for GNU C library with version >= 2... yes
+checking for uint64_t... yes
+checking for int64_t... yes
+checking for int_fast64_t... yes
+checking for pid_t... yes
+checking for size_t... yes
+checking whether SIZE_MAX is declared... yes
+checking for blkcnt_t... yes
+checking for type of socket length... socklen_t *
+checking for stack_t... yes
+checking for intptr_t... yes
+checking for uintptr_t... yes
+checking whether byte ordering is bigendian... no
+checking for an ANSI C-conforming const... yes
+checking for inline... inline
+checking size of int... 4
+checking size of long... 8
+checking size of long long... 8
+checking size of double... 8
+checking size of size_t... 8
+checking for C stack direction... down
+checking size of long double... 16
+checking whether we can compute C Make dependencies... yes, using $(CC) -MM
+checking whether gcc supports -c -o FILE.lo... yes
+checking for gcc option to support OpenMP... -fopenmp
+checking how to get verbose linking output from gfortran... -v
+checking for Fortran libraries of gfortran...  -L/usr/local/lib -L/usr/lib/gcc/x86_64-linux-gnu/12 -L/usr/lib/gcc/x86_64-linux-gnu/12/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/12/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/12/../../.. -lgfortran -lm -lquadmath
+checking how to get verbose linking output from gcc... -v
+checking for C libraries of gcc...  -L/usr/local/lib -L/usr/lib/gcc/x86_64-linux-gnu/12 -L/usr/lib/gcc/x86_64-linux-gnu/12/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/12/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/12/../../.. -lgcc_s
+checking for dummy main to link with Fortran libraries... none
+checking for Fortran name-mangling scheme... lower case, underscore, no extra underscore
+checking whether gfortran appends underscores to external names... yes
+checking whether gfortran appends extra underscores to external names... no
+checking whether mixed C/Fortran code can be run... yes
+checking whether gfortran and gcc agree on int and double... yes
+checking whether gfortran and gcc agree on double complex... yes
+checking for gfortran option to support OpenMP... -fopenmp
+checking whether g++ accepts -M for generating dependencies... yes
+checking whether we can compute ObjC Make dependencies... no
+checking for type of 'hidden' Fortran character lengths... size_t
+checking for xmkmf... no
+checking whether g++  supports C++17 features with -std=gnu++17... yes
+checking whether g++  supports C++20 features with -std=gnu++20... yes
+checking whether g++  supports C++23 features with -std=gnu++23... yes
+checking whether g++  supports C++26 features with -std=gnu++26... no
+checking whether g++  supports C++26 features with -std=gnu++2... no
+checking whether g++  supports C++26 features with -std=c++26... no
+checking whether g++  supports C++26 features with +std=c++26... no
+checking whether g++  supports C++26 features with -std:c++26... no
+checking whether g++  supports C++26 features with -std=c++2... no
+checking whether g++  supports C++26 features with +std=c++2... no
+checking whether g++  supports C++26 features with -std:c++2... no
+checking whether g++  supports C++26 features by default... no
+configure: No compiler with C++26 support was found
+checking whether g++ -std=gnu++20 can compile ObjC++... no
+checking whether  can compile ObjC++... no
+checking for Objective C++ compiler... no working ObjC++ compiler found
+checking for g++ -std=gnu++20 option to support OpenMP... -fopenmp
+checking for option providing pthread_kill... none required
+checking whether POSIX threads are supported... yes
+checking for off_t... yes
+checking for working alloca.h... yes
+checking for alloca... yes
+checking whether alloca is declared... yes
+checking whether expm1 exists and is declared... yes
+checking whether hypot exists and is declared... yes
+checking whether log1p exists and is declared... yes
+checking whether log1pl exists and is declared... yes
+checking whether log2 exists and is declared... yes
+checking whether log10 exists and is declared... yes
+checking whether nearbyint exists and is declared... yes
+checking whether nearbyintl exists and is declared... yes
+checking whether powl exists and is declared... yes
+checking whether rintl exists and is declared... yes
+checking whether va_copy exists and is declared... yes
+checking for isblank... yes
+checking for sunmath.h... no
+checking for cospi in -lsunmath... no
+checking for atanpi... no
+checking for atan2pi... no
+checking for cospi... no
+checking for exp10... yes
+checking for pown... no
+checking for sinpi... no
+checking for tanpi... no
+checking for __cospi... no
+checking for __sinpi... no
+checking for __tanpi... no
+checking for fseeko... yes
+checking for ftello... yes
+checking whether fcntl exists and is declared... yes
+checking whether getgrgid exists and is declared... yes
+checking whether getpwnam exists and is declared... yes
+checking whether getpwuid exists and is declared... yes
+checking whether kill exists and is declared... yes
+checking whether sigaction exists and is declared... yes
+checking whether sigaltstack exists and is declared... yes
+checking whether sigemptyset exists and is declared... yes
+checking whether fdopen exists and is declared... yes
+checking whether popen exists and is declared... yes
+checking whether getline exists and is declared... yes
+checking whether select exists and is declared... yes
+checking whether setenv exists and is declared... yes
+checking whether unsetenv exists and is declared... yes
+checking whether getrlimit exists and is declared... yes
+checking whether setrlimit exists and is declared... yes
+checking whether getrusage exists and is declared... yes
+checking whether getpriority exists and is declared... yes
+checking whether chmod exists and is declared... yes
+checking whether mkfifo exists and is declared... yes
+checking whether stat exists and is declared... yes
+checking whether umask exists and is declared... yes
+checking whether gettimeofday exists and is declared... yes
+checking whether utimes exists and is declared... yes
+checking whether times exists and is declared... yes
+checking whether gmtime_r exists and is declared... yes
+checking whether localtime_r exists and is declared... yes
+checking whether nl_langinfo exists and is declared... yes
+checking whether access exists and is declared... yes
+checking whether chdir exists and is declared... yes
+checking whether execv exists and is declared... yes
+checking whether ftruncate exists and is declared... yes
+checking whether getcwd exists and is declared... yes
+checking whether geteuid exists and is declared... yes
+checking whether getuid exists and is declared... yes
+checking whether link exists and is declared... yes
+checking whether readlink exists and is declared... yes
+checking whether symlink exists and is declared... yes
+checking whether sysconf exists and is declared... yes
+checking whether sched_setaffinity exists and is declared... yes
+checking whether sched_getaffinity exists and is declared... yes
+checking whether utime exists and is declared... yes
+checking whether utimensat exists and is declared... yes
+checking for clock_gettime in -lrt... yes
+checking whether clock_gettime exists and is declared... yes
+checking whether timespec_get exists and is declared... yes
+checking for putenv... yes
+checking whether putenv is declared... yes
+checking for vasprintf... yes
+checking whether vasprintf is declared... yes
+checking for mempcpy... yes
+checking for realpath... yes
+checking whether realpath is declared... yes
+checking whether glob exists and is declared... yes
+checking for dladdr... yes
+checking for dlsym... yes
+checking whether dladdr is declared... yes
+checking whether dlsym is declared... yes
+checking whether RTLD_DEFAULT is declared... yes
+checking whether RTLD_NEXT is declared... yes
+checking for thread.h... no
+checking whether thr_stksegment exists and is declared... no
+checking for stpcpy... yes
+checking for isnan... yes
+checking whether isfinite is declared... yes
+checking whether isnan is declared... yes
+checking whether you have IEEE 754 floating-point arithmetic... yes
+checking whether putenv("FOO") can unset an environment variable... yes
+checking whether putenv("FOO=") can unset an environment variable... no
+checking for nl_langinfo and CODESET... yes
+checking for mkdtemp... yes
+checking for strdup... yes
+checking for strncasecmp... yes
+checking whether mkdtemp is declared... yes
+checking whether strdup is declared... yes
+checking whether strncasecmp is declared... yes
+checking for library containing connect... none required
+checking for library containing gethostbyname... none required
+checking for working calloc... yes
+checking for working isfinite... yes
+checking for working log1p... yes
+checking whether ftell works correctly on files opened for append... yes
+checking for working sigaction... yes
+checking whether the base type of an enum can be specified... no
+checking whether mktime, gmtime, localtime work correctly in 2020... yes
+checking whether mktime sets errno... yes
+checking whether mktime works correctly after 2037... yes
+checking whether mktime works correctly before 1902... yes
+checking whether mktime works correctly in 1969... yes
+checking for complex.h... yes
+checking for double complex... yes
+checking whether C99 double complex is supported... yes
+checking whether cabs exists and is declared... yes
+checking whether carg exists and is declared... yes
+checking whether cexp exists and is declared... yes
+checking whether clog exists and is declared... yes
+checking whether csqrt exists and is declared... yes
+checking whether cpow exists and is declared... yes
+checking whether ccos exists and is declared... yes
+checking whether csin exists and is declared... yes
+checking whether ctan exists and is declared... yes
+checking whether cacos exists and is declared... yes
+checking whether casin exists and is declared... yes
+checking whether catan exists and is declared... yes
+checking whether ccosh exists and is declared... yes
+checking whether csinh exists and is declared... yes
+checking whether ctanh exists and is declared... yes
+checking for working ctanh... yes
+checking whether 'struct tm' includes tm_zone... yes
+checking whether 'struct tm' includes tm_gmtoff... yes
+configure: using internal LAPACK sources
+checking for iconv.h... yes
+checking for iconv... yes
+checking whether iconv accepts "UTF-8", "latin1", "ASCII" and "UCS-*"... yes
+checking whether iconv accepts "CP1252"... yes
+checking for iconvlist... no
+checking for iconv... yes
+checking for iconv declaration... 
+         extern size_t iconv (iconv_t cd, char * *inbuf, size_t *inbytesleft, char * *outbuf, size_t *outbytesleft);
+checking for wchar.h... (cached) yes
+checking for wctype.h... yes
+checking whether mbrtowc exists and is declared... yes
+checking whether wcrtomb exists and is declared... yes
+checking whether wcscoll exists and is declared... yes
+checking whether wcsftime exists and is declared... yes
+checking whether wcstod exists and is declared... yes
+checking whether mbstowcs exists and is declared... yes
+checking whether wcstombs exists and is declared... yes
+checking whether wctrans exists and is declared... yes
+checking whether wctype exists and is declared... yes
+checking whether iswctype exists and is declared... yes
+checking whether wcwidth exists and is declared... yes
+checking whether wcswidth exists and is declared... yes
+checking for wctrans_t... yes
+checking for mbstate_t... yes
+checking for ICU... no
+checking for X... disabled
+using X11 ... no
+checking whether pkg-config knows about cairo and pango... no
+checking whether pkg-config knows about cairo... no
+checking for BSD networking... yes
+checking for rpc/types.h... no
+checking for tirpc/rpc/types.h... yes
+checking for tirpc/rpc/xdr.h... yes
+checking for XDR library... -ltirpc
+checking for XDR support... yes
+checking for inflateInit2_ in -lz... yes
+checking for zlib.h... yes
+checking if zlib version >= 1.2.5... yes
+checking whether zlib support suffices... yes
+checking for BZ2_bzlibVersion in -lbz2... yes
+checking for bzlib.h... yes
+checking if bzip2 version >= 1.0.6... yes
+checking whether bzip2 support suffices... yes
+checking for lzma_version_number in -llzma... yes
+checking for lzma.h... yes
+checking if lzma version >= 5.0.3... yes
+checking for ZSTD_versionNumber in -lzstd... yes
+checking for zstd.h... yes
+checking if zstd version >= 1.3.3... yes
+checking for ZSTD_decompressBound... yes
+checking for libdeflate.h... yes
+checking for libdeflate_alloc_compressor in -ldeflate... yes
+yes
+checking for pcre2.h... yes
+checking for pcre2_compile_8 in -lpcre2-8... yes
+checking if PCRE2 has Unicode support... yes
+checking whether PCRE support suffices... yes
+checking for curl-config... /usr/bin/curl-config
+checking libcurl version ... 7.88.1
+checking for curl/curl.h... yes
+checking if libcurl is >= 7.28.0... yes
+checking if libcurl supports https... yes
+checking if pkg-config knows about libjpeg... no: run 'pkg-config --print-errors libjpeg' for further info
+checking if jpeglib version >= 6b... no
+checking if pkg-config knows about libpng... no: run 'pkg-config --print-errors libpng' for further info
+checking if pkg-config knows about libtiff... no: run 'pkg-config --print-errors libtiff-4' for further info
+checking whether leap seconds are treated according to POSIX... yes
+checking for inline... inline
+checking for struct stat.st_atim.tv_nsec... yes
+checking whether struct stat.st_atim is of type struct timespec... yes
+checking for setitimer... yes
+checking for gcc option to enable large file support... none needed
+checking for declarations of fseeko and ftello... yes
+checking whether KERN_USRSTACK sysctl is supported... no
+checking for visible __lib_stack_end... yes
+checking for lpr... no
+checking for lp... no
+checking for paperconf... false
+checking for Fortran flag to compile .f90 files... none
+checking for Fortran flag to compile .f95 files... none
+checking for gfortran option to support OpenMP... (cached) -fopenmp
+checking whether NLS is requested... yes
+
+Configuring src/extra/intl directory
+checking for a race-free mkdir -p... /usr/bin/mkdir -p
+checking whether we are using the GNU C Library 2 or newer... yes
+checking for ranlib... (cached) ranlib
+checking for simple visibility declarations... yes
+checking for stdint.h... yes
+checking for getpagesize... yes
+checking for working mmap... yes
+checking whether integer division by zero raises SIGFPE... no
+checking for inttypes.h... yes
+checking for unsigned long long int... yes
+checking for inttypes.h... (cached) yes
+checking whether the inttypes.h PRIxNN macros are broken... no
+checking for ld used by gcc... /usr/bin/ld
+checking if the linker (/usr/bin/ld) is GNU ld... yes
+checking for shared library run path origin... done
+checking whether imported symbols can be declared weak... yes
+checking for multithread API to use... none
+checking for argz.h... yes
+checking for inttypes.h... (cached) yes
+checking for limits.h... (cached) yes
+checking for unistd.h... (cached) yes
+checking for sys/param.h... (cached) yes
+checking for getcwd... yes
+checking for getegid... yes
+checking for geteuid... yes
+checking for getgid... yes
+checking for getuid... yes
+checking for mempcpy... (cached) yes
+checking for munmap... yes
+checking for stpcpy... (cached) yes
+checking for strcasecmp... yes
+checking for strdup... (cached) yes
+checking for strtoul... yes
+checking for tsearch... yes
+checking for argz_count... yes
+checking for argz_stringify... yes
+checking for argz_next... yes
+checking for __fsetlocking... yes
+checking whether feof_unlocked is declared... yes
+checking whether fgets_unlocked is declared... yes
+checking for iconv... (cached) yes
+checking for iconv declaration... (cached) 
+         extern size_t iconv (iconv_t cd, char * *inbuf, size_t *inbytesleft, char * *outbuf, size_t *outbytesleft);
+checking for NL_LOCALE_NAME macro... yes
+checking for bison... no
+checking for long long int... yes
+checking for long double... yes
+checking for wchar_t... yes
+checking for wint_t... yes
+checking for intmax_t... yes
+checking whether printf() supports POSIX/XSI format strings... yes
+checking whether we are using the GNU C Library 2.1 or newer... yes
+checking for stdint.h... (cached) yes
+checking for SIZE_MAX... yes
+checking for stdint.h... (cached) yes
+checking for CFPreferencesCopyAppValue... no
+checking for CFLocaleCopyCurrent... no
+checking for ptrdiff_t... yes
+checking for stddef.h... yes
+checking for stdlib.h... (cached) yes
+checking for string.h... (cached) yes
+checking for asprintf... yes
+checking for fwprintf... yes
+checking for putenv... (cached) yes
+checking for setenv... yes
+checking for setlocale... yes
+checking for snprintf... yes
+checking for wcslen... yes
+checking whether _snprintf is declared... no
+checking whether _snwprintf is declared... no
+checking whether getc_unlocked is declared... yes
+checking for nl_langinfo and CODESET... (cached) yes
+checking for LC_MESSAGES... yes
+checking for CFPreferencesCopyAppValue... (cached) no
+checking for CFLocaleCopyCurrent... (cached) no
+checking whether included gettext is requested... no
+checking for GNU gettext in libc... yes
+checking whether to use NLS... yes
+checking where the gettext function comes from... libc
+Finished configuring src/extra/intl directory
+
+checking whether OpenMP SIMD reduction is supported... yes
+using as R_SHELL for scripts ... /bin/bash
+configure: creating ./config.status
+config.status: creating Makeconf
+config.status: creating Makefile
+config.status: creating doc/Makefile
+config.status: creating doc/html/Makefile
+config.status: creating doc/manual/Makefile
+config.status: creating etc/Makefile
+config.status: creating etc/Makeconf
+config.status: creating etc/Renviron
+config.status: creating etc/javaconf
+config.status: creating etc/ldpaths
+config.status: creating m4/Makefile
+config.status: creating po/Makefile
+config.status: creating share/Makefile
+config.status: creating src/Makefile
+config.status: creating src/appl/Makefile
+config.status: creating src/extra/Makefile
+config.status: creating src/extra/blas/Makefile
+config.status: creating src/extra/intl/Makefile
+config.status: creating src/extra/tre/Makefile
+config.status: creating src/extra/tzone/Makefile
+config.status: creating src/extra/xdr/Makefile
+config.status: creating src/include/Makefile
+config.status: creating src/include/Rmath.h0
+config.status: creating src/include/R_ext/Makefile
+config.status: creating src/library/Recommended/Makefile
+config.status: creating src/library/Makefile
+config.status: creating src/library/base/DESCRIPTION
+config.status: creating src/library/base/Makefile
+config.status: creating src/library/compiler/DESCRIPTION
+config.status: creating src/library/compiler/Makefile
+config.status: creating src/library/datasets/DESCRIPTION
+config.status: creating src/library/datasets/Makefile
+config.status: creating src/library/graphics/DESCRIPTION
+config.status: creating src/library/graphics/Makefile
+config.status: creating src/library/graphics/src/Makefile
+config.status: creating src/library/grDevices/DESCRIPTION
+config.status: creating src/library/grDevices/Makefile
+config.status: creating src/library/grDevices/src/Makefile
+config.status: creating src/library/grDevices/src/cairo/Makefile
+config.status: creating src/library/grid/DESCRIPTION
+config.status: creating src/library/grid/Makefile
+config.status: creating src/library/grid/src/Makefile
+config.status: creating src/library/methods/DESCRIPTION
+config.status: creating src/library/methods/Makefile
+config.status: creating src/library/methods/src/Makefile
+config.status: creating src/library/parallel/DESCRIPTION
+config.status: creating src/library/parallel/Makefile
+config.status: creating src/library/parallel/src/Makefile
+config.status: creating src/library/profile/Makefile
+config.status: creating src/library/stats/DESCRIPTION
+config.status: creating src/library/stats/Makefile
+config.status: creating src/library/stats/src/Makefile
+config.status: creating src/library/stats4/DESCRIPTION
+config.status: creating src/library/stats4/Makefile
+config.status: creating src/library/splines/DESCRIPTION
+config.status: creating src/library/splines/Makefile
+config.status: creating src/library/splines/src/Makefile
+config.status: creating src/library/tcltk/DESCRIPTION
+config.status: creating src/library/tcltk/Makefile
+config.status: creating src/library/tcltk/src/Makefile
+config.status: creating src/library/tools/DESCRIPTION
+config.status: creating src/library/tools/Makefile
+config.status: creating src/library/tools/src/Makefile
+config.status: creating src/library/translations/DESCRIPTION
+config.status: creating src/library/translations/Makefile
+config.status: creating src/library/utils/DESCRIPTION
+config.status: creating src/library/utils/Makefile
+config.status: creating src/library/utils/src/Makefile
+config.status: creating src/main/Makefile
+config.status: creating src/modules/Makefile
+config.status: creating src/modules/X11/Makefile
+config.status: creating src/modules/internet/Makefile
+config.status: creating src/modules/lapack/Makefile
+config.status: creating src/nmath/Makefile
+config.status: creating src/nmath/standalone/Makefile
+config.status: creating src/scripts/Makefile
+config.status: creating src/scripts/R.sh
+config.status: creating src/scripts/Rcmd
+config.status: creating src/scripts/javareconf
+config.status: creating src/scripts/mkinstalldirs
+config.status: creating src/scripts/pager
+config.status: creating src/scripts/rtags
+config.status: creating src/unix/Makefile
+config.status: creating tests/Makefile
+config.status: creating tests/Embedding/Makefile
+config.status: creating tests/Examples/Makefile
+config.status: creating tools/Makefile
+config.status: creating src/include/config.h
+config.status: executing libtool commands
+config.status: executing stamp-h commands
+
+R is now configured for x86_64-pc-linux-gnu
+
+  Source directory:            .
+  Installation directory:      /usr/local
+
+  C compiler:                  gcc  -g -O2
+  Fortran fixed-form compiler: gfortran  -g -O2
+
+  Default C++ compiler:        g++ -std=gnu++20  -g -O2
+  Fortran free-form compiler:  gfortran  -g -O2
+  Obj-C compiler:	        
+
+  Interfaces supported:        
+  External libraries:          pcre2, curl, libdeflate
+  Additional capabilities:     NLS
+  Options enabled:             shared BLAS, R profiling, libdeflate for lazyload
+
+  Capabilities skipped:        PNG, JPEG, TIFF, cairo, ICU
+  Options not enabled:         memory profiling
+
+  Recommended packages:        no
+
+configure: WARNING: you cannot build info or HTML versions of the R manuals
+configure: WARNING: you cannot build PDF versions of the R manuals
+configure: WARNING: you cannot build PDF versions of vignettes and help pages
+configure: WARNING: I could not determine a browser
+configure: WARNING: I could not determine a PDF viewer

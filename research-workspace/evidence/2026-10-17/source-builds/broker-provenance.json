@@ -1,0 +1,16 @@
+{
+  "source_repository": "https://github.com/EduCloud-Ecosystem/outfitter",
+  "source_revision": "5827c84e9952cc67b85e91ceff4282e0ead6923b",
+  "source_archive_sha256": "8a47a2428a1626cdb7c4e1388dd524c25863c2dde335bd960d1cacef2cbc0ca8",
+  "binary_sha256": "1e3ac23eba26b30434a8fe41f3d735ea4d939eb4ab6316703eef524495be1100",
+  "build_command": [
+    "go",
+    "build",
+    "-trimpath",
+    "-o",
+    "../outfitter",
+    "./cmd/outfitter"
+  ],
+  "go_version": "go1.26.4",
+  "platform": "darwin/arm64"
+}

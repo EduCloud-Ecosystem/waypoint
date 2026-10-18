@@ -4,3 +4,6 @@
 # Dockerfiles and shell scripts must stay LF regardless of detection.
 *.Dockerfile text eol=lf
 *.sh text eol=lf
+
+# Preserve raw source-build evidence bytes, including terminal carriage returns.
+research-workspace/evidence/2026-10-17/source-builds/**/*.log -text -diff -whitespace linguist-generated=true
