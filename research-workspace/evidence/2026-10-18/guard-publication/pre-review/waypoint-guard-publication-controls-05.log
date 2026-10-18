@@ -1,0 +1,1020 @@
+test_business_commit_and_close_failures_never_clear_uncertainty (test_guard_publication.GuardPublicationTests.test_business_commit_and_close_failures_never_clear_uncertainty) ... ERROR
+test_cached_current_rechecks_other_process_failed_scratch (test_guard_publication.GuardPublicationTests.test_cached_current_rechecks_other_process_failed_scratch) ... ERROR
+test_concurrent_processes_serialize_fixed_safety_path (test_guard_publication.GuardPublicationTests.test_concurrent_processes_serialize_fixed_safety_path) ... ERROR
+test_exact_profile_and_policy_digest (test_guard_publication.GuardPublicationTests.test_exact_profile_and_policy_digest) ... ERROR
+test_export_authorization_and_reader_controls_on_new_profile (test_guard_publication.GuardPublicationTests.test_export_authorization_and_reader_controls_on_new_profile) ... ERROR
+test_failed_bootstrap_cannot_be_adopted (test_guard_publication.GuardPublicationTests.test_failed_bootstrap_cannot_be_adopted) ... ERROR
+test_file_sync_write_close_and_rename_failures_preserve_exact_slot (test_guard_publication.GuardPublicationTests.test_file_sync_write_close_and_rename_failures_preserve_exact_slot) ... ERROR
+test_fresh_process_qualifies_effect_after_lost_parent_sync_without_forgiving_it (test_guard_publication.GuardPublicationTests.test_fresh_process_qualifies_effect_after_lost_parent_sync_without_forgiving_it) ... ERROR
+test_full_named_payload_family_and_exact_fit (test_guard_publication.GuardPublicationTests.test_full_named_payload_family_and_exact_fit) ... ERROR
+test_full_ordinary_intent_allowance_retains_fresh_safety_path (test_guard_publication.GuardPublicationTests.test_full_ordinary_intent_allowance_retains_fresh_safety_path) ... ERROR
+test_http_logout_exhaustion_reports_failure_and_keeps_session (test_guard_publication.GuardPublicationTests.test_http_logout_exhaustion_reports_failure_and_keeps_session) ... ERROR
+test_lock_close_failure_preserves_original_and_holds_safety (test_guard_publication.GuardPublicationTests.test_lock_close_failure_preserves_original_and_holds_safety) ... ERROR
+test_missing_receipt_refuses_safety_even_with_empty_slot (test_guard_publication.GuardPublicationTests.test_missing_receipt_refuses_safety_even_with_empty_slot) ... ERROR
+test_mutually_exclusive_cli_profiles (test_guard_publication.GuardPublicationTests.test_mutually_exclusive_cli_profiles) ... ERROR
+test_namespace_types_are_never_adopted_or_removed (test_guard_publication.GuardPublicationTests.test_namespace_types_are_never_adopted_or_removed) ... ERROR
+test_new_worker_start_propagates_failed_recovery (test_guard_publication.GuardPublicationTests.test_new_worker_start_propagates_failed_recovery) ... ERROR
+test_no_borrow_after_unresolved_essential_with_empty_scratch (test_guard_publication.GuardPublicationTests.test_no_borrow_after_unresolved_essential_with_empty_scratch) ... ERROR
+test_one_byte_overflow_precedes_scratch_and_business_effects (test_guard_publication.GuardPublicationTests.test_one_byte_overflow_precedes_scratch_and_business_effects) ... ERROR
+test_ordinary_worker_error_does_not_touch_an_active_safety_intent (test_guard_publication.GuardPublicationTests.test_ordinary_worker_error_does_not_touch_an_active_safety_intent) ... ERROR
+test_postrename_failure_is_not_success_or_permission_from_absence (test_guard_publication.GuardPublicationTests.test_postrename_failure_is_not_success_or_permission_from_absence) ... ERROR
+test_process_death_retains_candidate_without_adoption (test_guard_publication.GuardPublicationTests.test_process_death_retains_candidate_without_adoption) ... ERROR
+test_receipt_outcomes_are_not_cached (test_guard_publication.GuardPublicationTests.test_receipt_outcomes_are_not_cached) ... ERROR
+test_released_tokens_cannot_authorize_another_effect (test_guard_publication.GuardPublicationTests.test_released_tokens_cannot_authorize_another_effect) ... ERROR
+test_required_failure_note_preserves_original_error_and_role (test_guard_publication.GuardPublicationTests.test_required_failure_note_preserves_original_error_and_role) ... ERROR
+test_safety_matrix_preserves_residue_and_refuses_exhaustion (test_guard_publication.GuardPublicationTests.test_safety_matrix_preserves_residue_and_refuses_exhaustion) ... ERROR
+test_short_writes_complete_one_candidate (test_guard_publication.GuardPublicationTests.test_short_writes_complete_one_candidate) ... ERROR
+test_started_receipt_acknowledgement_failure_preserves_debt (test_guard_publication.GuardPublicationTests.test_started_receipt_acknowledgement_failure_preserves_debt) ... ERROR
+test_takeover_precedes_business_transaction (test_guard_publication.GuardPublicationTests.test_takeover_precedes_business_transaction) ... ERROR
+test_worker_run_and_settlement_errors_keep_their_origins (test_guard_publication.GuardPublicationTests.test_worker_run_and_settlement_errors_keep_their_origins) ... ERROR
+
+======================================================================
+ERROR: test_business_commit_and_close_failures_never_clear_uncertainty (test_guard_publication.GuardPublicationTests.test_business_commit_and_close_failures_never_clear_uncertainty)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/tests/test_guard_publication.py", line 34, in setUp
+    self.store = Store(self.root, create=True, guarded=True, config=self.config, subject="alice")
+                 ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/store.py", line 118, in __init__
+    self.guard = Guard.create(self.root, self._connect, finite_profile=self.finite,
+                 ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                              profile_version=self.profile_version or 1)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 137, in create
+    with guard.locked():
+         ~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/contextlib.py", line 148, in __exit__
+    next(self.gen)
+    ~~~~^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 174, in locked
+    if (current.st_dev, current.st_ino, current.st_nlink, current.st_size) != (original.st_dev, original.st_ino, 1, 0):
+                                                                               ^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'st_dev'
+
+======================================================================
+ERROR: test_cached_current_rechecks_other_process_failed_scratch (test_guard_publication.GuardPublicationTests.test_cached_current_rechecks_other_process_failed_scratch)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/tests/test_guard_publication.py", line 34, in setUp
+    self.store = Store(self.root, create=True, guarded=True, config=self.config, subject="alice")
+                 ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/store.py", line 118, in __init__
+    self.guard = Guard.create(self.root, self._connect, finite_profile=self.finite,
+                 ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                              profile_version=self.profile_version or 1)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 137, in create
+    with guard.locked():
+         ~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/contextlib.py", line 148, in __exit__
+    next(self.gen)
+    ~~~~^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 174, in locked
+    if (current.st_dev, current.st_ino, current.st_nlink, current.st_size) != (original.st_dev, original.st_ino, 1, 0):
+                                                                               ^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'st_dev'
+
+======================================================================
+ERROR: test_concurrent_processes_serialize_fixed_safety_path (test_guard_publication.GuardPublicationTests.test_concurrent_processes_serialize_fixed_safety_path)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/tests/test_guard_publication.py", line 34, in setUp
+    self.store = Store(self.root, create=True, guarded=True, config=self.config, subject="alice")
+                 ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/store.py", line 118, in __init__
+    self.guard = Guard.create(self.root, self._connect, finite_profile=self.finite,
+                 ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                              profile_version=self.profile_version or 1)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 137, in create
+    with guard.locked():
+         ~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/contextlib.py", line 148, in __exit__
+    next(self.gen)
+    ~~~~^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 174, in locked
+    if (current.st_dev, current.st_ino, current.st_nlink, current.st_size) != (original.st_dev, original.st_ino, 1, 0):
+                                                                               ^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'st_dev'
+
+======================================================================
+ERROR: test_exact_profile_and_policy_digest (test_guard_publication.GuardPublicationTests.test_exact_profile_and_policy_digest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/tests/test_guard_publication.py", line 34, in setUp
+    self.store = Store(self.root, create=True, guarded=True, config=self.config, subject="alice")
+                 ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/store.py", line 118, in __init__
+    self.guard = Guard.create(self.root, self._connect, finite_profile=self.finite,
+                 ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                              profile_version=self.profile_version or 1)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 137, in create
+    with guard.locked():
+         ~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/contextlib.py", line 148, in __exit__
+    next(self.gen)
+    ~~~~^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 174, in locked
+    if (current.st_dev, current.st_ino, current.st_nlink, current.st_size) != (original.st_dev, original.st_ino, 1, 0):
+                                                                               ^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'st_dev'
+
+======================================================================
+ERROR: test_export_authorization_and_reader_controls_on_new_profile (test_guard_publication.GuardPublicationTests.test_export_authorization_and_reader_controls_on_new_profile)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/tests/test_guard_publication.py", line 34, in setUp
+    self.store = Store(self.root, create=True, guarded=True, config=self.config, subject="alice")
+                 ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/store.py", line 118, in __init__
+    self.guard = Guard.create(self.root, self._connect, finite_profile=self.finite,
+                 ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                              profile_version=self.profile_version or 1)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 137, in create
+    with guard.locked():
+         ~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/contextlib.py", line 148, in __exit__
+    next(self.gen)
+    ~~~~^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 174, in locked
+    if (current.st_dev, current.st_ino, current.st_nlink, current.st_size) != (original.st_dev, original.st_ino, 1, 0):
+                                                                               ^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'st_dev'
+
+======================================================================
+ERROR: test_failed_bootstrap_cannot_be_adopted (test_guard_publication.GuardPublicationTests.test_failed_bootstrap_cannot_be_adopted)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/tests/test_guard_publication.py", line 34, in setUp
+    self.store = Store(self.root, create=True, guarded=True, config=self.config, subject="alice")
+                 ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/store.py", line 118, in __init__
+    self.guard = Guard.create(self.root, self._connect, finite_profile=self.finite,
+                 ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                              profile_version=self.profile_version or 1)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 137, in create
+    with guard.locked():
+         ~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/contextlib.py", line 148, in __exit__
+    next(self.gen)
+    ~~~~^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 174, in locked
+    if (current.st_dev, current.st_ino, current.st_nlink, current.st_size) != (original.st_dev, original.st_ino, 1, 0):
+                                                                               ^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'st_dev'
+
+======================================================================
+ERROR: test_file_sync_write_close_and_rename_failures_preserve_exact_slot (test_guard_publication.GuardPublicationTests.test_file_sync_write_close_and_rename_failures_preserve_exact_slot)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/tests/test_guard_publication.py", line 34, in setUp
+    self.store = Store(self.root, create=True, guarded=True, config=self.config, subject="alice")
+                 ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/store.py", line 118, in __init__
+    self.guard = Guard.create(self.root, self._connect, finite_profile=self.finite,
+                 ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                              profile_version=self.profile_version or 1)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 137, in create
+    with guard.locked():
+         ~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/contextlib.py", line 148, in __exit__
+    next(self.gen)
+    ~~~~^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 174, in locked
+    if (current.st_dev, current.st_ino, current.st_nlink, current.st_size) != (original.st_dev, original.st_ino, 1, 0):
+                                                                               ^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'st_dev'
+
+======================================================================
+ERROR: test_fresh_process_qualifies_effect_after_lost_parent_sync_without_forgiving_it (test_guard_publication.GuardPublicationTests.test_fresh_process_qualifies_effect_after_lost_parent_sync_without_forgiving_it)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/tests/test_guard_publication.py", line 34, in setUp
+    self.store = Store(self.root, create=True, guarded=True, config=self.config, subject="alice")
+                 ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/store.py", line 118, in __init__
+    self.guard = Guard.create(self.root, self._connect, finite_profile=self.finite,
+                 ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                              profile_version=self.profile_version or 1)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 137, in create
+    with guard.locked():
+         ~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/contextlib.py", line 148, in __exit__
+    next(self.gen)
+    ~~~~^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 174, in locked
+    if (current.st_dev, current.st_ino, current.st_nlink, current.st_size) != (original.st_dev, original.st_ino, 1, 0):
+                                                                               ^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'st_dev'
+
+======================================================================
+ERROR: test_full_named_payload_family_and_exact_fit (test_guard_publication.GuardPublicationTests.test_full_named_payload_family_and_exact_fit)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/tests/test_guard_publication.py", line 34, in setUp
+    self.store = Store(self.root, create=True, guarded=True, config=self.config, subject="alice")
+                 ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/store.py", line 118, in __init__
+    self.guard = Guard.create(self.root, self._connect, finite_profile=self.finite,
+                 ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                              profile_version=self.profile_version or 1)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 137, in create
+    with guard.locked():
+         ~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/contextlib.py", line 148, in __exit__
+    next(self.gen)
+    ~~~~^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 174, in locked
+    if (current.st_dev, current.st_ino, current.st_nlink, current.st_size) != (original.st_dev, original.st_ino, 1, 0):
+                                                                               ^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'st_dev'
+
+======================================================================
+ERROR: test_full_ordinary_intent_allowance_retains_fresh_safety_path (test_guard_publication.GuardPublicationTests.test_full_ordinary_intent_allowance_retains_fresh_safety_path)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/tests/test_guard_publication.py", line 34, in setUp
+    self.store = Store(self.root, create=True, guarded=True, config=self.config, subject="alice")
+                 ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/store.py", line 118, in __init__
+    self.guard = Guard.create(self.root, self._connect, finite_profile=self.finite,
+                 ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                              profile_version=self.profile_version or 1)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 137, in create
+    with guard.locked():
+         ~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/contextlib.py", line 148, in __exit__
+    next(self.gen)
+    ~~~~^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 174, in locked
+    if (current.st_dev, current.st_ino, current.st_nlink, current.st_size) != (original.st_dev, original.st_ino, 1, 0):
+                                                                               ^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'st_dev'
+
+======================================================================
+ERROR: test_http_logout_exhaustion_reports_failure_and_keeps_session (test_guard_publication.GuardPublicationTests.test_http_logout_exhaustion_reports_failure_and_keeps_session)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/tests/test_guard_publication.py", line 34, in setUp
+    self.store = Store(self.root, create=True, guarded=True, config=self.config, subject="alice")
+                 ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/store.py", line 118, in __init__
+    self.guard = Guard.create(self.root, self._connect, finite_profile=self.finite,
+                 ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                              profile_version=self.profile_version or 1)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 137, in create
+    with guard.locked():
+         ~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/contextlib.py", line 148, in __exit__
+    next(self.gen)
+    ~~~~^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 174, in locked
+    if (current.st_dev, current.st_ino, current.st_nlink, current.st_size) != (original.st_dev, original.st_ino, 1, 0):
+                                                                               ^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'st_dev'
+
+======================================================================
+ERROR: test_lock_close_failure_preserves_original_and_holds_safety (test_guard_publication.GuardPublicationTests.test_lock_close_failure_preserves_original_and_holds_safety)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/tests/test_guard_publication.py", line 34, in setUp
+    self.store = Store(self.root, create=True, guarded=True, config=self.config, subject="alice")
+                 ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/store.py", line 118, in __init__
+    self.guard = Guard.create(self.root, self._connect, finite_profile=self.finite,
+                 ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                              profile_version=self.profile_version or 1)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 137, in create
+    with guard.locked():
+         ~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/contextlib.py", line 148, in __exit__
+    next(self.gen)
+    ~~~~^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 174, in locked
+    if (current.st_dev, current.st_ino, current.st_nlink, current.st_size) != (original.st_dev, original.st_ino, 1, 0):
+                                                                               ^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'st_dev'
+
+======================================================================
+ERROR: test_missing_receipt_refuses_safety_even_with_empty_slot (test_guard_publication.GuardPublicationTests.test_missing_receipt_refuses_safety_even_with_empty_slot)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/tests/test_guard_publication.py", line 34, in setUp
+    self.store = Store(self.root, create=True, guarded=True, config=self.config, subject="alice")
+                 ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/store.py", line 118, in __init__
+    self.guard = Guard.create(self.root, self._connect, finite_profile=self.finite,
+                 ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                              profile_version=self.profile_version or 1)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 137, in create
+    with guard.locked():
+         ~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/contextlib.py", line 148, in __exit__
+    next(self.gen)
+    ~~~~^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 174, in locked
+    if (current.st_dev, current.st_ino, current.st_nlink, current.st_size) != (original.st_dev, original.st_ino, 1, 0):
+                                                                               ^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'st_dev'
+
+======================================================================
+ERROR: test_mutually_exclusive_cli_profiles (test_guard_publication.GuardPublicationTests.test_mutually_exclusive_cli_profiles)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/tests/test_guard_publication.py", line 34, in setUp
+    self.store = Store(self.root, create=True, guarded=True, config=self.config, subject="alice")
+                 ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/store.py", line 118, in __init__
+    self.guard = Guard.create(self.root, self._connect, finite_profile=self.finite,
+                 ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                              profile_version=self.profile_version or 1)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 137, in create
+    with guard.locked():
+         ~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/contextlib.py", line 148, in __exit__
+    next(self.gen)
+    ~~~~^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 174, in locked
+    if (current.st_dev, current.st_ino, current.st_nlink, current.st_size) != (original.st_dev, original.st_ino, 1, 0):
+                                                                               ^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'st_dev'
+
+======================================================================
+ERROR: test_namespace_types_are_never_adopted_or_removed (test_guard_publication.GuardPublicationTests.test_namespace_types_are_never_adopted_or_removed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/tests/test_guard_publication.py", line 34, in setUp
+    self.store = Store(self.root, create=True, guarded=True, config=self.config, subject="alice")
+                 ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/store.py", line 118, in __init__
+    self.guard = Guard.create(self.root, self._connect, finite_profile=self.finite,
+                 ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                              profile_version=self.profile_version or 1)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 137, in create
+    with guard.locked():
+         ~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/contextlib.py", line 148, in __exit__
+    next(self.gen)
+    ~~~~^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 174, in locked
+    if (current.st_dev, current.st_ino, current.st_nlink, current.st_size) != (original.st_dev, original.st_ino, 1, 0):
+                                                                               ^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'st_dev'
+
+======================================================================
+ERROR: test_new_worker_start_propagates_failed_recovery (test_guard_publication.GuardPublicationTests.test_new_worker_start_propagates_failed_recovery)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/tests/test_guard_publication.py", line 34, in setUp
+    self.store = Store(self.root, create=True, guarded=True, config=self.config, subject="alice")
+                 ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/store.py", line 118, in __init__
+    self.guard = Guard.create(self.root, self._connect, finite_profile=self.finite,
+                 ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                              profile_version=self.profile_version or 1)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 137, in create
+    with guard.locked():
+         ~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/contextlib.py", line 148, in __exit__
+    next(self.gen)
+    ~~~~^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 174, in locked
+    if (current.st_dev, current.st_ino, current.st_nlink, current.st_size) != (original.st_dev, original.st_ino, 1, 0):
+                                                                               ^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'st_dev'
+
+======================================================================
+ERROR: test_no_borrow_after_unresolved_essential_with_empty_scratch (test_guard_publication.GuardPublicationTests.test_no_borrow_after_unresolved_essential_with_empty_scratch)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/tests/test_guard_publication.py", line 34, in setUp
+    self.store = Store(self.root, create=True, guarded=True, config=self.config, subject="alice")
+                 ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/store.py", line 118, in __init__
+    self.guard = Guard.create(self.root, self._connect, finite_profile=self.finite,
+                 ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                              profile_version=self.profile_version or 1)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 137, in create
+    with guard.locked():
+         ~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/contextlib.py", line 148, in __exit__
+    next(self.gen)
+    ~~~~^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 174, in locked
+    if (current.st_dev, current.st_ino, current.st_nlink, current.st_size) != (original.st_dev, original.st_ino, 1, 0):
+                                                                               ^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'st_dev'
+
+======================================================================
+ERROR: test_one_byte_overflow_precedes_scratch_and_business_effects (test_guard_publication.GuardPublicationTests.test_one_byte_overflow_precedes_scratch_and_business_effects)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/tests/test_guard_publication.py", line 34, in setUp
+    self.store = Store(self.root, create=True, guarded=True, config=self.config, subject="alice")
+                 ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/store.py", line 118, in __init__
+    self.guard = Guard.create(self.root, self._connect, finite_profile=self.finite,
+                 ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                              profile_version=self.profile_version or 1)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 137, in create
+    with guard.locked():
+         ~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/contextlib.py", line 148, in __exit__
+    next(self.gen)
+    ~~~~^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 174, in locked
+    if (current.st_dev, current.st_ino, current.st_nlink, current.st_size) != (original.st_dev, original.st_ino, 1, 0):
+                                                                               ^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'st_dev'
+
+======================================================================
+ERROR: test_ordinary_worker_error_does_not_touch_an_active_safety_intent (test_guard_publication.GuardPublicationTests.test_ordinary_worker_error_does_not_touch_an_active_safety_intent)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/tests/test_guard_publication.py", line 34, in setUp
+    self.store = Store(self.root, create=True, guarded=True, config=self.config, subject="alice")
+                 ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/store.py", line 118, in __init__
+    self.guard = Guard.create(self.root, self._connect, finite_profile=self.finite,
+                 ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                              profile_version=self.profile_version or 1)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 137, in create
+    with guard.locked():
+         ~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/contextlib.py", line 148, in __exit__
+    next(self.gen)
+    ~~~~^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 174, in locked
+    if (current.st_dev, current.st_ino, current.st_nlink, current.st_size) != (original.st_dev, original.st_ino, 1, 0):
+                                                                               ^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'st_dev'
+
+======================================================================
+ERROR: test_postrename_failure_is_not_success_or_permission_from_absence (test_guard_publication.GuardPublicationTests.test_postrename_failure_is_not_success_or_permission_from_absence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/tests/test_guard_publication.py", line 34, in setUp
+    self.store = Store(self.root, create=True, guarded=True, config=self.config, subject="alice")
+                 ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/store.py", line 118, in __init__
+    self.guard = Guard.create(self.root, self._connect, finite_profile=self.finite,
+                 ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                              profile_version=self.profile_version or 1)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 137, in create
+    with guard.locked():
+         ~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/contextlib.py", line 148, in __exit__
+    next(self.gen)
+    ~~~~^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 174, in locked
+    if (current.st_dev, current.st_ino, current.st_nlink, current.st_size) != (original.st_dev, original.st_ino, 1, 0):
+                                                                               ^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'st_dev'
+
+======================================================================
+ERROR: test_process_death_retains_candidate_without_adoption (test_guard_publication.GuardPublicationTests.test_process_death_retains_candidate_without_adoption)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/tests/test_guard_publication.py", line 34, in setUp
+    self.store = Store(self.root, create=True, guarded=True, config=self.config, subject="alice")
+                 ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/store.py", line 118, in __init__
+    self.guard = Guard.create(self.root, self._connect, finite_profile=self.finite,
+                 ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                              profile_version=self.profile_version or 1)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 137, in create
+    with guard.locked():
+         ~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/contextlib.py", line 148, in __exit__
+    next(self.gen)
+    ~~~~^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 174, in locked
+    if (current.st_dev, current.st_ino, current.st_nlink, current.st_size) != (original.st_dev, original.st_ino, 1, 0):
+                                                                               ^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'st_dev'
+
+======================================================================
+ERROR: test_receipt_outcomes_are_not_cached (test_guard_publication.GuardPublicationTests.test_receipt_outcomes_are_not_cached)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/tests/test_guard_publication.py", line 34, in setUp
+    self.store = Store(self.root, create=True, guarded=True, config=self.config, subject="alice")
+                 ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/store.py", line 118, in __init__
+    self.guard = Guard.create(self.root, self._connect, finite_profile=self.finite,
+                 ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                              profile_version=self.profile_version or 1)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 137, in create
+    with guard.locked():
+         ~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/contextlib.py", line 148, in __exit__
+    next(self.gen)
+    ~~~~^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 174, in locked
+    if (current.st_dev, current.st_ino, current.st_nlink, current.st_size) != (original.st_dev, original.st_ino, 1, 0):
+                                                                               ^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'st_dev'
+
+======================================================================
+ERROR: test_released_tokens_cannot_authorize_another_effect (test_guard_publication.GuardPublicationTests.test_released_tokens_cannot_authorize_another_effect)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/tests/test_guard_publication.py", line 34, in setUp
+    self.store = Store(self.root, create=True, guarded=True, config=self.config, subject="alice")
+                 ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/store.py", line 118, in __init__
+    self.guard = Guard.create(self.root, self._connect, finite_profile=self.finite,
+                 ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                              profile_version=self.profile_version or 1)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 137, in create
+    with guard.locked():
+         ~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/contextlib.py", line 148, in __exit__
+    next(self.gen)
+    ~~~~^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 174, in locked
+    if (current.st_dev, current.st_ino, current.st_nlink, current.st_size) != (original.st_dev, original.st_ino, 1, 0):
+                                                                               ^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'st_dev'
+
+======================================================================
+ERROR: test_required_failure_note_preserves_original_error_and_role (test_guard_publication.GuardPublicationTests.test_required_failure_note_preserves_original_error_and_role)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/tests/test_guard_publication.py", line 34, in setUp
+    self.store = Store(self.root, create=True, guarded=True, config=self.config, subject="alice")
+                 ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/store.py", line 118, in __init__
+    self.guard = Guard.create(self.root, self._connect, finite_profile=self.finite,
+                 ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                              profile_version=self.profile_version or 1)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 137, in create
+    with guard.locked():
+         ~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/contextlib.py", line 148, in __exit__
+    next(self.gen)
+    ~~~~^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 174, in locked
+    if (current.st_dev, current.st_ino, current.st_nlink, current.st_size) != (original.st_dev, original.st_ino, 1, 0):
+                                                                               ^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'st_dev'
+
+======================================================================
+ERROR: test_safety_matrix_preserves_residue_and_refuses_exhaustion (test_guard_publication.GuardPublicationTests.test_safety_matrix_preserves_residue_and_refuses_exhaustion)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/tests/test_guard_publication.py", line 34, in setUp
+    self.store = Store(self.root, create=True, guarded=True, config=self.config, subject="alice")
+                 ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/store.py", line 118, in __init__
+    self.guard = Guard.create(self.root, self._connect, finite_profile=self.finite,
+                 ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                              profile_version=self.profile_version or 1)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 137, in create
+    with guard.locked():
+         ~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/contextlib.py", line 148, in __exit__
+    next(self.gen)
+    ~~~~^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 174, in locked
+    if (current.st_dev, current.st_ino, current.st_nlink, current.st_size) != (original.st_dev, original.st_ino, 1, 0):
+                                                                               ^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'st_dev'
+
+======================================================================
+ERROR: test_short_writes_complete_one_candidate (test_guard_publication.GuardPublicationTests.test_short_writes_complete_one_candidate)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/tests/test_guard_publication.py", line 34, in setUp
+    self.store = Store(self.root, create=True, guarded=True, config=self.config, subject="alice")
+                 ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/store.py", line 118, in __init__
+    self.guard = Guard.create(self.root, self._connect, finite_profile=self.finite,
+                 ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                              profile_version=self.profile_version or 1)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 137, in create
+    with guard.locked():
+         ~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/contextlib.py", line 148, in __exit__
+    next(self.gen)
+    ~~~~^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 174, in locked
+    if (current.st_dev, current.st_ino, current.st_nlink, current.st_size) != (original.st_dev, original.st_ino, 1, 0):
+                                                                               ^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'st_dev'
+
+======================================================================
+ERROR: test_started_receipt_acknowledgement_failure_preserves_debt (test_guard_publication.GuardPublicationTests.test_started_receipt_acknowledgement_failure_preserves_debt)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/tests/test_guard_publication.py", line 34, in setUp
+    self.store = Store(self.root, create=True, guarded=True, config=self.config, subject="alice")
+                 ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/store.py", line 118, in __init__
+    self.guard = Guard.create(self.root, self._connect, finite_profile=self.finite,
+                 ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                              profile_version=self.profile_version or 1)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 137, in create
+    with guard.locked():
+         ~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/contextlib.py", line 148, in __exit__
+    next(self.gen)
+    ~~~~^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 174, in locked
+    if (current.st_dev, current.st_ino, current.st_nlink, current.st_size) != (original.st_dev, original.st_ino, 1, 0):
+                                                                               ^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'st_dev'
+
+======================================================================
+ERROR: test_takeover_precedes_business_transaction (test_guard_publication.GuardPublicationTests.test_takeover_precedes_business_transaction)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/tests/test_guard_publication.py", line 34, in setUp
+    self.store = Store(self.root, create=True, guarded=True, config=self.config, subject="alice")
+                 ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/store.py", line 118, in __init__
+    self.guard = Guard.create(self.root, self._connect, finite_profile=self.finite,
+                 ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                              profile_version=self.profile_version or 1)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 137, in create
+    with guard.locked():
+         ~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/contextlib.py", line 148, in __exit__
+    next(self.gen)
+    ~~~~^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 174, in locked
+    if (current.st_dev, current.st_ino, current.st_nlink, current.st_size) != (original.st_dev, original.st_ino, 1, 0):
+                                                                               ^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'st_dev'
+
+======================================================================
+ERROR: test_worker_run_and_settlement_errors_keep_their_origins (test_guard_publication.GuardPublicationTests.test_worker_run_and_settlement_errors_keep_their_origins)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/tests/test_guard_publication.py", line 34, in setUp
+    self.store = Store(self.root, create=True, guarded=True, config=self.config, subject="alice")
+                 ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/store.py", line 118, in __init__
+    self.guard = Guard.create(self.root, self._connect, finite_profile=self.finite,
+                 ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                              profile_version=self.profile_version or 1)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 137, in create
+    with guard.locked():
+         ~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/contextlib.py", line 148, in __exit__
+    next(self.gen)
+    ~~~~^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/research_workspace/operation_guard.py", line 174, in locked
+    if (current.st_dev, current.st_ino, current.st_nlink, current.st_size) != (original.st_dev, original.st_ino, 1, 0):
+                                                                               ^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'st_dev'
+
+----------------------------------------------------------------------
+Ran 29 tests in 0.057s
+
+FAILED (errors=29)
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 566, in _exitfunc
+    f()
+    ~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 490, in __call__
+    return info.func(*info.args, **(info.kwargs or {}))
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py", line 961, in _cleanup
+    _warnings.warn(warn_message, ResourceWarning)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmpupzjan_8'>
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 566, in _exitfunc
+    f()
+    ~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 490, in __call__
+    return info.func(*info.args, **(info.kwargs or {}))
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py", line 961, in _cleanup
+    _warnings.warn(warn_message, ResourceWarning)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmp1rpy4xg_'>
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 566, in _exitfunc
+    f()
+    ~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 490, in __call__
+    return info.func(*info.args, **(info.kwargs or {}))
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py", line 961, in _cleanup
+    _warnings.warn(warn_message, ResourceWarning)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmpqi0pze3d'>
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 566, in _exitfunc
+    f()
+    ~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 490, in __call__
+    return info.func(*info.args, **(info.kwargs or {}))
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py", line 961, in _cleanup
+    _warnings.warn(warn_message, ResourceWarning)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmpg11cnrwc'>
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 566, in _exitfunc
+    f()
+    ~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 490, in __call__
+    return info.func(*info.args, **(info.kwargs or {}))
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py", line 961, in _cleanup
+    _warnings.warn(warn_message, ResourceWarning)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmpkq_hp8_z'>
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 566, in _exitfunc
+    f()
+    ~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 490, in __call__
+    return info.func(*info.args, **(info.kwargs or {}))
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py", line 961, in _cleanup
+    _warnings.warn(warn_message, ResourceWarning)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmp5zy03ehz'>
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 566, in _exitfunc
+    f()
+    ~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 490, in __call__
+    return info.func(*info.args, **(info.kwargs or {}))
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py", line 961, in _cleanup
+    _warnings.warn(warn_message, ResourceWarning)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmp4xtyo0f1'>
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 566, in _exitfunc
+    f()
+    ~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 490, in __call__
+    return info.func(*info.args, **(info.kwargs or {}))
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py", line 961, in _cleanup
+    _warnings.warn(warn_message, ResourceWarning)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmp3_224f5o'>
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 566, in _exitfunc
+    f()
+    ~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 490, in __call__
+    return info.func(*info.args, **(info.kwargs or {}))
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py", line 961, in _cleanup
+    _warnings.warn(warn_message, ResourceWarning)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmpney2h26l'>
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 566, in _exitfunc
+    f()
+    ~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 490, in __call__
+    return info.func(*info.args, **(info.kwargs or {}))
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py", line 961, in _cleanup
+    _warnings.warn(warn_message, ResourceWarning)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmpcxdekdy9'>
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 566, in _exitfunc
+    f()
+    ~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 490, in __call__
+    return info.func(*info.args, **(info.kwargs or {}))
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py", line 961, in _cleanup
+    _warnings.warn(warn_message, ResourceWarning)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmpfh3164ei'>
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 566, in _exitfunc
+    f()
+    ~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 490, in __call__
+    return info.func(*info.args, **(info.kwargs or {}))
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py", line 961, in _cleanup
+    _warnings.warn(warn_message, ResourceWarning)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmp6yjs3xgm'>
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 566, in _exitfunc
+    f()
+    ~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 490, in __call__
+    return info.func(*info.args, **(info.kwargs or {}))
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py", line 961, in _cleanup
+    _warnings.warn(warn_message, ResourceWarning)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmp43hczulq'>
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 566, in _exitfunc
+    f()
+    ~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 490, in __call__
+    return info.func(*info.args, **(info.kwargs or {}))
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py", line 961, in _cleanup
+    _warnings.warn(warn_message, ResourceWarning)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmpz2u6k6zv'>
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 566, in _exitfunc
+    f()
+    ~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 490, in __call__
+    return info.func(*info.args, **(info.kwargs or {}))
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py", line 961, in _cleanup
+    _warnings.warn(warn_message, ResourceWarning)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmpxbx0eb93'>
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 566, in _exitfunc
+    f()
+    ~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 490, in __call__
+    return info.func(*info.args, **(info.kwargs or {}))
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py", line 961, in _cleanup
+    _warnings.warn(warn_message, ResourceWarning)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmpevr4i45r'>
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 566, in _exitfunc
+    f()
+    ~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 490, in __call__
+    return info.func(*info.args, **(info.kwargs or {}))
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py", line 961, in _cleanup
+    _warnings.warn(warn_message, ResourceWarning)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmp3f9nayaw'>
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 566, in _exitfunc
+    f()
+    ~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 490, in __call__
+    return info.func(*info.args, **(info.kwargs or {}))
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py", line 961, in _cleanup
+    _warnings.warn(warn_message, ResourceWarning)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmplry08uxm'>
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 566, in _exitfunc
+    f()
+    ~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 490, in __call__
+    return info.func(*info.args, **(info.kwargs or {}))
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py", line 961, in _cleanup
+    _warnings.warn(warn_message, ResourceWarning)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmpsidplwax'>
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 566, in _exitfunc
+    f()
+    ~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 490, in __call__
+    return info.func(*info.args, **(info.kwargs or {}))
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py", line 961, in _cleanup
+    _warnings.warn(warn_message, ResourceWarning)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmpta_uvw6c'>
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 566, in _exitfunc
+    f()
+    ~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 490, in __call__
+    return info.func(*info.args, **(info.kwargs or {}))
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py", line 961, in _cleanup
+    _warnings.warn(warn_message, ResourceWarning)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmpvbqzgowh'>
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 566, in _exitfunc
+    f()
+    ~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 490, in __call__
+    return info.func(*info.args, **(info.kwargs or {}))
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py", line 961, in _cleanup
+    _warnings.warn(warn_message, ResourceWarning)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmptuu7ur30'>
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 566, in _exitfunc
+    f()
+    ~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 490, in __call__
+    return info.func(*info.args, **(info.kwargs or {}))
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py", line 961, in _cleanup
+    _warnings.warn(warn_message, ResourceWarning)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmphb342ayc'>
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 566, in _exitfunc
+    f()
+    ~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 490, in __call__
+    return info.func(*info.args, **(info.kwargs or {}))
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py", line 961, in _cleanup
+    _warnings.warn(warn_message, ResourceWarning)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmpqt045_vm'>
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 566, in _exitfunc
+    f()
+    ~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 490, in __call__
+    return info.func(*info.args, **(info.kwargs or {}))
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py", line 961, in _cleanup
+    _warnings.warn(warn_message, ResourceWarning)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmpn8cmgu2s'>
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 566, in _exitfunc
+    f()
+    ~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 490, in __call__
+    return info.func(*info.args, **(info.kwargs or {}))
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py", line 961, in _cleanup
+    _warnings.warn(warn_message, ResourceWarning)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmpmj1b1t8f'>
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 566, in _exitfunc
+    f()
+    ~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 490, in __call__
+    return info.func(*info.args, **(info.kwargs or {}))
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py", line 961, in _cleanup
+    _warnings.warn(warn_message, ResourceWarning)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmpjgrgwe_0'>
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 566, in _exitfunc
+    f()
+    ~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 490, in __call__
+    return info.func(*info.args, **(info.kwargs or {}))
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py", line 961, in _cleanup
+    _warnings.warn(warn_message, ResourceWarning)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmp74xflmxv'>
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 566, in _exitfunc
+    f()
+    ~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/weakref.py", line 490, in __call__
+    return info.func(*info.args, **(info.kwargs or {}))
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py", line 961, in _cleanup
+    _warnings.warn(warn_message, ResourceWarning)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmppq4_hba6'>

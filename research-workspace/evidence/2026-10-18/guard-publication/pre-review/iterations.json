@@ -1,0 +1,73 @@
+{
+  "base": "66a48dfe29d61d3f6f48f016f2c474e1ac6af4f6",
+  "failed_iteration_source_snapshots": "NOT CAPTURED; these logs do not claim replayable exact-source evidence",
+  "interpretation": {
+    "01": "Takeover assertion mislabeled a preflight read connection as a business transaction; assertion now observes BEGIN IMMEDIATE.",
+    "02": "351 combined controls passed before later additions.",
+    "03": "Incorrect assertion expected close failure to replace the original commit error; preserving the commit error is required.",
+    "04": "361 combined controls passed before later additions.",
+    "05": "Lock error-preservation edit accidentally reused the lock stat variable; setup failures retained, corrected with distinct names.",
+    "06": "Logout HTTP fixture omitted existing X-Research-Request header, yielding 403; fixture corrected to exercise publication exhaustion.",
+    "candidate-01": "363 combined controls passed before the subsequent bootstrap descriptor cleanup change and its additional control.",
+    "initial": "Two legacy Guard.save test hooks rejected new keyword arguments; legacy call shape restored."
+  },
+  "iterations": {
+    "waypoint-guard-publication-candidate-01.log": {
+      "result_lines": [
+        "Ran 363 tests in 43.279s",
+        "OK"
+      ],
+      "sha256": "4773bd1750951967d022cf70ddfcca814e77619b554b46e0b90841b8beaa0835"
+    },
+    "waypoint-guard-publication-controls-01.log": {
+      "result_lines": [
+        "Ran 17 tests in 11.073s",
+        "FAILED (failures=1)"
+      ],
+      "sha256": "39203748339f6c18b9e64e39934cac760d4ec11b42683f9b130615b8284ed7b9"
+    },
+    "waypoint-guard-publication-controls-02.log": {
+      "result_lines": [
+        "Ran 351 tests in 42.287s",
+        "OK"
+      ],
+      "sha256": "653d0eebc77b2f6b73bf7e5d429a2739c669cb49baaf2fd8c68010f39b26c379"
+    },
+    "waypoint-guard-publication-controls-03.log": {
+      "result_lines": [
+        "Ran 27 tests in 14.695s",
+        "FAILED (failures=1)"
+      ],
+      "sha256": "3f6c328ae5d31bbcbb202e45d14519dd172c463a0b6c7b761ab492f48531235d"
+    },
+    "waypoint-guard-publication-controls-04.log": {
+      "result_lines": [
+        "Ran 361 tests in 39.166s",
+        "OK"
+      ],
+      "sha256": "effe84e43188ec164c3e6621c29160656266ade6cd88789fac81ffbd630c2c64"
+    },
+    "waypoint-guard-publication-controls-05.log": {
+      "result_lines": [
+        "Ran 29 tests in 0.057s",
+        "FAILED (errors=29)"
+      ],
+      "sha256": "6a9839ca661d22e72b913607e33d8f1d7cf3a00226c863bdff584b77534a9c10"
+    },
+    "waypoint-guard-publication-controls-06.log": {
+      "result_lines": [
+        "Ran 29 tests in 16.124s",
+        "FAILED (failures=1)"
+      ],
+      "sha256": "c9b9f18a02a2d8b0fb02d139f2c7f0fdacdce667940960c4252c4f09e0c8f5e5"
+    },
+    "waypoint-guard-publication-initial-controls.log": {
+      "result_lines": [
+        "Ran 334 tests in 25.196s",
+        "FAILED (errors=2)"
+      ],
+      "sha256": "fef9555afa7b08898fce635cf03747fb9b1e5099eba1b5983b32b3668cf5f19b"
+    }
+  },
+  "prior_evidence_files_unchanged": 248
+}

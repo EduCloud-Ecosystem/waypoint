@@ -56,6 +56,11 @@ access as operator privileges. Each active session expires after eight hours.
 
 ## Complete the first experiment
 
+For separately selected disposable profiles, see [finite logical authority](FINITE-AUTHORITY.md)
+and [bounded guard publication](BOUNDED-GUARD-PUBLICATION.md). The latter can
+refuse safety actions when required publication is unavailable; it requires a
+fresh explicit opt-in and does not change the default commands above.
+
 1. Create a project with a question, success criterion, end date and a 120
    CPU-second allowance. The workspace commits that allowance from its finite
    total; closing a project does not reset or recycle it.

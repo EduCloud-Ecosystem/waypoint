@@ -71,6 +71,8 @@ class TrackedConnection:
         return self.raw.execute(sql, parameters)
 
     def commit(self):
+        if self.operation.guard.publication:
+            self.operation.check_publication()
         if not self.keep:
             self.operation.complete_sql(self.raw)
         self.raw.commit()
@@ -96,7 +98,7 @@ class Store:
                 raise finite.InvalidProfile("Fresh initialization cannot reuse an authority binding.")
             finite.bounded_path(self.root)
             self.profile_version = finite.validate_config(config)
-            proposed = {"format": finite.GUARD_FORMAT if self.profile_version == 1 else finite.EXPORT_GUARD_FORMAT,
+            proposed = {"format": finite.PROFILE_GUARDS[self.profile_version],
                         "authority_id": "0" * 32,
                         "logical_authority_sha256": finite.profile_digest(self.profile_version)}
             finite.validate_config({**config, "operation_guard": proposed}, binding=proposed)
@@ -117,39 +119,40 @@ class Store:
                                           profile_version=self.profile_version or 1)
                 bootstrap = self.guard.begin("initialize", subject=subject, request=config, bootstrap=True)
             try:
-                (self.root / "runs").mkdir(mode=0o700)
-                with contextlib.closing(self._connect()) as db:
-                    db.executescript("""
-                    CREATE TABLE users(subject TEXT PRIMARY KEY, key_hash TEXT UNIQUE NOT NULL, active INTEGER NOT NULL);
-                    CREATE TABLE sessions(token_hash TEXT PRIMARY KEY, subject TEXT NOT NULL, expires REAL NOT NULL);
-                    CREATE TABLE projects(id TEXT PRIMARY KEY, payload TEXT NOT NULL);
-                    CREATE TABLE members(project_id TEXT NOT NULL, subject TEXT NOT NULL, role TEXT NOT NULL,
-                                         PRIMARY KEY(project_id,subject));
-                    CREATE TABLE runs(id TEXT PRIMARY KEY,project_id TEXT NOT NULL,subject TEXT NOT NULL,
-                        status TEXT NOT NULL,payload TEXT NOT NULL,cancel_requested INTEGER NOT NULL DEFAULT 0,
-                        request_key TEXT,request_hash TEXT,UNIQUE(project_id,subject,request_key));
-                    CREATE INDEX queued ON runs(status);
-                    """)
-                    if bootstrap:
-                        for statement in SCHEMA:
-                            db.execute(statement)
-                        db.execute(f"PRAGMA application_id={APPLICATION_ID}")
-                        if self.finite:
-                            db.execute(f"PRAGMA user_version={finite.database_version(self.profile_version)}")
-                        db.execute("INSERT INTO operation_authority VALUES(?,0,?)", (self.guard.binding["authority_id"], uuid.uuid4().hex))
-                        bootstrap.register(db)
-                        db.commit()
-                        bootstrap.effect()
-                        config = {**config, "operation_guard": self.guard.binding}
-                        if self.finite:
-                            finite.validate_config(config, binding=self.guard.binding)
-                        private_write(self.root / "config.json", canonical(config).encode())
-                        self.initial_key = secrets.token_urlsafe(32)
-                        db.execute("INSERT INTO users VALUES(?,?,1)", (subject, digest(self.initial_key.encode())))
-                        bootstrap.complete_sql(db)
-                        db.commit()
-                (self.root / "workspace.sqlite3").chmod(0o600)
-                sync_directory(self.root)
+                with self.guard.locked() if self.guard and self.guard.publication else contextlib.nullcontext():
+                    (self.root / "runs").mkdir(mode=0o700)
+                    with contextlib.closing(self._connect()) as db:
+                        db.executescript("""
+                        CREATE TABLE users(subject TEXT PRIMARY KEY, key_hash TEXT UNIQUE NOT NULL, active INTEGER NOT NULL);
+                        CREATE TABLE sessions(token_hash TEXT PRIMARY KEY, subject TEXT NOT NULL, expires REAL NOT NULL);
+                        CREATE TABLE projects(id TEXT PRIMARY KEY, payload TEXT NOT NULL);
+                        CREATE TABLE members(project_id TEXT NOT NULL, subject TEXT NOT NULL, role TEXT NOT NULL,
+                                             PRIMARY KEY(project_id,subject));
+                        CREATE TABLE runs(id TEXT PRIMARY KEY,project_id TEXT NOT NULL,subject TEXT NOT NULL,
+                            status TEXT NOT NULL,payload TEXT NOT NULL,cancel_requested INTEGER NOT NULL DEFAULT 0,
+                            request_key TEXT,request_hash TEXT,UNIQUE(project_id,subject,request_key));
+                        CREATE INDEX queued ON runs(status);
+                        """)
+                        if bootstrap:
+                            for statement in SCHEMA:
+                                db.execute(statement)
+                            db.execute(f"PRAGMA application_id={APPLICATION_ID}")
+                            if self.finite:
+                                db.execute(f"PRAGMA user_version={finite.database_version(self.profile_version)}")
+                            db.execute("INSERT INTO operation_authority VALUES(?,0,?)", (self.guard.binding["authority_id"], uuid.uuid4().hex))
+                            bootstrap.register(db)
+                            db.commit()
+                            bootstrap.effect()
+                            config = {**config, "operation_guard": self.guard.binding}
+                            if self.finite:
+                                finite.validate_config(config, binding=self.guard.binding)
+                            private_write(self.root / "config.json", canonical(config).encode())
+                            self.initial_key = secrets.token_urlsafe(32)
+                            db.execute("INSERT INTO users VALUES(?,?,1)", (subject, digest(self.initial_key.encode())))
+                            bootstrap.complete_sql(db)
+                            db.commit()
+                    (self.root / "workspace.sqlite3").chmod(0o600)
+                    sync_directory(self.root)
             except BaseException:
                 if bootstrap:
                     bootstrap.fail()
@@ -161,6 +164,8 @@ class Store:
             raise ValueError("Workspace authority is missing. Restore it; do not reinitialize existing state.")
 
         self._initializing = False
+        if self.guard and self.guard.publication:
+            self.guard.publication.initializing = False
         if not create:
             with contextlib.closing(sqlite3.connect((self.root / "workspace.sqlite3").as_uri() + "?mode=ro", uri=True)) as probe:
                 guarded_db = probe.execute("PRAGMA application_id").fetchone()[0] == APPLICATION_ID
@@ -241,8 +246,12 @@ class Store:
                         preflight(probe)
                 token = operation or self.guard.begin(kind, resource_id=resource_id, subject=subject, request=request,
                                                        request_key=request_key, essential=essential)
+                if operation is not None and self.guard.publication:
+                    item = self.guard.load()["operations"][operation.identity]
+                    self.guard.check(essential=item["essential"], admitted=operation)
                 raw = None
                 failed = False
+                original_error = None
                 try:
                     raw = self._connect()
                     raw.execute("BEGIN IMMEDIATE")
@@ -255,8 +264,9 @@ class Store:
                     db = TrackedConnection(raw, token, keep)
                     yield db
                     db.commit()
-                except BaseException:
+                except BaseException as original:
                     failed = True
+                    original_error = original
                     # Latch uncertainty before cleanup. No exception class or change
                     # count can prove that an attempted effect did not happen.
                     if token.effects:
@@ -269,15 +279,18 @@ class Store:
                                 token.complete_sql(raw, refused=True)
                                 raw.commit()
                     except BaseException:
-                        token.fail()
+                        token.fail(error=original)
                     raise
                 finally:
                     try:
                         if raw is not None:
                             raw.close()
-                    except BaseException:
-                        token.fail()
-                        raise
+                    except BaseException as close_error:
+                        token.fail(error=original_error or close_error)
+                        if original_error is not None and self.guard.publication:
+                            original_error.add_note("The business connection close also failed.")
+                        else:
+                            raise
                     finally:
                         if failed or not keep:
                             token.release()
@@ -697,6 +710,8 @@ class Store:
                 token = self.guard.running(run["id"])
                 if token:
                     token.fail()
+                if self.guard.publication:
+                    raise
             # Another authority already settled or interrupted the run. Do not
             # replace its files or accounting using this worker's stale copy.
             return
@@ -739,7 +754,7 @@ class Store:
                            and all(type(value) is int for value in accounting[:2])
                            and accounting in {(0, 0, "not_admitted"), (30, 30, "estimated_upper_bound")})
                 if run_token and settled:
-                    run_token.complete_sql(db.raw)
+                    run_token.complete_sql(db.raw, authority=db.operation if self.guard.publication else None)
                 elif run_token:
                     run_token.fail("unresolved_compute")
                 # Commit visibility before releasing the local identity guard.
@@ -749,7 +764,7 @@ class Store:
                     run_token.release()
 
     def snapshot(self, project_id, subject):
-        if self.profile_version == 2:
+        if self.profile_version in (2, 3):
             raise ValueError("This profile requires the complete authorized export operation.")
         with contextlib.closing(self.connect()) as db:
             db.execute("BEGIN")
@@ -766,7 +781,7 @@ class Store:
             return project, runs, files
 
     def export_bundle(self, project_id, subject, token):
-        if self.profile_version != 2:
+        if self.profile_version not in (2, 3):
             raise ValueError("Bounded export requires its explicit fresh profile.")
         from .bounded_export import export_bundle
         return export_bundle(self, project_id, subject, token)

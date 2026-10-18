@@ -145,7 +145,7 @@ def database_digest(db):
         raise ValueError("The workspace database failed its integrity check.")
     digest = hashlib.sha256(canonical(schema).encode())
     if version:
-        profile_version = 1 if version == finite.USER_VERSION else 2
+        profile_version = next(v for v, marker in finite.PROFILE_DATABASES.items() if marker == version)
         digest.update(canonical({"user_version": version, "logical_authority": finite.profile_digest(profile_version)}).encode())
     for table in tables:
         digest.update(table.encode())

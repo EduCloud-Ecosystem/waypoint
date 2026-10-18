@@ -1,0 +1,43 @@
+test_business_commit_and_close_failures_never_clear_uncertainty (test_guard_publication.GuardPublicationTests.test_business_commit_and_close_failures_never_clear_uncertainty) ... ok
+test_cached_current_rechecks_other_process_failed_scratch (test_guard_publication.GuardPublicationTests.test_cached_current_rechecks_other_process_failed_scratch) ... ok
+test_concurrent_processes_serialize_fixed_safety_path (test_guard_publication.GuardPublicationTests.test_concurrent_processes_serialize_fixed_safety_path) ... ok
+test_exact_profile_and_policy_digest (test_guard_publication.GuardPublicationTests.test_exact_profile_and_policy_digest) ... ok
+test_export_authorization_and_reader_controls_on_new_profile (test_guard_publication.GuardPublicationTests.test_export_authorization_and_reader_controls_on_new_profile) ... ok
+test_failed_bootstrap_cannot_be_adopted (test_guard_publication.GuardPublicationTests.test_failed_bootstrap_cannot_be_adopted) ... ok
+test_file_sync_write_close_and_rename_failures_preserve_exact_slot (test_guard_publication.GuardPublicationTests.test_file_sync_write_close_and_rename_failures_preserve_exact_slot) ... ok
+test_fresh_process_qualifies_effect_after_lost_parent_sync_without_forgiving_it (test_guard_publication.GuardPublicationTests.test_fresh_process_qualifies_effect_after_lost_parent_sync_without_forgiving_it) ... ok
+test_full_named_payload_family_and_exact_fit (test_guard_publication.GuardPublicationTests.test_full_named_payload_family_and_exact_fit) ... ok
+test_full_ordinary_intent_allowance_retains_fresh_safety_path (test_guard_publication.GuardPublicationTests.test_full_ordinary_intent_allowance_retains_fresh_safety_path) ... ok
+test_http_logout_exhaustion_reports_failure_and_keeps_session (test_guard_publication.GuardPublicationTests.test_http_logout_exhaustion_reports_failure_and_keeps_session) ... FAIL
+test_lock_close_failure_preserves_original_and_holds_safety (test_guard_publication.GuardPublicationTests.test_lock_close_failure_preserves_original_and_holds_safety) ... ok
+test_missing_receipt_refuses_safety_even_with_empty_slot (test_guard_publication.GuardPublicationTests.test_missing_receipt_refuses_safety_even_with_empty_slot) ... ok
+test_mutually_exclusive_cli_profiles (test_guard_publication.GuardPublicationTests.test_mutually_exclusive_cli_profiles) ... ok
+test_namespace_types_are_never_adopted_or_removed (test_guard_publication.GuardPublicationTests.test_namespace_types_are_never_adopted_or_removed) ... ok
+test_new_worker_start_propagates_failed_recovery (test_guard_publication.GuardPublicationTests.test_new_worker_start_propagates_failed_recovery) ... ok
+test_no_borrow_after_unresolved_essential_with_empty_scratch (test_guard_publication.GuardPublicationTests.test_no_borrow_after_unresolved_essential_with_empty_scratch) ... ok
+test_one_byte_overflow_precedes_scratch_and_business_effects (test_guard_publication.GuardPublicationTests.test_one_byte_overflow_precedes_scratch_and_business_effects) ... ok
+test_ordinary_worker_error_does_not_touch_an_active_safety_intent (test_guard_publication.GuardPublicationTests.test_ordinary_worker_error_does_not_touch_an_active_safety_intent) ... ok
+test_postrename_failure_is_not_success_or_permission_from_absence (test_guard_publication.GuardPublicationTests.test_postrename_failure_is_not_success_or_permission_from_absence) ... ok
+test_process_death_retains_candidate_without_adoption (test_guard_publication.GuardPublicationTests.test_process_death_retains_candidate_without_adoption) ... ok
+test_receipt_outcomes_are_not_cached (test_guard_publication.GuardPublicationTests.test_receipt_outcomes_are_not_cached) ... ok
+test_released_tokens_cannot_authorize_another_effect (test_guard_publication.GuardPublicationTests.test_released_tokens_cannot_authorize_another_effect) ... ok
+test_required_failure_note_preserves_original_error_and_role (test_guard_publication.GuardPublicationTests.test_required_failure_note_preserves_original_error_and_role) ... ok
+test_safety_matrix_preserves_residue_and_refuses_exhaustion (test_guard_publication.GuardPublicationTests.test_safety_matrix_preserves_residue_and_refuses_exhaustion) ... ok
+test_short_writes_complete_one_candidate (test_guard_publication.GuardPublicationTests.test_short_writes_complete_one_candidate) ... ok
+test_started_receipt_acknowledgement_failure_preserves_debt (test_guard_publication.GuardPublicationTests.test_started_receipt_acknowledgement_failure_preserves_debt) ... ok
+test_takeover_precedes_business_transaction (test_guard_publication.GuardPublicationTests.test_takeover_precedes_business_transaction) ... ok
+test_worker_run_and_settlement_errors_keep_their_origins (test_guard_publication.GuardPublicationTests.test_worker_run_and_settlement_errors_keep_their_origins) ... ok
+
+======================================================================
+FAIL: test_http_logout_exhaustion_reports_failure_and_keeps_session (test_guard_publication.GuardPublicationTests.test_http_logout_exhaustion_reports_failure_and_keeps_session)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-guard-publication-design/research-workspace/tests/test_guard_publication.py", line 482, in test_http_logout_exhaustion_reports_failure_and_keeps_session
+    self.assertEqual(response.status, 503, payload)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 403 != 503 : {'error': 'A same-origin request header is required.'}
+
+----------------------------------------------------------------------
+Ran 29 tests in 16.124s
+
+FAILED (failures=1)
