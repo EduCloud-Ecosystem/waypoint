@@ -15,6 +15,13 @@ The [final runtime provenance](final-runtime-provenance.json) binds this record
 to the source and evidence. Exact final-PR-head CI and coordinating CLEAR remain
 separate merge gates. This source review does not authorize an owner merge.
 
+The [documentation correction](documentation-correction.json) after evidence
+head `b2972b2` distinguishes the preserved original failed cleanup receipt from
+the later accepted, resolved resource/accounting observation. Runtime and test
+files remain identical to the cleared source; the qualification archive retains
+its exact reviewed documentation. Original proposal and review artifacts remain
+unchanged as historical records.
+
 Earlier runtime candidate: `832d2844bb82ff7a9e24e19a3f2c551fb9849f48`.
 Its [full suite](full-suite-832d284.log) passes 427 tests and
 [frozen qualification](candidate-5/report.json) passes 43 v4 controls and detects
@@ -139,7 +146,13 @@ global quiescence. The unchanged standard Docker workflow exercises its
 existing profiles. Exact candidate CI, final independent review and
 coordinating CLEAR remain separate merge gates.
 
-Source candidates stay disabled; the original cleanup gate stays unresolved.
+Source candidates stay disabled. The original failed workload and unknown
+cleanup receipt remain unchanged. The accepted
+[later observation](../../2026-10-17/replay-cleanup-reconciliation/README.md)
+verified container absence, cleanup complete and liability resolved, with
+30 CPU-seconds conservatively charged and no refund. That later observation
+resolves resource/accounting state; it does not promote candidates or satisfy
+independent-human reproduction, hosted or real-data admission gates.
 The #39/#41 archives and fifth-headroom FAIL remain unchanged, available
 capacity remains UNKNOWN and `quota_enforced` remains false. Belay, parent pilot
 worktrees, accepted #43 worktree and provider state are untouched.

@@ -1,7 +1,7 @@
 {
   "approved_precode_commit": "4606cc6076999c6bae507bdb6beab4bbd0b0819a",
   "artifact_sha256": {
-    "README.md": "45b992f18872936ab752e083ff7994d7b62df2b8496312b9185432f1f0e540b1",
+    "README.md": "cd2b9360989189380856da461b2d777a6daa10bee019d395d9f230d6b207a6b3",
     "adversarial-results.json": "23b7db9163fa9d1b5e35f48a02ffdf3af1ca74204f5d762b14df71fff2d2b3f4",
     "candidate-1/candidate-source.tar.gz": "71ac30dde17640b857b5549fb950914799ef81111c93310253876dca4e5caa49",
     "candidate-1/controls.log": "41be92819d48e5132d694690de72354a36688d314e28cb312440a17feda60e1d",
@@ -179,6 +179,7 @@
     "ci-a318b50.json": "37e866f7e1c153efd10313c275eaede01300240bba5e177a5352f176da583d1b",
     "ci-d59edb4.json": "6998e8e3c57749de9bbbc6a2b1b5f31dd56ca6bd44a4404c7f4414e4f1bdf242",
     "consolidated-runtime-provenance.json": "951d2e4258c6647bf02cfbcb4613074053954d6617506e426037c4f1025a002a",
+    "documentation-correction.json": "934d7937377dea05d109a3e09a7b96a14797eba9cd0832e561dc712e7f19fc49",
     "full-suite-43890cb.log": "9c42f89f8118deb8b5e0f11c03a7a3912aff1f963043f6337574428a6cf46733",
     "full-suite-5d3e06b.log": "e3eda081dad5da0152a47bcee99b10d0492a39a652a6e8d87970ba938a530372",
     "full-suite-832d284.log": "9b4e9107391793fe14d10e2990f02b4d6f3ee82699c9b16e3a5de9261f29f1b3",
@@ -379,15 +380,17 @@
   "boundaries": {
     "available_capacity": "UNKNOWN",
     "belay_parent_pilots_accepted43": "UNTOUCHED",
-    "cleanup_gate": "UNRESOLVED_UNCHANGED",
+    "cleanup_gate": "LATER_RESOURCE_ACCOUNTING_OBSERVATION_RESOLVED; ORIGINAL_FAILED_RECEIPT_PRESERVED",
     "fifth_headroom": "FAIL_UNCHANGED",
     "quota_enforced": false,
     "source_candidates": "FOUR_DISABLED_UNCHANGED",
+    "source_promotion_human_hosted_real_data": "OPEN_UNCHANGED",
     "v4_docker_provider_acceptance": "NOT_RUN",
     "workflow_and_pins": "ACCEPTED45_UNCHANGED"
   },
   "canonical_policy_sha256": "ed235fd6d6bb3c10632c0c5dc2bb20c8d3cb9076ebb157c71c1cc9c8072a656e",
   "coordinating_clear": "REQUIRED_BEFORE_OWNER_MERGE",
+  "documentation_correction": "documentation-correction.json",
   "exact_head_ci": "REQUIRED_ON_FINAL_PR_HEAD; see PR checks",
   "format": "waypoint-sqlite-ownership-final-runtime-provenance-v1",
   "independent_review": {
@@ -427,6 +430,7 @@
   "preserved_base_files": 395,
   "preserved_historical_evidence_files": 343,
   "proposal_sha256": "5b03af41faa8b22830e9af792f185b0716867fd4918075389c2732dc1264ebb2",
+  "qualification_documentation": "Archive and91 source matches refer to immutable runtime43890cb; current operator/evidence documentation has the separately recorded cleanup-observation correction.",
   "retained_history": "All prior qualification results, HOLD reviews, exact sources, witnesses and iteration failures remain available. Candidate8 supersedes prior candidate readiness; it does not rewrite prior evidence.",
   "runtime_commit": "43890cbf10a02cd522da627f6ea5a841820a4762",
   "source_archive_sha256": "cbb0b9242cd45d5aec1d0c356b6f39f90f7efc2ac533d068999dd90c12e75d75",

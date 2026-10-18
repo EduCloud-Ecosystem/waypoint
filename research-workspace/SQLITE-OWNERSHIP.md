@@ -165,6 +165,12 @@ quiescence. The unchanged standard CI Docker job qualifies its existing profiles
 
 The historical #39/#41 archives and failed fifth-headroom witness remain intact.
 Available capacity remains **UNKNOWN**, `quota_enforced` remains **false**, the
-source environments remain **disabled**, and the original cleanup gate remains
-**unresolved**. Workflow pins, default behavior, Belay and parent pilot worktrees
-are outside this increment.
+source environments remain **disabled**, and the original failed workload and
+unknown cleanup receipt remain preserved. The accepted
+[later replay observation](evidence/2026-10-17/replay-cleanup-reconciliation/README.md)
+verified container absence, cleanup complete and liability resolved, with a
+conservative 30 CPU-second charge and no refund. That later resource/accounting
+observation is resolved; it does not rewrite the original receipt or clear source
+promotion, independent-human reproduction, hosted or real-data admission gates.
+Workflow pins, default behavior, Belay and parent pilot worktrees are outside
+this increment.
