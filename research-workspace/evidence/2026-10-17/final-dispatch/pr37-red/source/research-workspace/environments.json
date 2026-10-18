@@ -1,0 +1,706 @@
+{
+  "schema_version": 1,
+  "environments": [
+    {
+      "id": "summary-python-v1",
+      "recipe": "summary-python",
+      "version": 1,
+      "name": "Python group summary \u00b7 version 1",
+      "status": "active",
+      "image": "python@sha256:229a2c5bfa27522db7815ea81f9bed70af17ccb9de9fc7ad142b1877b5830d36",
+      "source": "recipes/recipe.py",
+      "recipe_sha256": "549f064aaaa36ee8259f1f8e2902d0dfb15d071fcb6d9b60e52b266a7bbdb922",
+      "runtime": {
+        "id": "python",
+        "version": "3.12.13",
+        "version_evidence": "PYTHON_VERSION in the pinned local image configuration, inspected 2026-10-17. The runtime version command was not independently executed for this catalog."
+      },
+      "dependencies": {
+        "standard_library": [
+          "csv",
+          "json",
+          "sys"
+        ],
+        "additional_packages": [],
+        "statement": "No packages beyond the runtime standard library are required."
+      },
+      "platforms": [
+        {
+          "os": "linux",
+          "architecture": "arm64",
+          "evidence_status": "PASS",
+          "evidence_boundary": "Both pinned local image IDs were inspected as linux/arm64 on 2026-10-17. This records image platform identity; execution evidence is stated separately. Other platforms have not been verified."
+        }
+      ],
+      "conditions": {
+        "baseline": "Retain every value and report each group count and arithmetic mean, plus the overall count and mean.",
+        "alternative": "Within each group containing at least five rows, remove one smallest and one largest value; retain all values in smaller groups. Report descriptive counts and means."
+      },
+      "limits": {
+        "cpus": 1,
+        "memory_mb": 256,
+        "pids_limit": 64,
+        "timeout_seconds": 30,
+        "max_output_bytes": 65536,
+        "max_input_bytes": 65536,
+        "max_input_rows": 1000
+      },
+      "validation": {
+        "relative_tolerance": 1e-12,
+        "absolute_tolerance": 1e-09,
+        "exact_fields": [
+          "condition",
+          "group",
+          "count"
+        ],
+        "independent_check": "The service recomputes descriptive results from the submitted input. Mean comparisons use the stated tolerances; object keys, conditions, group strings and counts must match exactly."
+      },
+      "provenance": {
+        "repository": "https://github.com/EduCloud-Ecosystem/waypoint",
+        "source_revision": "da4c65530b4ec34676823a466cdce475612fd0fe",
+        "image_origin": "Pre-existing local runtime image identified by immutable digest. Upstream build source and base-image inputs were not captured.",
+        "build_inputs_status": "NOT RECORDED",
+        "build_inputs": [],
+        "clean_rebuild": {
+          "status": "NOT RUN",
+          "boundary": "No image was rebuilt from pinned source/build inputs. Recorded execution of an existing image does not establish reproducible image construction."
+        },
+        "execution_evidence": {
+          "status": "PASS",
+          "reference": "research-workspace/evidence/2026-10-17/browser-verification.json",
+          "boundary": "Original local browser acceptance executed the synthetic baseline in this pinned image. Its 23 checks are historical evidence, not a repeat acceptance of the later catalog or another machine."
+        }
+      },
+      "limitations": [
+        "Public or synthetic data only.",
+        "Descriptive results do not establish scientific validity or statistical significance.",
+        "No independent operator or second-machine reproduction has been recorded."
+      ]
+    },
+    {
+      "id": "summary-r-v2",
+      "recipe": "summary-r",
+      "version": 2,
+      "name": "R group summary \u00b7 version 2",
+      "status": "active",
+      "image": "r-base@sha256:fa1972f31def171b83e0911e947ab8b57db143f0fc8a67af4c0d5ac329041646",
+      "source": "recipes/recipe.R",
+      "recipe_sha256": "a3c06effab96558d8a09068adbfaf2650a3d9ab82b608ea63437dc9076fe3957",
+      "runtime": {
+        "id": "r",
+        "version": "4.5.1",
+        "version_evidence": "R_BASE_VERSION in the pinned local image configuration, inspected 2026-10-17. The runtime version command was not independently executed for this catalog."
+      },
+      "dependencies": {
+        "standard_library": [
+          "base",
+          "utils"
+        ],
+        "additional_packages": [],
+        "statement": "No packages beyond the runtime standard library are required."
+      },
+      "platforms": [
+        {
+          "os": "linux",
+          "architecture": "arm64",
+          "evidence_status": "PASS",
+          "evidence_boundary": "Both pinned local image IDs were inspected as linux/arm64 on 2026-10-17. This records image platform identity; execution evidence is stated separately. Other platforms have not been verified."
+        }
+      ],
+      "conditions": {
+        "baseline": "Retain every value and report each group count and arithmetic mean, plus the overall count and mean.",
+        "alternative": "Within each group containing at least five rows, remove one smallest and one largest value; retain all values in smaller groups. Report descriptive counts and means."
+      },
+      "limits": {
+        "cpus": 1,
+        "memory_mb": 256,
+        "pids_limit": 64,
+        "timeout_seconds": 30,
+        "max_output_bytes": 65536,
+        "max_input_bytes": 65536,
+        "max_input_rows": 1000
+      },
+      "validation": {
+        "relative_tolerance": 1e-12,
+        "absolute_tolerance": 1e-09,
+        "exact_fields": [
+          "condition",
+          "group",
+          "count"
+        ],
+        "independent_check": "The service recomputes descriptive results from the submitted input. Mean comparisons use the stated tolerances; object keys, conditions, group strings and counts must match exactly."
+      },
+      "provenance": {
+        "repository": "https://github.com/EduCloud-Ecosystem/waypoint",
+        "source_revision": "da4c65530b4ec34676823a466cdce475612fd0fe",
+        "image_origin": "Pre-existing local runtime image identified by immutable digest. Upstream build source and base-image inputs were not captured.",
+        "build_inputs_status": "NOT RECORDED",
+        "build_inputs": [],
+        "clean_rebuild": {
+          "status": "NOT RUN",
+          "boundary": "No image was rebuilt from pinned source/build inputs. Recorded execution of an existing image does not establish reproducible image construction."
+        },
+        "execution_evidence": {
+          "status": "PASS",
+          "reference": "research-workspace/evidence/2026-10-17/http-docker-verification.json",
+          "boundary": "The corrected recipe preserves group labels as strings and uses the shared finite decimal grammar. Local Docker HTTP regression evidence is bounded by the source hashes recorded in that report; it is not an image rebuild or an independent operator reproduction."
+        }
+      },
+      "limitations": [
+        "Public or synthetic data only.",
+        "Descriptive results do not establish scientific validity or statistical significance.",
+        "No independent operator or second-machine reproduction has been recorded."
+      ]
+    },
+    {
+      "id": "summary-r-v1",
+      "recipe": "summary-r",
+      "version": 1,
+      "name": "R group summary \u00b7 version 1",
+      "status": "archived",
+      "image": "r-base@sha256:fa1972f31def171b83e0911e947ab8b57db143f0fc8a67af4c0d5ac329041646",
+      "source": "recipes/archive/recipe-r-v1.R",
+      "recipe_sha256": "91db760044f6879d8171d34db57d5138e9255ce4d16bf489c919990dc65da3fd",
+      "runtime": {
+        "id": "r",
+        "version": "4.5.1",
+        "version_evidence": "R_BASE_VERSION in the pinned local image configuration, inspected 2026-10-17. The runtime version command was not independently executed for this catalog."
+      },
+      "dependencies": {
+        "standard_library": [
+          "base",
+          "utils"
+        ],
+        "additional_packages": [],
+        "statement": "No packages beyond the runtime standard library are required."
+      },
+      "platforms": [
+        {
+          "os": "linux",
+          "architecture": "arm64",
+          "evidence_status": "PASS",
+          "evidence_boundary": "Both pinned local image IDs were inspected as linux/arm64 on 2026-10-17. This records image platform identity; execution evidence is stated separately. Other platforms have not been verified."
+        }
+      ],
+      "conditions": {
+        "baseline": "Retain every value and report each group count and arithmetic mean, plus the overall count and mean.",
+        "alternative": "Within each group containing at least five rows, remove one smallest and one largest value; retain all values in smaller groups. Report descriptive counts and means."
+      },
+      "limits": {
+        "cpus": 1,
+        "memory_mb": 256,
+        "pids_limit": 64,
+        "timeout_seconds": 30,
+        "max_output_bytes": 65536,
+        "max_input_bytes": 65536,
+        "max_input_rows": 1000
+      },
+      "validation": {
+        "relative_tolerance": 1e-12,
+        "absolute_tolerance": 1e-09,
+        "exact_fields": [
+          "condition",
+          "group",
+          "count"
+        ],
+        "independent_check": "The service recomputes descriptive results from the submitted input. Mean comparisons use the stated tolerances; object keys, conditions, group strings and counts must match exactly."
+      },
+      "provenance": {
+        "repository": "https://github.com/EduCloud-Ecosystem/waypoint",
+        "source_revision": "373f494ca0f5b2ac06a62906024f41212dbb8862",
+        "image_origin": "Pre-existing local runtime image identified by immutable digest. Upstream build source and base-image inputs were not captured.",
+        "build_inputs_status": "NOT RECORDED",
+        "build_inputs": [],
+        "clean_rebuild": {
+          "status": "NOT RUN",
+          "boundary": "No image was rebuilt from pinned source/build inputs. Recorded execution of an existing image does not establish reproducible image construction."
+        },
+        "execution_evidence": {
+          "status": "PASS",
+          "reference": "research-workspace/evidence/2026-10-17/browser-verification.json",
+          "boundary": "Historical synthetic alternative completed after the file-descriptor-limit correction. The earlier failed R run remains in the evidence. This does not validate general CSV parsing by this archived version."
+        }
+      },
+      "limitations": [
+        "Archived for historical replay only; unavailable for new runs. Original R CSV type inference can change group labels such as 001 or NA. A replay may fail the independent result check; corrected source must never be silently substituted.",
+        "Public or synthetic data only.",
+        "Descriptive results do not establish scientific validity or statistical significance.",
+        "No independent operator or second-machine reproduction has been recorded."
+      ]
+    },
+    {
+      "conditions": {
+        "alternative": "Within each group containing at least five rows, remove one smallest and one largest value; retain all values in smaller groups. Report descriptive counts and means.",
+        "baseline": "Retain every value and report each group count and arithmetic mean, plus the overall count and mean."
+      },
+      "dependencies": {
+        "additional_packages": [],
+        "standard_library": [
+          "csv",
+          "json",
+          "sys"
+        ],
+        "statement": "No packages beyond the runtime standard library are required."
+      },
+      "id": "summary-python-v2-2d21e7a33cfcf954a3a8822086c60065803c8c54c5e1c2cf0424bd3000ce38be",
+      "image": "sha256:e028545ad6c8c393b8441ff67af0b6fef40aa828cfd010549e48935bf4686458",
+      "limitations": [
+        "Public or synthetic data only.",
+        "Descriptive results do not establish scientific validity or statistical significance.",
+        "No independent operator or second-machine reproduction has been recorded.",
+        "Local image IDs require retaining/loading the exact image for replay; a rebuild can have a different identity. Independent human and second-machine acceptance remain NOT RUN.",
+        "Build logs and package inventory are external evidence identified by SHA-256; they are not embedded in a study bundle."
+      ],
+      "limits": {
+        "cpus": 1,
+        "max_input_bytes": 65536,
+        "max_input_rows": 1000,
+        "max_output_bytes": 65536,
+        "memory_mb": 256,
+        "pids_limit": 64,
+        "timeout_seconds": 30
+      },
+      "name": "Python source build 2",
+      "platforms": [
+        {
+          "architecture": "arm64",
+          "evidence_boundary": "Native clean source compilation and runtime version probe. Workload qualification is recorded separately.",
+          "evidence_status": "PASS",
+          "os": "linux"
+        }
+      ],
+      "provenance": {
+        "build_inputs": [
+          {
+            "kind": "runtime-source",
+            "reference": "https://www.python.org/ftp/python/3.12.15/Python-3.12.15.tar.xz",
+            "sha256": "c2c4321961fab0fb999d66e0cecf521c2ab3994c7992873ea99e306c1094fd5a"
+          },
+          {
+            "kind": "base-image",
+            "reference": "debian@sha256:a1b86db52ce3daef089e45aabe36dfec4091f82464c25c1fdcf03de197cbe82a",
+            "sha256": "a1b86db52ce3daef089e45aabe36dfec4091f82464c25c1fdcf03de197cbe82a"
+          },
+          {
+            "kind": "buildkit-image",
+            "reference": "moby/buildkit@sha256:cec9f139f45e93c5c69c60f8b07cfad9f43f4ef6b6a6cd917527fea5ff2e3dea",
+            "sha256": "cec9f139f45e93c5c69c60f8b07cfad9f43f4ef6b6a6cd917527fea5ff2e3dea"
+          },
+          {
+            "kind": "dockerfile",
+            "reference": "source-builds/Dockerfile",
+            "sha256": "15fc1c64825096f1971a102a5a6817c62f1880ef99ce4c9c0730f6a49aac5d84"
+          },
+          {
+            "kind": "build-script",
+            "reference": "source-builds/build.sh",
+            "sha256": "abaee159ed424c15d855389a5505fc52538390cf11e1653607c97e7df17a417b"
+          },
+          {
+            "kind": "input-contract",
+            "reference": "source-builds/inputs.json",
+            "sha256": "88f08691e3a637310cc4fd263265729c51f34af2e3a84164857a4ae7f2a6b85e"
+          },
+          {
+            "kind": "package-inventory",
+            "reference": "evidence/2026-10-17/source-builds/arm64/build/python-1/packages.tsv",
+            "sha256": "c0c464fef8a38e1b5c914bc9bf0ae9bb715c111240f239019d23961567b0f189"
+          },
+          {
+            "kind": "build-record",
+            "reference": "evidence/2026-10-17/source-builds/arm64/build/python-1/build.json",
+            "sha256": "3606b789bf04cdee9b802887213e732fd2e7a94b24befbb2dfa0bbca94e886c9"
+          }
+        ],
+        "build_inputs_status": "RECORDED",
+        "clean_rebuild": {
+          "boundary": "Runtime compiled from hash-verified official source with network disabled, a pinned Debian base and signed package snapshot, and --no-cache. OS and compiler binaries are inherited, not rebuilt from source. No bit-identical image claim.",
+          "status": "PASS"
+        },
+        "execution_evidence": {
+          "status": "PASS",
+          "reference": "evidence/2026-10-17/source-builds/arm64/qualification/verification.json",
+          "boundary": "49 automated HTTP/Outfitter/Docker checks, including both conditions in both runtimes for two synthetic projects. Counts and labels exact; numeric tolerances enforced. Candidate remains disabled pending promotion review."
+        },
+        "image_origin": "New locally built image. SHA-256 is the local Docker image ID; OCI manifest/config digests are separately recorded. Not the historical opaque image.",
+        "repository": "https://github.com/EduCloud-Ecosystem/waypoint",
+        "source_revision": "8a3e87c3cc37389de9f8e682810f3fde8966b754"
+      },
+      "recipe": "summary-python",
+      "recipe_sha256": "549f064aaaa36ee8259f1f8e2902d0dfb15d071fcb6d9b60e52b266a7bbdb922",
+      "runtime": {
+        "id": "python",
+        "version": "3.12.15",
+        "version_evidence": "Executed version command in the new source-built image; see build record."
+      },
+      "source": "recipes/recipe.py",
+      "status": "candidate",
+      "validation": {
+        "absolute_tolerance": 1e-09,
+        "exact_fields": [
+          "condition",
+          "group",
+          "count"
+        ],
+        "independent_check": "The service recomputes descriptive results from the submitted input. Mean comparisons use the stated tolerances; object keys, conditions, group strings and counts must match exactly.",
+        "relative_tolerance": 1e-12
+      },
+      "version": 2
+    },
+    {
+      "conditions": {
+        "alternative": "Within each group containing at least five rows, remove one smallest and one largest value; retain all values in smaller groups. Report descriptive counts and means.",
+        "baseline": "Retain every value and report each group count and arithmetic mean, plus the overall count and mean."
+      },
+      "dependencies": {
+        "additional_packages": [],
+        "standard_library": [
+          "base",
+          "utils"
+        ],
+        "statement": "No packages beyond the runtime standard library are required."
+      },
+      "id": "summary-r-v3-9cf75772fa71c34c9e47fd8f08dbacc124099ee0298aa201eb0d393f038f9d2f",
+      "image": "sha256:ba0f81935cb7e0b5742833dbdb826e8c713572702879d8ab3d384bf6551e4235",
+      "limitations": [
+        "Public or synthetic data only.",
+        "Descriptive results do not establish scientific validity or statistical significance.",
+        "No independent operator or second-machine reproduction has been recorded.",
+        "Local image IDs require retaining/loading the exact image for replay; a rebuild can have a different identity. Independent human and second-machine acceptance remain NOT RUN.",
+        "Build logs and package inventory are external evidence identified by SHA-256; they are not embedded in a study bundle."
+      ],
+      "limits": {
+        "cpus": 1,
+        "max_input_bytes": 65536,
+        "max_input_rows": 1000,
+        "max_output_bytes": 65536,
+        "memory_mb": 256,
+        "pids_limit": 64,
+        "timeout_seconds": 30
+      },
+      "name": "R source build 3",
+      "platforms": [
+        {
+          "architecture": "arm64",
+          "evidence_boundary": "Native clean source compilation and runtime version probe. Workload qualification is recorded separately.",
+          "evidence_status": "PASS",
+          "os": "linux"
+        }
+      ],
+      "provenance": {
+        "build_inputs": [
+          {
+            "kind": "runtime-source",
+            "reference": "https://cran.r-project.org/src/base/R-4/R-4.6.1.tar.xz",
+            "sha256": "e4149581e151f3f1bc5edd6475e24ca1e2f452c08b6a22c29b570ce8abfe5783"
+          },
+          {
+            "kind": "base-image",
+            "reference": "debian@sha256:a1b86db52ce3daef089e45aabe36dfec4091f82464c25c1fdcf03de197cbe82a",
+            "sha256": "a1b86db52ce3daef089e45aabe36dfec4091f82464c25c1fdcf03de197cbe82a"
+          },
+          {
+            "kind": "buildkit-image",
+            "reference": "moby/buildkit@sha256:cec9f139f45e93c5c69c60f8b07cfad9f43f4ef6b6a6cd917527fea5ff2e3dea",
+            "sha256": "cec9f139f45e93c5c69c60f8b07cfad9f43f4ef6b6a6cd917527fea5ff2e3dea"
+          },
+          {
+            "kind": "dockerfile",
+            "reference": "source-builds/Dockerfile",
+            "sha256": "15fc1c64825096f1971a102a5a6817c62f1880ef99ce4c9c0730f6a49aac5d84"
+          },
+          {
+            "kind": "build-script",
+            "reference": "source-builds/build.sh",
+            "sha256": "abaee159ed424c15d855389a5505fc52538390cf11e1653607c97e7df17a417b"
+          },
+          {
+            "kind": "input-contract",
+            "reference": "source-builds/inputs.json",
+            "sha256": "88f08691e3a637310cc4fd263265729c51f34af2e3a84164857a4ae7f2a6b85e"
+          },
+          {
+            "kind": "package-inventory",
+            "reference": "evidence/2026-10-17/source-builds/arm64/build/r-1/packages.tsv",
+            "sha256": "c0c464fef8a38e1b5c914bc9bf0ae9bb715c111240f239019d23961567b0f189"
+          },
+          {
+            "kind": "build-record",
+            "reference": "evidence/2026-10-17/source-builds/arm64/build/r-1/build.json",
+            "sha256": "56f7734d73020717db249d7be8b20abba966531a1a26139e9d015bbff754fc46"
+          }
+        ],
+        "build_inputs_status": "RECORDED",
+        "clean_rebuild": {
+          "boundary": "Runtime compiled from hash-verified official source with network disabled, a pinned Debian base and signed package snapshot, and --no-cache. OS and compiler binaries are inherited, not rebuilt from source. No bit-identical image claim.",
+          "status": "PASS"
+        },
+        "execution_evidence": {
+          "status": "PASS",
+          "reference": "evidence/2026-10-17/source-builds/arm64/qualification/verification.json",
+          "boundary": "49 automated HTTP/Outfitter/Docker checks, including both conditions in both runtimes for two synthetic projects. Counts and labels exact; numeric tolerances enforced. Candidate remains disabled pending promotion review."
+        },
+        "image_origin": "New locally built image. SHA-256 is the local Docker image ID; OCI manifest/config digests are separately recorded. Not the historical opaque image.",
+        "repository": "https://github.com/EduCloud-Ecosystem/waypoint",
+        "source_revision": "8a3e87c3cc37389de9f8e682810f3fde8966b754"
+      },
+      "recipe": "summary-r",
+      "recipe_sha256": "a3c06effab96558d8a09068adbfaf2650a3d9ab82b608ea63437dc9076fe3957",
+      "runtime": {
+        "id": "r",
+        "version": "4.6.1",
+        "version_evidence": "Executed version command in the new source-built image; see build record."
+      },
+      "source": "recipes/recipe.R",
+      "status": "candidate",
+      "validation": {
+        "absolute_tolerance": 1e-09,
+        "exact_fields": [
+          "condition",
+          "group",
+          "count"
+        ],
+        "independent_check": "The service recomputes descriptive results from the submitted input. Mean comparisons use the stated tolerances; object keys, conditions, group strings and counts must match exactly.",
+        "relative_tolerance": 1e-12
+      },
+      "version": 3
+    },
+    {
+      "conditions": {
+        "alternative": "Within each group containing at least five rows, remove one smallest and one largest value; retain all values in smaller groups. Report descriptive counts and means.",
+        "baseline": "Retain every value and report each group count and arithmetic mean, plus the overall count and mean."
+      },
+      "dependencies": {
+        "additional_packages": [],
+        "standard_library": [
+          "csv",
+          "json",
+          "sys"
+        ],
+        "statement": "No packages beyond the runtime standard library are required."
+      },
+      "id": "summary-python-v3-02492c2dfdd6f8ff463dd98b61bfd403bcb84ac666dd679f1f1dbc37ad780635",
+      "image": "sha256:a0e50e4755ce77300a83f288779ab92274a96b6d8b24ac34f2cc24fdadb58a5e",
+      "limitations": [
+        "Public or synthetic data only.",
+        "Descriptive results do not establish scientific validity or statistical significance.",
+        "No independent operator or second-machine reproduction has been recorded.",
+        "Local image IDs require retaining/loading the exact image for replay; a rebuild can have a different identity. Independent human and second-machine acceptance remain NOT RUN.",
+        "Build logs and package inventory are external evidence identified by SHA-256; they are not embedded in a study bundle."
+      ],
+      "limits": {
+        "cpus": 1,
+        "max_input_bytes": 65536,
+        "max_input_rows": 1000,
+        "max_output_bytes": 65536,
+        "memory_mb": 256,
+        "pids_limit": 64,
+        "timeout_seconds": 30
+      },
+      "name": "Python source build 3",
+      "platforms": [
+        {
+          "architecture": "amd64",
+          "evidence_boundary": "Native clean source compilation and runtime version probe. Workload qualification is recorded separately.",
+          "evidence_status": "PASS",
+          "os": "linux"
+        }
+      ],
+      "provenance": {
+        "build_inputs": [
+          {
+            "kind": "runtime-source",
+            "reference": "https://www.python.org/ftp/python/3.12.15/Python-3.12.15.tar.xz",
+            "sha256": "c2c4321961fab0fb999d66e0cecf521c2ab3994c7992873ea99e306c1094fd5a"
+          },
+          {
+            "kind": "base-image",
+            "reference": "debian@sha256:a4672c0cb26fbdde88e38fa2dfb6c681942306680e41e4378b28770b6e79ee91",
+            "sha256": "a4672c0cb26fbdde88e38fa2dfb6c681942306680e41e4378b28770b6e79ee91"
+          },
+          {
+            "kind": "buildkit-image",
+            "reference": "moby/buildkit@sha256:cec9f139f45e93c5c69c60f8b07cfad9f43f4ef6b6a6cd917527fea5ff2e3dea",
+            "sha256": "cec9f139f45e93c5c69c60f8b07cfad9f43f4ef6b6a6cd917527fea5ff2e3dea"
+          },
+          {
+            "kind": "dockerfile",
+            "reference": "source-builds/Dockerfile",
+            "sha256": "15fc1c64825096f1971a102a5a6817c62f1880ef99ce4c9c0730f6a49aac5d84"
+          },
+          {
+            "kind": "build-script",
+            "reference": "source-builds/build.sh",
+            "sha256": "abaee159ed424c15d855389a5505fc52538390cf11e1653607c97e7df17a417b"
+          },
+          {
+            "kind": "input-contract",
+            "reference": "source-builds/inputs.json",
+            "sha256": "88f08691e3a637310cc4fd263265729c51f34af2e3a84164857a4ae7f2a6b85e"
+          },
+          {
+            "kind": "package-inventory",
+            "reference": "evidence/2026-10-17/source-builds/amd64/build/python-1/packages.tsv",
+            "sha256": "003d35b6d096b1054e87155aa6c845579108776386b81d35dd154e3ba2264ff0"
+          },
+          {
+            "kind": "build-record",
+            "reference": "evidence/2026-10-17/source-builds/amd64/build/python-1/build.json",
+            "sha256": "e5de0af23d186640e2f450e3d3a02e3b1a6f91b7cbc47db4d55a3aee998515be"
+          }
+        ],
+        "build_inputs_status": "RECORDED",
+        "clean_rebuild": {
+          "boundary": "Runtime compiled from hash-verified official source with network disabled, a pinned Debian base and signed package snapshot, and --no-cache. OS and compiler binaries are inherited, not rebuilt from source. No bit-identical image claim.",
+          "status": "PASS"
+        },
+        "execution_evidence": {
+          "status": "PASS",
+          "reference": "evidence/2026-10-17/source-builds/amd64/qualification/verification.json",
+          "boundary": "49 automated HTTP/Outfitter/Docker checks, including both conditions in both runtimes for two synthetic projects. Counts and labels exact; numeric tolerances enforced. Candidate remains disabled pending promotion review."
+        },
+        "image_origin": "New locally built image. SHA-256 is the local Docker image ID; OCI manifest/config digests are separately recorded. Not the historical opaque image.",
+        "repository": "https://github.com/EduCloud-Ecosystem/waypoint",
+        "source_revision": "7a84e1a0cb22f5074618e267c023f5cd7562b032"
+      },
+      "recipe": "summary-python",
+      "recipe_sha256": "549f064aaaa36ee8259f1f8e2902d0dfb15d071fcb6d9b60e52b266a7bbdb922",
+      "runtime": {
+        "id": "python",
+        "version": "3.12.15",
+        "version_evidence": "Executed version command in the new source-built image; see build record."
+      },
+      "source": "recipes/recipe.py",
+      "status": "candidate",
+      "validation": {
+        "absolute_tolerance": 1e-09,
+        "exact_fields": [
+          "condition",
+          "group",
+          "count"
+        ],
+        "independent_check": "The service recomputes descriptive results from the submitted input. Mean comparisons use the stated tolerances; object keys, conditions, group strings and counts must match exactly.",
+        "relative_tolerance": 1e-12
+      },
+      "version": 3
+    },
+    {
+      "conditions": {
+        "alternative": "Within each group containing at least five rows, remove one smallest and one largest value; retain all values in smaller groups. Report descriptive counts and means.",
+        "baseline": "Retain every value and report each group count and arithmetic mean, plus the overall count and mean."
+      },
+      "dependencies": {
+        "additional_packages": [],
+        "standard_library": [
+          "base",
+          "utils"
+        ],
+        "statement": "No packages beyond the runtime standard library are required."
+      },
+      "id": "summary-r-v4-c382484f8ace7bc970aee958f2f1297e4a8d7a91a243272bd4887c0ba033e2a2",
+      "image": "sha256:be7cf46517584c92ab06b04b049afa234992a2e0bb4a290c3822d53cc2a2bdad",
+      "limitations": [
+        "Public or synthetic data only.",
+        "Descriptive results do not establish scientific validity or statistical significance.",
+        "No independent operator or second-machine reproduction has been recorded.",
+        "Local image IDs require retaining/loading the exact image for replay; a rebuild can have a different identity. Independent human and second-machine acceptance remain NOT RUN.",
+        "Build logs and package inventory are external evidence identified by SHA-256; they are not embedded in a study bundle."
+      ],
+      "limits": {
+        "cpus": 1,
+        "max_input_bytes": 65536,
+        "max_input_rows": 1000,
+        "max_output_bytes": 65536,
+        "memory_mb": 256,
+        "pids_limit": 64,
+        "timeout_seconds": 30
+      },
+      "name": "R source build 4",
+      "platforms": [
+        {
+          "architecture": "amd64",
+          "evidence_boundary": "Native clean source compilation and runtime version probe. Workload qualification is recorded separately.",
+          "evidence_status": "PASS",
+          "os": "linux"
+        }
+      ],
+      "provenance": {
+        "build_inputs": [
+          {
+            "kind": "runtime-source",
+            "reference": "https://cran.r-project.org/src/base/R-4/R-4.6.1.tar.xz",
+            "sha256": "e4149581e151f3f1bc5edd6475e24ca1e2f452c08b6a22c29b570ce8abfe5783"
+          },
+          {
+            "kind": "base-image",
+            "reference": "debian@sha256:a4672c0cb26fbdde88e38fa2dfb6c681942306680e41e4378b28770b6e79ee91",
+            "sha256": "a4672c0cb26fbdde88e38fa2dfb6c681942306680e41e4378b28770b6e79ee91"
+          },
+          {
+            "kind": "buildkit-image",
+            "reference": "moby/buildkit@sha256:cec9f139f45e93c5c69c60f8b07cfad9f43f4ef6b6a6cd917527fea5ff2e3dea",
+            "sha256": "cec9f139f45e93c5c69c60f8b07cfad9f43f4ef6b6a6cd917527fea5ff2e3dea"
+          },
+          {
+            "kind": "dockerfile",
+            "reference": "source-builds/Dockerfile",
+            "sha256": "15fc1c64825096f1971a102a5a6817c62f1880ef99ce4c9c0730f6a49aac5d84"
+          },
+          {
+            "kind": "build-script",
+            "reference": "source-builds/build.sh",
+            "sha256": "abaee159ed424c15d855389a5505fc52538390cf11e1653607c97e7df17a417b"
+          },
+          {
+            "kind": "input-contract",
+            "reference": "source-builds/inputs.json",
+            "sha256": "88f08691e3a637310cc4fd263265729c51f34af2e3a84164857a4ae7f2a6b85e"
+          },
+          {
+            "kind": "package-inventory",
+            "reference": "evidence/2026-10-17/source-builds/amd64/build/r-1/packages.tsv",
+            "sha256": "003d35b6d096b1054e87155aa6c845579108776386b81d35dd154e3ba2264ff0"
+          },
+          {
+            "kind": "build-record",
+            "reference": "evidence/2026-10-17/source-builds/amd64/build/r-1/build.json",
+            "sha256": "048df0821a9dc3e297c0d777e582ac2e896de9fb2805a0e6af10f60c060905df"
+          }
+        ],
+        "build_inputs_status": "RECORDED",
+        "clean_rebuild": {
+          "boundary": "Runtime compiled from hash-verified official source with network disabled, a pinned Debian base and signed package snapshot, and --no-cache. OS and compiler binaries are inherited, not rebuilt from source. No bit-identical image claim.",
+          "status": "PASS"
+        },
+        "execution_evidence": {
+          "status": "PASS",
+          "reference": "evidence/2026-10-17/source-builds/amd64/qualification/verification.json",
+          "boundary": "49 automated HTTP/Outfitter/Docker checks, including both conditions in both runtimes for two synthetic projects. Counts and labels exact; numeric tolerances enforced. Candidate remains disabled pending promotion review."
+        },
+        "image_origin": "New locally built image. SHA-256 is the local Docker image ID; OCI manifest/config digests are separately recorded. Not the historical opaque image.",
+        "repository": "https://github.com/EduCloud-Ecosystem/waypoint",
+        "source_revision": "7a84e1a0cb22f5074618e267c023f5cd7562b032"
+      },
+      "recipe": "summary-r",
+      "recipe_sha256": "a3c06effab96558d8a09068adbfaf2650a3d9ab82b608ea63437dc9076fe3957",
+      "runtime": {
+        "id": "r",
+        "version": "4.6.1",
+        "version_evidence": "Executed version command in the new source-built image; see build record."
+      },
+      "source": "recipes/recipe.R",
+      "status": "candidate",
+      "validation": {
+        "absolute_tolerance": 1e-09,
+        "exact_fields": [
+          "condition",
+          "group",
+          "count"
+        ],
+        "independent_check": "The service recomputes descriptive results from the submitted input. Mean comparisons use the stated tolerances; object keys, conditions, group strings and counts must match exactly.",
+        "relative_tolerance": 1e-12
+      },
+      "version": 4
+    }
+  ]
+}

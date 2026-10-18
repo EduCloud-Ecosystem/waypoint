@@ -1,0 +1,66 @@
+{
+  "boundary": "Temporary synthetic local stores; fake project broker and intercepted Popen. No HTTP/browser/Docker/cloud execution.",
+  "controls": [
+    {
+      "action": "cancel",
+      "intercepted_launch_attempts": 0,
+      "invariant": "No broker launch after local authority denial committed.",
+      "local_denial_committed": true,
+      "phase": "before_execute",
+      "real_provider_processes": 0,
+      "status": "PASS"
+    },
+    {
+      "action": "revoke",
+      "intercepted_launch_attempts": 0,
+      "invariant": "No broker launch after local authority denial committed.",
+      "local_denial_committed": true,
+      "phase": "before_execute",
+      "real_provider_processes": 0,
+      "status": "PASS"
+    },
+    {
+      "action": "close",
+      "intercepted_launch_attempts": 0,
+      "invariant": "No broker launch after local authority denial committed.",
+      "local_denial_committed": true,
+      "phase": "before_execute",
+      "real_provider_processes": 0,
+      "status": "PASS"
+    },
+    {
+      "action": "cancel",
+      "intercepted_launch_attempts": 1,
+      "invariant": "No broker launch after local authority denial committed.",
+      "local_denial_committed": true,
+      "phase": "after_request_write",
+      "real_provider_processes": 0,
+      "status": "FAIL"
+    },
+    {
+      "action": "revoke",
+      "intercepted_launch_attempts": 1,
+      "invariant": "No broker launch after local authority denial committed.",
+      "local_denial_committed": true,
+      "phase": "after_request_write",
+      "real_provider_processes": 0,
+      "status": "FAIL"
+    },
+    {
+      "action": "close",
+      "intercepted_launch_attempts": 1,
+      "invariant": "No broker launch after local authority denial committed.",
+      "local_denial_committed": true,
+      "phase": "after_request_write",
+      "real_provider_processes": 0,
+      "status": "FAIL"
+    }
+  ],
+  "interpretation": "FAIL is the product dispatch invariant. Exit 0 means all three exact-boundary failures and all three earlier-denial controls were reproduced, not product acceptance.",
+  "real_provider_processes": 0,
+  "schema_version": 1,
+  "source_head": "68fe54960d9d3e56b39bd6aa51f21728f532b4c9",
+  "source_merge": "a58001b2731fa0dc9a1150b65c8940bf656625ec",
+  "status": "FAIL",
+  "witness": "REPRODUCED"
+}

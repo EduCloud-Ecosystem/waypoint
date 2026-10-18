@@ -55,6 +55,10 @@ class AccessError(Exception):
     pass
 
 
+class DispatchSuperseded(Exception):
+    """The claimed run is no longer current; do not overwrite its settlement."""
+
+
 class TrackedConnection:
     """Business writes are marked before SQLite sees them, including failed writes."""
     def __init__(self, db, operation, keep=False):
@@ -543,9 +547,59 @@ class Store:
             except (AccessError, ValueError):
                 return True
 
-    def finish(self, run, result=None, publication=None):
+    def launch_run(self, run, spawn, publication=None):
+        """Fence only spawn, using the same writer order as local safety controls."""
+        def current_launch():
+            # BEGIN IMMEDIATE orders controls from other Store instances and
+            # processes too. No remote check or broker wait belongs in this fence.
+            with contextlib.closing(self._connect()) as db:
+                try:
+                    db.execute("BEGIN IMMEDIATE")
+                    if self.guard:
+                        self.guard.validate_schema(db)
+                    config = json.loads((self.root / "config.json").read_bytes())
+                    if config.get("mode") in ("recovery-held", "retired"):
+                        raise DispatchSuperseded("This workspace is held or retired; dispatch is disabled.")
+                    with publication if publication is not None else contextlib.nullcontext(True) as authorized:
+                        row = db.execute("SELECT * FROM runs WHERE id=?", (run["id"],)).fetchone()
+                        if row is None or row["status"] != "running" or row["project_id"] != run["project_id"]:
+                            raise DispatchSuperseded("The claimed run is no longer current.")
+                        # Check expiry after acquiring identity publication too:
+                        # waiting for that local lock can cross the project end.
+                        try:
+                            self._access(db, row["project_id"], row["subject"], {"owner", "editor"}, active=True)
+                        except (AccessError, ValueError):
+                            return None
+                        if not authorized or row["cancel_requested"]:
+                            return None
+                        return spawn()
+                finally:
+                    # Failure here after spawn is uncertain, never a refusal.
+                    db.rollback()
+
+        if self.guard:
+            with self.guard.locked():
+                token = self.guard.running(run["id"])
+                if token is None:
+                    with contextlib.closing(self.connect()) as db:
+                        row = db.execute("SELECT status FROM runs WHERE id=?", (run["id"],)).fetchone()
+                    if row is None or row["status"] != "running":
+                        raise DispatchSuperseded("The claimed run is no longer current.")
+                    raise GuardPaused("missing_run_intent")
+                return token.launch(current_launch)
+        return current_launch()
+
+    def finish(self, run, result=None, publication=None, *, claimed=False):
         try:
-            return self._finish(run, result, publication)
+            return self._finish(run, result, publication, claimed=claimed)
+        except DispatchSuperseded:
+            if self.guard:
+                token = self.guard.running(run["id"])
+                if token:
+                    token.fail()
+            # Another authority already settled or interrupted the run. Do not
+            # replace its files or accounting using this worker's stale copy.
+            return
         except BaseException:
             if self.guard:
                 token = self.guard.running(run["id"])
@@ -553,9 +607,11 @@ class Store:
                     token.fail()
             raise
 
-    def _finish(self, run, result=None, publication=None):
+    def _finish(self, run, result=None, publication=None, *, claimed=False):
         with self.transaction(essential=True, kind="settle", resource_id=run["id"], request=run) as db:
             row = db.execute("SELECT * FROM runs WHERE id=?", (run["id"],)).fetchone()
+            if claimed and (row is None or row["status"] != "running" or row["project_id"] != run["project_id"]):
+                raise DispatchSuperseded("The claimed run is no longer current.")
             try:
                 self._access(db, row["project_id"], row["subject"], {"owner", "editor"}, active=True)
                 allowed = not row["cancel_requested"]
