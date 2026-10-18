@@ -1,0 +1,25 @@
+test_residue_arriving_after_business_statement_blocks_commit (__main__.IndependentControls.test_residue_arriving_after_business_statement_blocks_commit) ... FAIL
+test_missing_receipt_at_same_incarnation_blocks_safety (__main__.IndependentControls.test_missing_receipt_at_same_incarnation_blocks_safety) ... FAIL
+
+======================================================================
+FAIL: test_residue_arriving_after_business_statement_blocks_commit (__main__.IndependentControls.test_residue_arriving_after_business_statement_blocks_commit)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/guard-publication-independent-20261018/adversarial_controls.py", line 77, in test_residue_arriving_after_business_statement_blocks_commit
+    with self.assertRaises(g.GuardPaused):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+AssertionError: GuardPaused not raised
+
+======================================================================
+FAIL: test_missing_receipt_at_same_incarnation_blocks_safety (__main__.IndependentControls.test_missing_receipt_at_same_incarnation_blocks_safety)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/guard-publication-independent-20261018/adversarial_controls.py", line 90, in test_missing_receipt_at_same_incarnation_blocks_safety
+    with self.assertRaises(g.GuardPaused):c.store.logout(c.token)
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+AssertionError: GuardPaused not raised
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.078s
+
+FAILED (failures=2)

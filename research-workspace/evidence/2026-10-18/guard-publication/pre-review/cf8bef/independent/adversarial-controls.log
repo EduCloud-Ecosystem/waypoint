@@ -1,0 +1,14 @@
+test_barrier_close_error_holds_process_without_business_effect (__main__.IndependentControls.test_barrier_close_error_holds_process_without_business_effect) ... ok
+test_cached_B_partial_A_ordinary_residue_preserves_safety_effect (__main__.IndependentControls.test_cached_B_partial_A_ordinary_residue_preserves_safety_effect) ... ok
+test_cached_B_partial_A_safety_residue_refuses_both_roles (__main__.IndependentControls.test_cached_B_partial_A_safety_residue_refuses_both_roles) ... ok
+test_missing_receipt_at_same_incarnation_blocks_safety (__main__.IndependentControls.test_missing_receipt_at_same_incarnation_blocks_safety) ... ok
+test_mixed_v3_binding_refuses_reopen_live_safety_and_export (__main__.IndependentControls.test_mixed_v3_binding_refuses_reopen_live_safety_and_export) ... ok
+test_residue_arriving_after_business_statement_blocks_commit (__main__.IndependentControls.test_residue_arriving_after_business_statement_blocks_commit) ... ok
+test_settlement_uses_fresh_safety_authority_despite_ordinary_residue (__main__.IndependentControls.test_settlement_uses_fresh_safety_authority_despite_ordinary_residue) ... ok
+test_takeover_performs_real_barrier_before_business (__main__.IndependentControls.test_takeover_performs_real_barrier_before_business) ... ok
+test_uncertain_essential_terminal_receipt_does_not_grant_fresh_safety (__main__.IndependentControls.test_uncertain_essential_terminal_receipt_does_not_grant_fresh_safety) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 1.231s
+
+OK

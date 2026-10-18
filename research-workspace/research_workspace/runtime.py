@@ -103,15 +103,29 @@ class Worker:
     def start(self):
         try:
             self.store.recover(cancel_queued=self.identity is not None)
-        except Exception:
+        except Exception as error:
             if not self.store.guard:
                 raise
-            self.store.guard.fail()
+            self.guard_failure("safety", error)
+            if self.store.guard.publication:
+                raise
         self.thread.start()
 
     def stop(self):
         self.stopped.set()
         self.thread.join(timeout=40)
+
+    def guard_failure(self, origin, error, run_id=None):
+        guard = self.store.guard
+        if not guard.publication:
+            guard.fail()
+            return
+        try:
+            token = guard.running(run_id) if run_id is not None else None
+            guard.fail(origin=origin, operation=token, error=error)
+        except BaseException:
+            guard.lease.failure = guard.lease.failure or "worker_failed"
+            error.add_note("The required guard failure note could not be published.")
 
     def loop(self):
         while not self.stopped.is_set():
@@ -120,10 +134,10 @@ class Worker:
             except (GuardPaused, GuardBusy):
                 self.stopped.wait(0.25)
                 continue
-            except Exception:
+            except Exception as error:
                 if not self.store.guard:
                     raise
-                self.store.guard.fail()
+                self.guard_failure("ordinary", error)
                 self.stopped.wait(0.25)
                 continue
             if run is None:
@@ -131,17 +145,17 @@ class Worker:
                 continue
             try:
                 self.execute(run)
-            except Exception:
+            except Exception as error:
                 # Keep failures visible without leaking local paths or raw broker logs.
                 run.update(status="interrupted", metrics={}, error="Execution could not be reconciled. The operator must inspect the broker receipt; no automatic retry was made.")
                 if self.store.guard:
-                    self.store.guard.fail()
+                    self.guard_failure("ordinary", error, run["id"])
                 try:
                     self.store.finish(run, claimed=True)
-                except Exception:
+                except Exception as error:
                     if not self.store.guard:
                         raise
-                    self.store.guard.fail()
+                    self.guard_failure("safety", error)
             finally:
                 if self.identity:
                     self.identity.release(run["id"])
@@ -194,7 +208,15 @@ class Worker:
         if self.store.guard and token is None:
             raise GuardPaused("missing_run_intent")
         if token:
-            token.effect()
+            if token.guard.publication:
+                # Another process may have published since this run was claimed.
+                # Qualify that incarnation before the external file effect;
+                # transaction effects must still forbid takeover within SQL.
+                with token.guard.locked():
+                    token.guard.check(admitted=token)
+                    token.effect()
+            else:
+                token.effect()
         private_write(request_path, self.store.serialized(request, "request").encode())
         process = None
         def spawn():

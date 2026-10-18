@@ -20,9 +20,17 @@ EXPORT_MODE = "local-finite-public-data-v2"
 EXPORT_FORMAT = "educloud-finite-authority-v2"
 EXPORT_GUARD_FORMAT = "educloud-operation-guard-v3"
 EXPORT_USER_VERSION = 0x45464132
-MODES = {MODE, EXPORT_MODE}
-GUARD_FORMATS = {GUARD_FORMAT, EXPORT_GUARD_FORMAT}
-USER_VERSIONS = {USER_VERSION, EXPORT_USER_VERSION}
+PUBLICATION_MODE = "local-finite-public-data-v3"
+PUBLICATION_FORMAT = "educloud-finite-authority-v3"
+PUBLICATION_GUARD_FORMAT = "educloud-operation-guard-v4"
+PUBLICATION_USER_VERSION = 0x45464133
+PROFILE_MODES = {1: MODE, 2: EXPORT_MODE, 3: PUBLICATION_MODE}
+PROFILE_FORMATS = {1: FORMAT, 2: EXPORT_FORMAT, 3: PUBLICATION_FORMAT}
+PROFILE_GUARDS = {1: GUARD_FORMAT, 2: EXPORT_GUARD_FORMAT, 3: PUBLICATION_GUARD_FORMAT}
+PROFILE_DATABASES = {1: USER_VERSION, 2: EXPORT_USER_VERSION, 3: PUBLICATION_USER_VERSION}
+MODES = set(PROFILE_MODES.values())
+GUARD_FORMATS = set(PROFILE_GUARDS.values())
+USER_VERSIONS = set(PROFILE_DATABASES.values())
 ROW_LIMITS = {"users": 128, "projects": 20, "members": 1024, "runs": 1000,
               "sessions": 256, "sessions_per_subject": 8}
 ENCODED_LIMITS = {"config": 65536, "project": 32768, "run": 262144,
@@ -45,13 +53,20 @@ def encode(value):
 
 
 def profile(version=1):
-    if type(version) is not int or version not in (1, 2):
+    if type(version) is not int or version not in PROFILE_FORMATS:
         raise InvalidProfile("Unsupported finite authority version.")
-    result = {"format": FORMAT if version == 1 else EXPORT_FORMAT, "row_limits": dict(ROW_LIMITS),
+    result = {"format": PROFILE_FORMATS[version], "row_limits": dict(ROW_LIMITS),
             "encoded_limits": dict(ENCODED_LIMITS), "path_utf8_bytes": PATH_LIMIT,
             "counter_limit": COUNTER_LIMIT}
-    if version == 2:
+    if version in (2, 3):
         result["export_protocol"] = "educloud-bounded-export-v1"
+    if version == 3:
+        result["guard_publication"] = {
+            "format": "educloud-bounded-guard-publication-v1",
+            "ordinary_scratch": ".operation-guard-ordinary.pending",
+            "safety_scratch": ".operation-guard-safety.pending",
+            "max_payload_bytes": 4194304, "unresolved_essential": "refuse",
+            "residue": "preserve", "failure_notes": "origin_role"}
     return result
 
 
@@ -62,7 +77,7 @@ def profile_digest(version=1):
 def binding_version(binding):
     if not isinstance(binding, dict):
         raise InvalidProfile("Missing finite authority binding.")
-    for version, name in ((1, GUARD_FORMAT), (2, EXPORT_GUARD_FORMAT)):
+    for version, name in PROFILE_GUARDS.items():
         if (binding.get("format") == name
                 and binding.get("logical_authority_sha256") == profile_digest(version)):
             return version
@@ -71,7 +86,7 @@ def binding_version(binding):
 
 def database_version(version):
     profile(version)  # Reject unknown versions, including booleans.
-    return USER_VERSION if version == 1 else EXPORT_USER_VERSION
+    return PROFILE_DATABASES[version]
 
 
 def bounded(value, kind):
@@ -119,9 +134,9 @@ def validate_config(config, *, binding=None):
     allowed = {"version", "mode", "broker", "images", "total_budget_cpu_seconds",
                "operation_guard", "logical_authority", "recovery_retired"}
     required = {"version", "mode", "broker", "images", "total_budget_cpu_seconds", "logical_authority"}
-    version = next((v for v in (1, 2) if isinstance(config, dict)
+    version = next((v for v in PROFILE_MODES if isinstance(config, dict)
                     and encode(config.get("logical_authority")) == encode(profile(v))), None)
-    mode = MODE if version == 1 else EXPORT_MODE
+    mode = PROFILE_MODES.get(version)
     if (not isinstance(config, dict) or set(config) - allowed or not required <= set(config)
             or version is None or config.get("mode") not in {mode, "recovery-held", "retired"}):
         raise InvalidProfile("Missing or unsupported finite authority profile; unrestricted fallback is disabled.")

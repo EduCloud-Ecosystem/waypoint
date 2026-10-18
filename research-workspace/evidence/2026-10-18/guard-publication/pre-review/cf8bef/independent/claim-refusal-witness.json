@@ -1,0 +1,146 @@
+{
+  "head": "cf8befca9cef418d7e1238945872bed45d7fc6f2",
+  "source_sha256": "08074a58f8a3fff01ac7474436cd6342e7bebcba6f33fcbfb0d57ed2ecbc600a",
+  "cases": [
+    {
+      "action": "cancel",
+      "before": {
+        "guard_enabled": true,
+        "state": "ready",
+        "reason": null,
+        "quota_enforced": false,
+        "can_create_project": true,
+        "can_submit_run": true
+      },
+      "claim": {
+        "exception": "GuardPaused",
+        "code": "missing_operation",
+        "notes": [
+          "The required guard failure note could not be published."
+        ]
+      },
+      "after": {
+        "guard_enabled": true,
+        "state": "paused",
+        "reason": "operation_failed",
+        "quota_enforced": false,
+        "can_create_project": false,
+        "can_submit_run": false
+      },
+      "run": [
+        "cancelled",
+        1
+      ],
+      "latest_receipt": "committed",
+      "later_admission": {
+        "exception": "GuardPaused",
+        "code": "operation_failed"
+      }
+    },
+    {
+      "action": "revoke",
+      "before": {
+        "guard_enabled": true,
+        "state": "ready",
+        "reason": null,
+        "quota_enforced": false,
+        "can_create_project": true,
+        "can_submit_run": true
+      },
+      "claim": {
+        "exception": "GuardPaused",
+        "code": "missing_operation",
+        "notes": [
+          "The required guard failure note could not be published."
+        ]
+      },
+      "after": {
+        "guard_enabled": true,
+        "state": "paused",
+        "reason": "operation_failed",
+        "quota_enforced": false,
+        "can_create_project": false,
+        "can_submit_run": false
+      },
+      "run": [
+        "cancelled",
+        1
+      ],
+      "latest_receipt": "committed",
+      "later_admission": {
+        "exception": "GuardPaused",
+        "code": "operation_failed"
+      }
+    },
+    {
+      "action": "close",
+      "before": {
+        "guard_enabled": true,
+        "state": "ready",
+        "reason": null,
+        "quota_enforced": false,
+        "can_create_project": true,
+        "can_submit_run": true
+      },
+      "claim": {
+        "exception": "GuardPaused",
+        "code": "missing_operation",
+        "notes": [
+          "The required guard failure note could not be published."
+        ]
+      },
+      "after": {
+        "guard_enabled": true,
+        "state": "paused",
+        "reason": "operation_failed",
+        "quota_enforced": false,
+        "can_create_project": false,
+        "can_submit_run": false
+      },
+      "run": [
+        "cancelled",
+        1
+      ],
+      "latest_receipt": "committed",
+      "later_admission": {
+        "exception": "GuardPaused",
+        "code": "operation_failed"
+      }
+    },
+    {
+      "action": "expired",
+      "before": {
+        "guard_enabled": true,
+        "state": "ready",
+        "reason": null,
+        "quota_enforced": false,
+        "can_create_project": true,
+        "can_submit_run": true
+      },
+      "claim": {
+        "exception": "GuardPaused",
+        "code": "missing_operation",
+        "notes": [
+          "The required guard failure note could not be published."
+        ]
+      },
+      "after": {
+        "guard_enabled": true,
+        "state": "paused",
+        "reason": "operation_failed",
+        "quota_enforced": false,
+        "can_create_project": false,
+        "can_submit_run": false
+      },
+      "run": [
+        "cancelled",
+        0
+      ],
+      "latest_receipt": "committed",
+      "later_admission": {
+        "exception": "GuardPaused",
+        "code": "operation_failed"
+      }
+    }
+  ]
+}
