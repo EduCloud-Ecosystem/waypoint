@@ -1,0 +1,110 @@
+"""Qualification-oracle controls only; no Docker, broker execution or providers."""
+import copy
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+import tempfile
+import unittest
+from unittest.mock import patch
+
+import verify_broker_upgrade as q
+
+
+def passing_report():
+    return {"checks": [{"name": name, "passed": True} for name in sorted(q.REQUIRED)],
+            "attempts": [{"cleanup_verified": True} for _ in range(q.MAX_ATTEMPTS)]}
+
+
+class QualificationControls(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+
+    def test_complete_oracle_rejects_empty_partial_duplicate_false_and_unknown(self):
+        self.assertTrue(q.accepted(passing_report()))
+        for variant in ("empty", "missing", "duplicate", "false", "unknown", "fewer_attempts", "unknown_cleanup"):
+            with self.subTest(variant=variant):
+                report = passing_report()
+                if variant == "empty": report["checks"] = []
+                if variant == "missing": report["checks"].pop()
+                if variant == "duplicate": report["checks"][-1] = report["checks"][0]
+                if variant == "false": report["checks"][0]["passed"] = False
+                if variant == "unknown": report["checks"][0]["passed"] = "UNKNOWN"
+                if variant == "fewer_attempts": report["attempts"].pop()
+                if variant == "unknown_cleanup": report["attempts"][0]["cleanup_verified"] = 1
+                self.assertFalse(q.accepted(report))
+
+    def test_oracle_remains_enforced_under_optimized_python(self):
+        code = "import verify_broker_upgrade as q; r={'checks':[],'attempts':[]}; raise SystemExit(1 if q.accepted(r) else 0)"
+        completed = subprocess.run([sys.executable, "-O", "-c", code], cwd=q.HERE, capture_output=True, timeout=10)
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+
+    def test_output_existing_directory_file_and_symlink_refused(self):
+        for kind in ("directory", "file", "symlink"):
+            path = self.root / kind
+            if kind == "directory": path.mkdir()
+            if kind == "file": path.write_text("preserve")
+            if kind == "symlink": path.symlink_to(self.root / "directory", target_is_directory=True)
+            with self.subTest(kind=kind), self.assertRaises(FileExistsError): q.Audit(path, {})
+        self.assertEqual((self.root / "file").read_text(), "preserve")
+
+    def test_refusal_oracle_fails_when_operation_unexpectedly_succeeds(self):
+        audit = q.Audit(self.root / "output", {})
+        with self.assertRaises(ValueError): audit.refused("unknown_activation_refused", lambda: None)
+        report = json.loads((audit.root / "verification.json").read_text())
+        self.assertEqual(report["checks"], [{"name": "unknown_activation_refused", "passed": False}])
+
+    def request(self):
+        return {"request_id": "fixture", "project_id": "fixture", "cpus": 1, "memory_mb": 256,
+                "pids_limit": 64, "timeout_seconds": 30, "max_output_bytes": 65536,
+                "image": next(iter(json.loads((q.HERE / "images.lock.json").read_text()).values()))}
+
+    def test_attempt_budget_is_durable_before_launch_and_never_replenished(self):
+        audit = q.Audit(self.root / "output", {})
+        request = audit.private / "request.json"
+        request.write_text(json.dumps(self.request()))
+        for _ in range(q.MAX_ATTEMPTS): audit.attempt(sys.executable, audit.private, request)
+        saved = json.loads((audit.root / "verification.json").read_text())
+        self.assertEqual(len(saved["attempts"]), 7)
+        self.assertTrue(all(a["outcome"] == "unknown_before_launch" for a in saved["attempts"]))
+        with self.assertRaises(ValueError): audit.attempt(sys.executable, audit.private, request)
+        self.assertEqual(len(audit.targets), 7)
+
+    def test_attempt_refuses_over_limit_boolean_and_unreviewed_image_before_recording(self):
+        for field, value in (("timeout_seconds", 31), ("cpus", True), ("memory_mb", 257), ("image", "sha256:" + "f"*64)):
+            with self.subTest(field=field):
+                audit = q.Audit(self.root / field, {})
+                request = audit.private / "request.json"
+                request.write_text(json.dumps({**self.request(), field: value}))
+                with self.assertRaises(ValueError): audit.attempt(sys.executable, audit.private, request)
+                self.assertEqual(audit.report["attempts"], [])
+
+    def test_failed_body_and_failed_cleanup_cannot_report_pass(self):
+        with patch.object(q, "binary_identity", return_value={}), patch.object(q, "validate_images"), \
+             patch.object(q, "bridge", side_effect=ValueError("injected private failure")), \
+             patch.object(q.Audit, "cleanup", return_value=False):
+            report = q.exercise(sys.executable, sys.executable, self.root / "output")
+        self.assertEqual(report["status"], "FAIL")
+        self.assertFalse(report["checks"][-1]["passed"])
+        self.assertTrue((self.root / "output/state.private/failure.txt").is_file())
+        self.assertNotIn("injected private", (self.root / "output/verification.json").read_text())
+
+    def test_build_manifest_must_bind_binary_pin_metadata_and_builder(self):
+        binary = self.root / "candidate"
+        binary.write_bytes(b"fixture, never executed"); binary.chmod(0o700)
+        pin = json.loads(q.PINS.read_text())["candidate"]
+        metadata = ["\tpath\tgithub.com/EduCloud-Ecosystem/outfitter/cmd/outfitter"]
+        original = {"format": "waypoint-broker-build-v1", "pin": pin, "binary_sha256": q.file_hash(binary),
+                    "build_metadata": metadata, "pins_sha256": q.file_hash(q.PINS),
+                    "builder_sha256": q.file_hash(q.HERE / "build_upgrade_brokers.py")}
+        manifest = binary.with_name(binary.name + ".provenance.json")
+        with patch.object(q, "observed_command", return_value=(0, ("fixture\n" + "\n".join(metadata)).encode(), b"")):
+            manifest.write_text(json.dumps(original))
+            self.assertEqual(q.binary_identity(binary, pin)["sha256"], q.file_hash(binary))
+            for field in ("pin", "binary_sha256", "build_metadata", "pins_sha256", "builder_sha256"):
+                value = copy.deepcopy(original); value[field] = "wrong"
+                manifest.write_text(json.dumps(value))
+                with self.subTest(field=field), self.assertRaises(ValueError): q.binary_identity(binary, pin)

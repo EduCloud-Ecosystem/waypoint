@@ -12,10 +12,15 @@ or enable native execution, consumer commands, quota admission or cloud work.
 
 `python verify_broker_upgrade.py --baseline-broker ABSOLUTE_BINARY
 --candidate-broker ABSOLUTE_BINARY --output NEW_DIRECTORY` requires separate
-clean Go builds with embedded VCS revisions matching the named source pins.
-The candidate may identify the reviewed head or its merge, whose source trees
-must match the recorded source contract. Binary hashes and Go build metadata
-are evidence of the supplied build, not independently reproducible-build proof.
+builds and adjacent provenance manifests from `build_upgrade_brokers.py
+--repository OUTFITTER_GIT_REPOSITORY --output NEW_PRIVATE_DIRECTORY`. The helper
+reads the pinned Git blobs, verifies every compiled source hash, and builds with
+module/toolchain downloads disabled. Source snapshots, build logs, exact command
+and environment overrides remain private. It does not depend on embedded VCS
+stamps, which this host's Go toolchain omits even with `-buildvcs=true`.
+Binary hashes, source manifests and Go build metadata bind the supplied build;
+they do not independently authenticate an operator-supplied executable or prove
+bit-identical reproducible builds.
 Both binaries must exist and preflight must finish before the new private output
 is created. Only existing reviewed Python/R images from images.lock.json are
 inspected; this harness never pulls images. State and credential-containing
