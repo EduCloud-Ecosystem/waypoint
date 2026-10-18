@@ -129,6 +129,7 @@ if q.accepted(r): raise SystemExit('Failure marker accepted')
             self.assertTrue(audit.cleanup())
         self.assertTrue(q.accepted(audit.report))
         bindings = copy.deepcopy(audit.report["expected_attempts"])
+        valid_hashes = [entry["final_receipt_sha256"] for entry in audit.report["attempts"]]
         def refused(*args):
             _, receipt = valid(*args)
             receipt.update(admitted=False, execution_started=False, status="failed", exit_code=None, error="refused",
@@ -141,6 +142,8 @@ if q.accepted(r): raise SystemExit('Failure marker accepted')
         self.assertTrue(all(a["cleanup_verified"] is False and a["cleanup_error_type"] == "ValueError" for a in audit.report["attempts"]))
         # A rejected later observation cannot overwrite the earlier full charge.
         self.assertEqual(sum(a["compute"]["charged_cpu_seconds"] for a in audit.report["attempts"]), 210)
+        self.assertEqual([entry["final_receipt_sha256"] for entry in audit.report["attempts"]], valid_hashes)
+        self.assertTrue(all(entry["rejected_final_receipt_sha256"] != entry["final_receipt_sha256"] for entry in audit.report["attempts"]))
 
     def test_final_receipt_rejects_mutated_identity_and_nonsettled_accounting(self):
         audit = self.recorded_audit()

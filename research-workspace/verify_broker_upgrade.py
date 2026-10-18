@@ -146,7 +146,7 @@ def accepted(report):
             if (not settled_observation(final) or not sha256_value(entry["final_receipt_sha256"])
                     or any(final[k] != binding[k] for k in ("request_id", "project_id", "image"))
                     or entry["cleanup_verified"] is not True or entry["outcome"] != final["status"]
-                    or entry["compute"] != final["compute"] or "cleanup_error_type" in entry):
+                    or entry["compute"] != final["compute"] or "cleanup_error_type" in entry or "rejected_final_receipt_sha256" in entry):
                 return False
             # Equality alone allows 30.0 == 30. Independently type-check both copies.
             if not settled_observation({**final, "compute": entry["compute"]}):
@@ -254,8 +254,13 @@ class Audit:
                 if not receipt.get("cleanup_verified") or receipt.get("unresolved_liability"):
                     self.call(executable, state, "cancel", "--request-id", request["request_id"])
                     receipt = self.call(executable, state, "reconcile", "--request-id", request["request_id"])[1]
-                entry["final_receipt_sha256"] = digest(canonical(receipt).encode())
-                entry["final_receipt"] = final_receipt(receipt, request)
+                receipt_sha256 = digest(canonical(receipt).encode())
+                try:
+                    summary = final_receipt(receipt, request)
+                except ValueError:
+                    entry["rejected_final_receipt_sha256"] = receipt_sha256
+                    raise
+                entry.update(final_receipt_sha256=receipt_sha256, final_receipt=summary)
                 entry.update(cleanup_verified=True, outcome=receipt["status"], compute=copy.deepcopy(receipt["compute"]))
             except Exception as exc:
                 entry.update(cleanup_verified=False, cleanup_error_type=type(exc).__name__)
