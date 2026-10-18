@@ -1,0 +1,46 @@
+[
+  {
+    "case": "missing-output-binding",
+    "observed_status": "FAIL",
+    "failure": {
+      "type": "ValueError",
+      "message": "Missing diagnostic reference"
+    },
+    "attempts": 1,
+    "charged_cpu_seconds": 30,
+    "provider": "all external effects simulated by retained test fixture"
+  },
+  {
+    "case": "wrong-output-binding",
+    "observed_status": "FAIL",
+    "failure": {
+      "type": "FileNotFoundError",
+      "message": "[Errno 2] No such file or directory: '/private/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmpgm7cqeg6/synthetic/state.private/broker/outputs/0000000000000000000000000000000000000000000000000000000000000000.json'"
+    },
+    "attempts": 1,
+    "charged_cpu_seconds": 30,
+    "provider": "all external effects simulated by retained test fixture"
+  },
+  {
+    "case": "wrong-project-budget",
+    "observed_status": "FAIL",
+    "failure": {
+      "type": "ValueError",
+      "message": "Ledger project population or budgets differ from manifest"
+    },
+    "attempts": 0,
+    "charged_cpu_seconds": 0,
+    "provider": "all external effects simulated by retained test fixture"
+  },
+  {
+    "case": "extra-ledger-project",
+    "observed_status": "FAIL",
+    "failure": {
+      "type": "ValueError",
+      "message": "Ledger project population or budgets differ from manifest"
+    },
+    "attempts": 0,
+    "charged_cpu_seconds": 0,
+    "provider": "all external effects simulated by retained test fixture"
+  }
+]

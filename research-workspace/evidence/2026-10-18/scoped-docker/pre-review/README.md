@@ -23,6 +23,13 @@ PASS. Candidate 01 remains immutable and unexecuted.
   harness/test sources. One recipe mutation failed the production bundle schema
   before reaching the new comparison. The corrected regression also changes the
   embedded recipe hash so it remains a valid bundle and tests the intended check.
+- `independent-09418f2` retains Candidate 02's independent review and two lineage
+  counterexamples. Both final HTTP projections and public exports could agree on
+  changed input or recipe hashes while differing from the prelaunch binding.
+  The complete original snapshot remains at its recorded private path; the
+  exact 34 candidate files are retained in `candidate-02/source.tar.gz`. Replay
+  copies can extract those members into `source/research-workspace` alongside
+  the unchanged scripts. The revised settlement guard checks this missing link.
 
 The `preservation.json` records compare retained original witness files byte for
 byte with their original locations. Newly written preservation notes are separate

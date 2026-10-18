@@ -1,0 +1,125 @@
+{
+  "candidate": "09418f231187a5465ba9d0b8546b3b59514959e9",
+  "scope": "Temporary synthetic stores and pure objects only; no real provider, broker, Docker, production CLI or checkpoint.",
+  "controls": [
+    {
+      "name": "baseline",
+      "actual_status": "PASS",
+      "expected_status": "PASS",
+      "matched": true,
+      "charge": 120,
+      "accounting_complete": true,
+      "attempts": 4,
+      "failure": null
+    },
+    {
+      "name": "absence-failure",
+      "actual_status": "FAIL",
+      "expected_status": "FAIL",
+      "matched": true,
+      "charge": 30,
+      "accounting_complete": false,
+      "attempts": 1,
+      "failure": {
+        "type": "ValueError",
+        "message": "Container absence was not verified"
+      }
+    },
+    {
+      "name": "numeric-export",
+      "actual_status": "FAIL",
+      "expected_status": "FAIL",
+      "matched": true,
+      "charge": 120,
+      "accounting_complete": false,
+      "attempts": 4,
+      "failure": {
+        "type": "ValueError",
+        "message": "Export status/accounting/lineage/metrics differ from captured HTTP record"
+      }
+    },
+    {
+      "name": "unknown-export",
+      "actual_status": "FAIL",
+      "expected_status": "FAIL",
+      "matched": true,
+      "charge": 120,
+      "accounting_complete": false,
+      "attempts": 4,
+      "failure": {
+        "type": "ValueError",
+        "message": "Export status/accounting/lineage/metrics differ from captured HTTP record"
+      }
+    },
+    {
+      "name": "self-consistent-different-diagnostics",
+      "actual_status": "FAIL",
+      "expected_status": "FAIL",
+      "matched": true,
+      "charge": 30,
+      "accounting_complete": false,
+      "attempts": 1,
+      "failure": {
+        "type": "ValueError",
+        "message": "Receipt differs from retained ledger diagnostics"
+      }
+    },
+    {
+      "name": "interrupted-second-intent",
+      "actual_status": "FAIL",
+      "expected_status": "FAIL",
+      "matched": true,
+      "charge": 30,
+      "accounting_complete": false,
+      "attempts": 2,
+      "failure": {
+        "type": "KeyboardInterrupt",
+        "message": "synthetic interruption before external effect"
+      }
+    },
+    {
+      "name": "self-consistent-diagnostic-oracle",
+      "accepted": false,
+      "matched": true
+    },
+    {
+      "name": "missing-project",
+      "rejected": true,
+      "matched": true,
+      "reason": "Ledger project population or budgets differ from manifest"
+    },
+    {
+      "name": "wrong-map-id",
+      "rejected": true,
+      "matched": true,
+      "reason": "Ledger project population or budgets differ from manifest"
+    },
+    {
+      "name": "float-budget",
+      "rejected": true,
+      "matched": true,
+      "reason": "Ledger project population or budgets differ from manifest"
+    },
+    {
+      "name": "bool-budget",
+      "rejected": true,
+      "matched": true,
+      "reason": "Ledger project population or budgets differ from manifest"
+    },
+    {
+      "name": "native-population",
+      "rejected": true,
+      "matched": true,
+      "reason": "Unexpected ledger authority population"
+    },
+    {
+      "name": "charge-regression-and-disappearance",
+      "charge": 120,
+      "regression_latched": true,
+      "accounting_observation": "NO_RECORD_OBSERVED; exposure not resolved",
+      "accepted": false,
+      "matched": true
+    }
+  ],
+  "all_expected": true
+}

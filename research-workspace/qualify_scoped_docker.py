@@ -295,6 +295,10 @@ def verify_settlement(binding, request, receipt, data, run, diagnostics, project
     require(settled(record) and record['compute'] == receipt['compute'], 'Ledger must independently retain the full charge')
     require(record['container_name'] == 'outfitter-' + digest((record['owner'] + ':' + binding['request_id']).encode())[:32], 'Wrong owned container')
     require(record['create_attempted'] is True and record['create_finished'] is True and record['create_ambiguous'] is False, 'Creation remains uncertain')
+    plan = MATRIX[binding['index']]
+    require(run['input_sha256'] == binding['input_sha256'] and run['recipe_sha256'] == binding['recipe_sha256']
+            and run['recipe'] == 'summary-' + plan['runtime'] and run['condition'] == plan['condition'],
+            'Final HTTP lineage differs from prelaunch binding or fixed matrix')
     require(run['id'] == binding['request_id'] and run['project_id'] == binding['project_id'] and run['status'] == 'succeeded'
             and run['cleanup_verified'] is True and run['compute']['unresolved_liability'] is False
             and encoded({k: run['compute'][k] for k in receipt['compute']}) == encoded(receipt['compute']), 'Application accounting differs')

@@ -55,7 +55,8 @@ is not the later `qualified-final` binary. No build or download is needed. The
 accounting review must confirm the exact pairing before this exercise. Neither
 the CI pin nor any operator executable is changed.
 
-Candidate 01 remains frozen and unexecuted with its older P1 broker pairing.
+Candidates 01 and 02 remain frozen and unexecuted. Candidate 01 retains its older
+P1 broker pairing; Candidate 02 retains the later lineage-correlation finding.
 Candidate revisions share the same exercise identity, output and durable marker;
 they do not create a fresh allowance.
 
@@ -84,6 +85,9 @@ The ledger must contain exactly the two planned 60-CPU-second projects, with no
 additional authority populations, before dispatch and at final verification.
 Each diagnostic sidecar must be a bounded regular file with the ledger's exact
 size and SHA-256, and its stdout/stderr must equal the final receipt streams.
+The final HTTP input and recipe hashes must equal the recorded prelaunch hashes,
+and its recipe and condition must equal the fixed matrix, before settlement can
+pass. Agreement between HTTP and export alone cannot establish that lineage.
 
 ## Controls and retained evidence
 
@@ -131,6 +135,10 @@ review witnesses are retained under `pre-review/independent-5fd7d44`,
 `pre-review/root-export` and `pre-review/accounting-absence`. The revised checks
 and synthetic regressions address these witnesses. These are qualification
 checker findings, not findings of a production export or provider defect.
+The Candidate 02 re-review then demonstrated that matching HTTP/export lineage
+could differ from the prelaunch binding. Its unchanged witnesses are retained
+under `pre-review/independent-09418f2`; the revised settlement comparison refuses
+that mismatch after the first attempt while preserving its known charge.
 
 ## Boundaries that remain
 
