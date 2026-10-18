@@ -1,9 +1,10 @@
 # Combined revision check after accepted PR #43
 
 Accepted PR #43 merge `5f2b21f1535702f9c18592b15e61c4c347d93558`
-was incorporated with signed merge commit
-`c6425ab64f13ce9ceefb5b34e20d2eb823925916`, without rebasing or rewriting
-the qualification history. Production modules match that accepted base exactly.
+was incorporated with merge commit
+`c6425ab64f13ce9ceefb5b34e20d2eb823925916`, which has a DCO `Signed-off-by`
+trailer and no cryptographic signature, without rebasing or rewriting the
+qualification history. Production modules match that accepted base exactly.
 The qualification still uses the unchanged active broker pin and archived
 catalog/image/qualification files; no runtime/profile/default was edited here.
 
@@ -33,8 +34,14 @@ Docker run as a run of the final source.
 
 All 304 evidence files from accepted PR #43 and all 31 prior files in this
 qualification packet are byte-identical. [manifest.json](manifest.json) records
-the current 25 scoped source hashes, test source identities and five new evidence
-files. CI's existing Docker job uses the unchanged baseline broker; a passing job
+the current 25 scoped source hashes, test source identities and seven evidence files, including the archived prior
+README and manifest. CI's existing Docker job uses the unchanged baseline broker; a passing job
 is not a second candidate upgrade qualification. Unknown synthetic liabilities,
 native/consumer execution exclusions, finite-restore refusal and all-writer
 uncertainty are unchanged. This PR remains qualification only, not pin adoption.
+
+This documentation-only clarification corrects the earlier ambiguous word
+“signed.” The [prior README](provenance-clarification/README-before-dco-clarification.md)
+and [prior manifest](provenance-clarification/manifest-before-dco-clarification.json)
+are preserved byte-for-byte. Source, test logs and workload observations are
+unchanged; no local tests, broker processes or Docker workloads were repeated.

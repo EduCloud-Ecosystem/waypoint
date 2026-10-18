@@ -5,10 +5,12 @@
   "active_pin_changed": false,
   "counts_overlap": true,
   "evidence_sha256": {
-    "research-workspace/evidence/2026-10-18/broker-upgrade/integration-after-pr43/README.md": "191f86c3a87ef6f6eeaaf16b9b42cda532ba05a81173f3940ab7f70e83dc4567",
+    "research-workspace/evidence/2026-10-18/broker-upgrade/integration-after-pr43/README.md": "b004dd759e78e3224e2b120f05c98cd284286d4f6dce4332a4c81dc4c8467b8b",
     "research-workspace/evidence/2026-10-18/broker-upgrade/integration-after-pr43/focused-optimized.log": "b4e881e11c399381be588d2cd24e278b0d4cbd0ff934fafb34eec7323f9dff2d",
     "research-workspace/evidence/2026-10-18/broker-upgrade/integration-after-pr43/full-controls.log": "116fd85a09ce4a309b3f36f486e4912d55f8b78b264cf9110cab962e62833685",
     "research-workspace/evidence/2026-10-18/broker-upgrade/integration-after-pr43/javascript-check.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "research-workspace/evidence/2026-10-18/broker-upgrade/integration-after-pr43/provenance-clarification/README-before-dco-clarification.md": "191f86c3a87ef6f6eeaaf16b9b42cda532ba05a81173f3940ab7f70e83dc4567",
+    "research-workspace/evidence/2026-10-18/broker-upgrade/integration-after-pr43/provenance-clarification/manifest-before-dco-clarification.json": "1b27cdce00373dbc4343693bb301e84e0c90a81f0501842ac7718395c208ec1d",
     "research-workspace/evidence/2026-10-18/broker-upgrade/integration-after-pr43/retained-observations.json": "587943c543d6dd59f42e40383433993975bad68739757e14f5ae7023ace69baf"
   },
   "format": "waypoint-broker-upgrade-combined-integration-v1",
@@ -21,6 +23,9 @@
     "CI Docker uses the unchanged baseline broker, not an additional candidate upgrade exercise.",
     "Retained request/state bindings are retrospective. No unknown fixture was replayed, reconciled or refunded."
   ],
+  "merge_commit": "c6425ab64f13ce9ceefb5b34e20d2eb823925916",
+  "merge_commit_cryptographic_signature": "absent",
+  "merge_commit_dco_signoff": true,
   "new_broker_processes_in_receipt_recheck": 0,
   "new_local_docker_attempts": 0,
   "optimized_qualification_controls_passed": 16,
@@ -67,10 +72,10 @@
     "research-workspace/qualification/sqlite-guard/contract-v1.json": "6b0d81d3d75f4997d35fd605571d0ad35ac662afe145f4845fa018a51975bab5",
     "research-workspace/qualification/sqlite-guard/pinned-v1.tar.gz": "6bf625ca8c826e85d2cb80893e1e61fd673e52fff6b33a9bf1439c8e7977efdf"
   },
+  "provenance_clarification_parent": "63171175f7baf7e07e82371e7e447ad3f5176382",
   "retained_actual_receipts_rechecked": 7,
   "retained_charged_cpu_seconds": 210,
   "review_manifest_sha256": "88cabd278b3b6ba24e3d6c64d26b12d18f91eb4fa0ddddc866de8cf20a60fae9",
-  "signed_merge_commit": "c6425ab64f13ce9ceefb5b34e20d2eb823925916",
   "source_sha256": {
     "research-workspace/BROKER-UPGRADE-QUALIFICATION.md": "1faf70216c5703fe4ce840fed7a8b397a9bd193a6642952bd6a3dbf34351cb9f",
     "research-workspace/build_upgrade_brokers.py": "5255ef9520437ff7e98e61d45433793830d71e70de8411c2bae4beea906a84b0",
