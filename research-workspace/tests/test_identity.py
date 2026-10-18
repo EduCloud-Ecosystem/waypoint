@@ -134,16 +134,13 @@ class IdentityTests(unittest.TestCase):
             'status': 'succeeded', 'admitted': True, 'execution_started': True, 'cleanup_verified': True,
             'unresolved_liability': False, 'stdout': canonical(result), 'stderr': '', 'error': '', 'exit_code': 0,
             'compute': {'reserved_cpu_seconds': 30, 'charged_cpu_seconds': 30, 'provenance': 'estimated_upper_bound'}}
-        class Process:
-            returncode = 0
-            calls = 0
-            def communicate(inner, timeout):
-                inner.calls += 1
-                if inner.calls == 1: raise subprocess.TimeoutExpired('synthetic', timeout)
-                return canonical(receipt).encode(), b''
+        process = unittest.mock.Mock(returncode=0)
+        def collect(process, *, timeout, tick):
+            tick()
+            return canonical(receipt).encode(), b''
         worker = Worker(self.store, self.broker, self.identity)
         self.broker.command = lambda *args: ['synthetic-broker']; self.broker.call = lambda *args: {}
-        with patch('research_workspace.runtime.subprocess.Popen', return_value=Process()), patch('research_workspace.runtime.time.monotonic', side_effect=[0, 0, 2, 2, 2]), patch.object(worker, 'identity_allowed', side_effect=[True, False, True]):
+        with patch('research_workspace.runtime.subprocess.Popen', return_value=process), patch('research_workspace.runtime.collect', side_effect=collect), patch('research_workspace.runtime.time.monotonic', side_effect=[0, 2, 2]), patch.object(worker, 'identity_allowed', side_effect=[True, False, True]):
             worker.execute(run)
         saved = self.store.run(self.pid, run['id'], 'alice')
         self.assertEqual(saved['status'], 'cancelled'); self.assertEqual(saved['metrics'], {})

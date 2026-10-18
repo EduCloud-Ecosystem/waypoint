@@ -10,6 +10,7 @@ import time
 
 from .recipes import IDS, digest, validate_result
 from .store import canonical, private_write
+from .bounded_process import collect
 
 
 def strict_json(content):
@@ -73,14 +74,13 @@ class Broker:
         return [self.executable, "--state-dir", self.state, *args]
 
     def call(self, *args):
-        completed = subprocess.run(self.command(*args), capture_output=True, timeout=20)
-        if len(completed.stdout) > 262144 or len(completed.stderr) > 65536:
-            raise ValueError("The broker returned an oversized response.")
+        process = subprocess.Popen(self.command(*args), stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, _ = collect(process, timeout=20)
         try:
-            result = strict_json(completed.stdout)
+            result = strict_json(stdout)
         except (ValueError, UnicodeError) as exc:
             raise ValueError("The compute broker is unavailable or returned an invalid receipt.") from exc
-        if completed.returncode != 0:
+        if process.returncode != 0:
             raise ValueError("The compute broker refused the request; check its private operator diagnostics.")
         return result
 
@@ -169,7 +169,7 @@ class Worker:
         request_path = directory / "request.private.json"
         private_write(request_path, canonical(request).encode())
         with self.identity.publication(run["id"]) if self.identity else nullcontext(True) as authorized:
-            process = subprocess.Popen(self.broker.command("run", "--request", str(request_path)), stdout=subprocess.PIPE, stderr=subprocess.PIPE) if authorized else None
+            process = subprocess.Popen(self.broker.command("run", "--request", str(request_path)), stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE) if authorized else None
         if process is None:
             run.update(status="cancelled", error="Identity authorization ended before broker launch.", cleanup_verified=True,
                        compute={"reserved_cpu_seconds": 0, "charged_cpu_seconds": 0, "provenance": "not_admitted", "unresolved_liability": False})
@@ -178,29 +178,19 @@ class Worker:
         cancellation_sent = False
         identity_denied = False
         next_identity_check = time.monotonic() + 1 if self.identity else 0
-        deadline = time.monotonic() + 70
-        while True:
-            try:
-                stdout, stderr = process.communicate(timeout=0.25)
-                break
-            except subprocess.TimeoutExpired:
-                if time.monotonic() > deadline:
-                    process.kill()
-                    process.communicate(timeout=5)
-                    raise ValueError("Broker response deadline exceeded; retained reservation needs reconciliation.")
-                if self.identity and time.monotonic() >= next_identity_check:
-                    identity_denied = identity_denied or not self.identity_allowed(run)
-                    next_identity_check = time.monotonic() + 1
-                if not cancellation_sent and (identity_denied or self.stopped.is_set() or self.store.should_cancel(run["id"])):
-                    try:
-                        self.broker.call("cancel", "--request-id", run["id"])
-                    except (ValueError, subprocess.TimeoutExpired):
-                        # The independent watchdog still owns the original finite deadline.
-                        # Do not kill or refund a possibly running resource on an uncertain response.
-                        pass
-                    cancellation_sent = True
-        if len(stdout) > 262144 or len(stderr) > 65536:
-            raise ValueError("Oversized broker receipt.")
+        def tick():
+            nonlocal identity_denied, next_identity_check, cancellation_sent
+            if self.identity and time.monotonic() >= next_identity_check:
+                identity_denied = identity_denied or not self.identity_allowed(run)
+                next_identity_check = time.monotonic() + 1
+            if not cancellation_sent and (identity_denied or self.stopped.is_set() or self.store.should_cancel(run["id"])):
+                try:
+                    self.broker.call("cancel", "--request-id", run["id"])
+                except (ValueError, subprocess.TimeoutExpired):
+                    # The independent watchdog retains the finite deadline.
+                    pass
+                cancellation_sent = True
+        stdout, stderr = collect(process, timeout=70, tick=tick)
         if process.returncode != 0:
             raise ValueError("The broker process failed; its receipt is not an accepted outcome.")
         receipt = validate_receipt(strict_json(stdout), run)
