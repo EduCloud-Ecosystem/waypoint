@@ -249,7 +249,7 @@ class Store:
                 if operation is not None and self.guard.publication:
                     item = self.guard.load()["operations"][operation.identity]
                     self.guard.check(essential=item["essential"], admitted=operation)
-                raw = None
+                raw = db = None
                 failed = False
                 original_error = None
                 try:
@@ -292,7 +292,7 @@ class Store:
                         else:
                             raise
                     finally:
-                        if failed or not keep:
+                        if failed or not keep or (self.guard.publication and db is not None and not db.keep):
                             token.release()
             return
         db = self.connect()
@@ -639,9 +639,14 @@ class Store:
                     if on_cancel is not None:
                         on_cancel(row["id"])
                     if operation is not None:
-                        operation.complete_sql(db.raw)
-                        db.raw.commit()
-                        operation.release()
+                        if self.guard.publication:
+                            # The terminal refusal must retain its token through
+                            # the context's publication check, commit and close.
+                            db.keep = False
+                        else:
+                            operation.complete_sql(db.raw)
+                            db.raw.commit()
+                            operation.release()
                         return None
                     continue
                 run.update(status="running", started_at=now(), compute=unknown_compute())

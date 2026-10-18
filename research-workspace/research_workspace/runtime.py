@@ -208,7 +208,15 @@ class Worker:
         if self.store.guard and token is None:
             raise GuardPaused("missing_run_intent")
         if token:
-            token.effect()
+            if token.guard.publication:
+                # Another process may have published since this run was claimed.
+                # Qualify that incarnation before the external file effect;
+                # transaction effects must still forbid takeover within SQL.
+                with token.guard.locked():
+                    token.guard.check(admitted=token)
+                    token.effect()
+            else:
+                token.effect()
         private_write(request_path, self.store.serialized(request, "request").encode())
         process = None
         def spawn():

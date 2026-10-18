@@ -13,14 +13,15 @@ import sys
 import tempfile
 import threading
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from research_workspace import finite_authority as f, operation_guard as g
 from research_workspace import guard_publication as p, recovery, runtime
 from research_workspace.store import Store
+from research_workspace.recipes import expected_result
 from research_workspace.server import Application, Handler, Server
 from test_operation_guard import FakeBroker, FaultDB
-from test_workspace import IMAGES
+from test_workspace import CSV, IMAGES
 import test_bounded_export as export_tests
 
 
@@ -329,6 +330,136 @@ except GuardPaused: print(json.dumps({'refused':True}))
                 with self.assertRaises(g.GuardPaused):
                     with self.store.transaction(operation=token, essential=essential): pass
                 self.assertEqual((self.database(), (self.root / g.FILE).read_bytes()), before)
+
+    def test_predispatch_refusal_retains_token_through_commit_and_close(self):
+        for action in ("cancel", "revoke", "close", "expired"):
+            with self.subTest(action=action), fresh() as c:
+                run = c.submit()
+                if action == "cancel": c.store.cancel(c.pid, run["id"], "alice")
+                elif action == "revoke": c.store.revoke_user("alice")
+                elif action == "close": c.store.close_project(c.pid, "alice")
+                else:
+                    with c.store.transaction(essential=True) as db:
+                        payload = json.loads(db.execute("SELECT payload FROM projects WHERE id=?", (c.pid,)).fetchone()[0])
+                        payload["ends_at"] = "2000-01-01T00:00:00+00:00"
+                        db.execute("UPDATE projects SET payload=? WHERE id=?", (json.dumps(payload), c.pid))
+                observed, cancelled = [], []
+                connect = c.store._connect
+                class Observed:
+                    def __init__(self, db): self.db, self.business = db, False
+                    def __getattr__(self, name): return getattr(self.db, name)
+                    def execute(self, sql, *args):
+                        if sql == "BEGIN IMMEDIATE": self.business = True
+                        return self.db.execute(sql, *args)
+                    def checkpoint(self, stage):
+                        if self.business:
+                            observed.append(stage)
+                            self_test.assertEqual(len(c.store.guard.lease.active), 1)
+                    def commit(self): self.checkpoint("commit"); return self.db.commit()
+                    def close(self): self.checkpoint("close"); return self.db.close()
+                self_test = self
+                with patch.object(c.store, "_connect", side_effect=lambda: Observed(connect())):
+                    self.assertIsNone(c.store.claim(on_cancel=cancelled.append))
+                self.assertEqual(observed, ["commit", "close"])
+                self.assertEqual(cancelled, [run["id"]])
+                with closing(c.store.connect()) as db:
+                    self.assertEqual(db.execute("SELECT status FROM runs WHERE id=?", (run["id"],)).fetchone()[0], "cancelled")
+                    self.assertEqual(db.execute("SELECT outcome FROM operation_receipts ORDER BY sequence DESC LIMIT 1").fetchone()[0], "committed")
+                self.assertEqual(c.store.guard.lease.active, {})
+                self.assertIsNone(c.store.guard.lease.failure)
+                self.assertEqual(c.store.operation_status()["state"], "ready")
+                c.store.add_user("after-clean-refusal")
+                self.assertEqual(c.reopened()["state"], "ready")
+
+    def test_predispatch_refusal_commit_and_close_failures_preserve_uncertainty(self):
+        for fail_commit, after, fail_close in ((True, False, False), (True, True, False),
+                                               (False, False, True), (True, True, True)):
+            with self.subTest(commit=fail_commit, after=after, close=fail_close), fresh() as c:
+                run = c.submit()
+                c.store.cancel(c.pid, run["id"], "alice")
+                connect = c.store._connect
+                class Fault(FaultDB):
+                    def execute(self, sql, *args):
+                        if sql == "BEGIN IMMEDIATE":
+                            self.commit_error, self.after_commit, self.close_error = fail_commit, after, fail_close
+                        return self.db.execute(sql, *args)
+                with patch.object(c.store, "_connect", side_effect=lambda: Fault(connect())):
+                    expected = "commit failure" if fail_commit else "close failure"
+                    with self.assertRaisesRegex(OSError, expected): c.store.claim()
+                self.assertEqual(c.store.guard.lease.active, {})
+                self.assertEqual(c.store.operation_status()["state"], "paused")
+                operations = c.store.guard.load()["operations"]
+                self.assertTrue(any(item["kind"] == "run" and item["phase"] == "uncertain" for item in operations.values()))
+                with closing(c.store.connect()) as db:
+                    self.assertEqual(db.execute("SELECT status FROM runs WHERE id=?", (run["id"],)).fetchone()[0],
+                                     "queued" if fail_commit and not after else "cancelled")
+                with self.assertRaises(g.GuardPaused): c.store.add_user("must-stay-held")
+                self.assertEqual(c.reopened()["state"], "paused")
+
+    def test_worker_qualifies_other_process_publication_and_rechecks_final_authority(self):
+        for late_cancel in (False, True):
+            with self.subTest(late_cancel=late_cancel), fresh() as c:
+                c.submit()
+                run = c.store.claim()
+                cached = c.store.guard.lease.durable_incarnation
+                c.child("import json,sys;from research_workspace.store import Store;s=Store(sys.argv[1]);s.logout('unrelated-token');print(json.dumps(True))")
+                with c.store.guard.locked():
+                    self.assertNotEqual(c.store.guard.publication.current()[0], cached)
+                events, connections = [], []
+                barrier, connect = c.store.guard.barrier, c.store._connect
+                original_write, original_spawn = runtime.private_write, runtime.subprocess.Popen
+                fake_spawn = Mock(return_value=Mock(returncode=0))
+                class Observed:
+                    def __init__(self, db): self.db, self.closed = db, False
+                    def __getattr__(self, name): return getattr(self.db, name)
+                    def close(self): self.db.close(); self.closed = True
+                def open_connection():
+                    connection = Observed(connect()); connections.append(connection); return connection
+                def qualify():
+                    self.assertFalse(any(not db.closed and db.in_transaction for db in connections))
+                    events.append("barrier")
+                    return barrier()
+                def write(path, content):
+                    original_write(path, content)
+                    if path.name == "request.private.json":
+                        events.append("request")
+                        if late_cancel:
+                            c.child("import json,sys;from research_workspace.store import Store;s=Store(sys.argv[1]);s.cancel(" + repr(c.pid) + "," + repr(run["id"]) + ",'alice');print(json.dumps(True))")
+                def spawn(command, **kwargs):
+                    if command[0] == sys.executable: return original_spawn(command, **kwargs)
+                    events.append("spawn")
+                    return fake_spawn(command, **kwargs)
+                receipt = {"schema_version": 1, "request_id": run["id"], "project_id": c.pid,
+                    "image": run["environment"]["image"], "status": "succeeded", "admitted": True,
+                    "execution_started": True, "cleanup_verified": True, "unresolved_liability": False,
+                    "stdout": json.dumps(expected_result(CSV, "baseline")), "stderr": "", "error": "", "exit_code": 0,
+                    "compute": {"reserved_cpu_seconds": 30, "charged_cpu_seconds": 30, "provenance": "estimated_upper_bound"}}
+                with patch.object(c.store.guard, "barrier", side_effect=qualify), \
+                        patch.object(c.store, "_connect", side_effect=open_connection), \
+                        patch.object(runtime, "private_write", side_effect=write), \
+                        patch.object(runtime.subprocess, "Popen", side_effect=spawn), \
+                        patch.object(runtime, "collect", return_value=(json.dumps(receipt).encode(), b"")):
+                    runtime.Worker(c.store, c.broker).execute(run)
+                self.assertEqual(events, ["barrier", "request", "barrier"] if late_cancel else ["barrier", "request", "spawn"])
+                self.assertEqual(fake_spawn.call_count, 0 if late_cancel else 1)
+                saved = c.store.run(c.pid, run["id"], "alice")
+                self.assertEqual(saved["status"], "cancelled" if late_cancel else "succeeded")
+                self.assertEqual(saved["compute"]["charged_cpu_seconds"], 0 if late_cancel else 30)
+                self.assertTrue(saved["cleanup_verified"])
+                self.assertEqual(c.store.operation_status()["state"], "ready")
+
+    def test_worker_failed_takeover_precedes_request_and_provider_effects(self):
+        self.submit()
+        run = self.store.claim()
+        self.child("import json,sys;from research_workspace.store import Store;s=Store(sys.argv[1]);s.logout('unrelated-token');print(json.dumps(True))")
+        with patch.object(self.store.guard, "barrier", side_effect=OSError("takeover barrier failed")), \
+                patch.object(runtime.subprocess, "Popen") as spawn:
+            with self.assertRaisesRegex(OSError, "takeover barrier failed"):
+                runtime.Worker(self.store, self.broker).execute(run)
+            spawn.assert_not_called()
+        self.assertFalse((self.root / "runs" / run["id"] / "request.private.json").exists())
+        self.assertTrue(self.store.guard.lease.publication_failed)
+        self.assertEqual(self.store.operation_status()["state"], "paused")
 
     def test_full_ordinary_intent_allowance_retains_fresh_safety_path(self):
         for action in ("logout", "revoke", "rotate", "demote", "remove", "cancel", "close", "settle", "recover"):

@@ -1,0 +1,15 @@
+test_uncertain_essential_terminal_receipt_does_not_grant_fresh_safety (__main__.IndependentControls.test_uncertain_essential_terminal_receipt_does_not_grant_fresh_safety) ... FAIL
+
+======================================================================
+FAIL: test_uncertain_essential_terminal_receipt_does_not_grant_fresh_safety (__main__.IndependentControls.test_uncertain_essential_terminal_receipt_does_not_grant_fresh_safety)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/guard-publication-independent-20261018/adversarial_controls.py", line 100, in test_uncertain_essential_terminal_receipt_does_not_grant_fresh_safety
+    with self.assertRaises(g.GuardPaused):c.store.logout(c.token)
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+AssertionError: GuardPaused not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.071s
+
+FAILED (failures=1)

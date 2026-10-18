@@ -1,0 +1,15 @@
+test_required_failure_note_preserves_original_error_and_role (test_guard_publication.GuardPublicationTests.test_required_failure_note_preserves_original_error_and_role) ... FAIL
+
+======================================================================
+FAIL: test_required_failure_note_preserves_original_error_and_role (test_guard_publication.GuardPublicationTests.test_required_failure_note_preserves_original_error_and_role)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/guard-publication-independent-20261018/negative-ordinary_note_consumes_safety-27t4gqtl/research-workspace/tests/test_guard_publication.py", line 293, in test_required_failure_note_preserves_original_error_and_role
+    self.assertTrue((self.root / p.ORDINARY).exists())
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 1 test in 0.060s
+
+FAILED (failures=1)

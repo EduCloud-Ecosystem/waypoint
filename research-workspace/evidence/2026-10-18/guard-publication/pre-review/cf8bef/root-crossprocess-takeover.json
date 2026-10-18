@@ -1,0 +1,22 @@
+{
+  "revision": "cf8befca9cef418d7e1238945872bed45d7fc6f2",
+  "source_sha256": {
+    "research-workspace/research_workspace/guard_publication.py": "73c3b5754d1738b34d63f7893a727687a275aa4b9ddc3aedd55435d47dd7def7",
+    "research-workspace/research_workspace/operation_guard.py": "86b215608c6a67eb79e283c01f0ff4128c56c8dd1da89edc71b72b7a1c345d12",
+    "research-workspace/research_workspace/runtime.py": "9ca67684c3877dd7cad73c117c3dcfe3da1459805103e03824967a3a4aae40bf",
+    "research-workspace/research_workspace/store.py": "08074a58f8a3fff01ac7474436cd6342e7bebcba6f33fcbfb0d57ed2ecbc600a",
+    "research-workspace/tests/test_guard_publication.py": "5596b546c2ef4ad0bc0f462bd56aceb922f4a885aef2d445421c033f6bca8f81"
+  },
+  "probe_source": "import json\nfrom test_guard_publication import PublicationFixture\nfrom research_workspace.runtime import Worker\nfrom research_workspace.operation_guard import GuardPaused\nc=PublicationFixture();c.setUp()\ntry:\n c.submit();run=c.store.claim();token=c.store.guard.running(run['id'])\n before=c.store.guard.lease.durable_incarnation\n c.child(\"import json,sys;from research_workspace.store import Store;s=Store(sys.argv[1]);s.logout('unrelated-nonexistent-token');print(json.dumps({'published':True}))\")\n with c.store.guard.locked():changed=c.store.guard.publication.current()[0]!=before\n worker=Worker(c.store,c.broker)\n try:\n  worker.execute(run);result={'execute':'succeeded'}\n except GuardPaused as e:\n  result={'execute':'refused','code':e.code}\n callbacks=[]\n token.launch(lambda:callbacks.append('fake-dispatch'))\n result.update(incarnation_changed=changed,existing_launch_gate_callback_count=len(callbacks),provider_calls=0,profile_version=3)\n print(json.dumps(result))\nfinally:\n c.tearDown();c.doCleanups()\n",
+  "returncode": 0,
+  "observation": {
+    "execute": "refused",
+    "code": "durability_unverified",
+    "incarnation_changed": true,
+    "existing_launch_gate_callback_count": 1,
+    "provider_calls": 0,
+    "profile_version": 3
+  },
+  "stderr": "",
+  "scope": "Disposable exact-commit fake-broker fixture. No provider process, network, Docker or accepted state."
+}

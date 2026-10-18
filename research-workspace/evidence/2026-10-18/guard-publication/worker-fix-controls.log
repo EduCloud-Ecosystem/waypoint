@@ -1,0 +1,7 @@
+test_worker_qualifies_other_process_publication_and_rechecks_final_authority (test_guard_publication.GuardPublicationTests.test_worker_qualifies_other_process_publication_and_rechecks_final_authority) ... ok
+test_worker_failed_takeover_precedes_request_and_provider_effects (test_guard_publication.GuardPublicationTests.test_worker_failed_takeover_precedes_request_and_provider_effects) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 1.200s
+
+OK

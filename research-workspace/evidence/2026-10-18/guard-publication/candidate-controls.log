@@ -173,6 +173,8 @@ test_no_borrow_after_unresolved_essential_with_empty_scratch (test_guard_publica
 test_one_byte_overflow_precedes_scratch_and_business_effects (test_guard_publication.GuardPublicationTests.test_one_byte_overflow_precedes_scratch_and_business_effects) ... ok
 test_ordinary_worker_error_does_not_touch_an_active_safety_intent (test_guard_publication.GuardPublicationTests.test_ordinary_worker_error_does_not_touch_an_active_safety_intent) ... ok
 test_postrename_failure_is_not_success_or_permission_from_absence (test_guard_publication.GuardPublicationTests.test_postrename_failure_is_not_success_or_permission_from_absence) ... ok
+test_predispatch_refusal_commit_and_close_failures_preserve_uncertainty (test_guard_publication.GuardPublicationTests.test_predispatch_refusal_commit_and_close_failures_preserve_uncertainty) ... ok
+test_predispatch_refusal_retains_token_through_commit_and_close (test_guard_publication.GuardPublicationTests.test_predispatch_refusal_retains_token_through_commit_and_close) ... ok
 test_process_death_retains_candidate_without_adoption (test_guard_publication.GuardPublicationTests.test_process_death_retains_candidate_without_adoption) ... ok
 test_receipt_outcomes_are_not_cached (test_guard_publication.GuardPublicationTests.test_receipt_outcomes_are_not_cached) ... ok
 test_released_tokens_cannot_authorize_another_effect (test_guard_publication.GuardPublicationTests.test_released_tokens_cannot_authorize_another_effect) ... ok
@@ -181,6 +183,8 @@ test_safety_matrix_preserves_residue_and_refuses_exhaustion (test_guard_publicat
 test_short_writes_complete_one_candidate (test_guard_publication.GuardPublicationTests.test_short_writes_complete_one_candidate) ... ok
 test_started_receipt_acknowledgement_failure_preserves_debt (test_guard_publication.GuardPublicationTests.test_started_receipt_acknowledgement_failure_preserves_debt) ... ok
 test_takeover_precedes_business_transaction (test_guard_publication.GuardPublicationTests.test_takeover_precedes_business_transaction) ... ok
+test_worker_failed_takeover_precedes_request_and_provider_effects (test_guard_publication.GuardPublicationTests.test_worker_failed_takeover_precedes_request_and_provider_effects) ... ok
+test_worker_qualifies_other_process_publication_and_rechecks_final_authority (test_guard_publication.GuardPublicationTests.test_worker_qualifies_other_process_publication_and_rechecks_final_authority) ... ok
 test_worker_run_and_settlement_errors_keep_their_origins (test_guard_publication.GuardPublicationTests.test_worker_run_and_settlement_errors_keep_their_origins) ... ok
 test_active_config_before_terminal_proof_remains_paused (test_guarded_recovery.GuardedRecoveryTests.test_active_config_before_terminal_proof_remains_paused) ... ok
 test_cutover_can_use_last_reserved_ordinary_slots (test_guarded_recovery.GuardedRecoveryTests.test_cutover_can_use_last_reserved_ordinary_slots) ... ok
@@ -364,6 +368,6 @@ test_unregistered_immutable_image_cannot_enter_queue (test_workspace.WorkspaceTe
 test_viewer_cannot_submit_or_manage (test_workspace.WorkspaceTests.test_viewer_cannot_submit_or_manage) ... ok
 
 ----------------------------------------------------------------------
-Ran 364 tests in 39.588s
+Ran 368 tests in 42.056s
 
 OK

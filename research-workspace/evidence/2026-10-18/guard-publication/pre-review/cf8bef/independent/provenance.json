@@ -1,0 +1,11 @@
+{
+  "head": "cf8befca9cef418d7e1238945872bed45d7fc6f2",
+  "base": "66a48dfe29d61d3f6f48f016f2c474e1ac6af4f6",
+  "manifest_sha256": "c8f04225df57beed2077d6c960e6765f636cc68167f9afd4795d13c31b638938",
+  "source_entries": 45,
+  "evidence_entries": 14,
+  "prior_evidence_files": 248,
+  "reviewed_source_entries": 39,
+  "failures": [],
+  "result": "CLEAR"
+}

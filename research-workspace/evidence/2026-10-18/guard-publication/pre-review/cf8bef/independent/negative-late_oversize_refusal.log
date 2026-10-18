@@ -1,0 +1,15 @@
+test_one_byte_overflow_precedes_scratch_and_business_effects (test_guard_publication.GuardPublicationTests.test_one_byte_overflow_precedes_scratch_and_business_effects) ... FAIL
+
+======================================================================
+FAIL: test_one_byte_overflow_precedes_scratch_and_business_effects (test_guard_publication.GuardPublicationTests.test_one_byte_overflow_precedes_scratch_and_business_effects)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/guard-publication-independent-20261018/negative-late_oversize_refusal-wkeu50ne/research-workspace/tests/test_guard_publication.py", line 200, in test_one_byte_overflow_precedes_scratch_and_business_effects
+    self.assertFalse(list(self.root.glob(g.TEMP + "*")))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: [PosixPath('/private/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmpsxtti9jc/state/.operation-guard-ordinary.pending')] is not false
+
+----------------------------------------------------------------------
+Ran 1 test in 0.060s
+
+FAILED (failures=1)
