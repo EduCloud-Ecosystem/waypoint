@@ -1,0 +1,30 @@
+{
+  "application_sha256": {
+    "research_workspace/__main__.py": "516a24b09b877ac9ae340bb3b5e479182c8c137f86e2d6931a5ecd3d25178521",
+    "research_workspace/storage_inventory.py": "992f0957b4e9fc10f8152c5b862f1fe4f26050298532e2e18b8c2a6e3e4b0b52",
+    "tests/test_storage_inventory.py": "135985c02ba35f9be9e7bda19f0b5b0b6a927fa0dbe587d42e88cb4793bf125c"
+  },
+  "base_commit": "8bb8e41575aee399a62989be561e4252482a2435",
+  "before_after_content_and_identity_equal": true,
+  "broker_called": false,
+  "classification": "AVAILABLE",
+  "deletion_authorized": false,
+  "filesystem_entries": 82,
+  "identity_fields": [
+    "device",
+    "inode",
+    "mode",
+    "link_count",
+    "size",
+    "mtime_ns",
+    "ctime_ns"
+  ],
+  "inventory_sha256": "d63734694e4bb5049de48a2bc48a79d8d6c1ce166aa74def8e597130d9a8d9b2",
+  "limits": "Read access can update access timestamps. This proves equal captured content and identity metadata, not immunity to later operator changes or available host capacity.",
+  "logical_bytes": 163779,
+  "quota_enforced": false,
+  "reason": null,
+  "review_candidate_files": 0,
+  "scope": "Read-only observation of this component chat-owned stopped replacement from the local synthetic OIDC pilot. No parent pilot state was inspected or changed.",
+  "source_database_opened": false
+}

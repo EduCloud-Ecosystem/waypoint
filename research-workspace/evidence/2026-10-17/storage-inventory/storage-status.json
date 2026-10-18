@@ -1,0 +1,396 @@
+{
+  "command": "storage-status",
+  "complete": true,
+  "deletion_authorized": false,
+  "directories": 32,
+  "entries": {
+    ".": {
+      "bytes": 0,
+      "kind": "directory"
+    },
+    "broker": {
+      "bytes": 0,
+      "kind": "directory"
+    },
+    "broker/execution.lock": {
+      "bytes": 0,
+      "kind": "file",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "broker/initialized": {
+      "bytes": 0,
+      "kind": "file",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "broker/ledger.json": {
+      "bytes": 13351,
+      "kind": "file",
+      "sha256": "22ec7f96b7980c9510d0f761cf8ee433437de09f462bec7c5a0406439a221d2a"
+    },
+    "broker/ledger.lock": {
+      "bytes": 0,
+      "kind": "file",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "broker/outputs": {
+      "bytes": 0,
+      "kind": "directory"
+    },
+    "broker/outputs/43e1d12bcc81f7875296bacb99b1ca2b9e45c2e13f3b705126e9b7e87ae3a0fb.json": {
+      "bytes": 201,
+      "kind": "file",
+      "sha256": "43e1d12bcc81f7875296bacb99b1ca2b9e45c2e13f3b705126e9b7e87ae3a0fb"
+    },
+    "broker/outputs/d80b843c88ba4d657981bf6aa48ea66861a64cc72c6b5a84f6a640fd5a241452.json": {
+      "bytes": 175,
+      "kind": "file",
+      "sha256": "d80b843c88ba4d657981bf6aa48ea66861a64cc72c6b5a84f6a640fd5a241452"
+    },
+    "broker/outputs/e115b6846927e8b776ccee85e739814b01949304ef4a905b69e649f763609d0f.json": {
+      "bytes": 148,
+      "kind": "file",
+      "sha256": "e115b6846927e8b776ccee85e739814b01949304ef4a905b69e649f763609d0f"
+    },
+    "broker/outputs/f27304ab6b65545ac7526da2aba485092088e5dea406a2dd28c546fffeb033b9.json": {
+      "bytes": 197,
+      "kind": "file",
+      "sha256": "f27304ab6b65545ac7526da2aba485092088e5dea406a2dd28c546fffeb033b9"
+    },
+    "broker/snapshots": {
+      "bytes": 0,
+      "kind": "directory"
+    },
+    "broker/snapshots/c5526b27a7644faea22377e485bbcbe6": {
+      "bytes": 0,
+      "kind": "directory"
+    },
+    "broker/snapshots/c5526b27a7644faea22377e485bbcbe6/input": {
+      "bytes": 0,
+      "kind": "directory"
+    },
+    "broker/snapshots/c5526b27a7644faea22377e485bbcbe6/input/data.csv": {
+      "bytes": 62,
+      "kind": "file",
+      "sha256": "31b266eec3e380098d5d033309f1389928950951a2b2b3443c4646afa236112f"
+    },
+    "broker/snapshots/c5526b27a7644faea22377e485bbcbe6/recipe": {
+      "bytes": 0,
+      "kind": "directory"
+    },
+    "broker/snapshots/c5526b27a7644faea22377e485bbcbe6/recipe/recipe.py": {
+      "bytes": 821,
+      "kind": "file",
+      "sha256": "549f064aaaa36ee8259f1f8e2902d0dfb15d071fcb6d9b60e52b266a7bbdb922"
+    },
+    "config.json": {
+      "bytes": 1149,
+      "kind": "file",
+      "sha256": "27980e2cc93da361685911374e784c3098b04a68e52799ca6f6e9534dd10f048"
+    },
+    "recovery.json": {
+      "bytes": 485,
+      "kind": "file",
+      "sha256": "d33e7b700025070304fb9d0aaee5c2c6fa9dec24946c3eb3c4319603270a2411"
+    },
+    "runs": {
+      "bytes": 0,
+      "kind": "directory"
+    },
+    "runs/49af57b7b93145de86bb1a3936533db6": {
+      "bytes": 0,
+      "kind": "directory"
+    },
+    "runs/49af57b7b93145de86bb1a3936533db6/input": {
+      "bytes": 0,
+      "kind": "directory"
+    },
+    "runs/49af57b7b93145de86bb1a3936533db6/input/data.csv": {
+      "bytes": 20,
+      "kind": "file",
+      "sha256": "93e6b66103c5b80ec9ee5453b8097f1bad6ad843127ed5ca2cb1faa2f92f48fd"
+    },
+    "runs/49af57b7b93145de86bb1a3936533db6/receipt.private.json": {
+      "bytes": 872,
+      "kind": "file",
+      "sha256": "329d86ada5895a8a8138550560386333ec7da72024094ee56b16e76c99105fb6"
+    },
+    "runs/49af57b7b93145de86bb1a3936533db6/recipe": {
+      "bytes": 0,
+      "kind": "directory"
+    },
+    "runs/49af57b7b93145de86bb1a3936533db6/recipe/recipe.py": {
+      "bytes": 821,
+      "kind": "file",
+      "sha256": "549f064aaaa36ee8259f1f8e2902d0dfb15d071fcb6d9b60e52b266a7bbdb922"
+    },
+    "runs/49af57b7b93145de86bb1a3936533db6/request.private.json": {
+      "bytes": 628,
+      "kind": "file",
+      "sha256": "c454c4ec0947e741267b257579170f13e3c189bf7e182bd2141133ac24ad1523"
+    },
+    "runs/550b0c43bb374c5eb13a37e7cf14178c": {
+      "bytes": 0,
+      "kind": "directory"
+    },
+    "runs/550b0c43bb374c5eb13a37e7cf14178c/input": {
+      "bytes": 0,
+      "kind": "directory"
+    },
+    "runs/550b0c43bb374c5eb13a37e7cf14178c/input/data.csv": {
+      "bytes": 20,
+      "kind": "file",
+      "sha256": "93e6b66103c5b80ec9ee5453b8097f1bad6ad843127ed5ca2cb1faa2f92f48fd"
+    },
+    "runs/550b0c43bb374c5eb13a37e7cf14178c/receipt.private.json": {
+      "bytes": 872,
+      "kind": "file",
+      "sha256": "f7ef0f6489ca5570f3d46539064877677f05444b4396332e3df445f676cca8ab"
+    },
+    "runs/550b0c43bb374c5eb13a37e7cf14178c/recipe": {
+      "bytes": 0,
+      "kind": "directory"
+    },
+    "runs/550b0c43bb374c5eb13a37e7cf14178c/recipe/recipe.py": {
+      "bytes": 821,
+      "kind": "file",
+      "sha256": "549f064aaaa36ee8259f1f8e2902d0dfb15d071fcb6d9b60e52b266a7bbdb922"
+    },
+    "runs/550b0c43bb374c5eb13a37e7cf14178c/request.private.json": {
+      "bytes": 628,
+      "kind": "file",
+      "sha256": "d8597cec7c8d9ce14b7a2ce3e82ead3884b9c6969337d79bd3e735762d4702cc"
+    },
+    "runs/550b0c43bb374c5eb13a37e7cf14178c/result.json": {
+      "bytes": 91,
+      "kind": "file",
+      "sha256": "0060260aa65743fc46b955e74b5513dabc883d886d2770ae50c8e68c9f8d336c"
+    },
+    "runs/737734c6e24e45af96047c6b2e9cb7c1": {
+      "bytes": 0,
+      "kind": "directory"
+    },
+    "runs/737734c6e24e45af96047c6b2e9cb7c1/input": {
+      "bytes": 0,
+      "kind": "directory"
+    },
+    "runs/737734c6e24e45af96047c6b2e9cb7c1/input/data.csv": {
+      "bytes": 24,
+      "kind": "file",
+      "sha256": "2a34f7209c384ae4393b1d5689261bf4273354637bce181cda67a3a612aad443"
+    },
+    "runs/737734c6e24e45af96047c6b2e9cb7c1/receipt.private.json": {
+      "bytes": 899,
+      "kind": "file",
+      "sha256": "f6cb488970767f54b303e03f5930779496fce27f615647380195ba9cbd44c1ac"
+    },
+    "runs/737734c6e24e45af96047c6b2e9cb7c1/recipe": {
+      "bytes": 0,
+      "kind": "directory"
+    },
+    "runs/737734c6e24e45af96047c6b2e9cb7c1/recipe/recipe.R": {
+      "bytes": 1124,
+      "kind": "file",
+      "sha256": "a3c06effab96558d8a09068adbfaf2650a3d9ab82b608ea63437dc9076fe3957"
+    },
+    "runs/737734c6e24e45af96047c6b2e9cb7c1/request.private.json": {
+      "bytes": 640,
+      "kind": "file",
+      "sha256": "5dc7f3f67cb9dad0e19e97cf97bd8d7932e06c03a244b32095978ffc00b1699d"
+    },
+    "runs/737734c6e24e45af96047c6b2e9cb7c1/result.json": {
+      "bytes": 122,
+      "kind": "file",
+      "sha256": "bded28cf34e60f4f08daf244bb5d7666d0bec167b8d6a3726e8005e7123eeb1d"
+    },
+    "runs/9e2e0247fda34086827b3a3a1410ac20": {
+      "bytes": 0,
+      "kind": "directory"
+    },
+    "runs/9e2e0247fda34086827b3a3a1410ac20/input": {
+      "bytes": 0,
+      "kind": "directory"
+    },
+    "runs/9e2e0247fda34086827b3a3a1410ac20/input/data.csv": {
+      "bytes": 20,
+      "kind": "file",
+      "sha256": "93e6b66103c5b80ec9ee5453b8097f1bad6ad843127ed5ca2cb1faa2f92f48fd"
+    },
+    "runs/9e2e0247fda34086827b3a3a1410ac20/receipt.private.json": {
+      "bytes": 872,
+      "kind": "file",
+      "sha256": "bd077f85a0b5599d3c69b15b62ce3518cb32cdfc59dd04c929384d56a4087570"
+    },
+    "runs/9e2e0247fda34086827b3a3a1410ac20/recipe": {
+      "bytes": 0,
+      "kind": "directory"
+    },
+    "runs/9e2e0247fda34086827b3a3a1410ac20/recipe/recipe.py": {
+      "bytes": 821,
+      "kind": "file",
+      "sha256": "549f064aaaa36ee8259f1f8e2902d0dfb15d071fcb6d9b60e52b266a7bbdb922"
+    },
+    "runs/9e2e0247fda34086827b3a3a1410ac20/request.private.json": {
+      "bytes": 628,
+      "kind": "file",
+      "sha256": "c24a1d01e7043e4e31752d63edcbeb35db25ecd0f69082e0bd87b681519fce61"
+    },
+    "runs/c5526b27a7644faea22377e485bbcbe6": {
+      "bytes": 0,
+      "kind": "directory"
+    },
+    "runs/c5526b27a7644faea22377e485bbcbe6/input": {
+      "bytes": 0,
+      "kind": "directory"
+    },
+    "runs/c5526b27a7644faea22377e485bbcbe6/input/data.csv": {
+      "bytes": 62,
+      "kind": "file",
+      "sha256": "31b266eec3e380098d5d033309f1389928950951a2b2b3443c4646afa236112f"
+    },
+    "runs/c5526b27a7644faea22377e485bbcbe6/receipt.private.json": {
+      "bytes": 925,
+      "kind": "file",
+      "sha256": "8c31d965ca0343acf45972a77518ff28300a71c20720782942009980358a29cc"
+    },
+    "runs/c5526b27a7644faea22377e485bbcbe6/recipe": {
+      "bytes": 0,
+      "kind": "directory"
+    },
+    "runs/c5526b27a7644faea22377e485bbcbe6/recipe/recipe.py": {
+      "bytes": 821,
+      "kind": "file",
+      "sha256": "549f064aaaa36ee8259f1f8e2902d0dfb15d071fcb6d9b60e52b266a7bbdb922"
+    },
+    "runs/c5526b27a7644faea22377e485bbcbe6/request.private.json": {
+      "bytes": 640,
+      "kind": "file",
+      "sha256": "4878eef06d807e55eb64331b485545e37ec6f8f2dbce6d90ed84aa5537a05812"
+    },
+    "runs/c5526b27a7644faea22377e485bbcbe6/result.json": {
+      "bytes": 130,
+      "kind": "file",
+      "sha256": "fd59489e8883fb41a49a279f76797384cea5bf5eb10fb778a19181af7a4f9fec"
+    },
+    "runs/c7bbdf9e40474726887b162993d44108": {
+      "bytes": 0,
+      "kind": "directory"
+    },
+    "runs/c7bbdf9e40474726887b162993d44108/input": {
+      "bytes": 0,
+      "kind": "directory"
+    },
+    "runs/c7bbdf9e40474726887b162993d44108/input/data.csv": {
+      "bytes": 24,
+      "kind": "file",
+      "sha256": "2a34f7209c384ae4393b1d5689261bf4273354637bce181cda67a3a612aad443"
+    },
+    "runs/c7bbdf9e40474726887b162993d44108/receipt.private.json": {
+      "bytes": 921,
+      "kind": "file",
+      "sha256": "86aa13bf7be2833cfffaebea432c356a5a22b4646ec82361c39050e2c5b4e3b9"
+    },
+    "runs/c7bbdf9e40474726887b162993d44108/recipe": {
+      "bytes": 0,
+      "kind": "directory"
+    },
+    "runs/c7bbdf9e40474726887b162993d44108/recipe/recipe.py": {
+      "bytes": 821,
+      "kind": "file",
+      "sha256": "549f064aaaa36ee8259f1f8e2902d0dfb15d071fcb6d9b60e52b266a7bbdb922"
+    },
+    "runs/c7bbdf9e40474726887b162993d44108/request.private.json": {
+      "bytes": 628,
+      "kind": "file",
+      "sha256": "c8805fa1fea5775bc7f874ee1b675c5d5cb8ce5c096fa989ba1e8fdc294e71fd"
+    },
+    "runs/c7bbdf9e40474726887b162993d44108/result.json": {
+      "bytes": 126,
+      "kind": "file",
+      "sha256": "863e038365a3ce9d6a29e6fc090deb2666e707a8bb153761988b41ba2a73a077"
+    },
+    "runs/f03f6c5c7c2b4c84801fb60666422295": {
+      "bytes": 0,
+      "kind": "directory"
+    },
+    "runs/f03f6c5c7c2b4c84801fb60666422295/input": {
+      "bytes": 0,
+      "kind": "directory"
+    },
+    "runs/f03f6c5c7c2b4c84801fb60666422295/input/data.csv": {
+      "bytes": 5902,
+      "kind": "file",
+      "sha256": "97d78f0a32d74fe8d41ed1b65a25716cc68284165c30ab1f05b6f9307e6a253a"
+    },
+    "runs/f03f6c5c7c2b4c84801fb60666422295/receipt.private.json": {
+      "bytes": 782,
+      "kind": "file",
+      "sha256": "76905cc63a875216fc0589c3e9c3a2df8f96ba872ebbb4bd698d5f4aab4d30b1"
+    },
+    "runs/f03f6c5c7c2b4c84801fb60666422295/recipe": {
+      "bytes": 0,
+      "kind": "directory"
+    },
+    "runs/f03f6c5c7c2b4c84801fb60666422295/recipe/recipe.R": {
+      "bytes": 1124,
+      "kind": "file",
+      "sha256": "a3c06effab96558d8a09068adbfaf2650a3d9ab82b608ea63437dc9076fe3957"
+    },
+    "runs/f03f6c5c7c2b4c84801fb60666422295/request.private.json": {
+      "bytes": 640,
+      "kind": "file",
+      "sha256": "37b498637a91142aae1807d0d30cb7c463896ca82adcda34e6750e792170f278"
+    },
+    "runs/f56cfd2d87cf49528bfb70990e36dc67": {
+      "bytes": 0,
+      "kind": "directory"
+    },
+    "runs/f56cfd2d87cf49528bfb70990e36dc67/input": {
+      "bytes": 0,
+      "kind": "directory"
+    },
+    "runs/f56cfd2d87cf49528bfb70990e36dc67/input/data.csv": {
+      "bytes": 20,
+      "kind": "file",
+      "sha256": "93e6b66103c5b80ec9ee5453b8097f1bad6ad843127ed5ca2cb1faa2f92f48fd"
+    },
+    "runs/f56cfd2d87cf49528bfb70990e36dc67/recipe": {
+      "bytes": 0,
+      "kind": "directory"
+    },
+    "runs/f56cfd2d87cf49528bfb70990e36dc67/recipe/recipe.py": {
+      "bytes": 821,
+      "kind": "file",
+      "sha256": "549f064aaaa36ee8259f1f8e2902d0dfb15d071fcb6d9b60e52b266a7bbdb922"
+    },
+    "server.lock": {
+      "bytes": 0,
+      "kind": "file",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "workspace.sqlite3": {
+      "bytes": 90112,
+      "kind": "file",
+      "sha256": "3d4b1e34fd2a76189e1f2dc1fca2b1a96e1d2b7d6af31a7d12667feb9082194a"
+    },
+    "workspace.sqlite3-shm": {
+      "bytes": 32768,
+      "kind": "file",
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+    },
+    "workspace.sqlite3-wal": {
+      "bytes": 0,
+      "kind": "file",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "existing_service_lock_held": true,
+  "files": 50,
+  "filesystem_entries": 82,
+  "format": "educloud-storage-observation-v1",
+  "inventory_sha256": "d63734694e4bb5049de48a2bc48a79d8d6c1ce166aa74def8e597130d9a8d9b2",
+  "logical_bytes": 163779,
+  "quota_enforced": false,
+  "read_only": true,
+  "scope": "Logical file bytes and all directory/file entries under this root. External backups/replays, Docker images and identity-provider volumes are outside this observation.",
+  "warning": "This is a bounded observation, not storage admission, available host capacity or permission to delete. Other operator writers must remain stopped."
+}

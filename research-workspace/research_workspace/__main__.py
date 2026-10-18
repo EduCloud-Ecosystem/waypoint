@@ -70,6 +70,9 @@ def main():
     restore.add_argument("--broker", required=True)
     status = commands.add_parser("recovery-status")
     status.add_argument("--state", required=True)
+    for name in ("storage-status", "retention-plan"):
+        command = commands.add_parser(name, help="Read-only bounded offline inventory; never deletion or admission authority")
+        command.add_argument("--state", required=True)
     activate = commands.add_parser("activate-recovery", help="Fence a current offline source and activate its replacement")
     activate.add_argument("--state", required=True)
     activate.add_argument("--source-state", required=True)
@@ -110,6 +113,12 @@ def main():
             result = reproduce_bundle(args.bundle, trusted_sha256=args.trusted_sha256, output=args.output,
                                       broker=args.broker, budget_cpu_seconds=args.budget_cpu_seconds, selected_run_ids=args.run_id)
         print(json.dumps(result, indent=2))
+    elif args.command in ("storage-status", "retention-plan"):
+        from .storage_inventory import observe
+        result = observe(args.state, retention=args.command == "retention-plan")
+        print(json.dumps(result, indent=2))
+        if not result["complete"]:
+            raise SystemExit(1)
     elif args.command in ("checkpoint", "restore", "recovery-status", "activate-recovery"):
         from . import recovery
         if args.command == "checkpoint":

@@ -145,3 +145,5 @@ participant data, live cloud provisioning and scientific validity are not
 accepted by this local proof of concept.
 
 The separate [local synthetic OIDC pilot](OIDC-PILOT.md) exercises current identity and project access while keeping hosted and real-data admission gates open.
+Read-only storage inventory and retention review are documented in [STORAGE.md](STORAGE.md).
+These reports do not enforce admission or authorize deletion.
