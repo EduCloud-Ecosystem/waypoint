@@ -23,7 +23,7 @@ MAX_OPERATIONS = 4096
 KINDS = {"initialize", "mutation", "submit", "project", "claim", "run", "settle", "recover"}
 TERMINAL = {"committed", "refused"}
 PHASES = {"prepared", "effect", "uncertain"}
-GUARDED_MODES = {"local-guarded-public-data-v1", "local-guarded-synthetic-oidc-v1", finite.MODE}
+GUARDED_MODES = {"local-guarded-public-data-v1", "local-guarded-synthetic-oidc-v1"} | finite.MODES
 SCHEMA = (
     "CREATE TABLE operation_authority(authority_id TEXT PRIMARY KEY, sequence INTEGER NOT NULL, barrier TEXT NOT NULL)",
     "CREATE TABLE operation_receipts(id TEXT PRIMARY KEY, sequence INTEGER UNIQUE NOT NULL, digest TEXT NOT NULL, outcome TEXT NOT NULL, essential INTEGER NOT NULL)",
@@ -93,12 +93,13 @@ class Lease:
 class Guard:
     def __init__(self, root, binding, connect=None):
         self.root = Path(root).resolve()
-        self.finite = isinstance(binding, dict) and binding.get("format") == finite.GUARD_FORMAT
+        self.finite = isinstance(binding, dict) and binding.get("format") in finite.GUARD_FORMATS
+        self.profile_version = finite.binding_version(binding) if self.finite else 0
         keys = {"format", "authority_id"} | ({"logical_authority_sha256"} if self.finite else set())
         if (not isinstance(binding, dict) or set(binding) != keys
-                or binding["format"] != (finite.GUARD_FORMAT if self.finite else FORMAT)
+                or binding["format"] not in (finite.GUARD_FORMATS if self.finite else {FORMAT})
                 or not re.fullmatch(r"[a-f0-9]{32}", str(binding["authority_id"]))
-                or (self.finite and binding["logical_authority_sha256"] != finite.profile_digest())):
+                or (self.finite and binding["logical_authority_sha256"] != finite.profile_digest(self.profile_version))):
             raise GuardPaused("invalid_binding")
         self.binding = dict(binding)
         self.connect = connect
@@ -106,10 +107,11 @@ class Guard:
             self.lease = _registry.setdefault(str(self.root), Lease())
 
     @classmethod
-    def create(cls, root, connect=None, *, finite_profile=False):
-        binding = {"format": finite.GUARD_FORMAT if finite_profile else FORMAT, "authority_id": secrets.token_hex(16)}
+    def create(cls, root, connect=None, *, finite_profile=False, profile_version=1):
+        guard_format = finite.GUARD_FORMAT if profile_version == 1 else finite.EXPORT_GUARD_FORMAT
+        binding = {"format": guard_format if finite_profile else FORMAT, "authority_id": secrets.token_hex(16)}
         if finite_profile:
-            binding["logical_authority_sha256"] = finite.profile_digest()
+            binding["logical_authority_sha256"] = finite.profile_digest(profile_version)
         guard = cls(root, binding, connect)
         fd = os.open(guard.root / LOCK, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
         try:

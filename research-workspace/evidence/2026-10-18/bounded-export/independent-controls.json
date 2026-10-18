@@ -1,0 +1,76 @@
+{
+  "source_sha256": {
+    "bounded_export.py": "2900079a2f4bcd19ed09a7e27ee1eaa5c0b49e8ab4967eb7c8adf0dd026e22dc",
+    "store.py": "001553e8b026988bb6e46c7a3f1413f9211eb1e112b16f193a568aed1dbbfad3",
+    "finite_authority.py": "2f72061235c255107b0f924366d202d6809bf689a88c333f298e985f9d91eeac",
+    "operation_guard.py": "136560ee4d0a119a1d94cefef758e9f3a59efed2933735c78a2af7229efe01f3"
+  },
+  "controls": [
+    {
+      "name": "closed_capture_and_final_connections_and_guard_release",
+      "passed": true,
+      "connections": 2
+    },
+    {
+      "name": "final_rejects_logout",
+      "passed": true,
+      "exception": "AccessError"
+    },
+    {
+      "name": "final_rejects_revoke",
+      "passed": true,
+      "exception": "AccessError"
+    },
+    {
+      "name": "final_rejects_rotate",
+      "passed": true,
+      "exception": "AccessError"
+    },
+    {
+      "name": "final_rejects_close",
+      "passed": true,
+      "exception": "ExportChanged"
+    },
+    {
+      "name": "final_rejects_cancel_only",
+      "passed": true,
+      "exception": "ExportChanged"
+    },
+    {
+      "name": "final_rejects_new_run",
+      "passed": true,
+      "exception": "ExportChanged"
+    },
+    {
+      "name": "final_rejects_run_subject",
+      "passed": true,
+      "exception": "ExportChanged"
+    },
+    {
+      "name": "final_rejects_request_key",
+      "passed": true,
+      "exception": "ExportChanged"
+    },
+    {
+      "name": "final_rejects_request_hash",
+      "passed": true,
+      "exception": "ExportChanged"
+    },
+    {
+      "name": "final_rejects_user_key_hash",
+      "passed": true,
+      "exception": "ExportChanged"
+    },
+    {
+      "name": "final_rejects_expiry",
+      "passed": true,
+      "exception": "AccessError"
+    },
+    {
+      "name": "final_rejects_strip_profile",
+      "passed": true,
+      "exception": "ValueError"
+    }
+  ],
+  "scope": "Disposable simulated fixtures only; direct SQL used only to inject manifest changes; no real broker, Docker or accepted-state operation."
+}

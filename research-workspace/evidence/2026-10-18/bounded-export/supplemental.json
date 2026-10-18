@@ -1,0 +1,23 @@
+{
+  "source_sha256": "2900079a2f4bcd19ed09a7e27ee1eaa5c0b49e8ab4967eb7c8adf0dd026e22dc",
+  "controls": [
+    {
+      "control": "missing required runtime",
+      "status": "PASS",
+      "outcome": "refused before creation",
+      "diagnostic": "Configure at least one reviewed runtime."
+    },
+    {
+      "control": "fresh CLI bounded-export initialization and reopen/local sign-in",
+      "status": "PASS",
+      "provider_calls": 0,
+      "profile_version": 2
+    },
+    {
+      "control": "artifact changed during descriptor read",
+      "status": "PASS",
+      "publication": "refused"
+    }
+  ],
+  "scope": "Disposable local fixtures; no broker process or provider."
+}

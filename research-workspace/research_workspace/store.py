@@ -84,7 +84,8 @@ class Store:
         self.root = Path(root).resolve()
         self.guard = None
         self.finite = bool(create and isinstance(config, dict) and
-                           (config.get("mode") == finite.MODE or "logical_authority" in config))
+                           (config.get("mode") in finite.MODES or "logical_authority" in config))
+        self.profile_version = 0
         self._initializing = create
         self.initial_key = None
         bootstrap = None
@@ -94,8 +95,10 @@ class Store:
             if "operation_guard" in config:
                 raise finite.InvalidProfile("Fresh initialization cannot reuse an authority binding.")
             finite.bounded_path(self.root)
-            proposed = {"format": finite.GUARD_FORMAT, "authority_id": "0" * 32,
-                        "logical_authority_sha256": finite.profile_digest()}
+            self.profile_version = finite.validate_config(config)
+            proposed = {"format": finite.GUARD_FORMAT if self.profile_version == 1 else finite.EXPORT_GUARD_FORMAT,
+                        "authority_id": "0" * 32,
+                        "logical_authority_sha256": finite.profile_digest(self.profile_version)}
             finite.validate_config({**config, "operation_guard": proposed}, binding=proposed)
         if create:
             if self.root.exists() and any(self.root.iterdir()):
@@ -110,7 +113,8 @@ class Store:
                 if not isinstance(config, dict) or config.get("mode") not in GUARDED_MODES or subject is None:
                     raise ValueError("Guarded initialization requires an explicit fresh profile and subject.")
                 identifier(subject)
-                self.guard = Guard.create(self.root, self._connect, finite_profile=self.finite)
+                self.guard = Guard.create(self.root, self._connect, finite_profile=self.finite,
+                                          profile_version=self.profile_version or 1)
                 bootstrap = self.guard.begin("initialize", subject=subject, request=config, bootstrap=True)
             try:
                 (self.root / "runs").mkdir(mode=0o700)
@@ -131,7 +135,7 @@ class Store:
                             db.execute(statement)
                         db.execute(f"PRAGMA application_id={APPLICATION_ID}")
                         if self.finite:
-                            db.execute(f"PRAGMA user_version={finite.USER_VERSION}")
+                            db.execute(f"PRAGMA user_version={finite.database_version(self.profile_version)}")
                         db.execute("INSERT INTO operation_authority VALUES(?,0,?)", (self.guard.binding["authority_id"], uuid.uuid4().hex))
                         bootstrap.register(db)
                         db.commit()
@@ -165,12 +169,14 @@ class Store:
             config = finite.read_config(self.root) if version else json.loads((self.root / "config.json").read_bytes())
             evidence = guarded_db or guarded_tables or any((self.root / name).exists() for name in (FILE, LOCK)) or any(self.root.glob(TEMP + "*"))
             binding = config.get("operation_guard")
-            finite_evidence = (version or "logical_authority" in config or config.get("mode") == finite.MODE
-                               or isinstance(binding, dict) and binding.get("format") == finite.GUARD_FORMAT)
+            finite_evidence = (version or "logical_authority" in config or config.get("mode") in finite.MODES
+                               or isinstance(binding, dict) and binding.get("format") in finite.GUARD_FORMATS)
             if finite_evidence:
-                if version != finite.USER_VERSION or not isinstance(binding, dict) or binding.get("format") != finite.GUARD_FORMAT:
+                if version not in finite.USER_VERSIONS or not isinstance(binding, dict) or binding.get("format") not in finite.GUARD_FORMATS:
                     raise finite.InvalidProfile("Missing or unsupported finite authority binding.")
-                finite.validate_config(config, binding=binding)
+                self.profile_version = finite.validate_config(config, binding=binding)
+                if version != finite.database_version(self.profile_version):
+                    raise finite.InvalidProfile("The database and finite policy differ.")
                 self.finite = True
             if binding is not None or evidence or config.get("mode") in GUARDED_MODES:
                 if not guarded_db or guarded_tables != 2 or binding is None or config.get("mode") not in GUARDED_MODES | {"recovery-held", "retired"}:
@@ -203,8 +209,8 @@ class Store:
                     config_path = self.root / "config.json"
                     config = json.loads(config_path.read_bytes()) if config_path.exists() else {}
                     binding = config.get("operation_guard")
-                    if ("logical_authority" in config or config.get("mode") == finite.MODE
-                            or isinstance(binding, dict) and binding.get("format") == finite.GUARD_FORMAT):
+                    if ("logical_authority" in config or config.get("mode") in finite.MODES
+                            or isinstance(binding, dict) and binding.get("format") in finite.GUARD_FORMATS):
                         raise finite.InvalidProfile("A finite profile cannot use an unrestricted open store.")
             db.execute("PRAGMA foreign_keys=ON")
             db.execute("PRAGMA journal_mode=WAL")
@@ -743,6 +749,8 @@ class Store:
                     run_token.release()
 
     def snapshot(self, project_id, subject):
+        if self.profile_version == 2:
+            raise ValueError("This profile requires the complete authorized export operation.")
         with contextlib.closing(self.connect()) as db:
             db.execute("BEGIN")
             project, _ = self._access(db, project_id, subject)
@@ -756,3 +764,9 @@ class Store:
                 if run["status"] == "succeeded":
                     files[f"runs/{run['id']}/result.json"] = (directory / "result.json").read_bytes()
             return project, runs, files
+
+    def export_bundle(self, project_id, subject, token):
+        if self.profile_version != 2:
+            raise ValueError("Bounded export requires its explicit fresh profile.")
+        from .bounded_export import export_bundle
+        return export_bundle(self, project_id, subject, token)

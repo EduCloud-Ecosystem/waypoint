@@ -38,7 +38,7 @@ class Application:
             {"id": "summary-r", "name": "R · group comparison", "description": "Run the same reviewed method in R for a runtime comparison.", "available": "summary-r" in available},
         ]}
 
-    def dispatch(self, method, path, subject, data, request_key, context=None):
+    def dispatch(self, method, path, subject, data, request_key, context=None, *, local_session_token=None):
         if path == "/api/operation-status" and method == "GET":
             return 200, self.store.operation_status()
         if path == "/api/session" and method == "GET":
@@ -98,6 +98,8 @@ class Application:
             response = self.store.project(project_id, subject)
             return 200, {"runs": response["runs"], "warning": WARNING}
         if action == "/export" and method == "GET":
+            if self.store.profile_version == 2:
+                return 200, self.store.export_bundle(project_id, subject, local_session_token)
             project, runs, files = self.store.snapshot(project_id, subject)
             return 200, build_bundle(project, runs, files)
         return 404, {"error": "That page or action is unavailable."}
@@ -238,7 +240,8 @@ class Handler(BaseHTTPRequestHandler):
                 self.server.app.store.logout(token)
                 self.respond(200, {"ok": True}, headers={"Set-Cookie": "research_session=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0"})
                 return
-            status, value = self.server.app.dispatch(self.command, path, subject, data, self.headers.get("Idempotency-Key"), context)
+            status, value = self.server.app.dispatch(self.command, path, subject, data, self.headers.get("Idempotency-Key"), context,
+                                                   local_session_token=token if not identity else None)
             headers = {"Content-Disposition": 'attachment; filename="research-evidence.zip"'} if isinstance(value, bytes) else None
             self.respond(status, value, headers=headers)
         except GuardPaused as exc:
