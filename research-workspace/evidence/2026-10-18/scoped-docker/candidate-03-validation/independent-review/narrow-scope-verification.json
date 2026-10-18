@@ -1,0 +1,17 @@
+{
+  "changed_archive_files": [
+    "qualify_scoped_docker.py",
+    "tests/test_scoped_docker_qualification.py"
+  ],
+  "added_archive_files": [],
+  "removed_archive_files": [],
+  "changed_manifest_fields": [
+    "source_archive_sha256",
+    "source_commit",
+    "sources"
+  ],
+  "exercise_unchanged": true,
+  "output_marker_unchanged": true,
+  "broker_prerequisites_unchanged": true,
+  "operator_doc_sha256": "fe05e9415500e6974a60f145cfc6709aa8a05b6df7bdedf23e4ef78fd360e62c"
+}
