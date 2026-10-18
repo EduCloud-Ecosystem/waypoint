@@ -1,0 +1,10 @@
+{
+  "docker_attempts": 0,
+  "failure": "Integer 1 incorrectly accepted for a required true control; retained before correction.",
+  "files": {
+    "qualify_scoped_docker.py": "1b5a67701f751bc40b55466cb28bbdbf7457e0cf2d9cab482aca42b39a28f888",
+    "test_scoped_docker_qualification.py": "1b1d7df0dc66279f2d3bf302a85c1f8ef6bdd039145b31b21316215d6a47ea5c",
+    "waypoint-v4-harness-first-tests.log": "49e8de7a86b5296910a3f881b058da2a03b89e86b5e8186876f8b60c91a96027"
+  },
+  "status": "FAIL"
+}
