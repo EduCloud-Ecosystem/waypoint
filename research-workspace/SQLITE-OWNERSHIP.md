@@ -53,6 +53,8 @@ the export's fixed preflight expressions. Caller-supplied projections and
 predicates are refused before SQL evaluation. Bindings are copied once as
 primitive scalar values; custom adapters are refused. Metadata and payload
 evaluations therefore use the same query, bindings and validated snapshot.
+Statements and scripts require plain built-in strings before normalization or
+effects; a custom string type cannot disguise the SQL sent to SQLite.
 
 Writers use distinct roles for initialization, mutations, started receipts,
 barriers, final dispatch and offline backup. Existing writable connections

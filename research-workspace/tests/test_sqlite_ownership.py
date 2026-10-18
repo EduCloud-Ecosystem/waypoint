@@ -550,6 +550,34 @@ class OwnershipTests(Fixture):
             with self.store.read() as db:self.assertEqual(db.execute(sql,parameters).fetchone()[0],canonical(self.project))
         self.assertEqual(observed,[(self.pid,),(self.pid,)])
 
+    def test_sql_string_subclasses_cannot_disguise_reads_writes_or_scripts(self):
+        from research_workspace.storage_inventory import SCHEMA_SQL
+        normalized=[]
+        class Disguised(str):
+            def __new__(cls,actual,approved):
+                value=super().__new__(cls,actual);value.approved=approved;return value
+            def split(self,*args,**kw):normalized.append(True);return self.approved.split(*args,**kw)
+        with o.Owner(self.root,"guard-proof",guard=self.store.guard,readonly=True) as db:
+            with self.assertRaisesRegex(ValueError,"plain string"):
+                db.execute(Disguised("SELECT subject FROM users",o._AUTHORITY_SELECT))
+        with self.store.write(role="barrier") as db:
+            with self.assertRaisesRegex(ValueError,"plain string"):
+                db.execute(Disguised("UPDATE users SET active=0 WHERE subject='alice'","UPDATE operation_authority SET barrier=? WHERE authority_id=?"))
+            db.commit()
+        escaped=str(self.root/"workspace.sqlite3").replace("'","''")
+        attack="ATTACH DATABASE '"+escaped+"' AS authority; UPDATE authority.users SET active=0 WHERE subject='alice'; DETACH DATABASE authority;"
+        with o.Owner(self.root,"memory-reference",guard=self.store.guard,memory=True,initialize=True,validate=False) as db:
+            with self.assertRaisesRegex(ValueError,"plain string"):
+                db.executescript(Disguised(attack,";".join(SCHEMA_SQL+g.SCHEMA)))
+        with self.store.write(role="mutation") as db:
+            operation=Mock();adapter=o.Mutation(db,operation)
+            with self.assertRaisesRegex(ValueError,"plain string"):
+                adapter.execute(Disguised("UPDATE users SET active=0 WHERE subject='alice'","SELECT subject FROM users"))
+            operation.effect.assert_not_called()
+        self.assertEqual(normalized,[])
+        with self.raw() as db:self.assertEqual(db.execute("SELECT active FROM users WHERE subject='alice'").fetchone()[0],1)
+        self.assertFalse(o.held(self.root))
+
     def test_primary_spawn_and_offline_errors_survive_rollback_failure(self):
         run=self.submit();run=self.store.claim()
         with fault("dispatch-reservation","rollback"):

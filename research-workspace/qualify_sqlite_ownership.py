@@ -53,6 +53,7 @@ def main():
         (output/"candidate-source.tar.gz").write_bytes(gzip.compress(buffer.getvalue(),mtime=0))
         baseline=run(captured,["test_sqlite_ownership"],output/"controls.log")
         variants=[
+          ("sql-string-normalization-bypass","research_workspace/sqlite_ownership.py",[("def _statement(sql):\n    if type(sql) is not str:","def _statement(sql):\n    if False:"),("    if type(sql) is not str:\n        return False","    if not isinstance(sql,str):\n        return False")],"test_sql_string_subclasses_cannot_disguise_reads_writes_or_scripts"),
           ("unreviewed-projection","research_workspace/sqlite_ownership.py",[("if \" \".join(sql.split()) not in _SELECTS | _export_selects():","if False:")],"test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation"),
           ("mutable-observation-bindings","research_workspace/sqlite_ownership.py",[("        parameters = tuple(parameters)","        parameters = parameters")],"test_observation_bindings_copied_once_and_custom_adapters_refused"),
           ("custom-observation-adapter","research_workspace/sqlite_ownership.py",[("        if any(type(value) not in (str, bytes, int, float, type(None))\n               or type(value) is float and not math.isfinite(value) for value in parameters):","        if False:")],"test_observation_bindings_copied_once_and_custom_adapters_refused"),

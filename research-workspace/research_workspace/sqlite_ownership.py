@@ -240,10 +240,16 @@ def _export_selects():
     return statements
 
 
+def _statement(sql):
+    if type(sql) is not str:
+        raise ValueError("SQLite statements require plain string values.")
+    return sql
+
+
 def _schema_allowed(role, sql, *, script):
     from .storage_inventory import SCHEMA_SQL
     from .operation_guard import SCHEMA
-    if not isinstance(sql,str):
+    if type(sql) is not str:
         return False
     if script:
         allowed = ([";".join(SCHEMA_SQL)] if role == "initialize" else
@@ -458,6 +464,7 @@ class Owner:
         self._validated = True
 
     def execute(self, sql, parameters=()):
+        sql = _statement(sql)
         self._check()
         normalized = " ".join(sql.split())
         if self.role in {"offline-freeze","dispatch-reservation"} and normalized == "BEGIN":
@@ -560,6 +567,7 @@ class Owner:
         return result
 
     def executescript(self, sql):
+        sql = _statement(sql)
         self._check()
         if not _schema_allowed(self.role, sql, script=True):
             raise ValueError("This owner accepts only its exact reviewed schema script.")
@@ -690,6 +698,7 @@ class Mutation:
         self.__owner, self.operation, self.keep = owner, operation, keep
 
     def execute(self, sql, parameters=()):
+        sql = _statement(sql)
         self.__owner._check()
         if not sql.startswith("SELECT "):
             self.operation.effect()
