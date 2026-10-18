@@ -15,10 +15,37 @@
   ],
   "observations": [
     {
-      "authority_id": "63ceb00118ad438a67377d56e5a1a5d3",
+      "authority_id": "ed7a506065deb0428331bb5ea0289d45",
       "classification": "modeled invariant",
       "control": "append_exact_fit_and_unrelated_growth",
       "exact_fit_bytes_and_entries": true,
+      "expected_entries_from_pre_submit_inputs": {
+        "runs/991540973a3f4e58b01170777c8a4def": {
+          "bytes": 0,
+          "directory": true,
+          "sha256": null
+        },
+        "runs/991540973a3f4e58b01170777c8a4def/input": {
+          "bytes": 0,
+          "directory": true,
+          "sha256": null
+        },
+        "runs/991540973a3f4e58b01170777c8a4def/input/data.csv": {
+          "bytes": 34,
+          "directory": false,
+          "sha256": "7a92b8682957cf8aa7abf33c1fa1e73aae253785389b6d2700c41bd3640eca6b"
+        },
+        "runs/991540973a3f4e58b01170777c8a4def/recipe": {
+          "bytes": 0,
+          "directory": true,
+          "sha256": null
+        },
+        "runs/991540973a3f4e58b01170777c8a4def/recipe/recipe.py": {
+          "bytes": 821,
+          "directory": false,
+          "sha256": "549f064aaaa36ee8259f1f8e2902d0dfb15d071fcb6d9b60e52b266a7bbdb922"
+        }
+      },
       "next_writer_remaining": [
         855,
         5
@@ -29,29 +56,29 @@
       ],
       "one_byte_short_refused": true,
       "one_entry_short_refused": true,
-      "operation_id": "f8b8e6fddb2287561772e59b52fcc355",
+      "operation_id": "2ccf3b52ce2b8ffa9d87b90e21c3dca1",
       "owned_entries": {
-        "runs/4a2b827ed8d54431a91b1f00376e46d8": {
+        "runs/991540973a3f4e58b01170777c8a4def": {
           "bytes": 0,
           "directory": true,
           "sha256": null
         },
-        "runs/4a2b827ed8d54431a91b1f00376e46d8/input": {
+        "runs/991540973a3f4e58b01170777c8a4def/input": {
           "bytes": 0,
           "directory": true,
           "sha256": null
         },
-        "runs/4a2b827ed8d54431a91b1f00376e46d8/input/data.csv": {
+        "runs/991540973a3f4e58b01170777c8a4def/input/data.csv": {
           "bytes": 34,
           "directory": false,
           "sha256": "7a92b8682957cf8aa7abf33c1fa1e73aae253785389b6d2700c41bd3640eca6b"
         },
-        "runs/4a2b827ed8d54431a91b1f00376e46d8/recipe": {
+        "runs/991540973a3f4e58b01170777c8a4def/recipe": {
           "bytes": 0,
           "directory": true,
           "sha256": null
         },
-        "runs/4a2b827ed8d54431a91b1f00376e46d8/recipe/recipe.py": {
+        "runs/991540973a3f4e58b01170777c8a4def/recipe/recipe.py": {
           "bytes": 821,
           "directory": false,
           "sha256": "549f064aaaa36ee8259f1f8e2902d0dfb15d071fcb6d9b60e52b266a7bbdb922"
@@ -62,9 +89,12 @@
         0,
         0
       ],
+      "same_length_mutated_content_credit": 0,
       "scope": "Only this completed append; other writers UNKNOWN",
       "sequence": 3,
       "terminal_receipt": "committed",
+      "unexpected_file_credit": 0,
+      "unexpected_file_preserved": true,
       "unknown_file_preserved": true,
       "whole_root_after": [
         112995,
@@ -107,7 +137,7 @@
       "consumption_credit": 0,
       "control": "partial_append",
       "file_preserved": true,
-      "operation_id": "809691bd9fbacdc6a78b57b01965bcb9",
+      "operation_id": "2b81111375e4afe6a3d1d6d8214c2646",
       "remaining_liability": "UNKNOWN",
       "retained_bytes": 1,
       "sequence": 3,

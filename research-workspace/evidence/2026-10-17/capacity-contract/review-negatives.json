@@ -1,0 +1,22 @@
+{
+  "scope": "Independent negative controls for pre-submit expected append manifest; not quota acceptance",
+  "harness_sha256": "5a12b2e273f66f0ab8040b152dbee3fcc7c38ebc5b611a32fb4c793129893e14",
+  "checks": [
+    {
+      "fault_inserted_before_observation": "same_length_input_corruption",
+      "harness_assertion_rejected": true,
+      "errors": 0
+    },
+    {
+      "fault_inserted_before_observation": "unexpected_extra_entry",
+      "harness_assertion_rejected": true,
+      "errors": 0
+    },
+    {
+      "fault_inserted_before_observation": "wrong_recipe_filename_same_content_and_entry_count",
+      "harness_assertion_rejected": true,
+      "errors": 0
+    }
+  ],
+  "provider_processes": 0
+}

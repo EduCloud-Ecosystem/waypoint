@@ -22,8 +22,10 @@ HERE = Path(__file__).resolve().parent
 WORKSPACE = HERE.parents[1]
 sys.path[:0] = [str(WORKSPACE), str(WORKSPACE / "tests")]
 from research_workspace import operation_guard as g, store as storage, recovery as r
+from research_workspace.recipes import recipe_bytes
 from test_operation_guard import GuardFixture
 from test_guarded_recovery import GuardedRecoveryTests
+from test_workspace import CSV
 
 OBSERVATIONS = []
 
@@ -64,26 +66,38 @@ def modeled_append_remaining(envelope, expected, observed, owner, current_owner,
 class CapacityControls(GuardFixture):
     def test_append_owned_consumption_and_unknown_growth(self):
         before = inventory(self.root)
+        # Expected content comes from caller inputs and the trusted recipe BEFORE
+        # production submission, never from the destination being qualified.
+        csv_bytes, source_bytes = CSV.encode(), recipe_bytes("summary-python")
+        def file_meta(content):
+            return {"bytes": len(content), "directory": False,
+                    "sha256": hashlib.sha256(content).hexdigest()}
+        relative_plan = {name: {"bytes": 0, "directory": True, "sha256": None}
+                         for name in ("", "/input", "/recipe")}
+        relative_plan.update({"/input/data.csv": file_meta(csv_bytes),
+                              "/recipe/recipe.py": file_meta(source_bytes)})
         run = self.submit()
         data = self.store.guard.load()
         oid, intent = next((oid, item) for oid, item in data["operations"].items()
                            if item["kind"] == "submit" and item["resource_id"] == run["id"])
         self.assertEqual(self.store.guard.proof(data)[oid][2], "committed")
         prefix = "runs/" + run["id"]
+        expected = {prefix + name: meta for name, meta in relative_plan.items()}
         owned = {name: meta for name, meta in inventory(self.root).items()
                  if name == prefix or name.startswith(prefix + "/")}
         self.assertEqual(len(owned), 5)  # Three directories and two immutable files.
+        self.assertEqual(expected, owned)
         self.assertEqual(owned[prefix + "/input/data.csv"]["sha256"], run["input_sha256"])
         recipe = next(meta for name, meta in owned.items() if "/recipe/" in name)
         self.assertEqual(recipe["sha256"], run["recipe_sha256"])
-        envelope = size(owned)
+        envelope = size(expected)
         self.assertTrue(fits([0, 0], envelope, envelope))
         self.assertFalse(fits([0, 0], envelope, [envelope[0] - 1, envelope[1]]))
         self.assertFalse(fits([0, 0], envelope, [envelope[0], envelope[1] - 1]))
         # Terminal proof, resource identity and both content hashes allow only
         # this append writer's liability to move to observed occupancy.
         owner = [data["authority_id"], oid, intent["sequence"], run["id"]]
-        remaining = modeled_append_remaining(envelope, owned, owned, owner, owner, True)
+        remaining = modeled_append_remaining(envelope, expected, owned, owner, owner, True)
         self.assertTrue(fits(envelope, remaining, envelope))
         (self.root / "unowned-orphan").write_bytes(b"unrelated")
         after = inventory(self.root)
@@ -92,17 +106,35 @@ class CapacityControls(GuardFixture):
         self.assertEqual(remaining, [0, 0])
         self.assertFalse(fits([envelope[0] + 9, envelope[1] + 1], remaining, envelope))
         # Unrelated bytes do not consume the next writer's remaining liability.
-        next_remaining = modeled_append_remaining(envelope, owned, owned, owner,
+        next_remaining = modeled_append_remaining(envelope, expected, owned, owner,
                                                   [*owner[:2], intent["sequence"] + 1, run["id"]], True)
         self.assertEqual(next_remaining, envelope)
-        self.assertEqual(modeled_append_remaining(envelope, owned, owned, owner, owner, False), envelope)
-        changed = {**owned, prefix: {**owned[prefix], "bytes": 1}}
-        self.assertEqual(modeled_append_remaining(envelope, owned, changed, owner, owner, True), envelope)
+        self.assertEqual(modeled_append_remaining(envelope, expected, owned, owner, owner, False), envelope)
         self.assertFalse(fits([9, 1], next_remaining, envelope))
+        # Negative controls mutate only this disposable fixture. Same-length
+        # content corruption isolates the hash check from the size check.
+        csv_path = self.root / prefix / "input/data.csv"
+        csv_path.chmod(0o600)
+        csv_path.write_bytes(b"X" + csv_bytes[1:])
+        changed = {name: meta for name, meta in inventory(self.root).items()
+                   if name == prefix or name.startswith(prefix + "/")}
+        self.assertEqual(size(changed), envelope)
+        self.assertEqual(modeled_append_remaining(envelope, expected, changed, owner, owner, True), envelope)
+        csv_path.write_bytes(csv_bytes)
+        csv_path.chmod(0o444)
+        unexpected = self.root / prefix / "unexpected-artifact"
+        unexpected.write_bytes(b"protected")
+        extra = {name: meta for name, meta in inventory(self.root).items()
+                 if name == prefix or name.startswith(prefix + "/")}
+        self.assertEqual(modeled_append_remaining(envelope, expected, extra, owner, owner, True), envelope)
+        self.assertEqual(unexpected.read_bytes(), b"protected")
         record("append_exact_fit_and_unrelated_growth", "modeled invariant",
                production_transition="Store.submit", authority_id=data["authority_id"],
                operation_id=oid, sequence=intent["sequence"], terminal_receipt="committed",
-               owned_entries=owned, observed_append=envelope, remaining_append=remaining,
+               expected_entries_from_pre_submit_inputs=expected, owned_entries=owned,
+               observed_append=envelope, remaining_append=remaining,
+               same_length_mutated_content_credit=0, unexpected_file_credit=0,
+               unexpected_file_preserved=True,
                next_writer_remaining=next_remaining, exact_fit_bytes_and_entries=True,
                one_byte_short_refused=True, one_entry_short_refused=True,
                unknown_file_preserved=True, whole_root_before=size(before),

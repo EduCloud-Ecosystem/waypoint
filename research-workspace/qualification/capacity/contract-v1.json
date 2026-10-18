@@ -285,7 +285,7 @@
       "whole_root_envelope": "UNKNOWN"
     },
     {
-      "bounded_future_growth": "Per-call current/temp ceiling exists; whole-root retries/orphan count UNKNOWN. Do not derive snapshot/watchdog bounds from this lock.",
+      "bounded_future_growth": "Per-call current/temp ceiling exists; whole-root retries/orphan count UNKNOWN. Do not derive snapshot/watchdog bounds from this lock. Open can migrate a legacy ledger and spill output even for a status command. Duplicate project/run commands also rewrite the ledger; do not classify nominal reads/retries as storage-neutral.",
       "id": "broker-ledger",
       "owner_incarnation": "Ledger owner + authority ID + request_id; replacement generation not persisted separately",
       "partial_failure": "Outputs spill before compact record/ledger bounds. Deferred temp removal is not crash/removal success proof; rename then directory fsync can fail.",
@@ -294,7 +294,9 @@
       "sites": [
         "internal/ledger/store.go:Open",
         "internal/ledger/store.go:Store.write",
-        "internal/ledger/store.go:Store.Update"
+        "internal/ledger/store.go:Store.Update",
+        "internal/ledger/store.go:Store.InitProject",
+        "internal/broker/broker.go:Broker.Reserve"
       ],
       "temporary": "Current ledger + .ledger-* <=67108864 bytes/1 new entry per serialized write; crash leftovers UNKNOWN.",
       "terminal_proof": "Validated persisted record + owner/payload hash; terminal cleanup and full charge are compute proof, not universal file ownership proof.",
@@ -321,7 +323,7 @@
       "owner_incarnation": "Ledger owner/request_id + snapshot request directory; stable reservation before copy",
       "partial_failure": "Failed copies retain prefix incl extra probe byte; no automatic deletion or owner exit credit.",
       "retained": "snapshots parent + request directory + at most1024 walked input/recipe entries; up to16777217 bytes on growth-refusal path (16MiB+1).",
-      "serialization_boundary": "Outside ledger flock; request dir exclusive creation. Multiple live/uncertain owners not fully bounded by observed active record count.",
+      "serialization_boundary": "Outside ledger flock; request dir exclusive creation. Multiple live/uncertain owners not fully bounded by observed active record count. Copy follows CPU reservation and precedes watchdog start; copyTree has no context/deadline. Observer timeout is not terminal writer proof.",
       "sites": [
         "internal/broker/broker.go:snapshot",
         "internal/broker/broker.go:Broker.Run"
@@ -336,7 +338,7 @@
       "owner_incarnation": "Detached watchdog process + request_id + ledger owner; ready filename does not encode process incarnation",
       "partial_failure": "Deferred ready removal not crash proof; ambiguous provider creation retains compute liability; preserve capacity liability too.",
       "retained": "watch-<request_id>.ready 6 bytes/1 entry per path; stale/preexisting or uncertain ownership protected.",
-      "serialization_boundary": "Ready write outside ledger lock, WriteFile truncates; cancel/reconcile each acquire ledger lock separately.",
+      "serialization_boundary": "Ready write outside ledger lock, WriteFile truncates; cancel/reconcile each acquire ledger lock separately. Watch holds neither Waypoint lifecycle/operation locks nor Outfitter execution.lock; only Run holds the shared execution lease. Stopped Waypoint, broker-parent exit and settled compute receipts never prove all-writer quiescence.",
       "sites": [
         "cmd/outfitter/main.go:execute watchdog closure",
         "internal/broker/broker.go:Broker.Watch"
@@ -346,12 +348,12 @@
       "whole_root_envelope": "UNKNOWN"
     },
     {
-      "bounded_future_growth": "UNKNOWN: complete destination envelope before copy and before source fence; max read bounds not pre-write capacity proofs.",
+      "bounded_future_growth": "UNKNOWN: complete destination envelope before copy and before source fence; max read bounds not pre-write capacity proofs. Repeated external checkpoint destinations have no aggregate count/space ceiling.",
       "id": "broker-recovery",
       "owner_incarnation": "Source/destination authority IDs + trusted checkpoint + execution leases + ledger locks",
       "partial_failure": "Partial destination held, source can already be fenced when dest write fails; protect leftovers and all prior charges.",
       "retained": "New directories, initialized, execution.lock, referenced outputs, ledger, manifest; unknown/unreferenced files not covered by checkpoint.",
-      "serialization_boundary": "Checkpoint ledger flock; activate sorted execution leases and ledger locks; Go JSON serializers; snapshots/watch readiness outside this serialization.",
+      "serialization_boundary": "Checkpoint ledger flock; activate sorted execution leases and ledger locks; Go JSON serializers; snapshots/watch readiness outside this serialization. Checkpoint ledger.lock does not fence snapshot copy or readiness writes; detached Watch is not fenced by execution.lock.",
       "sites": [
         "internal/ledger/recovery.go:Store.Checkpoint",
         "internal/ledger/recovery.go:Restore",

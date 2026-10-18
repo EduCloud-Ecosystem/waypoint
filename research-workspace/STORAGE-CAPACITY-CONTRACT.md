@@ -38,6 +38,14 @@ with a simulated provider. It never builds in the supplied checkout.
 synthetic evidence. A passing qualification test can successfully reproduce a
 current failure; it is not a quota acceptance result.
 
+Root review found the initial append control reused its observed map as its
+expected map. That earlier observation, harness and initial review are retained
+under [pre-review](evidence/2026-10-17/capacity-contract/pre-review/README.md).
+The corrected control derives expected directories, lengths and hashes from
+pre-submit CSV and trusted recipe bytes, then compares the production output.
+Same-length altered content and an unexpected file independently receive no
+consumption credit.
+
 ## Consumption and replacement rules
 
 Count logical bytes and entries separately. Entries include the root, every
@@ -111,12 +119,24 @@ Outfitter serializes ledger/output replacements under the ledger lock, with
 Output spills precede final compact-record validation and can become orphans.
 Go JSON escaping differs from Python canonical JSON. Neither a raw output cap
 nor the active-run limit proves the total file-writing envelope.
+Opening an existing legacy ledger can migrate it and spill output even for a
+status command. Duplicate project/run commands can also rewrite the ledger.
+Nominal reads and idempotent retries are not assumed storage-neutral.
 
 Broker snapshots and watchdog readiness writes occur outside that ledger lock.
 A refused snapshot can retain 16 MiB + 1 byte after an input grows during copy,
 and its 1024 walked entries exclude the snapshots parent and request directory.
 Detached watchdogs can outlive the observer and retry cleanup. Unknown ownership
 cannot be replaced by a fixed concurrency multiplier or a released reservation.
+`Watch` holds neither the Waypoint lifecycle/operation locks nor Outfitter's
+execution lock. Only `Run` holds that shared execution lease; cutover takes it
+exclusively. Checkpoint's ledger lock does not fence snapshot copying or ready
+writes. Stopped Waypoint, broker-parent exit and a settled compute receipt are
+not evidence that all writers are quiescent.
+Snapshot copying starts after CPU reservation and before watchdog startup; its
+copy loop has no context/deadline. Observer timeout is not terminal writer
+proof. Repeated external checkpoint destinations also have no aggregate count
+or space ceiling.
 
 Current recovery inventories files, not every directory or unknown root file;
 broker checkpoints include ledger and referenced outputs, not every orphan,
@@ -134,24 +154,32 @@ review of this contract; NO-GO for admission wiring or quota claims.** The next
 slice may implement finite logical state/serialization and qualification only.
 It must not imply that SQLite or guard replacement headroom is solved.
 
-1. Separate new sign-in admission from safety actions. New key sign-in creates
+1. Persist and version the proposed profile limits through the existing
+   config/database/guard authority binding. Every entry point must enforce the
+   same binding. Missing or unsupported binding must refuse, never fall back to
+   unrestricted behavior. Restore must preserve the profile or explicitly
+   refuse it. Do not introduce another capacity ledger.
+2. Separate new sign-in admission from safety actions. New key sign-in creates
    authority state and needs a finite live-session policy. Proposed disposable
    profile limits are 256 total live sessions and eight per subject, with the
    existing eight-hour expiry. Counts must be checked inside the current guard
    and SQLite transaction. Expired-session deletion already exists; do not add
    pruning of evidence or unknown files. Logout, revocation, cancellation and
    conservative settlement need reserved safety behavior, including at limits.
-2. Qualify every schema insertion and encoded field before effects. Proposed
+3. Qualify every schema insertion and encoded field before effects. Proposed
    fresh-profile ceilings are 128 users, 20 projects, 1024 membership rows and
    1000 recorded runs total, retaining the tighter existing per-project/queue
-   checks. A viewer membership that creates a row is new admission. Bound
+   checks. Count revoked users, closed projects and failed/interrupted runs in
+   total-history caps; changing status never resets an allowance. A viewer
+   membership that creates a row is new admission. Bound
    UTF-8 paths, escaped JSON, config, request, receipt, recovery metadata,
    sequence/generation and every diagnostic field. Candidate config and
    recovery records can use 65536 encoded bytes to match existing readers;
    choose request/receipt limits only from serializer measurements and maximum
    valid schema values. These numbers are review proposals, not defaults or
-   approved capacity allocations.
-3. Establish a finite SQLite and guard replacement protocol before any quota
+   approved capacity allocations. A 1000-run row ceiling does not imply a
+   64 MiB fit or executable broker capacity; broker limits remain independent.
+4. Establish a finite SQLite and guard replacement protocol before any quota
    claim. Measure maximum pages/index growth at the candidate schema limits;
    qualify reader/checkpoint overlap and safety writes at the boundary. Do not
    change journal mode or accepted stores to make a fixture pass. If WAL growth
@@ -162,15 +190,32 @@ It must not imply that SQLite or guard replacement headroom is solved.
    prove its exact prior incarnation terminal; unknown files cannot be removed
    or overwritten. If exhaustion prevents a safe durable transition, preserve
    uncertainty and keep new work held rather than promise indefinite retries.
-4. Review that finite-authority slice independently, including held readers,
+5. Review that finite-authority slice independently, including held readers,
    maximum encodings, counters, failures at every durability boundary, and
    repeated safety operations at full admission capacity. Only then propose
    complete broker writer ownership, orphan accounting and pre-copy/pre-seal
    destination envelopes. Run competing final byte/entry admissions against
-   actual enforced limits before claiming quota readiness.
+   actual enforced limits before claiming quota readiness. Logical-authority
+   acceptance must include competing final row slots, repeated sign-ins,
+   maximum valid encodings, refusal before effects and recovery preservation.
 
-The parent owns the next go/no-go decision. This PR authorizes no follow-on
-admission implementation. Source candidates remain unavailable; failed replay,
+The next slice must use this explicit safety-action matrix. These are logical
+policy requirements; no unproved disk-headroom guarantee is implied.
+
+| Action | Classification and required behavior at caps |
+| --- | --- |
+| New key sign-in / new user / new project / new run | Admission; refuse before effects when its total or subject cap is reached. Preserve existing authenticated sessions. |
+| New viewer membership | Admission because it inserts a row; enforce the same total membership cap. |
+| Existing editor-to-viewer demotion / removal | Safety action; allow at caps and retain cancellation semantics. Do not conflate demotion with insertion. |
+| Existing-session authentication / logout | Authentication remains readable; logout must retain its existing revocation effect at caps. |
+| Operator revoke / rotate | Safety action; preserve revocation and replacement-key semantics, including session invalidation, at caps. |
+| Cancel / project close / conservative settlement | Safety action; preserve charges, unknown liability and required cancellation/hold state. |
+| Oversize terminal data | Retain prior charges, unknowns and guard hold; never substitute a successful/refunded terminal record to satisfy a size limit. |
+
+The parent owns the final go/no-go on this reviewed proposal. Engineering scope
+for a later fresh opt-in disposable profile is limited to row and serialized
+field ceilings after this PR's final review and CI. Quota admission wiring is
+excluded. Source candidates remain unavailable; failed replay,
 unresolved cleanup evidence, conservative charges and revocations remain
 unchanged. Accepted stores, the rejected draft, local Docker baseline, Belay
 and parent worktrees are outside this qualification.

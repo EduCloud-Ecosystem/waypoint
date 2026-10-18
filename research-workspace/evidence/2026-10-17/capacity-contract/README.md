@@ -9,6 +9,9 @@ No accepted store, broker service, Docker resource or remote identity is used.
 - `broker.json`: seven existing controls at the pinned Outfitter commit, executed
   from a disposable Git archive with simulated providers. Real watchdog process
   ownership and storage peaks remain NOT RUN.
+- `review-waypoint.json`, `review-negatives.json` and `REVIEW.md`: corrected
+  independent review and negative controls. The earlier self-comparison witness
+  remains under `pre-review/`.
 - `manifest.json`: hashes of the precise contract, harnesses and observations;
   all 168 earlier evidence files matched the PR38 merge. The original fifth
   headroom failure is not replaced or repaired.
