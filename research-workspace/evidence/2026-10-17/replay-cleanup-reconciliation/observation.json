@@ -1,0 +1,131 @@
+{
+  "schema_version": 1,
+  "observation_type": "supplemental-read-only-reconciliation",
+  "observed_at_utc": "2026-10-18T02:45:47.838048+00:00",
+  "observed_at_local": "2026-10-17T19:45:47.838048-07:00",
+  "accepted_main_commit": "adc44643c4e055046beb6db73d5a95ee07956f55",
+  "original_pr": "https://github.com/EduCloud-Ecosystem/waypoint/pull/31",
+  "request_id": "replay_211c5d86f73d488e9a9af014e0736d06",
+  "historical_container_id": "98c0b3f716beeb62997a7183cec8b19b2566ceb6b3e74deb4a99cd7b14434fae",
+  "historical_container_name": "outfitter-bec8129ea1c89f0b9e40c3010d8551b7",
+  "identity_checks": {
+    "original_report_matches_committed_bytes": true,
+    "private_request_matches_ledger_request": true,
+    "request_project_image_match_original_receipt": true,
+    "ledger_owner_matches_run_owner": true,
+    "container_id_and_name_match_original_cleanup_attempt": true,
+    "private_artifacts_unchanged_during_observation": true,
+    "ledger_hash_unchanged_since_prior_review_note": true
+  },
+  "docker_endpoint": {
+    "server_version": "29.8.2",
+    "operating_system": "OrbStack",
+    "daemon_id_sha256": "4e49ed449480dfce4be024be31fd670e6ff6a38c4da3acd6b7d768e1e240c50b"
+  },
+  "container_checks": [
+    {
+      "command": [
+        "docker",
+        "container",
+        "inspect",
+        "98c0b3f716beeb62997a7183cec8b19b2566ceb6b3e74deb4a99cd7b14434fae"
+      ],
+      "deadline_seconds": 10,
+      "exit_code": 1,
+      "stdout": "[]\n",
+      "stderr": "Error response from daemon: No such container: 98c0b3f716beeb62997a7183cec8b19b2566ceb6b3e74deb4a99cd7b14434fae",
+      "result": "ABSENT"
+    },
+    {
+      "command": [
+        "docker",
+        "container",
+        "inspect",
+        "outfitter-bec8129ea1c89f0b9e40c3010d8551b7"
+      ],
+      "deadline_seconds": 10,
+      "exit_code": 1,
+      "stdout": "[]\n",
+      "stderr": "Error response from daemon: No such container: outfitter-bec8129ea1c89f0b9e40c3010d8551b7",
+      "result": "ABSENT"
+    }
+  ],
+  "current_ledger_observation": {
+    "request_id": "replay_211c5d86f73d488e9a9af014e0736d06",
+    "project_id": "replay_5045dde57b5e43028ea6eb0bb4579a1c",
+    "status": "cancelled",
+    "cleanup_verified": true,
+    "unresolved_liability": false,
+    "compute": {
+      "reserved_cpu_seconds": 30,
+      "charged_cpu_seconds": 30,
+      "provenance": "estimated_upper_bound"
+    },
+    "finished_at": "2026-10-17T23:00:33.769673Z"
+  },
+  "original_saved_receipt": {
+    "request_id": "replay_211c5d86f73d488e9a9af014e0736d06",
+    "project_id": "replay_5045dde57b5e43028ea6eb0bb4579a1c",
+    "status": "unknown",
+    "cleanup_verified": false,
+    "unresolved_liability": true,
+    "compute": {
+      "charged_cpu_seconds": 0,
+      "provenance": "reserved",
+      "reserved_cpu_seconds": 30
+    },
+    "finished_at": "2026-10-17T22:26:32.21238Z"
+  },
+  "original_execution": {
+    "report_status": "FAIL",
+    "selected_run_outcome": "FAIL",
+    "rerun": false
+  },
+  "reconciliation": {
+    "resource_cleanup": "RESOLVED_AT_OBSERVATION",
+    "accounting": "CONSERVATIVE_CHARGE_RECORDED",
+    "charged_cpu_seconds": 30,
+    "refunded_cpu_seconds": 0,
+    "charge_provenance": "estimated_upper_bound",
+    "original_workload_result": "FAIL",
+    "meaning": "The later ledger and current Docker absence resolve the resource/accounting observation. Original receipt/report remain historical failure evidence; they are not rewritten and the failed execution does not become a successful run."
+  },
+  "boundaries": {
+    "source_environment_candidates": 4,
+    "source_environments_disabled": true,
+    "promotion": "NOT RUN",
+    "independent_human_second_machine": "NOT RUN",
+    "hosted_or_real_data_admission": "NOT RUN",
+    "cleanup_or_ledger_mutations_performed": false,
+    "docker_restart": false,
+    "parent_or_belay_worktrees_modified": false
+  },
+  "artifact_hashes": {
+    "private_ledger": {
+      "sha256": "5bbe4ce639a25b929f9e316218dfd3383ae3de8f80064fa7985904605d70fef9",
+      "availability": "Retained privately; full content not published."
+    },
+    "private_request": {
+      "sha256": "2b59e0db0781f95c9d40b4df6fe52f04503e968fe02b12048cb783ed76f830c6",
+      "availability": "Retained privately; full content not published."
+    },
+    "private_saved_receipt": {
+      "sha256": "b0dbd0f74fc52ed57d9c3cc231728349865a6a27651ba633e3c46bac810163d9",
+      "availability": "Retained privately; full content not published."
+    },
+    "original_report": {
+      "sha256": "92df2f4e212a65186ffe10f55f73f361af49351dfafbfa960bc1db6e4620d3ab",
+      "availability": "Hash-linked source retained."
+    },
+    "prior_review_note": {
+      "sha256": "b71f1431a01cfa704d9426b52a8d9c52436f43fe58e636b31aa844cf6e5a1e9a",
+      "availability": "Hash-linked source retained."
+    }
+  },
+  "original_committed_evidence": {
+    "acceptance.json": "3fa4cbc104d76c0937f833182896e3a55cbfe8d03aab227f088b966d4bb5f888",
+    "failed-documents-replay/report.json": "92df2f4e212a65186ffe10f55f73f361af49351dfafbfa960bc1db6e4620d3ab",
+    "failed-documents-replay/evidence.zip": "e6211079ecca06cfa3f2b318d69a56b3074bb24ae4bcbad7d0e63c81cc2c3fa5",
+    "failed-documents-replay/cleanup-attempt.json": "3fd0266e2f6a1be25b181c35f79eb1e3721b86bae96b30bb1bac4a3853ea0988"
+  }
+}
