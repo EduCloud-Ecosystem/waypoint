@@ -6,7 +6,7 @@ from pathlib import Path
 import subprocess
 
 from research_workspace.store import canonical, private_write
-from verify_broker_upgrade import PINS, digest, file_hash, observed_command, strict_json
+from verify_broker_upgrade import PINS, digest, file_hash, new_private_directory, observed_command, strict_json
 
 
 def build(repository, output):
@@ -16,8 +16,7 @@ def build(repository, output):
         tree = subprocess.check_output(["git", "-C", str(repository), "rev-parse", pin["commit"] + "^{tree}"], timeout=10).decode().strip()
         if tree != pin["tree"]:
             raise ValueError("Pinned source tree mismatch.")
-    root = Path(output).resolve()
-    root.mkdir(mode=0o700, parents=False, exist_ok=False)
+    root = new_private_directory(output)
     environment = {**os.environ, "GOPROXY": "off", "GOSUMDB": "off", "GOTOOLCHAIN": "local", "GOFLAGS": "", "CGO_ENABLED": "0", "GOWORK": "off"}
     for role, pin in pins.items():
         source = root / (role + "-source")

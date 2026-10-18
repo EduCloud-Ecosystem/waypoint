@@ -50,6 +50,15 @@ def file_hash(path):
         return hashlib.file_digest(stream, "sha256").hexdigest()
 
 
+def new_private_directory(path):
+    # Resolve only the existing parent. Resolving the final component would
+    # follow a dangling symlink and create a different, unrequested destination.
+    raw = Path(path).absolute()
+    root = raw.parent.resolve(strict=True) / raw.name
+    root.mkdir(mode=0o700, parents=False, exist_ok=False)
+    return root
+
+
 def observed_command(argv, timeout=20):
     process = subprocess.Popen(argv, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = collect(process, timeout=timeout)
@@ -87,8 +96,7 @@ def accepted(report):
 
 class Audit:
     def __init__(self, output, provenance):
-        self.root = Path(output).resolve()
-        self.root.mkdir(mode=0o700, parents=False, exist_ok=False)
+        self.root = new_private_directory(output)
         self.private = self.root / "state.private"
         self.private.mkdir(mode=0o700)
         self.report = {"format": "waypoint-broker-upgrade-qualification-v1", "status": "INCOMPLETE",
@@ -403,7 +411,9 @@ def exercise(baseline, candidate, output):
         bridge(audit, "guarded", baseline, candidate, images)
         offline_controls(audit, baseline, candidate, template, original)
         export_controls(audit, candidate, images)
-    except Exception as exc:
+    except BaseException as exc:
+        # A terminal interrupt between the last check and artifact publication
+        # must never become PASS merely because every earlier check succeeded.
         audit.report["failure"] = {"type": type(exc).__name__, "message": "Qualification stopped; inspect private failure details."}
         private_write(audit.private / "failure.txt", (type(exc).__name__ + ": " + str(exc)).encode())
     finally:

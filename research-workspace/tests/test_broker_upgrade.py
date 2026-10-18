@@ -43,13 +43,15 @@ class QualificationControls(unittest.TestCase):
         self.assertEqual(completed.returncode, 0, completed.stderr)
 
     def test_output_existing_directory_file_and_symlink_refused(self):
-        for kind in ("directory", "file", "symlink"):
+        for kind in ("directory", "file", "symlink", "dangling"):
             path = self.root / kind
             if kind == "directory": path.mkdir()
             if kind == "file": path.write_text("preserve")
             if kind == "symlink": path.symlink_to(self.root / "directory", target_is_directory=True)
+            if kind == "dangling": path.symlink_to(self.root / "must-not-create", target_is_directory=True)
             with self.subTest(kind=kind), self.assertRaises(FileExistsError): q.Audit(path, {})
         self.assertEqual((self.root / "file").read_text(), "preserve")
+        self.assertFalse((self.root / "must-not-create").exists())
 
     def test_refusal_oracle_fails_when_operation_unexpectedly_succeeds(self):
         audit = q.Audit(self.root / "output", {})
@@ -91,6 +93,22 @@ class QualificationControls(unittest.TestCase):
         self.assertFalse(report["checks"][-1]["passed"])
         self.assertTrue((self.root / "output/state.private/failure.txt").is_file())
         self.assertNotIn("injected private", (self.root / "output/verification.json").read_text())
+
+    def test_interruption_after_checks_cannot_publish_pass(self):
+        def interrupt(audit, *_):
+            audit.report.update(passing_report())
+            audit.report["checks"] = [c for c in audit.report["checks"] if c["name"] != "owned_cleanup_verified"]
+            raise KeyboardInterrupt("injected before final artifact publication")
+        with patch.object(q, "binary_identity", return_value={}), patch.object(q, "validate_images"), \
+             patch.object(q, "bridge", return_value=({}, {})), patch.object(q, "offline_controls"), \
+             patch.object(q, "export_controls", side_effect=interrupt), patch.object(q.Audit, "cleanup", return_value=True):
+            try:
+                q.exercise(sys.executable, sys.executable, self.root / "output")
+            except KeyboardInterrupt:
+                pass
+        report = json.loads((self.root / "output/verification.json").read_text())
+        self.assertEqual(report["status"], "FAIL")
+        self.assertEqual(report["failure"]["type"], "KeyboardInterrupt")
 
     def test_build_manifest_must_bind_binary_pin_metadata_and_builder(self):
         binary = self.root / "candidate"
