@@ -143,3 +143,5 @@ are campus identity, shared hosting, off-host recovery, approved data storage
 and retention, and independently verified provider cleanup/accounting. Real
 participant data, live cloud provisioning and scientific validity are not
 accepted by this local proof of concept.
+
+The separate [local synthetic OIDC pilot](OIDC-PILOT.md) exercises current identity and project access while keeping hosted and real-data admission gates open.

@@ -159,7 +159,7 @@ def checkpoint(state, output, *, broker=None):
     with offline(state) as root, frozen_db(root) as db:
         config_bytes = read_file(root / "config.json", 65536)
         config = strict_json(config_bytes)
-        if config.get("mode") != "local-public-data":
+        if config.get("mode") not in {"local-public-data", "local-synthetic-oidc"}:
             raise ValueError("Only an active source can create a new recovery point.")
         if safe_root(output).is_relative_to(root):
             raise ValueError("Keep checkpoints outside the source authority directory.")
@@ -271,9 +271,12 @@ def activate(state, source_state, checkpoint_path, *, trusted_sha256):
             raise ValueError("This destination belongs to a different recovery point.")
         dest_config = strict_json(read_file(destination / "config.json", 65536))
         source_config = strict_json(read_file(source / "config.json", 65536))
+        active_mode = strict_json(read_file(archive / "config.json", 65536))["mode"]
+        if active_mode not in {"local-public-data", "local-synthetic-oidc"}:
+            raise ValueError("Unsupported checkpoint identity mode.")
         retired = {"destination": str(destination), "checkpoint_sha256": trusted_sha256}
         compute = Broker(dest_config["broker"], destination / "broker")
-        if record.get("phase") == "active" and dest_config.get("mode") == "local-public-data" and source_config.get("recovery_retired") == retired:
+        if record.get("phase") == "active" and dest_config.get("mode") == active_mode and source_config.get("recovery_retired") == retired:
             result = compute.call("activate", "--source-state-dir", str(source / "broker"),
                                   "--checkpoint", str(archive / "broker"),
                                   "--checkpoint-sha256", manifest["broker"]["checkpoint_sha256"])
@@ -285,7 +288,7 @@ def activate(state, source_state, checkpoint_path, *, trusted_sha256):
         if source_config.get("mode") == "retired":
             if source_config.get("recovery_retired") != retired:
                 raise ValueError("The source is retired to another destination.")
-        elif source_config.get("mode") != "local-public-data":
+        elif source_config.get("mode") != active_mode:
             raise ValueError("The source is not eligible for local replacement.")
         original_config = read_file(archive / "config.json", 65536)
         if fingerprint(source, source_db, original_config if source_config.get("mode") == "retired" else None) != manifest["source_fingerprint"]:
@@ -305,10 +308,10 @@ def activate(state, source_state, checkpoint_path, *, trusted_sha256):
                               "--checkpoint-sha256", manifest["broker"]["checkpoint_sha256"])
         if result.get("admission") != "active":
             raise ValueError("Compute replacement did not establish active authority; both services remain stopped.")
-        dest_config["mode"] = "local-public-data"
+        dest_config["mode"] = active_mode
         record.update(phase="active", activated_at=now())
         # The active marker precedes service admission; recovery retries can
         # still complete safely if the process dies between these writes.
         atomic_json(destination / "recovery.json", record)
         atomic_json(destination / "config.json", dest_config)
-        return {"activated": True, "automatic_replay": False, "credentials": "Issue fresh keys for active subjects with user-rotate.", "broker": result}
+        return {"activated": True, "automatic_replay": False, "credentials": ("Sign in again with the configured identity provider; transient authorization was discarded." if active_mode == "local-synthetic-oidc" else "Issue fresh keys for active subjects with user-rotate."), "broker": result}

@@ -7,11 +7,12 @@ import json
 import mimetypes
 from pathlib import Path
 import re
-from urllib.parse import unquote, urlsplit
+from urllib.parse import unquote, urlsplit, urlencode
 
 from .evidence import build_bundle
 from .runtime import Broker, Worker, strict_json
 from .store import AccessError, Store
+from .identity import Identity, IdentityUnavailable
 
 STATIC = Path(__file__).resolve().parent.parent / "static"
 WARNING = "Descriptive results from a demonstration recipe. A successful run is not scientific validation or evidence of an intervention effect."
@@ -21,10 +22,12 @@ class Application:
     def __init__(self, state):
         self.store = Store(state)
         self.config = strict_json((self.store.root / "config.json").read_bytes())
-        if self.config.get("mode") != "local-public-data":
-            raise ValueError("This build supports only the local public-data pilot mode.")
+        mode = self.config.get("mode")
+        if mode not in {"local-public-data", "local-synthetic-oidc"}:
+            raise ValueError("This build requires an active local pilot mode.")
+        self.identity = Identity(self.config.get("identity"), self.store) if mode == "local-synthetic-oidc" else None
         self.broker = Broker(self.config["broker"], self.store.root / "broker")
-        self.worker = Worker(self.store, self.broker)
+        self.worker = Worker(self.store, self.broker, self.identity)
 
     def recipes(self):
         from .catalog import list_environments
@@ -34,7 +37,7 @@ class Application:
             {"id": "summary-r", "name": "R · group comparison", "description": "Run the same reviewed method in R for a runtime comparison.", "available": "summary-r" in available},
         ]}
 
-    def dispatch(self, method, path, subject, data, request_key):
+    def dispatch(self, method, path, subject, data, request_key, context=None):
         if path == "/api/session" and method == "GET":
             return 200, {"subject": subject}
         if path == "/api/recipes" and method == "GET":
@@ -69,7 +72,18 @@ class Application:
         if action == "/close" and method == "POST":
             return 200, self.store.close_project(project_id, subject)
         if action == "/runs" and method == "POST":
-            return 202, self.store.submit(project_id, subject, data, self.config["images"], request_key)
+            if self.identity and (context is None or context.subject != subject):
+                raise AccessError("Current identity is required for submission.")
+            bound = []
+            def authorize(rid):
+                self.identity.bind(rid, context)
+                bound.append(rid)
+            try:
+                return 202, self.store.submit(project_id, subject, data, self.config["images"], request_key, authorize if self.identity else None)
+            except Exception:
+                for rid in bound:
+                    self.identity.release(rid)
+                raise
         run_match = re.fullmatch(r"/runs/([a-f0-9]{32})(/cancel)?", action)
         if run_match:
             run_id, cancel = run_match.groups()
@@ -108,21 +122,27 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("Referrer-Policy", "no-referrer")
         self.send_header("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'")
-        for key, value in (headers or {}).items():
+        for key, value in (headers.items() if isinstance(headers, dict) else (headers or [])):
             self.send_header(key, value)
         self.end_headers()
         self.wfile.write(payload)
 
-    def session_token(self):
+    def session_token(self, name="research_session"):
         jar = cookies.SimpleCookie()
         try:
             jar.load(self.headers.get("Cookie", ""))
-            return jar["research_session"].value if "research_session" in jar else ""
+            return jar[name].value if name in jar else ""
         except cookies.CookieError:
             return ""
 
     def handle_request(self):
+        identity = self.server.app.identity
         allowed_hosts = {f"127.0.0.1:{self.server.server_port}", f"localhost:{self.server.server_port}"}
+        if identity:
+            allowed_hosts = {urlsplit(identity.config["public_origin"]).netloc}
+            if not identity.boundary(self.headers):
+                self.respond(403, {"error": "Use the configured workspace entrance."})
+                return
         host = self.headers.get("Host", "")
         if host not in allowed_hosts:
             self.respond(403, {"error": "This local pilot requires its loopback origin."})
@@ -132,6 +152,14 @@ class Handler(BaseHTTPRequestHandler):
             self.respond(403, {"error": "Cross-origin requests are not allowed."})
             return
         path = unquote(urlsplit(self.path).path)
+        if path == "/api/auth-config" and self.command == "GET":
+            config = {"mode": "key"}
+            if identity:
+                config = {"mode": "oidc", "sign_in": "/oauth2/start?rd=%2F%3Fsignin%3D1",
+                          "sign_out": identity.config["issuer"] + "/protocol/openid-connect/logout?" +
+                          urlencode({"client_id": identity.config["client_id"], "post_logout_redirect_uri": identity.config["public_origin"] + "/"})}
+            self.respond(200, config)
+            return
         if self.command not in ("GET", "POST", "DELETE"):
             self.respond(405, {"error": "This method is not supported."})
             return
@@ -158,10 +186,18 @@ class Handler(BaseHTTPRequestHandler):
                 return
         if path == "/api/session" and self.command == "POST":
             try:
-                subject, token = self.server.app.store.session(key=data.get("access_key"))
-                self.respond(200, {"subject": subject}, headers={"Set-Cookie": f"research_session={token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=28800"})
+                if identity:
+                    if data:
+                        raise AccessError("Use the identity-provider sign-in for this workspace.")
+                    subject, token = identity.begin(self.headers.get("Cookie", ""))
+                else:
+                    subject, token = self.server.app.store.session(key=data.get("access_key"))
+                name = identity.config["cookie_name"] if identity else "research_session"
+                self.respond(200, {"subject": subject}, headers={"Set-Cookie": f"{name}={token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=28800"})
             except AccessError as exc:
                 self.respond(401, {"error": str(exc)})
+            except IdentityUnavailable as exc:
+                self.respond(503, {"error": str(exc)})
             return
         if not path.startswith("/api/"):
             if self.command != "GET":
@@ -174,18 +210,30 @@ class Handler(BaseHTTPRequestHandler):
                 return
             self.respond(200, source.read_bytes(), content_type=mimetypes.guess_type(source.name)[0] or "application/octet-stream")
             return
-        token = self.session_token()
+        token = self.session_token(identity.config["cookie_name"] if identity else "research_session")
+        if identity and path == "/api/session" and self.command == "DELETE":
+            # Local invalidation is effective even if the IdP is unavailable.
+            identity.logout(token)
+            names = [identity.config["cookie_name"], identity.config["proxy_cookie_name"]]
+            names += [identity.config["proxy_cookie_name"] + "_" + str(i) for i in range(8)]
+            self.respond(200, {"ok": True, "identity_provider_session_ended": False},
+                         headers=[("Set-Cookie", f"{name}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0") for name in names])
+            return
         try:
-            subject = self.server.app.store.session(token=token)
+            context = identity.authenticate(token, self.headers.get("Cookie", "")) if identity else None
+            subject = context.subject if identity else self.server.app.store.session(token=token)
         except AccessError as exc:
             self.respond(401, {"error": str(exc)})
+            return
+        except IdentityUnavailable as exc:
+            self.respond(503, {"error": str(exc)})
             return
         try:
             if path == "/api/session" and self.command == "DELETE":
                 self.server.app.store.logout(token)
                 self.respond(200, {"ok": True}, headers={"Set-Cookie": "research_session=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0"})
                 return
-            status, value = self.server.app.dispatch(self.command, path, subject, data, self.headers.get("Idempotency-Key"))
+            status, value = self.server.app.dispatch(self.command, path, subject, data, self.headers.get("Idempotency-Key"), context)
             headers = {"Content-Disposition": 'attachment; filename="research-evidence.zip"'} if isinstance(value, bytes) else None
             self.respond(status, value, headers=headers)
         except AccessError as exc:
@@ -211,14 +259,14 @@ class Server(ThreadingHTTPServer):
 
 
 def serve(state, host="127.0.0.1", port=18765):
-    if host != "127.0.0.1":
-        raise ValueError("The local identity adapter refuses non-loopback binding.")
     with (Path(state) / "server.lock").open("a") as lock:
         try:
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError as exc:
             raise ValueError("This workspace already has a running service.") from exc
         app = Application(state)
+        if host != "127.0.0.1" and not (app.identity and host == "0.0.0.0"):
+            raise ValueError("Only the isolated OIDC backend may bind its private container network.")
         server = Server((host, port), Handler)
         server.app = app
         app.worker.start()

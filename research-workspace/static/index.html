@@ -23,13 +23,14 @@
     <div class="sign-in-form-wrap">
       <form id="sign-in-form" class="sign-in-form">
         <p class="eyebrow">Your research workspace</p><h2>Welcome back</h2>
-        <p class="muted">Use the access key your workspace operator provided. Your project permissions come with your account.</p>
-        <label for="access-key">Access key</label>
+        <p id="sign-in-help" class="muted">Use the access key your workspace operator provided. Your project permissions come with your account.</p>
+        <label id="key-label" for="access-key">Access key</label>
         <input id="access-key" name="access_key" type="password" autocomplete="off" spellcheck="false" required autofocus aria-describedby="key-help">
         <p id="key-help" class="field-help">The key stays out of browser storage. Keep it private.</p>
         <p id="sign-in-error" class="form-error" role="alert" hidden></p>
         <button id="sign-in-button" class="button primary" type="submit">Open workspace <span aria-hidden="true">→</span></button>
-        <div class="quiet-note"><strong>Need access?</strong><p>Ask your workspace operator for a key and a project invitation.</p></div>
+        <div class="quiet-note"><strong>Need access?</strong><p id="access-help">Ask your workspace operator for a key and a project invitation.</p></div>
+        <a id="identity-sign-out" class="button secondary" hidden>End identity-provider session</a>
       </form>
     </div>
   </section>
@@ -81,7 +82,7 @@
 
         <section id="details-panel" role="tabpanel" aria-labelledby="details-tab" hidden>
           <div class="details-grid"><section class="card" aria-labelledby="study-title"><div class="section-heading"><div><p class="eyebrow">Study brief</p><h2 id="study-title">What this project is for</h2></div></div><dl class="study-details"><dt>Research question</dt><dd id="details-question"></dd><dt>Success criterion</dt><dd id="details-success"></dd><dt>Project owner</dt><dd id="details-owner" class="mono"></dd><dt>Created</dt><dd id="details-created"></dd><dt>Project identifier</dt><dd id="details-id" class="mono"></dd></dl><h3 class="subheading">Recorded compute</h3><div id="usage-details"></div><p class="field-help">Recorded usage and reservations are enforced by the service. Uncertain runs may retain a reservation until an operator reviews them.</p></section>
-            <section class="card" aria-labelledby="people-title"><div class="section-heading"><div><p class="eyebrow">Work together</p><h2 id="people-title">Project access</h2></div></div><p class="section-intro">Owners manage access. Editors can run methods. Viewers can inspect and export evidence.</p><ul id="members-list" class="members-list"></ul><form id="member-form" hidden><h3 class="subheading">Add a collaborator</h3><label for="member-subject">Operator-provisioned account identifier</label><input id="member-subject" name="subject" type="text" autocomplete="off" spellcheck="false" required><p class="field-help">Ask your collaborator for the identifier associated with their access key.</p><label for="member-role">Project role</label><select id="member-role" name="role"><option value="editor">Editor · submit and cancel runs</option><option value="viewer">Viewer · inspect and export evidence</option></select><button class="button secondary full-width" type="submit">Add or update collaborator</button></form><p id="membership-readonly" class="quiet-note" hidden>Only the project owner can change access.</p></section></div>
+            <section class="card" aria-labelledby="people-title"><div class="section-heading"><div><p class="eyebrow">Work together</p><h2 id="people-title">Project access</h2></div></div><p class="section-intro">Owners manage access. Editors can run methods. Viewers can inspect and export evidence.</p><ul id="members-list" class="members-list"></ul><form id="member-form" hidden><h3 class="subheading">Add a collaborator</h3><label for="member-subject">Operator-provisioned account identifier</label><input id="member-subject" name="subject" type="text" autocomplete="off" spellcheck="false" required><p class="field-help">Ask your collaborator or operator for their workspace account identifier.</p><label for="member-role">Project role</label><select id="member-role" name="role"><option value="editor">Editor · submit and cancel runs</option><option value="viewer">Viewer · inspect and export evidence</option></select><button class="button secondary full-width" type="submit">Add or update collaborator</button></form><p id="membership-readonly" class="quiet-note" hidden>Only the project owner can change access.</p></section></div>
           <section id="close-section" class="card close-card" hidden><div><h2>Close this project</h2><p>Stop new runs and cancel queued work. Existing evidence remains available for inspection and export.</p></div><button id="close-project" class="button danger" type="button">Close project</button></section>
         </section>
         <footer class="workspace-footer"><span>EduCloud research workspace</span><span>Local pilot · Recorded evidence, independently validated conclusions</span></footer>
