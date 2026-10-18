@@ -1,0 +1,33 @@
+{
+  "accepted46_worktree_clean_at": "40fe12e62b98f1109cffbe76485d31abf218171b",
+  "broker_binary_sha256": "1bf1ce898d6d10e574ab7b2f79a830fa94fa740867e208470bfc15790dc41bb1",
+  "broker_source_commit": "5446438985e31cb739f2048a2aa2176918831a7e",
+  "docker_attempts": 0,
+  "execution": "NOT RUN; coordinating and Outfitter review pending",
+  "exercise_marker_exists": false,
+  "exercise_output_exists": false,
+  "focused_optimized_tests_passed": 22,
+  "focused_tests_passed": 22,
+  "harness_commit": "09418f231187a5465ba9d0b8546b3b59514959e9",
+  "logs": {
+    "focused-optimized.log": "819d70903aeb937d264151e7743062253a41f0f38692f8530525d2f77f17bb9e",
+    "focused.log": "fb76aaae92207f416ff0db3db8c0b1f3f62ba57b405b14f4646a5429530ab1af",
+    "full-suite.log": "b4f688d8ef285df066bed83869afdde569cf83b18557bccf32d40a609c04444f"
+  },
+  "manifest_commit": "b665fa8e6c77877c283b8a1dff4d9532c36f3103",
+  "manifest_sha256": "7c8b281f1675f868d680f3707ed1a4d0d0fb6d37481a8a06bc2399f1a21c5bb1",
+  "preserved_candidate01_manifest_sha256": "05d222c318359d546b91b05b13448693c0db154808aff2fba44d58e7b59389e4",
+  "preserved_review_witnesses": [
+    "pre-review/independent-5fd7d44",
+    "pre-review/root-export",
+    "pre-review/accounting-absence",
+    "pre-review/export-test-fixture"
+  ],
+  "required_execution_controls": 18,
+  "runtime_and_workflows_changed": false,
+  "source_archive_sha256": "37c119dbc04cce127b8b1a20ff58a5adf0fe8ade428dbf4dddbdc2c107397655",
+  "source_environments_disabled": true,
+  "source_files": 34,
+  "status": "PASS_SYNTHETIC_ONLY",
+  "tests_passed": 455
+}
