@@ -1,0 +1,171 @@
+{
+  "available_capacity": "UNKNOWN",
+  "baseline": {
+    "exit_code": 0,
+    "log": "controls.log",
+    "log_sha256": "1fcb63b98ce13a067fc0089159748e8aac6b134e8e72c505de59bf2baf60b76c"
+  },
+  "boundary": "Disposable synthetic application failure injection, real process contention; not power-loss, VFS, provider, Docker, capacity or global quiescence evidence.",
+  "fifth_headroom": "FAIL_UNCHANGED",
+  "format": "waypoint-scoped-sqlite-qualification-v1",
+  "negative_controls": [
+    {
+      "detected": true,
+      "exit_code": 1,
+      "log": "reusable-owner.log",
+      "log_sha256": "3f3a24127fd417289bd343cbffd53a10d8c91caaf4c82a98d7460a12c4b5962c",
+      "mutated_source_sha256": "6383d87f1414f5b3bd52a3327d23da240743eb661622f185e0d7d667500f8c4e",
+      "name": "reusable-owner",
+      "replacements": [
+        {
+          "after": "if self._thread != threading.get_ident():",
+          "before": "if self._thread != threading.get_ident() or self._entered:"
+        }
+      ],
+      "source_file": "research_workspace/sqlite_ownership.py"
+    },
+    {
+      "detected": true,
+      "exit_code": 1,
+      "log": "diagnostic-business-join.log",
+      "log_sha256": "46d0c3ffe011d1c99cc2514eb1c948802d30d402facc4d9ae10b693818d5428b",
+      "mutated_source_sha256": "8a24a2f3fe58025e3054852d0103e1883b1fd4984cb17ff7e86937be856e7bdb",
+      "name": "diagnostic-business-join",
+      "replacements": [
+        {
+          "after": "if self.role in _ROLE_READS and not normalized.startswith('SELECT '):",
+          "before": "if self.role in _ROLE_READS:"
+        }
+      ],
+      "source_file": "research_workspace/sqlite_ownership.py"
+    },
+    {
+      "detected": true,
+      "exit_code": 1,
+      "log": "proof-role-business-write.log",
+      "log_sha256": "844a426d9cc8c5184db2f95cd0eb67fdea1a7495c54304f925ad51047b2baf23",
+      "mutated_source_sha256": "3a0fdabf21f9f4dcd968423b0b5b5b05a9b4807cc39b8634aa72b48c2b91a289",
+      "name": "proof-role-business-write",
+      "replacements": [
+        {
+          "after": "if self.role in _ROLE_READS and not normalized.startswith('UPDATE '):",
+          "before": "if self.role in _ROLE_READS:"
+        }
+      ],
+      "source_file": "research_workspace/sqlite_ownership.py"
+    },
+    {
+      "detected": true,
+      "exit_code": 1,
+      "log": "writable-reader.log",
+      "log_sha256": "6863aae3229909e1005892ae435d3cffe23c1b632bc74d32f9045672692115a1",
+      "mutated_source_sha256": "8345d90fa1dba066660802aff4c9de976bee9cc64817ff1736fc954e1515b073",
+      "name": "writable-reader",
+      "replacements": [
+        {
+          "after": "\"rw\" if self.readonly else \"rw\"",
+          "before": "\"ro\" if self.readonly else \"rw\""
+        }
+      ],
+      "source_file": "research_workspace/sqlite_ownership.py"
+    },
+    {
+      "detected": true,
+      "exit_code": 1,
+      "log": "missing-connection-close.log",
+      "log_sha256": "a69263ad8b28a5a918bbbbd36795d0410c3f7bf16ea149e8875f757ba5a7cbfa",
+      "mutated_source_sha256": "b9ae8c92b1de730f638c9dd1a20e1058b511b722a553733032021319f195751f",
+      "name": "missing-connection-close",
+      "replacements": [
+        {
+          "after": "                    pass  # deliberate missing close",
+          "before": "                    self.__connection.close()"
+        }
+      ],
+      "source_file": "research_workspace/sqlite_ownership.py"
+    },
+    {
+      "detected": true,
+      "exit_code": 1,
+      "log": "swallowed-cursor-close.log",
+      "log_sha256": "1b4c87cf2e1db5cb36ff3e0365a871315ef4b853631be0e31030e4e99aca06f2",
+      "mutated_source_sha256": "89f56e39976d02ee52bba078247bb7802687d113fb3608273817376a503cc914",
+      "name": "swallowed-cursor-close",
+      "replacements": [
+        {
+          "after": "",
+          "before": "        if original is None:\n            try:\n                if self._uncertain:\n                    raise self._cleanup_error or OwnershipFailure()\n                _permit(self.root,self.role,self.guard)\n            except BaseException as failure:\n                original=failure\n"
+        }
+      ],
+      "source_file": "research_workspace/sqlite_ownership.py"
+    },
+    {
+      "detected": true,
+      "exit_code": 1,
+      "log": "reusable-diagnostic-token.log",
+      "log_sha256": "65281767571becc43830c51af219376deaa18953aeaa9de9faabc81da0485b2c",
+      "mutated_source_sha256": "8b3ed7496b2c1c5b40ed9da9c83f028d526d2cbadf84b488fd643ee99e4cc39f",
+      "name": "reusable-diagnostic-token",
+      "replacements": [
+        {
+          "after": "False",
+          "before": "getattr(token, \"_ownership_diagnostic_used\", False)"
+        }
+      ],
+      "source_file": "research_workspace/sqlite_ownership.py"
+    },
+    {
+      "detected": true,
+      "exit_code": 1,
+      "log": "primary-dispatch-error-lost.log",
+      "log_sha256": "3f35b4c50f535c5b28e05411bd8cb45b3911ef5af665d02634a129724f6a6303",
+      "mutated_source_sha256": "7c2bf690b1e551d7f44bdafb03dff9f3009043e38bf61a46c569f137e035e149",
+      "name": "primary-dispatch-error-lost",
+      "replacements": [
+        {
+          "after": "if True:\n                        db.rollback()",
+          "before": "if self.profile_version != 4:\n                        db.rollback()"
+        }
+      ],
+      "source_file": "research_workspace/store.py"
+    },
+    {
+      "detected": true,
+      "exit_code": 1,
+      "log": "spawn-after-reservation-close.log",
+      "log_sha256": "88a9ad01918f8694649de516f3060667dc0a329a34d353faf08d30b98442fad0",
+      "mutated_source_sha256": "9c2893d448f76bc46f401301bcedcbe70970d713a43a435dca7db86e38f7e9b2",
+      "name": "spawn-after-reservation-close",
+      "replacements": [
+        {
+          "after": "                        return spawn",
+          "before": "                        return spawn()"
+        },
+        {
+          "after": "                callback = token.launch(current_launch)\n                return callback()",
+          "before": "                return token.launch(current_launch)"
+        }
+      ],
+      "source_file": "research_workspace/store.py"
+    },
+    {
+      "detected": true,
+      "exit_code": 1,
+      "log": "skip-export-recapture.log",
+      "log_sha256": "46f9cf51522e5edff39f0cd7a73580c925232acb9f95df96ed727b1cdf887604",
+      "mutated_source_sha256": "ec3766d472210c59ea8e9a00f992e9b7fcb4524c901e2bb17e0ccf6f26588b0e",
+      "name": "skip-export-recapture",
+      "replacements": [
+        {
+          "after": "current = manifest",
+          "before": "current = _capture(store, project_id, subject, token)"
+        }
+      ],
+      "source_file": "research_workspace/bounded_export.py"
+    }
+  ],
+  "quota_enforced": false,
+  "source_archive_sha256": "28fba3312a6839e83dad49460fadee87ddf50b2994267c606d74934f7a689670",
+  "source_manifest_sha256": "a867f96eabefeff8c6c77be106f3c3f81ea402c735b25e01c7697f856c4d203b",
+  "status": "PASS"
+}

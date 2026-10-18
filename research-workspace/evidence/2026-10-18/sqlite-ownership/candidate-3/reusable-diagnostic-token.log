@@ -1,0 +1,15 @@
+test_nested_business_barrier_and_diagnostic_business_reads_are_refused (test_sqlite_ownership.OwnershipTests.test_nested_business_barrier_and_diagnostic_business_reads_are_refused) ... FAIL
+
+======================================================================
+FAIL: test_nested_business_barrier_and_diagnostic_business_reads_are_refused (test_sqlite_ownership.OwnershipTests.test_nested_business_barrier_and_diagnostic_business_reads_are_refused)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 258, in test_nested_business_barrier_and_diagnostic_business_reads_are_refused
+    with self.assertRaises(o.OwnershipFailure):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+AssertionError: OwnershipFailure not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.197s
+
+FAILED (failures=1)

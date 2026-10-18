@@ -1,0 +1,26 @@
+test_proof_writer_roles_cannot_mutate_or_observe_business_rows (test_sqlite_ownership.OwnershipTests.test_proof_writer_roles_cannot_mutate_or_observe_business_rows) ... 
+  test_proof_writer_roles_cannot_mutate_or_observe_business_rows (test_sqlite_ownership.OwnershipTests.test_proof_writer_roles_cannot_mutate_or_observe_business_rows) (role='barrier') ... FAIL
+  test_proof_writer_roles_cannot_mutate_or_observe_business_rows (test_sqlite_ownership.OwnershipTests.test_proof_writer_roles_cannot_mutate_or_observe_business_rows) (role='started-receipt') ... FAIL
+
+======================================================================
+FAIL: test_proof_writer_roles_cannot_mutate_or_observe_business_rows (test_sqlite_ownership.OwnershipTests.test_proof_writer_roles_cannot_mutate_or_observe_business_rows) (role='barrier')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 316, in test_proof_writer_roles_cannot_mutate_or_observe_business_rows
+    with self.assertRaises(ValueError):db.execute(sql,args)
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_proof_writer_roles_cannot_mutate_or_observe_business_rows (test_sqlite_ownership.OwnershipTests.test_proof_writer_roles_cannot_mutate_or_observe_business_rows) (role='started-receipt')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 316, in test_proof_writer_roles_cannot_mutate_or_observe_business_rows
+    with self.assertRaises(ValueError):db.execute(sql,args)
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.110s
+
+FAILED (failures=2)

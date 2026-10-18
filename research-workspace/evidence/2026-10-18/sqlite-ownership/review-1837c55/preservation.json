@@ -1,0 +1,19 @@
+{
+  "candidate_source_uncompressed_sha256": "94107cf250ceb16342278577918dce7552fbe4e5309bee301fe4f848a4a09275",
+  "disposition": "HOLD",
+  "files_sha256": {
+    "32-controls-exit.json": "df4d721d233a2334088d2d2e0110346ae9e509ff46bf0b379fbcfa85c715af4d",
+    "32-controls.log": "d61ead756eb018256bb894b242795f76b1bafc2e659f65af53a678455c38113f",
+    "adversarial-results.json": "50cb086a2a600823b8c3683998a02a0a83766367e428866957c9d5035a73ade5",
+    "adversarial_candidate.py": "dabf7c52bf17356f6e3f429ff662ac2cbc41a2adefaf559fd263f8c16b6370a0",
+    "candidate-source.tar.gz": "4278838e043de0139d3d27c648ec9ae963783d62d47dbd02a5442ee31b2a2d35",
+    "cross-thread-exit.json": "ad409d056a0361494cb036dc817a37e99189ab2cdb7f6ddf40daec74cef9cd65",
+    "cross_thread_exit.py": "a05291c239e5d215d79b608f24acfde020bba46dba7873ec1470fa5c30835dbe",
+    "prior-fix-results.json": "d82a2fccee7684198d65bc18b637d2fee0b93e150cfcf78825ea565697d40843",
+    "prior_fix_review.py": "4429f6a7a989b6ffe3946adbcd48565709baf7fdc140feafdd73c65391ea4ce5",
+    "review.json": "e54bc0ddd8e26f96c06169e10609eef1b121cce68548aac95aea025cf78e6b4d",
+    "source-manifest.json": "6e3e5fbc358991aac7eddab65e454ab17d55f330c284ffebb656e32325f69505"
+  },
+  "format": "waypoint-independent-review-preservation-v1",
+  "reviewed_runtime_commit": "1837c55b5e851a63688a0b14ea5bcc9bcb0c20b7"
+}

@@ -1,0 +1,32 @@
+[
+  {
+    "name": "scope_reuse",
+    "returncode": 0,
+    "stdout": "{\"name\": \"scope_reuse\", \"exception\": \"RuntimeError('SQLite owner cleanup was already attempted.')\", \"opened\": 2, \"closed\": 1, \"guard_depth\": 1, \"held\": false, \"active_after_exit\": true}\n",
+    "stderr": ""
+  },
+  {
+    "name": "recursive_proof_owner",
+    "returncode": 0,
+    "stdout": "{\"name\": \"recursive_proof_owner\", \"exception\": \"RuntimeError('SQLite owner cleanup was already attempted.')\", \"opened\": 2, \"closed\": 1, \"guard_depth\": 0, \"held\": false}\n",
+    "stderr": ""
+  },
+  {
+    "name": "diagnostic_join",
+    "returncode": 0,
+    "stdout": "{\"name\": \"diagnostic_join\", \"held\": true, \"business_subjects_returned\": [[\"alice\"]]}\n",
+    "stderr": ""
+  },
+  {
+    "name": "barrier_business_write",
+    "returncode": 0,
+    "stdout": "{\"name\": \"barrier_business_write\", \"role\": \"barrier\", \"business_write_committed\": true, \"new_intent_created\": false, \"held\": false}\n",
+    "stderr": ""
+  },
+  {
+    "name": "started_receipt_business_write",
+    "returncode": 0,
+    "stdout": "{\"name\": \"started_receipt_business_write\", \"role\": \"started-receipt\", \"business_write_committed\": true, \"new_intent_created\": false, \"held\": false}\n",
+    "stderr": ""
+  }
+]

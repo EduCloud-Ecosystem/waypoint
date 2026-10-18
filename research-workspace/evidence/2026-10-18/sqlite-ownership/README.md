@@ -1,6 +1,14 @@
 # Scoped SQLite ownership evidence
 
-Runtime candidate: `1837c55b5e851a63688a0b14ea5bcc9bcb0c20b7`.
+Current runtime candidate: `5d3e06b02c0e131acdcf99f16c9cc520257ce122`.
+Its [full suite](full-suite-5d3e06b.log) passes 419 tests and
+[frozen qualification](candidate-3/report.json) passes 35 v4 controls and detects
+ten deliberately broken variants. The captured source archive SHA-256 is
+`28fba3312a6839e83dad49460fadee87ddf50b2994267c606d74934f7a689670`.
+[Review-fix provenance](review-fixes-provenance.json) binds those results to
+the committed source; final independent review and exact-head CI remain pending.
+
+Initial runtime candidate: `1837c55b5e851a63688a0b14ea5bcc9bcb0c20b7`.
 The approved pre-code design remains frozen at
 `4606cc6076999c6bae507bdb6beab4bbd0b0819a`, on accepted #45.
 
@@ -45,6 +53,16 @@ of the candidate. Its failed instrumentation control is also retained.
 The development logs in `iteration-logs/` include instrumentation errors,
 intermediate runtime failures and passing iterations. They were not each
 captured with an immutable source and are not retrospective qualification.
+
+The [immutable review of 1837c55](review-1837c55/review.json) verified the first
+three fixes and both #43 regressions, but returned HOLD. Six adversarial cases
+showed three more issues: reused/reentrant/wrong-thread owners could leak or
+corrupt cleanup state, diagnostic joins could read business rows, and receipt
+or barrier roles could write business tables. Its complete source archive,
+scripts and results are retained. The new candidate enforces one-use,
+thread-bound ownership and complete statement allowlists for restricted roles.
+These are application capability-contract findings, not claimed remote exploits.
+The [earlier-head CI success](ci-d59edb4.json) does not clear the new candidate.
 
 ## Acceptance boundary
 
