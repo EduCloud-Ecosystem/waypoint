@@ -1,0 +1,88 @@
+{
+  "active_broker_pin": "5827c84e9952cc67b85e91ceff4282e0ead6923b",
+  "available_capacity": "UNKNOWN",
+  "base_commit": "e79a50c6074e3ecf579a5bc5b0732c473d62502d",
+  "candidate_protocol": {
+    "decision_gates": [
+      "Reader ownership and checkpoint waiting/refusal must preserve or explicitly redefine safety availability",
+      "Fixed retry slots need incarnation, preservation, terminal-proof and exhaustion semantics; overwriting uncertain scratch is not allowed",
+      "Engine/VFS/page/transaction limits require separately qualified evidence and explicit configuration; no default change in this slice"
+    ],
+    "not_a_ledger": true,
+    "phases": [
+      "Validate supported profile/schema/engine and inventory protected prior state",
+      "Obtain a future reader/writer ownership gate; otherwise refuse finite-bound claim",
+      "Serialize a closed write plan and prove complete engine plus guard plus safety allowance",
+      "Publish and synchronize one owned guard candidate before effects",
+      "Commit business changes with existing exact receipt; keep ambiguous commits charged/unknown",
+      "Establish a controlled checkpoint/replacement completion barrier before any reuse credit"
+    ],
+    "status": "PROPOSAL ONLY; no runtime enforcement"
+  },
+  "format": "waypoint-sqlite-guard-protocol-v1",
+  "implemented_bounds": {
+    "active_run_records": 20,
+    "essential_intents": 1,
+    "guard_candidate_bytes": 4194304,
+    "one_guard_save_current_plus_candidate_bytes": 8388608,
+    "ordinary_intents": 4096,
+    "run_record_bytes": 262144
+  },
+  "primary_sources": [
+    {
+      "accessed": "2026-10-18",
+      "url": "https://www.sqlite.org/wal.html",
+      "use": "reader starvation and checkpoint semantics; documented WAL reset fix requirement"
+    },
+    {
+      "accessed": "2026-10-18",
+      "url": "https://www.sqlite.org/pragma.html",
+      "use": "max_page_count, journal_size_limit, wal_checkpoint, cache_spill"
+    },
+    {
+      "accessed": "2026-10-18",
+      "url": "https://www.sqlite.org/tempfiles.html",
+      "use": "temporary engine writers separate from main database"
+    },
+    {
+      "accessed": "2026-10-18",
+      "url": "https://www.sqlite.org/atomiccommit.html",
+      "use": "durability depends on storage and synchronization assumptions"
+    }
+  ],
+  "quota_enforced": false,
+  "scope": "proposal and disposable production-connected qualification only",
+  "source_sha256": {
+    "research-workspace/environments.json": "9a206b4c96fe7365764b0e5521734a7502d4b72e8acdf6c23a404436ed4614a4",
+    "research-workspace/images.lock.json": "bf36e6c82b7b89ef438b0be7523e936dd2319b902325b8e91b0df440a2ea33af",
+    "research-workspace/research_workspace/__init__.py": "d8cd56bc22ee978af2e94c63e5f3ac755934c728209cd5b3cceea7b2bc3af6e5",
+    "research-workspace/research_workspace/__main__.py": "4231eb5cb0633a5b36ab6901689af5337cfe9a9d1d857d436d57e863d08b0e9a",
+    "research-workspace/research_workspace/bounded_process.py": "719856121bde1bae521a2f1e589eeb921d78af2c93ff6fdaa6cd417ba8bb3419",
+    "research-workspace/research_workspace/catalog.py": "3ea03e99bd71d61138c4278c72896d79debea1a930770adcfaf8f36eb9c68686",
+    "research-workspace/research_workspace/evidence.py": "017bc96e79a05592852f851cdbf0b59e65501d974261eb726099293b6e81ed7d",
+    "research-workspace/research_workspace/finite_authority.py": "32cb0dd595f4cc45618e8abbcaa6ffd89f83aec53be08cffa7cacb7d1dfc7288",
+    "research-workspace/research_workspace/guarded_recovery.py": "5c50fbf092a5fd7d46b0d201bcf779d5212d268d457c2abeddc20bcc682110ee",
+    "research-workspace/research_workspace/identity.py": "5bd7f9f1639812837406c6adaf5b90b8aa28179415e02bdbdbfbb8ea055907d8",
+    "research-workspace/research_workspace/operation_guard.py": "4810e1d72e94f7a35e4f51ecd21d053818ce81913797fce5dce21f3c4017e86f",
+    "research-workspace/research_workspace/recipes.py": "c157564229c562cc5fe5ee315e3cb2be74d5588d830e0de6d4c2e7caead2114f",
+    "research-workspace/research_workspace/recovery.py": "66d977ed6c4fde882fac4e6902ca200dda8e5a8d44d5e1732f14c590325e8896",
+    "research-workspace/research_workspace/reproduction.py": "a00e771b2712c4ae289098418856f3580a3d8fd5396724ecdbd685a9bff8041d",
+    "research-workspace/research_workspace/runtime.py": "4d53a8861acfa95cbac3ce7ed666bf87ff34348dd7108f5501a18bf7702ffbca",
+    "research-workspace/research_workspace/server.py": "6a5fc7b1afff52c2565a8435f35d70530eb3f3053522c08cb42ef031f17daf2a",
+    "research-workspace/research_workspace/storage_inventory.py": "992f0957b4e9fc10f8152c5b862f1fe4f26050298532e2e18b8c2a6e3e4b0b52",
+    "research-workspace/research_workspace/store.py": "531f870f5b0634c6d202f04e09f2b8beb3bb8e32b838f2d36cf84a9e367b0324",
+    "research-workspace/tests/test_finite_authority.py": "497266932eed9597b6faeba9f777b5a4b0e209aec22871015deb067b02f1ba36",
+    "research-workspace/tests/test_guarded_recovery.py": "ea0227938ffcffefd2b0a79da466753dedcb8d8fed32b97a76116278752a7432",
+    "research-workspace/tests/test_operation_guard.py": "9a11c4220a06cd1a732dbea5913ecf8785ab999a54af07c9b94be48428af33df",
+    "research-workspace/tests/test_workspace.py": "f1bb0fb44883adb26ce17ed9024422f48db266675cc4bfe6c2d080da5b45a34f"
+  },
+  "unknown_bounds": [
+    "SQLite pages/index amplification and temporary engine files",
+    "WAL/SHM history with held readers",
+    "whole-action save/commit/failure multiplicity",
+    "retained failed guard temporary count",
+    "repeated borrowed safety writes and startup barriers",
+    "physical allocation/inodes/metadata",
+    "checkpoint/restore destinations and broker ownership"
+  ]
+}
