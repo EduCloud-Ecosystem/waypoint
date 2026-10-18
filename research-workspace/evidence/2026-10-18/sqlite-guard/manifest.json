@@ -1,0 +1,14 @@
+{
+  "format": "waypoint-sqlite-guard-evidence-v1",
+  "sha256": {
+    "research-workspace/evidence/2026-10-18/sqlite-guard/README.md": "5eb63bf25e1dbe253c06be75622b3cd413be43120043edfe3051029d794bbfbf",
+    "research-workspace/evidence/2026-10-18/sqlite-guard/pre-review/first.json": "a9e4116a843a09845f670d7f7d730feb5d31c8c4b726ec289d391d197ee47dac",
+    "research-workspace/evidence/2026-10-18/sqlite-guard/pre-review/first.log": "9e6656a1f90546d3bb60870d0ce62e4ce6e1f6c8b377ad6aee778f173008d094",
+    "research-workspace/evidence/2026-10-18/sqlite-guard/pre-review/second-qualify.py": "62fb2627457804aaa8962d2629b6d636fa086d12e968a38ace10c59a1017d6c4",
+    "research-workspace/evidence/2026-10-18/sqlite-guard/pre-review/second.json": "0e02cb5f54edb711fbe1edf904e1586f76c3968810f0263babac1b9c929a460a",
+    "research-workspace/evidence/2026-10-18/sqlite-guard/pre-review/second.log": "3fb6e79a1c08e8587e809fe41f9550d2dba15f0ed601fe68fc68a8179f75d09c",
+    "research-workspace/evidence/2026-10-18/sqlite-guard/qualification.json": "17527bfb90d7ffb955bbd5b4434486f363dd0715d53b7805c458181a6d624026",
+    "research-workspace/evidence/2026-10-18/sqlite-guard/qualification.log": "dfbf6c5c59d76d3e868aed31ec8a23f044d738d4534d57e0441590cb5fd91ae8",
+    "research-workspace/evidence/2026-10-18/sqlite-guard/suite.log": "71d77625716650d6dc9718933bfc0b06e9a32b07a5af459221f05caf470aec94"
+  }
+}

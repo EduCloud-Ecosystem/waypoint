@@ -1,5 +1,14 @@
 # CHANGELOG.md: Document history for the EduCloud hosting layer repo
 
+## 2026-10-18: SQLite and guard protocol qualification
+
+- Pin unchanged production writers and qualify disposable held-reader WAL,
+  transaction uncertainty, full guard replacement and retained retry-file growth.
+- Propose reader ownership, write allowance and proof requirements while keeping
+  their availability and exhaustion decisions open before implementation.
+- Preserve prior evidence, disabled sources and the fifth headroom failure;
+  quotas, engine ceilings, migration, restore and deletion remain blocked.
+
 ## 2026-10-18: Fresh finite logical authority
 
 - Add an explicit local-key profile with version-bound row/session and encoded

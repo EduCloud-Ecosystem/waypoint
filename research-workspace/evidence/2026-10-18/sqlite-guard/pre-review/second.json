@@ -1,0 +1,457 @@
+{
+  "available_capacity": "UNKNOWN",
+  "base_commit": "e79a50c6074e3ecf579a5bc5b0732c473d62502d",
+  "fifth_headroom_failure": "FAIL preserved",
+  "format": "waypoint-sqlite-guard-qualification-v1",
+  "not_run": [
+    "physical exhaustion",
+    "power loss",
+    "VFS syscall or allocator upper bounds",
+    "production reader ownership/checkpoint gate",
+    "fixed retry-slot implementation",
+    "live broker/provider writes",
+    "finite restore",
+    "accepted store migration"
+  ],
+  "observations": [
+    {
+      "after_reader_release_truncate": [
+        0,
+        0,
+        0
+      ],
+      "before": {
+        "operation-guard.json": 874,
+        "workspace.sqlite3": 77824,
+        "workspace.sqlite3-shm": 32768,
+        "workspace.sqlite3-wal": 0
+      },
+      "classification": "observed counterexample to row-only WAL bound",
+      "control": "held_reader_and_safety_wal",
+      "essential_slots": 1,
+      "note": "Explicit checkpoints affect disposable fixture only. Samples are not a maximum or a production checkpoint policy.",
+      "ordinary_intents": 2,
+      "passive_result": [
+        0,
+        84,
+        0
+      ],
+      "reader_snapshot_preserved": true,
+      "rows_preserved": true,
+      "settings": {
+        "busy_timeout": 10000,
+        "cache_size": -2000,
+        "cache_spill": 483,
+        "freelist_count": 0,
+        "journal_mode": "wal",
+        "journal_size_limit": -1,
+        "max_page_count": 4294967294,
+        "page_count": 19,
+        "page_size": 4096,
+        "synchronous": 2,
+        "temp_store": 0,
+        "wal_autocheckpoint": 1000
+      },
+      "settings_unchanged": true,
+      "wal_samples": [
+        28872,
+        57712,
+        86552,
+        115392,
+        144232,
+        173072,
+        201912,
+        230752,
+        259592,
+        288432,
+        317272,
+        346112
+      ],
+      "writes": 12
+    },
+    {
+      "after": {
+        "operation-guard.json": 874,
+        "workspace.sqlite3": 77824,
+        "workspace.sqlite3-shm": 32768,
+        "workspace.sqlite3-wal": 24752
+      },
+      "before": {
+        "operation-guard.json": 874,
+        "workspace.sqlite3": 77824,
+        "workspace.sqlite3-shm": 32768,
+        "workspace.sqlite3-wal": 0
+      },
+      "classification": "observed recurring writer",
+      "control": "startup_barrier",
+      "finite_lifetime_wal_bound": "UNKNOWN",
+      "opens": 6,
+      "production_site": "Guard.resume FULL-synchronous barrier"
+    },
+    {
+      "classification": "injected acknowledgement boundaries",
+      "control": "transaction_commit_faults",
+      "outcomes": [
+        {
+          "active": 1,
+          "after": {
+            "operation-guard.json": 1195,
+            "workspace.sqlite3": 77824,
+            "workspace.sqlite3-shm": 32768,
+            "workspace.sqlite3-wal": 16512
+          },
+          "before": {
+            "operation-guard.json": 874,
+            "workspace.sqlite3": 77824,
+            "workspace.sqlite3-shm": 32768,
+            "workspace.sqlite3-wal": 0
+          },
+          "commit_happened": false,
+          "credit": 0,
+          "hold": true
+        },
+        {
+          "active": 0,
+          "after": {
+            "operation-guard.json": 1195,
+            "workspace.sqlite3": 77824,
+            "workspace.sqlite3-shm": 32768,
+            "workspace.sqlite3-wal": 24752
+          },
+          "before": {
+            "operation-guard.json": 874,
+            "workspace.sqlite3": 77824,
+            "workspace.sqlite3-shm": 32768,
+            "workspace.sqlite3-wal": 0
+          },
+          "commit_happened": true,
+          "credit": 0,
+          "hold": true
+        }
+      ],
+      "power_loss_tested": false,
+      "sqlite_io_fault_tested": false
+    },
+    {
+      "classification": "source-shaped logical-byte bound",
+      "conservative_current_plus_next": 8388608,
+      "conservative_current_upper": 2327360,
+      "control": "full_guard_replacement",
+      "enforced_per_serialization": 4194304,
+      "measured": {
+        "current_bytes": 2327358,
+        "entries": 2,
+        "logical_bytes": 4654716,
+        "temporary_bytes": 2327358
+      },
+      "note": "Boundary map seeded synthetically. Only Guard.save performs the measured replacement. No orphan, SQLite, filesystem or future retry credit.",
+      "operations": 4097
+    },
+    {
+      "capacity_credit": 0,
+      "classification": "observed unbounded-retry premise failure",
+      "control": "retry_orphans",
+      "failed_attempts": 3,
+      "failed_business_writes": 0,
+      "future_orphan_count": "UNKNOWN",
+      "later_safety_write": true,
+      "old_preserved_before_retry": true,
+      "protected_files_removed": 0,
+      "retained": [
+        {
+          ".operation-guard-57764179c4f59ff711a2e74444473b24": 1183
+        },
+        {
+          ".operation-guard-57764179c4f59ff711a2e74444473b24": 1183,
+          ".operation-guard-975ff775a9771683afe136a7767b17e2": 1183
+        },
+        {
+          ".operation-guard-56f9a1ad2ab0f7d16fd499f56f5c654e": 1183,
+          ".operation-guard-57764179c4f59ff711a2e74444473b24": 1183,
+          ".operation-guard-975ff775a9771683afe136a7767b17e2": 1183
+        }
+      ]
+    },
+    {
+      "after_safety": {
+        "operation-guard.json": 1181,
+        "workspace.sqlite3": 77824,
+        "workspace.sqlite3-shm": 32768,
+        "workspace.sqlite3-wal": 0
+      },
+      "before_safety": {
+        "operation-guard.json": 1183,
+        "workspace.sqlite3": 77824
+      },
+      "classification": "visible generation is not durability proof",
+      "control": "post_rename_sync",
+      "durable_completion_proven": false,
+      "guard_hold": true,
+      "initial_business_write": false,
+      "later_safety_write": true,
+      "reclaimed_bytes": 0
+    },
+    {
+      "actions": [
+        {
+          "action": "authenticate",
+          "after": {
+            "operation-guard.json": 3095,
+            "workspace.sqlite3": 86016,
+            "workspace.sqlite3-shm": 32768,
+            "workspace.sqlite3-wal": 0
+          },
+          "before": {
+            "operation-guard.json": 3095,
+            "workspace.sqlite3": 86016,
+            "workspace.sqlite3-shm": 32768,
+            "workspace.sqlite3-wal": 0
+          },
+          "effect_verified": true
+        },
+        {
+          "action": "logout",
+          "after": {
+            "operation-guard.json": 3404,
+            "workspace.sqlite3": 86016,
+            "workspace.sqlite3-shm": 32768,
+            "workspace.sqlite3-wal": 28872
+          },
+          "before": {
+            "operation-guard.json": 3095,
+            "workspace.sqlite3": 86016,
+            "workspace.sqlite3-shm": 32768,
+            "workspace.sqlite3-wal": 0
+          },
+          "effect_verified": true
+        },
+        {
+          "action": "demote",
+          "after": {
+            "operation-guard.json": 3424,
+            "workspace.sqlite3": 86016,
+            "workspace.sqlite3-shm": 32768,
+            "workspace.sqlite3-wal": 28872
+          },
+          "before": {
+            "operation-guard.json": 3095,
+            "workspace.sqlite3": 86016,
+            "workspace.sqlite3-shm": 32768,
+            "workspace.sqlite3-wal": 0
+          },
+          "effect_verified": true
+        },
+        {
+          "action": "remove",
+          "after": {
+            "operation-guard.json": 3424,
+            "workspace.sqlite3": 86016,
+            "workspace.sqlite3-shm": 32768,
+            "workspace.sqlite3-wal": 32992
+          },
+          "before": {
+            "operation-guard.json": 3095,
+            "workspace.sqlite3": 86016,
+            "workspace.sqlite3-shm": 32768,
+            "workspace.sqlite3-wal": 0
+          },
+          "effect_verified": true
+        },
+        {
+          "action": "revoke",
+          "after": {
+            "operation-guard.json": 3399,
+            "workspace.sqlite3": 86016,
+            "workspace.sqlite3-shm": 32768,
+            "workspace.sqlite3-wal": 37112
+          },
+          "before": {
+            "operation-guard.json": 3095,
+            "workspace.sqlite3": 86016,
+            "workspace.sqlite3-shm": 32768,
+            "workspace.sqlite3-wal": 0
+          },
+          "effect_verified": true
+        },
+        {
+          "action": "rotate",
+          "after": {
+            "operation-guard.json": 3399,
+            "workspace.sqlite3": 86016,
+            "workspace.sqlite3-shm": 32768,
+            "workspace.sqlite3-wal": 37112
+          },
+          "before": {
+            "operation-guard.json": 3095,
+            "workspace.sqlite3": 86016,
+            "workspace.sqlite3-shm": 32768,
+            "workspace.sqlite3-wal": 0
+          },
+          "effect_verified": true
+        },
+        {
+          "action": "cancel",
+          "after": {
+            "operation-guard.json": 3424,
+            "workspace.sqlite3": 86016,
+            "workspace.sqlite3-shm": 32768,
+            "workspace.sqlite3-wal": 24752
+          },
+          "before": {
+            "operation-guard.json": 3095,
+            "workspace.sqlite3": 86016,
+            "workspace.sqlite3-shm": 32768,
+            "workspace.sqlite3-wal": 0
+          },
+          "effect_verified": true
+        },
+        {
+          "action": "settle",
+          "after": {
+            "operation-guard.json": 3425,
+            "workspace.sqlite3": 86016,
+            "workspace.sqlite3-shm": 32768,
+            "workspace.sqlite3-wal": 28872
+          },
+          "before": {
+            "operation-guard.json": 3095,
+            "workspace.sqlite3": 86016,
+            "workspace.sqlite3-shm": 32768,
+            "workspace.sqlite3-wal": 0
+          },
+          "effect_verified": true
+        },
+        {
+          "action": "close",
+          "after": {
+            "operation-guard.json": 3424,
+            "workspace.sqlite3": 86016,
+            "workspace.sqlite3-shm": 32768,
+            "workspace.sqlite3-wal": 32992
+          },
+          "before": {
+            "operation-guard.json": 3095,
+            "workspace.sqlite3": 86016,
+            "workspace.sqlite3-shm": 32768,
+            "workspace.sqlite3-wal": 0
+          },
+          "effect_verified": true
+        }
+      ],
+      "classification": "production methods in independent disposable fixtures",
+      "control": "safety_reader_matrix",
+      "physical_capacity_guaranteed": false,
+      "row_caps_filled": false
+    },
+    {
+      "after": {
+        "operation-guard.json": 1195,
+        "workspace.sqlite3": 77824,
+        "workspace.sqlite3-shm": 32768,
+        "workspace.sqlite3-wal": 65952
+      },
+      "before": {
+        "operation-guard.json": 1195,
+        "workspace.sqlite3": 77824,
+        "workspace.sqlite3-shm": 32768,
+        "workspace.sqlite3-wal": 0
+      },
+      "classification": "guard counters do not bound WAL history",
+      "control": "borrowed_essential_repeats",
+      "guard_bytes_unchanged": true,
+      "remaining_wal": "UNKNOWN",
+      "writes": 8
+    }
+  ],
+  "platform": "Darwin",
+  "python": "3.14.5",
+  "quota_admission": "NO-GO",
+  "quota_enforced": false,
+  "source_sha256": {
+    "research-workspace/environments.json": "9a206b4c96fe7365764b0e5521734a7502d4b72e8acdf6c23a404436ed4614a4",
+    "research-workspace/images.lock.json": "bf36e6c82b7b89ef438b0be7523e936dd2319b902325b8e91b0df440a2ea33af",
+    "research-workspace/research_workspace/__init__.py": "d8cd56bc22ee978af2e94c63e5f3ac755934c728209cd5b3cceea7b2bc3af6e5",
+    "research-workspace/research_workspace/__main__.py": "4231eb5cb0633a5b36ab6901689af5337cfe9a9d1d857d436d57e863d08b0e9a",
+    "research-workspace/research_workspace/bounded_process.py": "719856121bde1bae521a2f1e589eeb921d78af2c93ff6fdaa6cd417ba8bb3419",
+    "research-workspace/research_workspace/catalog.py": "3ea03e99bd71d61138c4278c72896d79debea1a930770adcfaf8f36eb9c68686",
+    "research-workspace/research_workspace/evidence.py": "017bc96e79a05592852f851cdbf0b59e65501d974261eb726099293b6e81ed7d",
+    "research-workspace/research_workspace/finite_authority.py": "32cb0dd595f4cc45618e8abbcaa6ffd89f83aec53be08cffa7cacb7d1dfc7288",
+    "research-workspace/research_workspace/guarded_recovery.py": "5c50fbf092a5fd7d46b0d201bcf779d5212d268d457c2abeddc20bcc682110ee",
+    "research-workspace/research_workspace/identity.py": "5bd7f9f1639812837406c6adaf5b90b8aa28179415e02bdbdbfbb8ea055907d8",
+    "research-workspace/research_workspace/operation_guard.py": "4810e1d72e94f7a35e4f51ecd21d053818ce81913797fce5dce21f3c4017e86f",
+    "research-workspace/research_workspace/recipes.py": "c157564229c562cc5fe5ee315e3cb2be74d5588d830e0de6d4c2e7caead2114f",
+    "research-workspace/research_workspace/recovery.py": "66d977ed6c4fde882fac4e6902ca200dda8e5a8d44d5e1732f14c590325e8896",
+    "research-workspace/research_workspace/reproduction.py": "a00e771b2712c4ae289098418856f3580a3d8fd5396724ecdbd685a9bff8041d",
+    "research-workspace/research_workspace/runtime.py": "4d53a8861acfa95cbac3ce7ed666bf87ff34348dd7108f5501a18bf7702ffbca",
+    "research-workspace/research_workspace/server.py": "6a5fc7b1afff52c2565a8435f35d70530eb3f3053522c08cb42ef031f17daf2a",
+    "research-workspace/research_workspace/storage_inventory.py": "992f0957b4e9fc10f8152c5b862f1fe4f26050298532e2e18b8c2a6e3e4b0b52",
+    "research-workspace/research_workspace/store.py": "531f870f5b0634c6d202f04e09f2b8beb3bb8e32b838f2d36cf84a9e367b0324",
+    "research-workspace/tests/test_finite_authority.py": "497266932eed9597b6faeba9f777b5a4b0e209aec22871015deb067b02f1ba36",
+    "research-workspace/tests/test_guarded_recovery.py": "ea0227938ffcffefd2b0a79da466753dedcb8d8fed32b97a76116278752a7432",
+    "research-workspace/tests/test_operation_guard.py": "9a11c4220a06cd1a732dbea5913ecf8785ab999a54af07c9b94be48428af33df",
+    "research-workspace/tests/test_workspace.py": "f1bb0fb44883adb26ce17ed9024422f48db266675cc4bfe6c2d080da5b45a34f"
+  },
+  "sqlite": {
+    "binding_note": "Source ID, compile options and Python extension hash; not complete dynamic-library/VFS attestation.",
+    "compile_options": [
+      "ATOMIC_INTRINSICS=1",
+      "COMPILER=clang-21.0.0",
+      "DEFAULT_AUTOVACUUM",
+      "DEFAULT_CACHE_SIZE=-2000",
+      "DEFAULT_FILE_FORMAT=4",
+      "DEFAULT_JOURNAL_SIZE_LIMIT=-1",
+      "DEFAULT_MMAP_SIZE=0",
+      "DEFAULT_PAGE_SIZE=4096",
+      "DEFAULT_PCACHE_INITSZ=20",
+      "DEFAULT_RECURSIVE_TRIGGERS",
+      "DEFAULT_SECTOR_SIZE=4096",
+      "DEFAULT_SYNCHRONOUS=2",
+      "DEFAULT_WAL_AUTOCHECKPOINT=1000",
+      "DEFAULT_WAL_SYNCHRONOUS=2",
+      "DEFAULT_WORKER_THREADS=0",
+      "DIRECT_OVERFLOW_READ",
+      "ENABLE_API_ARMOR",
+      "ENABLE_COLUMN_METADATA",
+      "ENABLE_DBSTAT_VTAB",
+      "ENABLE_FTS3",
+      "ENABLE_FTS3_PARENTHESIS",
+      "ENABLE_FTS5",
+      "ENABLE_GEOPOLY",
+      "ENABLE_MATH_FUNCTIONS",
+      "ENABLE_MEMORY_MANAGEMENT",
+      "ENABLE_PERCENTILE",
+      "ENABLE_PREUPDATE_HOOK",
+      "ENABLE_RTREE",
+      "ENABLE_SESSION",
+      "ENABLE_STAT4",
+      "ENABLE_UNLOCK_NOTIFY",
+      "MALLOC_SOFT_LIMIT=1024",
+      "MAX_ATTACHED=10",
+      "MAX_COLUMN=2000",
+      "MAX_COMPOUND_SELECT=500",
+      "MAX_DEFAULT_PAGE_SIZE=8192",
+      "MAX_EXPR_DEPTH=1000",
+      "MAX_FUNCTION_ARG=1000",
+      "MAX_LENGTH=1000000000",
+      "MAX_LIKE_PATTERN_LENGTH=50000",
+      "MAX_MMAP_SIZE=0x7fff0000",
+      "MAX_PAGE_COUNT=0xfffffffe",
+      "MAX_PAGE_SIZE=65536",
+      "MAX_SQL_LENGTH=1000000000",
+      "MAX_TRIGGER_DEPTH=1000",
+      "MAX_VARIABLE_NUMBER=250000",
+      "MAX_VDBE_OP=250000000",
+      "MAX_WORKER_THREADS=8",
+      "MUTEX_PTHREADS",
+      "SYSTEM_MALLOC",
+      "TEMP_STORE=1",
+      "THREADSAFE=1",
+      "USE_URI"
+    ],
+    "python_extension_sha256": "667b7091a77ae8f1498f30b4f86445ab4676edc19b46b6c81ecc416cc324220e",
+    "source_id": "2026-07-24 19:02:57 bf7c7f30031888f4e796e429ab3978879485813aaca6f641c7b33e4e09459bcc",
+    "version": "3.53.4"
+  },
+  "tests_passed": false,
+  "tests_run": 9
+}

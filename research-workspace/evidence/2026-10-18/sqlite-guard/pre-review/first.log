@@ -1,0 +1,12 @@
+test_held_reader_safety_wal_and_checkpoint (__main__.ProtocolControls.test_held_reader_safety_wal_and_checkpoint) ... ok
+test_startup_barrier_is_a_writer (__main__.ProtocolControls.test_startup_barrier_is_a_writer) ... ok
+test_transaction_rollback_and_commit_acknowledgement (__main__.ProtocolControls.test_transaction_rollback_and_commit_acknowledgement) ... ok
+test_full_guard_replacement_peak (__main__.ProtocolControls.test_full_guard_replacement_peak) ... ok
+test_repeated_failed_guard_writes_accumulate_orphans (__main__.ProtocolControls.test_repeated_failed_guard_writes_accumulate_orphans) ... ok
+test_post_rename_directory_sync_uncertainty (__main__.ProtocolControls.test_post_rename_directory_sync_uncertainty) ... ok
+test_required_safety_actions_with_held_reader (__main__.ProtocolControls.test_required_safety_actions_with_held_reader) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 1.261s
+
+OK

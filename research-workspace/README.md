@@ -155,3 +155,7 @@ The optional [finite logical-authority profile](FINITE-AUTHORITY.md) adds row,
 live-session and encoded-field limits to a fresh local-key store. It preserves
 safety actions and history at the limits; OIDC and restore remain explicitly
 unqualified for that profile. These limits do not establish storage capacity.
+
+The [SQLite and guard protocol qualification](SQLITE-GUARD-PROTOCOL.md) separates
+per-save ceilings from unknown WAL, reader and retry-file growth. Its proposed
+coordination rules require further decisions before any runtime implementation.
