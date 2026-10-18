@@ -1,0 +1,23 @@
+[
+  {
+    "name": "offline_rollback_original",
+    "observed_exception": "OSError('rollback failure')",
+    "notes": [],
+    "original_preserved": false,
+    "held": true
+  },
+  {
+    "name": "dispatch_rollback_original",
+    "observed_exception": "OSError('rollback failure')",
+    "notes": [],
+    "original_preserved": false,
+    "held": true
+  },
+  {
+    "name": "swallowed_cursor_close",
+    "observed_exception": null,
+    "caught": "OSError('ORIGINAL cursor-close failure')",
+    "scope_returned_success": true,
+    "held": true
+  }
+]

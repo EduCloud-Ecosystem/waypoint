@@ -1,0 +1,122 @@
+{
+  "accepted45": "d84311621653e2d8e853092cae7c90d0eea02098",
+  "artifact_sha256": {
+    "adversarial-results.json": "23b7db9163fa9d1b5e35f48a02ffdf3af1ca74204f5d762b14df71fff2d2b3f4",
+    "candidate-1/candidate-source.tar.gz": "71ac30dde17640b857b5549fb950914799ef81111c93310253876dca4e5caa49",
+    "candidate-1/controls.log": "41be92819d48e5132d694690de72354a36688d314e28cb312440a17feda60e1d",
+    "candidate-1/missing-connection-close.log": "7d9b513ab87fa43b0dba44a9e17461d1c7b57c0dcd9c12d5c2b964028e62e651",
+    "candidate-1/primary-dispatch-error-lost.log": "546b1502b4e2ec6631f29559983767a833500fb33b3b6086b9d998ff543e1f05",
+    "candidate-1/report.json": "511f9a1a34bf2c6a6e529f1207c07b863e5b9c4f1eacd11b797ca16ee23b674e",
+    "candidate-1/reusable-diagnostic-token.log": "eb29d052be141787a450e4a5a1691caf15fa0132670a9c7c0e0639501d594e9c",
+    "candidate-1/skip-export-recapture.log": "f8e59c662741cedb5169698b3931754a2c15808ecf27863426aeaaa03c55dad8",
+    "candidate-1/source-sha256.json": "5414958a6fcc798397db7d47c505678ac85784112b0274c416d748ef5dc323b2",
+    "candidate-1/spawn-after-reservation-close.log": "43559112d8f59a8e4974188ce69aaf95998e92c7c384bc523abf465253119662",
+    "candidate-1/swallowed-cursor-close.log": "aa8ff9eff2ac143a1d80fe90e9ad6839fd1cc6dab0ca8f4f2bad45137f0d609b",
+    "candidate-1/writable-reader.log": "02455c4f6d1356ddbcb70baa27fa3ac30c536469c3b368fcd05bbf49e734830d",
+    "candidate-2/candidate-source.tar.gz": "bcd34f482fad871455bd4b45df0a0f50eff82ba7761ea4eef721e6ead0c15e15",
+    "candidate-2/controls.log": "131e7a60350daec6fefee49d79d7772461c8d026b8a25e78b12dba9f4a0c77bc",
+    "candidate-2/missing-connection-close.log": "641aa8eb41d08ad71858cd018f1e2c0af03f1a6d0471642d3ad4d9b54a98842e",
+    "candidate-2/primary-dispatch-error-lost.log": "b6ce6d836546eab91501f23fd30b0dc3fd3b3f4a7c533b313627df0136d7dfae",
+    "candidate-2/report.json": "e72c0f6cdd4c86c488dc0fafea37ddbb2966d93d8d679a25f30a647cc402fb89",
+    "candidate-2/reusable-diagnostic-token.log": "49bbaa8010cd3259aa23d880f0468b7c9c0d6e8e498451aa7447a3587a5aa239",
+    "candidate-2/skip-export-recapture.log": "38b48f590865285df06d0f7dab88f8c17b1a80fc49389bf890b61ef933fcba19",
+    "candidate-2/source-sha256.json": "38c77f5846ff5722fa16baad9db39852b2c2383d51f8cf49373f27ae0df4f5ee",
+    "candidate-2/spawn-after-reservation-close.log": "6e7d30a49cfa80b6c3325eccd5d8374f84764dcd26930552d642c8449604b8c5",
+    "candidate-2/swallowed-cursor-close.log": "38dfb04a8a6f8b75b1838badfbb4f01a83b38ab01ff7f5408c3888935df7e7ff",
+    "candidate-2/writable-reader.log": "e706800d5c7efa3b1222e6682778750fb6c8f9d5f794a2cb96cf287bd1986307",
+    "full-suite.log": "49007375a34aa5d310967dca60f1df58ce0bdf874ca2697eee78516cf2ed03c6",
+    "iteration-logs/legacy-first.log": "9a8e3cb9cbc30c8a2934ea601d20fd5fe77934e35a16cf96eab88cae79549017",
+    "iteration-logs/qualification-first.log": "b6587b9ca2f3e961c5be2f06dddc6f0300afc16530b4d2c62e04ba167f9facf4",
+    "iteration-logs/qualification-second.log": "5766bb850d22d00494a15e2afaa5a41b2b56ed1d43bae62ebe7051d0c77e25d6",
+    "iteration-logs/v4-fifth.log": "112cde0c7f8a2c88eb0113a2b22e8f5bbb1053fcec6d4735551c5e5f976896e3",
+    "iteration-logs/v4-first.log": "f4886e3a017a4794795e2986660eef34cbda3b3ac645722643e973a0b090de40",
+    "iteration-logs/v4-fourth.log": "b9025213c91d9a62e4750d94e9a733dc59dbc737351797eff6c77772a36507dc",
+    "iteration-logs/v4-second.log": "6012f2e73412fc6d85b0d83c8c3caa504a5cfae2b4d80d02c50adb882fafcd57",
+    "iteration-logs/v4-third.log": "b08301e38c2a73f16429bf64297bcded835eff909c97540bdaa4b758132de162",
+    "preliminary-review-snapshot.tar.gz": "346e12ff88016ff309f56af5a10176660fce4b8f003839e0c4a7b63c3304e486",
+    "preliminary-review.json": "473341355d461d97739aae72444f0a991e5d34402c718ab0a286e8e10ff35940",
+    "snapshot.json": "e15746e2810af4721d5ebaed901af2652c7f2bcb39b7177210736fecc8c4c840"
+  },
+  "boundaries": {
+    "available_capacity": "UNKNOWN",
+    "fifth_headroom": "FAIL_UNCHANGED",
+    "merge_gate": "INDEPENDENT_REVIEW_EXACT_CI_COORDINATING_CLEAR",
+    "original_cleanup_gate": "UNRESOLVED_UNCHANGED",
+    "provider_or_docker_v4_acceptance": "NOT_RUN",
+    "quota_enforced": false,
+    "source_environments": "DISABLED_UNCHANGED",
+    "workflow_pins": "UNCHANGED_ACCEPTED45"
+  },
+  "candidate_source_files_equal_worktree": 91,
+  "format": "waypoint-sqlite-ownership-runtime-provenance-v1",
+  "intentional_runtime_modifications": [
+    {
+      "path": "research-workspace/research_workspace/__main__.py",
+      "precode_sha256": "958585aac75cf16f49d6b3cd69d549cc11250719caff415cbb33f7fcbdaaac2d",
+      "runtime_sha256": "e11240958b801f7e2e214f50e2318a96fc90e5c1e1ce0862fed0b09fac48a677"
+    },
+    {
+      "path": "research-workspace/research_workspace/bounded_export.py",
+      "precode_sha256": "2900079a2f4bcd19ed09a7e27ee1eaa5c0b49e8ab4967eb7c8adf0dd026e22dc",
+      "runtime_sha256": "8d1703a0c59e5a6cb9f916edaca752a436232997279b93f3625f93eebd7bd64b"
+    },
+    {
+      "path": "research-workspace/research_workspace/finite_authority.py",
+      "precode_sha256": "1b9c1bf3baecb6779bb5fa621d5d90dcf93ee351f99fd4cb7887583cc9976808",
+      "runtime_sha256": "37cfc8b5bbef3864faa8f9e0ee79e27fb87829df76d876ad803c00514fc0557d"
+    },
+    {
+      "path": "research-workspace/research_workspace/guarded_recovery.py",
+      "precode_sha256": "5c50fbf092a5fd7d46b0d201bcf779d5212d268d457c2abeddc20bcc682110ee",
+      "runtime_sha256": "6120a8abb50f38d655a7b87e5f881eff58e4ed99712cb26993f404b22915a117"
+    },
+    {
+      "path": "research-workspace/research_workspace/operation_guard.py",
+      "precode_sha256": "86b215608c6a67eb79e283c01f0ff4128c56c8dd1da89edc71b72b7a1c345d12",
+      "runtime_sha256": "095dfbc24558fa2419fa65c9687884c5584eb84f0ad7e8d2cc5c176bc92a7757"
+    },
+    {
+      "path": "research-workspace/research_workspace/recovery.py",
+      "precode_sha256": "97b12675c26b808b1f6d362da457f6785f3b2225274eab811352006366baa6cd",
+      "runtime_sha256": "0c78cf6033a5fc9cabbf9312912009a48f1dc904591c23335d823bbba669fbe6"
+    },
+    {
+      "path": "research-workspace/research_workspace/server.py",
+      "precode_sha256": "140bdcde9ee1b6a1db91f6f16229d8832b5f967386d285032de0d187be146770",
+      "runtime_sha256": "fad6079ef7768009fed485cc37af697a0219b08c3ec2c269f2b6962d56deda30"
+    },
+    {
+      "path": "research-workspace/research_workspace/store.py",
+      "precode_sha256": "dee3938d6e761cd17452cf9ff6666e3b9adc55f84a82dc2ce4ad6136c76a1db0",
+      "runtime_sha256": "e8e3dd4cc14e365a04caea9dd26ee903a107e2c67d08ddb81f9729a13850ac8a"
+    }
+  ],
+  "policy_sha256": "ed235fd6d6bb3c10632c0c5dc2bb20c8d3cb9076ebb157c71c1cc9c8072a656e",
+  "precode_commit": "4606cc6076999c6bae507bdb6beab4bbd0b0819a",
+  "precode_provenance_sha256": "1f0673858f01c453045863cde595ead9b7c32590e9d10df2659f6d9c785c0f76",
+  "preserved_base_file_count": 395,
+  "preserved_historical_evidence_files": 343,
+  "proposal_sha256": "5b03af41faa8b22830e9af792f185b0716867fd4918075389c2732dc1264ebb2",
+  "retained_failures": {
+    "candidate-1": "FAIL: HTTP fixture omitted X-Research-Request; 29 of 30 baseline tests passed; 7 regressions detected. Exact source retained.",
+    "iteration_logs": "Development logs are not individually source pinned. Known instrumentation errors and partial runs remain visible; no retrospective qualification claim.",
+    "preliminary_review": "R1 manifest before SQL cleanup; R2 primary error masked by rollback; R3 swallowed cursor-close success. Exact source retained. Runtime candidate includes fixes; final independent review pending."
+  },
+  "runtime_commit": "1837c55b5e851a63688a0b14ea5bcc9bcb0c20b7",
+  "validation": {
+    "full_suite": {
+      "log": "full-suite.log",
+      "status": "PASS",
+      "tests": 416
+    },
+    "javascript_syntax": "PASS",
+    "platform": "macOS-26.5-arm64-arm-64bit-Mach-O",
+    "python": "3.14.5",
+    "v4_frozen_controls": {
+      "negative_controls_detected": 7,
+      "report": "candidate-2/report.json",
+      "status": "PASS",
+      "tests": 32
+    }
+  }
+}
