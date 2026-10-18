@@ -45,6 +45,9 @@ with `mode=ro` and `query_only`. Binding/schema checks and result materializatio
 share one read snapshot. SQLite evaluates registered type, row and byte limits
 before payloads are copied into Python. Keyed lookups check uniqueness; a queue
 with two eligible runs still permits one bounded claim.
+Duplicate projection names are rejected before payload transfer. Explicitly
+ending a reader transaction also ends its validated read capability; that owner
+cannot continue reading a different snapshot.
 
 Writers use distinct roles for initialization, mutations, started receipts,
 barriers, final dispatch and offline backup. Existing writable connections
@@ -59,6 +62,10 @@ wrong-thread entry/exit and exit before entry are refused before changing scope
 state. Proof, discovery, schema-reference, receipt and barrier roles accept
 explicit complete statements. Joins, unions and subqueries cannot expand those
 roles into business reads or writes.
+Existing-authority roles cannot skip binding/schema validation. Their resolved
+root must match the guard root, and their database path is fixed to that root.
+Only a fresh backup destination accepts a separate path; memory references
+cannot receive a file path.
 Schema scripts accept only the reviewed base schema during initialization or
 the complete reviewed schema in the memory reference. Initialization's separate
 guard-table statements are also matched exactly. Backup destinations accept no
@@ -76,6 +83,12 @@ operation error remains primary, with additional cleanup failures recorded as
 notes. Catching a cursor-close error inside a scope cannot turn its exit into
 success. A successful local close is an acknowledgement from that API, not
 proof that another connection, process, SQLite reader or writer has ended.
+Native write, commit, schema and backup failures invalidate the owner's success
+path even when a caller catches the error. Later effect attempts are refused,
+cleanup still runs once, the original error remains visible, and existing
+operation tokens can attempt their bounded uncertainty note. A partial backup
+destination is retained. Clean business denials and rejected read bounds do
+not imply a native effect failure.
 
 ## Unconfirmed ownership and safety actions
 
@@ -91,6 +104,8 @@ before its first diagnostic open. It can attempt the original operation's
 uncertainty note using guard-proof/schema-reference reads. It cannot create a
 new intent, open business SQL, run a barrier or recursively retry a failed note.
 Untokened startup and barrier failures stay held without inventing an intent.
+A diagnostic owner failure ends the token's entire attempt, including when its
+caller catches the failure. No second owner can be opened within that allowance.
 
 At clean, full logical row and intent limits, logout, revocation, key rotation,
 membership removal/demotion, cancellation, closure, settlement and recovery

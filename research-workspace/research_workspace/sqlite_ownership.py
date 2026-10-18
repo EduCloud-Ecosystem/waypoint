@@ -47,6 +47,7 @@ def held(root):
 
 
 def hold(root, owner=None, error=None):
+    _end_diagnostic_attempt(root)
     value = state(root)
     with _registry_lock:
         value.failed = True
@@ -70,20 +71,33 @@ def _event(root, role, boundary):
 @contextmanager
 def diagnostic(token):
     # Consumed before ANY diagnostic open, once per token, even if setup fails.
-    if getattr(token, "_ownership_diagnostic_used", False) or getattr(_local, "diagnostic", None) is not None:
-        raise OwnershipFailure()
-    token._ownership_diagnostic_used = True
+    with _registry_lock:
+        if getattr(token, "_ownership_diagnostic_used", False) or getattr(_local, "diagnostic", None) is not None:
+            raise OwnershipFailure()
+        token._ownership_diagnostic_used = True
     _local.diagnostic = token
     try:
         yield
+        if getattr(token,"_ownership_diagnostic_failed",False):
+            raise OwnershipFailure()
+    except BaseException:
+        token._ownership_diagnostic_failed = True
+        raise
     finally:
         _local.diagnostic = None
+
+
+def _end_diagnostic_attempt(root):
+    token = getattr(_local,"diagnostic",None)
+    if token is not None and token.guard.root == Path(root).resolve():
+        token._ownership_diagnostic_failed = True
 
 
 def _permit(root, role, guard):
     token = getattr(_local, "diagnostic", None)
     if token is not None:
-        if (token.guard is not guard or str(token.guard.root) != str(root)
+        if (getattr(token,"_ownership_diagnostic_failed",False)
+                or token.guard is not guard or str(token.guard.root) != str(root)
                 or role not in {"guard-proof", "memory-reference"}):
             raise OwnershipFailure()
     elif held(root):
@@ -229,6 +243,7 @@ class Owner:
         self._thread = threading.get_ident()
         self._entry_lock = threading.Lock()
         self._entered = False
+        self._read_ended = False
         self._rollback_attempted = False
         self._close_attempted = False
         self._validated = False
@@ -245,10 +260,20 @@ class Owner:
             raise ValueError("Only fresh owners may create a database.")
         if archive != (role == "archive-rejection") or (guard is None and not archive):
             raise ValueError("SQLite owner requires its bound guard or offline archive role.")
+        if path is not None and role != "backup-destination":
+            raise ValueError("Only a backup destination may override the database path.")
+        if role == "backup-destination" and path is None:
+            raise ValueError("A backup destination requires its fresh explicit path.")
+        if guard is not None and Path(guard.root).resolve() != self.root:
+            raise ValueError("The SQLite owner and guard must have the same resolved root.")
+        if type(validate) is not bool or (not validate and role not in {"initialize","memory-reference","backup-destination","archive-rejection"}):
+            raise ValueError("Existing authority owners require binding and schema validation.")
 
     def _check(self):
-        if not self._active or self._thread != threading.get_ident():
+        if not self._active or self._thread != threading.get_ident() or self._read_ended:
             raise RuntimeError("SQLite scope has ended or belongs to another thread.")
+        if self._uncertain:
+            raise self._cleanup_error or OwnershipFailure()
         _permit(self.root, self.role, self.guard)
 
     @contextmanager
@@ -261,6 +286,9 @@ class Owner:
         self.__cursors.append(cursor)
         try:
             yield cursor
+        except BaseException:
+            _end_diagnostic_attempt(self.root)
+            raise
         finally:
             original = sys.exception()
             try:
@@ -297,8 +325,8 @@ class Owner:
                     raise ValueError("End the current SQLite scope before opening another business or barrier owner.")
             _event(self.root, self.role, "before-open")
             try:
-                if self.role == "backup-destination" and self.path.exists():
-                    raise ValueError("Backup destination must be fresh.")
+                if self.initialize and not self.memory and self.path.exists():
+                    raise ValueError("A newly initialized database must be fresh.")
                 if self.memory:
                     self.__connection = sqlite3.connect(":memory:", timeout=10)
                 else:
@@ -329,6 +357,7 @@ class Owner:
                 self._control("PRAGMA synchronous=FULL")
             return self
         except BaseException:
+            _end_diagnostic_attempt(self.root)
             self.__exit__(*sys.exc_info())
             raise
 
@@ -384,7 +413,11 @@ class Owner:
                 or _schema_allowed(self.role,sql,script=False)):
             raise ValueError("Unregistered mutation statement.")
         with self._cursor() as cursor:
-            cursor.execute(sql, parameters)
+            try:
+                cursor.execute(sql, parameters)
+            except BaseException as failure:
+                hold(self.root,self,failure)
+                raise
             result = Values(rowcount=cursor.rowcount)
         return result
 
@@ -395,6 +428,8 @@ class Owner:
         with self._cursor() as cursor:
             cursor.execute(sql, parameters)
             names = [column[0] for column in cursor.description]
+            if len({name.casefold() for name in names}) != len(names):
+                raise ReadBounds("Ambiguous SQLite projection names are not permitted.")
             checks = []
             for name in names:
                 kinds, maximum, nullable = _field(name, table)
@@ -428,16 +463,24 @@ class Owner:
         if not _schema_allowed(self.role, sql, script=True):
             raise ValueError("This owner accepts only its exact reviewed schema script.")
         with self._cursor() as cursor:
-            cursor.executescript(sql)
+            try:
+                cursor.executescript(sql)
+            except BaseException as failure:
+                hold(self.root,self,failure)
+                raise
         return Values()
 
     def commit(self):
         self._check()
         if self.readonly:
             raise ValueError("Read scopes do not commit writes.")
-        self.__connection.commit()
-        self._rollback_attempted = False
-        _event(self.root,self.role,"committed")
+        try:
+            self.__connection.commit()
+            self._rollback_attempted = False
+            _event(self.root,self.role,"committed")
+        except BaseException as failure:
+            hold(self.root,self,failure)
+            raise
 
     def rollback(self):
         # Cleanup must still run after a hold; do not consult _permit here.
@@ -446,11 +489,13 @@ class Owner:
         if self._rollback_attempted:
             raise OwnershipFailure()
         self._rollback_attempted = True
+        if self.readonly:
+            self._read_ended = True
         try:
             self.__connection.rollback()
             _event(self.root,self.role,"rolled-back")
-        except BaseException:
-            hold(self.root,self)
+        except BaseException as failure:
+            hold(self.root,self,failure)
             raise
 
     def backup_to(self, destination):
@@ -458,12 +503,19 @@ class Owner:
         if (self.role != "backup-source" or destination.role != "backup-destination"
                 or self.root != destination.root or self.guard is not destination.guard):
             raise ValueError("Backup requires distinct owned offline source and destination.")
-        self.__connection.backup(destination.__connection)
+        try:
+            self.__connection.backup(destination.__connection)
+        except BaseException as failure:
+            hold(self.root,self,failure)
+            hold(destination.root,destination,failure)
+            raise
 
     def __exit__(self, kind, error, tb):
         if self._thread != threading.get_ident() or not self._entered:
             raise RuntimeError("Only the owning thread may end an entered SQLite scope.")
         original = error
+        if error is not None:
+            _end_diagnostic_attempt(self.root)
         if original is None:
             try:
                 if self._uncertain:
@@ -525,17 +577,20 @@ class Mutation:
         self.__owner, self.operation, self.keep = owner, operation, keep
 
     def execute(self, sql, parameters=()):
+        self.__owner._check()
         if not sql.startswith("SELECT "):
             self.operation.effect()
         return self.__owner.execute(sql,parameters)
 
     def commit(self):
+        self.__owner._check()
         self.operation.check_publication()
         if not self.keep:
             self.operation.complete_sql(self.__owner)
         self.__owner.commit()
 
     def complete(self, token, *, authority=None):
+        self.__owner._check()
         token.complete_sql(self.__owner,authority=authority)
 
     def effect(self):

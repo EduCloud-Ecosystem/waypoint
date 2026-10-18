@@ -120,12 +120,15 @@ def fault(role, stage, *, after=False, secondary=False):
             if stage=="query" and sql.startswith("SELECT payload FROM projects"):
                 raise OSError("primary query failure")
             if stage=="setup" and sql=="PRAGMA foreign_keys=ON":raise OSError("primary setup failure")
+            if stage=="diagnostic-query" and sql=="SELECT authority_id,sequence FROM operation_authority":raise OSError("diagnostic query failure")
+            if stage=="write" and sql=="UPDATE users SET active=0 WHERE subject=?":
+                self.db.execute(sql,*args);raise OSError("write acknowledgement failure")
             return self.db.execute(sql,*args)
         def close(self):
             self.close_calls+=1;self.db.close()
             if stage=="cursor-close" or secondary:raise OSError("cursor close failure")
     class Connection:
-        def __init__(self,db,selected):self.db=db;self.selected=selected;self.close_calls=0;self.rollback_calls=0;self.cursors=[]
+        def __init__(self,db,selected):self.db=db;self.selected=selected;self.close_calls=0;self.rollback_calls=0;self.commit_calls=0;self.cursors=[]
         def __getattr__(self,key):return getattr(self.db,key)
         def cursor(self):
             if not self.selected:return self.db.cursor()
@@ -137,8 +140,11 @@ def fault(role, stage, *, after=False, secondary=False):
             self.rollback_calls+=1
             if self.selected and stage=="rollback":raise OSError("rollback failure")
             return self.db.rollback()
-        def backup(self,target):return self.db.backup(target.db)
+        def backup(self,target):
+            self.db.backup(target.db)
+            if self.selected and stage=="backup":raise OSError("backup acknowledgement failure")
         def commit(self):
+            self.commit_calls+=1
             if self.selected and stage=="commit":
                 if after:self.db.commit()
                 raise OSError("commit failure")
@@ -249,11 +255,11 @@ class OwnershipTests(Fixture):
         # the deliberately failed barrier's required process hold.
         with fresh() as c:
             token=c.store.guard.begin("mutation")
-            with c.store.guard.locked(),o.diagnostic(token):
-                with self.assertRaises(o.OwnershipFailure):
-                    with c.store.write():pass
+            with self.assertRaises(o.OwnershipFailure),c.store.guard.locked(),o.diagnostic(token):
                 with o.Owner(c.root,"guard-proof",guard=c.store.guard,readonly=True) as db:
                     with self.assertRaises(ValueError):db.execute("SELECT payload FROM projects")
+                with self.assertRaises(o.OwnershipFailure):
+                    with c.store.write():pass
             with c.store.guard.locked():
                 with self.assertRaises(o.OwnershipFailure):
                     with o.diagnostic(token):pass
@@ -332,11 +338,98 @@ class OwnershipTests(Fixture):
         with self.raw() as db:self.assertEqual(db.execute("SELECT active FROM users WHERE subject='alice'").fetchone()[0],1)
         self.assertEqual((self.root/g.FILE).read_bytes(),before)
         with fresh() as c:
-            for role in ("backup-destination","initialize"):
-                with o.Owner(c.root,role,guard=c.store.guard,path=c.root.parent/(role+".sqlite3"),initialize=True,validate=False) as db:
-                    with self.assertRaises(ValueError):db.executescript(attack)
-                    with self.assertRaises(ValueError):db.executescript("CREATE TABLE injected(value)")
-                    with self.assertRaises(ValueError):db.execute("CREATE TABLE injected(value)")
+            with o.Owner(c.root,"backup-destination",guard=c.store.guard,path=c.root.parent/"backup.sqlite3",initialize=True,validate=False) as db:
+                with self.assertRaises(ValueError):db.executescript(attack)
+                with self.assertRaises(ValueError):db.executescript("CREATE TABLE injected(value)")
+                with self.assertRaises(ValueError):db.execute("CREATE TABLE injected(value)")
+
+    def test_read_rollback_ends_the_validated_snapshot_capability(self):
+        with self.store.read() as db:
+            db.rollback()
+            with self.raw() as raw:raw.execute("PRAGMA user_version=0");raw.commit()
+            with self.assertRaises(RuntimeError):db.execute("SELECT subject FROM users")
+            with self.assertRaises(RuntimeError):db.execute("PRAGMA user_version")
+        self.assertFalse(o.held(self.root))
+        with self.assertRaises(f.InvalidProfile):self.store.projects("alice")
+
+    def test_existing_authority_cannot_disable_validation(self):
+        with self.raw() as raw:raw.execute("PRAGMA user_version=0");raw.commit()
+        for role in ("online-read","guard-proof","discovery","mutation","barrier","started-receipt","dispatch-reservation","offline-freeze","backup-source"):
+            with self.subTest(role=role),patch.object(o.sqlite3,"connect",side_effect=AssertionError("invalid owner opened")):
+                with self.assertRaises(ValueError):
+                    o.Owner(self.root,role,guard=self.store.guard,readonly=role in {"online-read","guard-proof","discovery","backup-source"},validate=False)
+
+    def test_owner_guard_and_database_path_are_bound_to_resolved_root(self):
+        import shutil
+        clone=self.root.parent/"cloned-authority";shutil.copytree(self.root,clone)
+        with patch.object(o.sqlite3,"connect",side_effect=AssertionError("wrong authority opened")):
+            with self.assertRaises(ValueError):o.Owner(clone,"online-read",guard=self.store.guard,readonly=True)
+            with self.assertRaises(ValueError):o.Owner(self.root,"online-read",guard=self.store.guard,path=clone/"workspace.sqlite3",readonly=True)
+            with self.assertRaises(ValueError):o.Owner(self.root,"memory-reference",guard=self.store.guard,path=clone/"workspace.sqlite3",memory=True,initialize=True)
+        self.assertEqual(self.store.projects("alice"),[self.project]);self.assertFalse(o.held(self.root))
+
+    def test_caught_diagnostic_owner_failure_ends_the_whole_attempt(self):
+        for stage in ("open","diagnostic-query","cursor-close"):
+            with self.subTest(stage=stage),fresh() as c:
+                token=c.store.guard.begin("mutation");o.hold(c.root)
+                with fault("guard-proof",stage) as (_,events):
+                    with self.assertRaises(o.OwnershipFailure):
+                        with o.diagnostic(token):
+                            try:
+                                with o.Owner(c.root,"guard-proof",guard=c.store.guard,readonly=True):pass
+                            except OSError:pass
+                            with patch.object(o.sqlite3,"connect",side_effect=AssertionError("diagnostic retried")):
+                                with self.assertRaises(o.OwnershipFailure):
+                                    with o.Owner(c.root,"guard-proof",guard=c.store.guard,readonly=True):pass
+                self.assertEqual(events.count(("guard-proof","before-open")),1)
+                self.assertTrue(token._ownership_diagnostic_failed);token.release()
+
+    def test_caught_write_or_commit_acknowledgement_failure_cannot_succeed(self):
+        for stage in ("write","commit"):
+            with self.subTest(stage=stage),fresh() as c:
+                with fault("mutation",stage,after=True) as (connections,_):
+                    with self.assertRaisesRegex(OSError,"write acknowledgement|commit failure"):
+                        with c.store.transaction() as db:
+                            try:
+                                db.execute("UPDATE users SET active=0 WHERE subject=?",("alice",))
+                                db.commit()
+                            except OSError:pass
+                selected=[x for x in connections if x.selected];self.assertEqual(len(selected),1)
+                self.assertEqual(selected[0].commit_calls,0 if stage=="write" else 1)
+                self.assertTrue(o.held(c.root));self.assertEqual(c.store.operation_status()["state"],"paused")
+                with c.raw() as raw:self.assertEqual(raw.execute("SELECT active FROM users WHERE subject='alice'").fetchone()[0],1 if stage=="write" else 0)
+                self.assertTrue(any(x['phase']=='uncertain' for x in c.store.guard.load()['operations'].values()))
+
+    def test_caught_backup_acknowledgement_failure_keeps_both_owners_failed(self):
+        target=self.root.parent/"partial-backup.sqlite3"
+        with fault("backup-source","backup"):
+            with self.assertRaisesRegex(OSError,"backup acknowledgement"):
+                with self.store.write(role="offline-freeze") as freeze:
+                    freeze.execute("BEGIN IMMEDIATE")
+                    with o.Owner(self.root,"backup-source",guard=self.store.guard,readonly=True) as source:
+                        with o.Owner(self.root,"backup-destination",guard=self.store.guard,path=target,initialize=True,validate=False) as destination:
+                            try:source.backup_to(destination)
+                            except OSError:pass
+        self.assertTrue(o.held(self.root));self.assertTrue(target.exists())
+
+    def test_duplicate_projection_names_refuse_before_payload_fetch(self):
+        native=sqlite3.connect;fetched=[]
+        attack="SELECT subject, zeroblob(1000000) AS subject FROM users"
+        class Cursor:
+            def __init__(self,db):self.db=db;self.sql=None
+            def __getattr__(self,key):return getattr(self.db,key)
+            def execute(self,sql,*args):self.sql=sql;return self.db.execute(sql,*args)
+            def fetchmany(self,*args):
+                if self.sql==attack:fetched.append(True)
+                return self.db.fetchmany(*args)
+        class Connection:
+            def __init__(self,db):self.db=db
+            def __getattr__(self,key):return getattr(self.db,key)
+            def cursor(self):return Cursor(self.db.cursor())
+        with patch.object(o.sqlite3,"connect",side_effect=lambda *args,**kw:Connection(native(*args,**kw))):
+            with self.store.read() as db:
+                with self.assertRaisesRegex(o.ReadBounds,"projection"):db.execute(attack)
+        self.assertEqual(fetched,[]);self.assertFalse(o.held(self.root))
 
     def test_primary_spawn_and_offline_errors_survive_rollback_failure(self):
         run=self.submit();run=self.store.claim()
@@ -421,6 +514,8 @@ class OwnershipTests(Fixture):
         with patch.object(o,"_event",side_effect=lambda root,role,b:opened.append(role) if b=="opened" else None):
             token.fail(error=RuntimeError("original"))
             count=len(opened)
+            with self.assertRaises(o.OwnershipFailure):
+                with o.diagnostic(token):pass
             token.fail(error=RuntimeError("repeat"))
         self.assertGreater(count,0);self.assertEqual(len(opened),count)
         self.assertEqual(set(opened),{"guard-proof","memory-reference"})
