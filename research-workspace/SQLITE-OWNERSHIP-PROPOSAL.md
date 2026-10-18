@@ -1,8 +1,9 @@
 # SQLite connection ownership proposal
 
-**Decision requested: approve a fresh opt-in connection ownership and read-scope
-increment. Runtime implementation remains NOT RUN until coordinating design
-review. Checkpoint gates and WAL or whole-store quotas remain NO-GO.**
+**Design approved for a fresh opt-in connection ownership and read-scope
+increment, subject to the five explicit clarifications below. This revision is
+the pre-code boundary; runtime implementation and qualification remain NOT RUN.
+Checkpoint gates and WAL or whole-store quotas remain NO-GO.**
 
 The new profile would give every application SQLite connection and cursor a
 named owner and a definite success boundary. Ordinary reads would open an
@@ -11,11 +12,14 @@ values only after cleanup succeeds. Mutation and durability-barrier owners would
 retain their existing authority ordering. Offline backup would have a separate
 owner that preserves its frozen consistency boundary.
 
-The inspected base is accepted PR #44,
-`2317eac63a0bad0d691457b0cde2de14bf6bcc7f`. Its application modules are identical
+The inspected base is accepted PR #45,
+`d84311621653e2d8e853092cae7c90d0eea02098`. Its application modules are identical
 to accepted PR #43, `5f2b21f1535702f9c18592b15e61c4c347d93558`.
 This proposal changes no runtime, tests, workflow, broker pin or accepted state.
-The coordinating chat owns standard Docker CI broker adoption separately.
+The standard Docker broker pin is the accepted #45 value; the optional source
+pin remains unchanged. No workflow or pin edits belong to this increment.
+The original reviewed proposal and provenance are retained byte-for-byte under
+[reviewed-8ed8879](design/sqlite-ownership/reviewed-8ed8879/provenance.json).
 All four source environments remain disabled. The original failed replay and
 unresolved cleanup gate remain documented in
 [the retained boundary](FINAL-DISPATCH.md); this proposal does not resolve them.
@@ -126,8 +130,10 @@ Validate types and encoded lengths inside the same snapshot before fetching
 payload columns, following the existing export `_rows` pattern. Fetch at most
 the declared count plus one and refuse overflow before returning partial data.
 Validate and copy to ordinary Python values; JSON parsing does not keep a live
-cursor. Single-row queries check uniqueness rather than silently accepting a
-second row. Scalar counts have integer/range checks.
+cursor. Uniqueness checks apply only to keyed lookups. Bounded selection is a
+different operation: a claim with two valid queued runs must select and claim
+one, not reject the queue because more than one row exists. Scalar counts have
+integer/range checks.
 
 | Query family | Result ceiling and field checks |
 | --- | --- |
@@ -226,8 +232,10 @@ application lock as evidence of database quiescence or reusable storage.
 | Dispatch reservation cleanup fails after spawn | Retain the child ownership and accounting uncertainty; unwind locks and invoke existing bounded observer cleanup. Never launch again or claim the child did not start. |
 | Offline source/destination backup or close fails | No success report or manifest. Preserve partial output and original source; no deletion, adoption, retry or provider continuation justified by the failure. |
 
-The proposed ownership hold is process-local and shared by Store instances for
-the same authority root. It refuses further normal readers and writers,
+The proposed ownership hold is process-local and shared by all Store instances
+and threads for the same resolved authority root. Other roots remain independent.
+Constructors, status calls and automatic worker/server restarts never clear the
+hold. It refuses further normal readers and writers,
 including safety calls, before opening another SQLite connection. This is an
 explicit availability tradeoff after an unconfirmed ownership boundary, not a
 quota gate. A status endpoint may report the in-memory held reason without
@@ -237,10 +245,18 @@ caller, pool or retry loop.
 One narrow diagnostic exception preserves the existing failure protocol: if a
 failed mutation already has an operation token, its original-role uncertainty
 note may attempt the required fresh guard-proof reads once under the same guard.
+The exception is consumed once per existing token, not once per nested owner or
+failed helper. Consumption precedes the first diagnostic open and cannot reset.
 It cannot open a business writer, create a new intent, run a barrier or borrow a
 safety token. A diagnostic owner failure terminates that one attempt; it cannot
 recursively initiate another note. Read/open failures without a token do not
-invent a durable mutation merely to log an error.
+invent a durable mutation merely to log an error. Untokened startup or barrier
+failure stays held without inventing a note.
+
+Clean full-cap safety controls remain available. After an ownership failure,
+revocation and settlement must visibly refuse without claiming that access was
+removed or debt discharged. A process hold is neither a successful safety effect
+nor a checkpoint, reader-drain or storage-capacity admission policy.
 
 Application-lock cleanup is still attempted; an unlock is not a claim that an
 uncertain database handle closed. Other processes do not inherit this in-memory
@@ -332,15 +348,19 @@ or source-candidate promotion is included. Raw SQLite SHM files can still occur.
 
 ## Review decision and implementation boundary
 
-Coordinating review must explicitly accept the proposed v4 binding, rejection-only
-legacy discovery boundary, process-local ownership hold and its single diagnostic
-exception, bounded result inventory, and separate offline owner. Those choices
-must not be inferred from successful local tests.
+Coordinating and research review accepted the v4 binding, rejection-only legacy
+discovery boundary, process-local ownership hold including safety refusal, and
+the single original-role diagnostic exception at proposal SHA-256
+`21f68b9c546136d0ccf2df96d6f69d84909dd2ebdacb32e5d9beba5e562c1012`.
+This clarification also makes explicit that v0–v3 retain their existing behavior,
+including memory-reference helpers; v4 helpers must be separately dispatched.
+The proposed canonical policy hash is unchanged.
 
-After approval, implement the owner and typed adapters, convert v4 call sites,
+After this clarification and refreshed provenance are committed, implement the
+owner and typed adapters, convert v4 call sites,
 then qualify the full inventory and both original #43 regressions. Obtain
-independent review and exact-head CI before conditional merge. Workflow/pin
-adoption remains the coordinating chat's separate work. Until that approval,
+independent review, exact-head CI and coordinating CLEAR before owner merge.
+Workflow/pin adoption remains separate coordinating work. At this pre-code boundary,
 this branch contains only the proposal, candidate policy, source inventory and
 provenance;
 accepted #43/#44 runtime and protected worktrees remain untouched.

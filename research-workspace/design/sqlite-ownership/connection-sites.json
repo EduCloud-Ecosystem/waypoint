@@ -1,5 +1,5 @@
 {
-  "base_commit": "2317eac63a0bad0d691457b0cde2de14bf6bcc7f",
+  "base_commit": "d84311621653e2d8e853092cae7c90d0eea02098",
   "application_tree_matches_accepted_pr43": true,
   "scope": "Production connection creation/factory/backup call sites; excludes frozen fixtures and tests. Nested closures and call sites are locations, not simultaneously live connection counts.",
   "sites": [

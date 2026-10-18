@@ -1,12 +1,13 @@
 {
+  "accepted45_merge_commit": "1f97f91fd2762d1489a97ee625085c2a253e8163",
   "accepted_pr43_commit": "5f2b21f1535702f9c18592b15e61c4c347d93558",
   "application_tree_identical_to_accepted_pr43": true,
   "artifact_sha256": {
-    "research-workspace/SQLITE-OWNERSHIP-PROPOSAL.md": "21f68b9c546136d0ccf2df96d6f69d84909dd2ebdacb32e5d9beba5e562c1012",
-    "research-workspace/design/sqlite-ownership/connection-sites.json": "a35a6552b2da1046a8d742658bad9237ec519a867309a8832795f89398c46ee2",
+    "research-workspace/SQLITE-OWNERSHIP-PROPOSAL.md": "5b03af41faa8b22830e9af792f185b0716867fd4918075389c2732dc1264ebb2",
+    "research-workspace/design/sqlite-ownership/connection-sites.json": "212ba9cf958300f0663027e7b82b4c0821fe7abbf0670a5c5ddd03ad1ecc2315",
     "research-workspace/design/sqlite-ownership/proposed-profile.json": "053a1846ea2b4d57054565c122181f4a33f38b5ccb478315dc7720241b394f8c"
   },
-  "base_commit": "2317eac63a0bad0d691457b0cde2de14bf6bcc7f",
+  "base_commit": "d84311621653e2d8e853092cae7c90d0eea02098",
   "boundaries": {
     "accepted43_worktree": "UNTOUCHED",
     "available_capacity": "UNKNOWN",
@@ -15,9 +16,16 @@
     "original_cleanup_gate": "UNRESOLVED_UNCHANGED",
     "quota_enforced": false,
     "source_environments": "DISABLED_UNCHANGED",
-    "workflow_and_pins": "UNCHANGED_SEPARATE_COORDINATING_WORK"
+    "workflow_and_pins": "MATCH_ACCEPTED45_UNCHANGED"
   },
   "canonical_proposed_profile_sha256": "ed235fd6d6bb3c10632c0c5dc2bb20c8d3cb9076ebb157c71c1cc9c8072a656e",
+  "clarifications": [
+    "Hold shared by all Store instances and threads on the same resolved root; other roots independent; constructor/status/automatic restart never clears.",
+    "Diagnostic exception consumed once per existing token before first diagnostic open; no new intent, barrier, business SQL or recursion; untokened startup/barrier failure stays held.",
+    "Uniqueness only for keyed lookups; two queued runs permit one bounded claim.",
+    "Versions 0 through 3 retain existing behavior including memory-reference helpers.",
+    "Clean full-cap safety remains available; ownership-failed revocation and settlement visibly refuse without claiming safety effects."
+  ],
   "format": "waypoint-sqlite-ownership-design-provenance-v1",
   "frozen_archive_sha256": {
     "research-workspace/qualification/capacity/pinned-v1.tar.gz": "4da52b3c1889968d15ac12670a9bc9fe89379f15c9188ee7ef6d43ceed6f6333",
@@ -28,6 +36,7 @@
     "production_open_call_sites": 42,
     "simultaneous_connection_claim": false
   },
+  "merge_gate": "INDEPENDENT_REVIEW_AND_EXACT_HEAD_CI_AND_COORDINATING_CLEAR",
   "preserved_base_files": [
     {
       "base_git_blob": "fb02f32606e82d77147edf6ab5391f0f927a822a",
@@ -55,9 +64,9 @@
       "sha256": "66a6953454a46990619273c4928664757264b1470787ee594f74631e514649fd"
     },
     {
-      "base_git_blob": "0fce9cc8cd354006d41f3e855ce8afd57603c9ca",
+      "base_git_blob": "e02114b099305494a4d77394d7daca65fdb0af9c",
       "path": ".github/workflows/research-workspace.yml",
-      "sha256": "e88baaa2c634e018ff5cb614e97c8e2158c755e32b97f7594d29d138fb58abe0"
+      "sha256": "666199a79041069ce8a926edadd1ca564ba21df20c1d26f67b3569ab9a47a8db"
     },
     {
       "base_git_blob": "0a6cfafc17b354eb320aaf84c4ba456da74f157d",
@@ -73,6 +82,11 @@
       "base_git_blob": "9c11ca419ff909fd567ee8b741fa295bac2d1182",
       "path": ".github/workflows/workspace-recovery.yml",
       "sha256": "870bd50a227d1ef79836b02444cf2bddee2b779a366cb1ae38739dd6f3349cd8"
+    },
+    {
+      "base_git_blob": "1eb1885001d10d6427ac15ec982c3d599c1de655",
+      "path": "research-workspace/CI-BROKER-ADOPTION.md",
+      "sha256": "10f0a09c433950c1f2bdf367cce52bf0d3c378f78b752141f578af23ca0f757e"
     },
     {
       "base_git_blob": "c9e4c8f2fea96ae3bb05e1a8825081096b17b29e",
@@ -2040,7 +2054,15 @@
       "sha256": "f1bb0fb44883adb26ce17ed9024422f48db266675cc4bfe6c2d080da5b45a34f"
     }
   ],
+  "reviewed_artifact_sha256": {
+    "research-workspace/design/sqlite-ownership/reviewed-8ed8879/SQLITE-OWNERSHIP-PROPOSAL.md": "21f68b9c546136d0ccf2df96d6f69d84909dd2ebdacb32e5d9beba5e562c1012",
+    "research-workspace/design/sqlite-ownership/reviewed-8ed8879/connection-sites.json": "a35a6552b2da1046a8d742658bad9237ec519a867309a8832795f89398c46ee2",
+    "research-workspace/design/sqlite-ownership/reviewed-8ed8879/proposed-profile.json": "053a1846ea2b4d57054565c122181f4a33f38b5ccb478315dc7720241b394f8c",
+    "research-workspace/design/sqlite-ownership/reviewed-8ed8879/provenance.json": "ee80a9d50987fdc0fd2df8fac2ba8c88841735fc300891f16619385fef2c71d8"
+  },
+  "reviewed_proposal_commit": "8ed88799deba887f11c190381f3101bb8acb3e00",
+  "reviewed_proposal_sha256": "21f68b9c546136d0ccf2df96d6f69d84909dd2ebdacb32e5d9beba5e562c1012",
   "runtime_implementation": "NOT_RUN",
   "runtime_qualification": "NOT_RUN",
-  "status": "DESIGN_REVIEW_REQUIRED"
+  "status": "DESIGN_APPROVED_PRE_CODE"
 }
