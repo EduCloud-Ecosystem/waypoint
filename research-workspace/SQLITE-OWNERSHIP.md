@@ -119,6 +119,11 @@ Preserve the original state and failure evidence for operator investigation.
 The first phase retains the source freeze while separately owned source and
 destination connections perform SQLite backup. Its guard, freeze, source,
 destination and memory-reference owners unwind before broker/provider waits.
+Both backup owners require the same validated, live `BEGIN IMMEDIATE` parent
+when they open. Copying checks that native reservation before and after backup.
+Reservation scopes reject deferred starts and commits; rollback ends their
+capability. A parent cannot roll back or exit while its child owners remain
+active. These refusals preserve an existing reservation until children unwind.
 The second phase reopens the source, compares its fingerprint, and prepares the
 manifest. SQL cleanup must succeed before the final manifest is written; the
 operation guard and lifecycle lock remain held through publication.

@@ -53,6 +53,11 @@ def main():
         (output/"candidate-source.tar.gz").write_bytes(gzip.compress(buffer.getvalue(),mtime=0))
         baseline=run(captured,["test_sqlite_ownership"],output/"controls.log")
         variants=[
+          ("backup-without-freeze","research_workspace/sqlite_ownership.py",[("                freezes[0]._require_freeze()","                pass  # deliberately trust the role alone")],"test_backup_admission_requires_live_immediate_parent"),
+          ("deferred-freeze","research_workspace/sqlite_ownership.py",[("if self.role in {\"offline-freeze\",\"dispatch-reservation\"} and normalized == \"BEGIN\":","if False:")],"test_backup_admission_requires_live_immediate_parent"),
+          ("release-parent-before-children","research_workspace/sqlite_ownership.py",[("        if self._dependents():\n            raise RuntimeError(\"End child SQLite scopes before releasing their parent reservation.\")\n        if self._rollback_attempted:","        if self._rollback_attempted:")],"test_backup_parent_cannot_release_children_and_blocks_other_process"),
+          ("skip-pre-copy-reservation","research_workspace/sqlite_ownership.py",[("        self._freeze_owner._require_freeze()\n        try:","        try:")],"test_backup_rechecks_native_reservation_before_and_after_copy"),
+          ("skip-post-copy-reservation","research_workspace/sqlite_ownership.py",[("            self._freeze_owner._require_freeze()\n        except BaseException as failure:","        except BaseException as failure:")],"test_backup_rechecks_native_reservation_before_and_after_copy"),
           ("reader-after-rollback","research_workspace/sqlite_ownership.py",[(" or self._read_ended","")],"test_read_rollback_ends_the_validated_snapshot_capability"),
           ("skipped-validation","research_workspace/sqlite_ownership.py",[("not validate and role not in","False and role not in")],"test_existing_authority_cannot_disable_validation"),
           ("wrong-root-guard","research_workspace/sqlite_ownership.py",[("if guard is not None and Path(guard.root).resolve() != self.root:","if False:")],"test_owner_guard_and_database_path_are_bound_to_resolved_root"),

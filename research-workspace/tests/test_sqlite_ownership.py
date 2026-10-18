@@ -338,10 +338,12 @@ class OwnershipTests(Fixture):
         with self.raw() as db:self.assertEqual(db.execute("SELECT active FROM users WHERE subject='alice'").fetchone()[0],1)
         self.assertEqual((self.root/g.FILE).read_bytes(),before)
         with fresh() as c:
-            with o.Owner(c.root,"backup-destination",guard=c.store.guard,path=c.root.parent/"backup.sqlite3",initialize=True,validate=False) as db:
-                with self.assertRaises(ValueError):db.executescript(attack)
-                with self.assertRaises(ValueError):db.executescript("CREATE TABLE injected(value)")
-                with self.assertRaises(ValueError):db.execute("CREATE TABLE injected(value)")
+            with c.store.write(role="offline-freeze") as freeze:
+                freeze.execute("BEGIN IMMEDIATE")
+                with o.Owner(c.root,"backup-destination",guard=c.store.guard,path=c.root.parent/"backup.sqlite3",initialize=True,validate=False) as db:
+                    with self.assertRaises(ValueError):db.executescript(attack)
+                    with self.assertRaises(ValueError):db.executescript("CREATE TABLE injected(value)")
+                    with self.assertRaises(ValueError):db.execute("CREATE TABLE injected(value)")
 
     def test_read_rollback_ends_the_validated_snapshot_capability(self):
         with self.store.read() as db:
@@ -411,6 +413,70 @@ class OwnershipTests(Fixture):
                             try:source.backup_to(destination)
                             except OSError:pass
         self.assertTrue(o.held(self.root));self.assertTrue(target.exists())
+
+    def test_backup_admission_requires_live_immediate_parent(self):
+        for boundary in ("standalone", "before-begin", "deferred-begin", "after-rollback"):
+            with self.subTest(boundary=boundary),fresh() as c:
+                def refused():
+                    target=c.root.parent/"unadmitted.sqlite3"
+                    for role in ("backup-source","backup-destination"):
+                        kwargs={"readonly":True} if role=="backup-source" else {"path":target,"initialize":True,"validate":False}
+                        with patch.object(o.sqlite3,"connect",side_effect=AssertionError("unreserved backup opened")):
+                            with self.assertRaises((ValueError,RuntimeError)):
+                                with o.Owner(c.root,role,guard=c.store.guard,**kwargs):pass
+                    self.assertFalse(target.exists())
+                if boundary=="standalone":refused()
+                else:
+                    with c.store.write(role="offline-freeze") as freeze:
+                        if boundary=="deferred-begin":
+                            with self.assertRaises(ValueError):freeze.execute("BEGIN")
+                        elif boundary=="after-rollback":
+                            freeze.execute("BEGIN IMMEDIATE");freeze.rollback()
+                        refused()
+                self.assertFalse(o.held(c.root));self.assertEqual(c.store.guard.lease.depth,0)
+
+    def test_backup_parent_cannot_release_children_and_blocks_other_process(self):
+        code="import sqlite3,sys; db=sqlite3.connect(sys.argv[1],timeout=.1);\ntry:\n db.execute('BEGIN IMMEDIATE');print('reservation-acquired')\nexcept sqlite3.OperationalError: print('reservation-blocked')\nfinally: db.rollback();db.close()"
+        def contention():
+            child=subprocess.run([sys.executable,"-c",code,str(self.root/"workspace.sqlite3")],capture_output=True,text=True,timeout=5)
+            self.assertEqual(child.returncode,0,child.stderr);return child.stdout.strip()
+        self.assertEqual(contention(),"reservation-acquired")
+        target=self.root.parent/"reserved-backup.sqlite3"
+        with self.store.write(role="offline-freeze") as freeze:
+            freeze.execute("BEGIN IMMEDIATE")
+            with self.assertRaises(ValueError):freeze.commit()
+            with o.Owner(self.root,"backup-source",guard=self.store.guard,readonly=True) as source:
+                with o.Owner(self.root,"backup-destination",guard=self.store.guard,path=target,initialize=True,validate=False) as destination:
+                    for release in (freeze.rollback,lambda:freeze.__exit__(None,None,None),lambda:source.__exit__(None,None,None)):
+                        with self.assertRaises(RuntimeError):release()
+                        self.assertEqual(contention(),"reservation-blocked")
+                    source.backup_to(destination)
+                    self.assertEqual(contention(),"reservation-blocked")
+        self.assertEqual(contention(),"reservation-acquired")
+        with closing(sqlite3.connect(target)) as db:
+            self.assertEqual(db.execute("SELECT active FROM users WHERE subject='alice'").fetchone()[0],1)
+        self.assertFalse(o.held(self.root));self.assertEqual(self.store.guard.lease.depth,0)
+
+    def test_backup_rechecks_native_reservation_before_and_after_copy(self):
+        for boundary in ("before-copy","after-copy"):
+            with self.subTest(boundary=boundary),fresh() as c:
+                target=c.root.parent/"interrupted-backup.sqlite3";copied=[]
+                with fault("offline-freeze","observe") as (connections,_):
+                    with self.assertRaisesRegex(ValueError,"reservation has ended"):
+                        with c.store.write(role="offline-freeze") as freeze:
+                            freeze.execute("BEGIN IMMEDIATE")
+                            native_freeze=next(connection.db for connection in connections if connection.selected)
+                            with o.Owner(c.root,"backup-source",guard=c.store.guard,readonly=True) as source:
+                                with o.Owner(c.root,"backup-destination",guard=c.store.guard,path=target,initialize=True,validate=False) as destination:
+                                    connection_type=type(connections[0]);original=connection_type.backup
+                                    def copy(connection,target):
+                                        original(connection,target);copied.append(True)
+                                        if boundary=="after-copy":native_freeze.rollback()
+                                    if boundary=="before-copy":native_freeze.rollback()
+                                    with patch.object(connection_type,"backup",copy):source.backup_to(destination)
+                self.assertEqual(copied,[] if boundary=="before-copy" else [True])
+                self.assertEqual(o.held(c.root),boundary=="after-copy")
+                self.assertEqual(target.stat().st_size==0,boundary=="before-copy")
 
     def test_duplicate_projection_names_refuse_before_payload_fetch(self):
         native=sqlite3.connect;fetched=[]
