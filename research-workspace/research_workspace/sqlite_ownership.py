@@ -140,6 +140,29 @@ _PRAGMAS = {"PRAGMA application_id", "PRAGMA user_version", "PRAGMA journal_mode
             "PRAGMA synchronous", "PRAGMA foreign_keys", "PRAGMA query_only", "PRAGMA quick_check"}
 _TABLES = set(finite.ROW_LIMITS) - {"sessions_per_subject"}
 _TABLES |= {"operation_authority", "operation_receipts", "sqlite_master"}
+_SCHEMA_SELECT = "SELECT type,name,tbl_name,sql FROM sqlite_master ORDER BY name"
+_AUTHORITY_SELECT = "SELECT authority_id,sequence FROM operation_authority"
+_RECEIPTS_SELECT = "SELECT id,sequence,digest,outcome,essential FROM operation_receipts"
+_QUEUED_SELECT = "SELECT id FROM runs WHERE status='queued' LIMIT 21"
+_PROOF_READS = {_SCHEMA_SELECT, _AUTHORITY_SELECT}
+_ROLE_READS = {
+    "discovery": _PROOF_READS,
+    "guard-proof": _PROOF_READS | {_RECEIPTS_SELECT},
+    "memory-reference": {_SCHEMA_SELECT},
+    "barrier": _PROOF_READS,
+    "started-receipt": _PROOF_READS,
+    "backup-source": _PROOF_READS,
+    "archive-rejection": set(),
+    "backup-destination": set(),
+}
+_ROLE_WRITES = {
+    "barrier": {"UPDATE operation_authority SET barrier=? WHERE authority_id=?"},
+    "started-receipt": {
+        "DELETE FROM operation_receipts WHERE essential=1",
+        "INSERT INTO operation_receipts VALUES(?,?,?,?,?)",
+        "UPDATE operation_authority SET sequence=? WHERE authority_id=?",
+    },
+}
 
 
 def _query_limit(sql):
@@ -189,7 +212,9 @@ class Owner:
         self.__cursors = []
         self._guard_scope = None
         self._active = False
-        self._thread = None
+        self._thread = threading.get_ident()
+        self._entry_lock = threading.Lock()
+        self._entered = False
         self._rollback_attempted = False
         self._close_attempted = False
         self._validated = False
@@ -240,7 +265,12 @@ class Owner:
             return cursor.fetchall()
 
     def __enter__(self):
-        self._thread = threading.get_ident()
+        # Reject before replacing fields, acquiring the guard or opening SQL.
+        # One owner belongs to its creating thread and is entered only once.
+        with self._entry_lock:
+            if self._thread != threading.get_ident() or self._entered:
+                raise RuntimeError("SQLite owners are single-use and belong to their creating thread.")
+            self._entered = True
         if self.guard is not None:
             self._guard_scope = self.guard.locked()
             self._guard_scope.__enter__()
@@ -298,6 +328,13 @@ class Owner:
     def execute(self, sql, parameters=()):
         self._check()
         normalized = " ".join(sql.split())
+        if self.role in _ROLE_READS:
+            reads = _ROLE_READS[self.role]
+            queued = (self.role == "guard-proof" and getattr(_local,"diagnostic",None) is None
+                      and normalized == _QUEUED_SELECT)
+            controls = {"PRAGMA application_id", "PRAGMA user_version", "BEGIN", "BEGIN IMMEDIATE"}
+            if normalized not in reads | _ROLE_WRITES.get(self.role,set()) | controls and not queued:
+                raise ValueError("This owner accepts only its registered role statements.")
         if normalized in {"BEGIN", "BEGIN IMMEDIATE"}:
             if self.readonly:
                 if normalized != "BEGIN" or not self.__connection.in_transaction:
@@ -339,13 +376,6 @@ class Owner:
 
     def _select(self, sql, parameters):
         limit, table = _query_limit(sql)
-        if self.role in {"guard-proof", "discovery", "memory-reference"}:
-            allowed = {"sqlite_master"} if self.memory else {"sqlite_master", "operation_authority", "operation_receipts"}
-            if (self.role == "guard-proof" and getattr(_local,"diagnostic",None) is None
-                    and sql == "SELECT id FROM runs WHERE status='queued' LIMIT 21"):
-                allowed.add("runs")
-            if table not in allowed:
-                raise ValueError("This owner cannot read business rows.")
         if self.archive:
             raise ValueError("Archive rejection only observes format markers.")
         with self._cursor() as cursor:
@@ -417,6 +447,8 @@ class Owner:
         self.__connection.backup(destination.__connection)
 
     def __exit__(self, kind, error, tb):
+        if self._thread != threading.get_ident() or not self._entered:
+            raise RuntimeError("Only the owning thread may end an entered SQLite scope.")
         original = error
         if original is None:
             try:

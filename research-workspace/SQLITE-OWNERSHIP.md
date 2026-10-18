@@ -54,6 +54,12 @@ no immutable online reader, raw connection factory, or nested business/barrier
 scope. Schema-reference databases have their own owned memory scope; the
 legacy memory helpers remain unchanged for v0–v3.
 
+An owner is single-use and belongs to its creating thread. Re-entry, reuse,
+wrong-thread entry/exit and exit before entry are refused before changing scope
+state. Proof, discovery, schema-reference, receipt and barrier roles accept
+explicit complete statements. Joins, unions and subqueries cannot expand those
+roles into business reads or writes.
+
 The final broker spawn occurs inside the dispatch reservation. Artifact reads,
 ZIP generation, HTTP streaming, broker collection and provider waits occur
 after their SQL scopes end. A late authority check still precedes dispatch and

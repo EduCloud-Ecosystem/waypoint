@@ -259,6 +259,64 @@ class OwnershipTests(Fixture):
                     with o.diagnostic(token):pass
             token.release()
 
+    def test_owner_reentry_reuse_and_wrong_thread_refuse_before_any_open(self):
+        owner=o.Owner(self.root,"guard-proof",guard=self.store.guard,readonly=True)
+        with self.connections() as opened:
+            with self.assertRaisesRegex(RuntimeError,"owning thread"):
+                owner.__exit__(None,None,None)
+            failures=[]
+            def wrong_thread():
+                try:
+                    with owner:failures.append("wrong-thread owner opened")
+                except RuntimeError as error:
+                    if "single-use" not in str(error):failures.append(str(error))
+                except BaseException as error:failures.append(repr(error))
+            thread=threading.Thread(target=wrong_thread);thread.start();thread.join(3)
+            self.assertFalse(thread.is_alive());self.assertEqual(failures,[]);self.assertEqual(opened,[])
+            with owner as db:
+                before=len(opened);depth=self.store.guard.lease.depth
+                def wrong_exit():
+                    try:
+                        owner.__exit__(None,None,None);failures.append("wrong-thread exit succeeded")
+                    except RuntimeError as error:
+                        if "owning thread" not in str(error):failures.append(str(error))
+                    except BaseException as error:failures.append(repr(error))
+                thread=threading.Thread(target=wrong_exit);thread.start();thread.join(3)
+                self.assertFalse(thread.is_alive());self.assertEqual(failures,[])
+                with self.assertRaisesRegex(RuntimeError,"single-use"):
+                    with owner:pass
+                self.assertEqual(len(opened),before);self.assertEqual(self.store.guard.lease.depth,depth)
+                self.assertTrue(db.execute("PRAGMA user_version").fetchone()[0])
+            before=len(opened)
+            with self.assertRaisesRegex(RuntimeError,"single-use"):
+                with owner:pass
+            self.assertEqual(len(opened),before)
+        self.assertEqual(self.store.guard.lease.depth,0);self.assertFalse(o.held(self.root))
+
+    def test_diagnostic_role_rejects_join_union_subquery_and_business_pragma(self):
+        token=self.store.guard.begin("mutation");o.hold(self.root)
+        try:
+            with self.store.guard.locked(),o.diagnostic(token):
+                with o.Owner(self.root,"guard-proof",guard=self.store.guard,readonly=True) as db:
+                    for sql in ["SELECT u.subject FROM operation_authority a JOIN users u ON 1=1",
+                                "SELECT authority_id FROM operation_authority UNION SELECT subject FROM users",
+                                "SELECT (SELECT subject FROM users LIMIT 1) AS authority_id FROM operation_authority",
+                                "PRAGMA table_info(users)","SELECT id FROM runs WHERE status='queued' LIMIT 21"]:
+                        with self.subTest(sql=sql),self.assertRaises(ValueError):db.execute(sql)
+                    self.assertEqual(len(db.execute("SELECT authority_id,sequence FROM operation_authority").fetchall()),1)
+        finally:token.release()
+
+    def test_proof_writer_roles_cannot_mutate_or_observe_business_rows(self):
+        before=(self.root/g.FILE).read_bytes()
+        for role in ("barrier","started-receipt"):
+            with self.subTest(role=role),self.store.write(role=role) as db:
+                for sql,args in [("UPDATE users SET active=0 WHERE subject=?",("alice",)),
+                                 ("SELECT subject FROM users",()),
+                                 ("UPDATE operation_authority SET barrier=(SELECT subject FROM users LIMIT 1)",())]:
+                    with self.assertRaises(ValueError):db.execute(sql,args)
+        with self.raw() as db:self.assertEqual(db.execute("SELECT active FROM users WHERE subject='alice'").fetchone()[0],1)
+        self.assertEqual((self.root/g.FILE).read_bytes(),before);self.assertFalse(o.held(self.root))
+
     def test_primary_spawn_and_offline_errors_survive_rollback_failure(self):
         run=self.submit();run=self.store.claim()
         with fault("dispatch-reservation","rollback"):

@@ -53,6 +53,9 @@ def main():
         (output/"candidate-source.tar.gz").write_bytes(gzip.compress(buffer.getvalue(),mtime=0))
         baseline=run(captured,["test_sqlite_ownership"],output/"controls.log")
         variants=[
+          ("reusable-owner","research_workspace/sqlite_ownership.py",[("if self._thread != threading.get_ident() or self._entered:","if self._thread != threading.get_ident():")],"test_owner_reentry_reuse_and_wrong_thread_refuse_before_any_open"),
+          ("diagnostic-business-join","research_workspace/sqlite_ownership.py",[("if self.role in _ROLE_READS:","if self.role in _ROLE_READS and not normalized.startswith('SELECT '):")],"test_diagnostic_role_rejects_join_union_subquery_and_business_pragma"),
+          ("proof-role-business-write","research_workspace/sqlite_ownership.py",[("if self.role in _ROLE_READS:","if self.role in _ROLE_READS and not normalized.startswith('UPDATE '):")],"test_proof_writer_roles_cannot_mutate_or_observe_business_rows"),
           ("writable-reader","research_workspace/sqlite_ownership.py",[( '"ro" if self.readonly else "rw"', '"rw" if self.readonly else "rw"')],"test_online_read_guard_before_existing_ro_and_same_snapshot"),
           ("missing-connection-close","research_workspace/sqlite_ownership.py",[("                    self.__connection.close()","                    pass  # deliberate missing close")],"test_open_setup_cursor_rollback_close_failure_matrix"),
           ("swallowed-cursor-close","research_workspace/sqlite_ownership.py",[("        if original is None:\n            try:\n                if self._uncertain:\n                    raise self._cleanup_error or OwnershipFailure()\n                _permit(self.root,self.role,self.guard)\n            except BaseException as failure:\n                original=failure\n","")],"test_caught_cursor_close_failure_cannot_turn_scope_exit_into_success"),
