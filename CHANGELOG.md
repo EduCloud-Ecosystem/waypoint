@@ -1,5 +1,14 @@
 # CHANGELOG.md: Document history for the EduCloud hosting layer repo
 
+## 2026-10-17: Read-only research storage inventory
+
+- Add bounded offline storage-status and retention-plan reports that count all
+  logical file bytes and directory/file entries, preserve unknown/failed work,
+  and never create state, migrate, enforce a quota or authorize deletion.
+- Document the complete dependent admission/reservation/recovery contract and
+  keep issue 29 storage, hosted, private-data and human acceptance gates open.
+- Preserve disabled source candidates, original evidence, Belay and parent worktrees.
+
 ## 2026-10-17: Local synthetic research identity slice
 
 - Add a separate OIDC mode using the existing Keycloak/OAuth2 Proxy conventions,
