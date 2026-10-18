@@ -1,0 +1,12 @@
+{
+  "format": "waypoint-storage-blocked-draft-v1",
+  "base_commit": "2a7d6cd08ce7881a5ea36d761e53fc0c6f0e4b71",
+  "status": "BLOCKED_NOT_IMPLEMENTED",
+  "quota_enforced": false,
+  "patch_sha256": "aa4fa211bc0e7dff69096c21616c15c9d3d5b291eadcfc973fb033794f489c39",
+  "draft_files": {
+    "research-workspace/research_workspace/store.py": "6070acd8c3840e2b42a01a21b256cba0be1f083690f5c746dfdcab2a8ae31bd6",
+    "research-workspace/research_workspace/runtime.py": "ffe41ea1c35f3bdd2d7c2e84d25fd9abfbaaafab13f07025f2f972a9d5a69f80",
+    "research-workspace/research_workspace/storage.py": "f26f7d87540393f7f108de9551aecbe2b35133ba8e0091f4d5b48e7f6f547128"
+  }
+}

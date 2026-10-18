@@ -1,0 +1,95 @@
+{
+  "base_commit": "2a7d6cd08ce7881a5ea36d761e53fc0c6f0e4b71",
+  "cases": {
+    "claim_hold_race": {
+      "observed": {
+        "failure": {
+          "claimed_status": "running",
+          "dispatch_held": true,
+          "intercepted_launch_attempts": 1,
+          "real_provider_processes": 0
+        },
+        "no_hold_control": {
+          "claimed_status": "running",
+          "dispatch_held": false
+        }
+      },
+      "outcome": "BLOCKER_REPRODUCED"
+    },
+    "consumed_headroom_model": {
+      "observed": {
+        "failure": {
+          "consumed_reserved_bytes": 1,
+          "essential_check_rejected": true,
+          "initial_capacity_check_accepted": true,
+          "observed_bytes_after": 196609,
+          "observed_bytes_before": 196608,
+          "policy_bytes": 33996800,
+          "reserved_bytes_after": 33800192,
+          "reserved_bytes_before": 33800192,
+          "temporary_name": ".storage-00000000000000000000000000000000"
+        },
+        "one_extra_policy_byte_control": {
+          "essential_check_accepted": true
+        },
+        "scope": "inventory arithmetic model; physical free-space preflight mocked"
+      },
+      "outcome": "BLOCKER_REPRODUCED"
+    },
+    "project_initialization_hold": {
+      "observed": {
+        "failure": {
+          "dispatch_held_after_init": true,
+          "project_committed": true,
+          "worker_stopped_with_failure": true
+        },
+        "no_worker_overlap_control": {
+          "dispatch_held_after_init": false
+        }
+      },
+      "outcome": "BLOCKER_REPRODUCED"
+    },
+    "result_before_commit": {
+      "observed": {
+        "failure": {
+          "dispatch_held_after_failure": false,
+          "dispatch_held_after_fallback": false,
+          "fallback_phase": "settled",
+          "oversized_record_rejected": true,
+          "pending_intents_after_failure": 0,
+          "result_file_retained": true
+        },
+        "post_result_oserror_control": {
+          "dispatch_held_after_failure": true,
+          "pending_intents_after_failure": 1,
+          "result_file_retained": true
+        },
+        "scope": "real disposable files/SQLite; injected 262144-byte internal error outside normal broker validation; ordinary recipe reachability not established"
+      },
+      "outcome": "BLOCKER_REPRODUCED"
+    },
+    "rollback_failure": {
+      "observed": {
+        "failure": {
+          "active_intents_after_exit": 1,
+          "connection_closed": true,
+          "dispatch_held": false,
+          "modeled_pending_intents": 1
+        },
+        "scope": "in-memory coordinator persistence and database stub; injected rollback OSError",
+        "successful_rollback_control": {
+          "active_intents_after_exit": 0,
+          "connection_closed": true,
+          "dispatch_held": true,
+          "modeled_pending_intents": 1
+        }
+      },
+      "outcome": "BLOCKER_REPRODUCED"
+    }
+  },
+  "draft_patch_sha256": "aa4fa211bc0e7dff69096c21616c15c9d3d5b291eadcfc973fb033794f489c39",
+  "format": "waypoint-storage-blocked-observation-v1",
+  "product_acceptance": "BLOCKED",
+  "quota_enforced": false,
+  "real_provider_processes": 0
+}

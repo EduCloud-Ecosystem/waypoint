@@ -1,5 +1,15 @@
 # CHANGELOG.md: Document history for the EduCloud hosting layer repo
 
+## 2026-10-17: Blocked storage admission design and evidence
+
+- Preserve an inert, hash-bound admission draft and five offline defect witnesses
+  with comparison controls. Keep application changes uncommitted and quota
+  enforcement explicitly blocked.
+- Record the missing writer/peak-capacity proof, uncertainty transitions and
+  recovery/migration acceptance sequence without changing accepted pilot state.
+- Preserve disabled source environments, original failed/identity evidence,
+  liabilities, Belay and parent pilot worktrees.
+
 ## 2026-10-17: Bounded broker response observation
 
 - Drain broker stdout/stderr incrementally for both control calls and worker

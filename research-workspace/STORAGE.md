@@ -94,6 +94,10 @@ This foundation intentionally installs no new policy into accepted pilot stores.
 The proposed defaults for a future fresh synthetic store are 64 MiB logical bytes
 and 4,096 entries. They are protocol values, not measured host capacity.
 
+The next admission draft is [blocked by reproduced failure-boundary defects](STORAGE-ADMISSION-BLOCKED.md).
+Its inert patch and offline synthetic witnesses are retained for review; the
+draft is not enabled and does not change the accepted application's behavior.
+
 The complete admission change must cover every writer under a consistent lock
 order: offline lifecycle lock, storage coordinator, SQLite transaction, then
 identity publication lock. Before file/provider effects, durable idempotent
