@@ -1,0 +1,22 @@
+{
+  "format": "waypoint-capacity-evidence-manifest-v1",
+  "full_local_unittest_count": 296,
+  "outfitter_pin": "5827c84e9952cc67b85e91ceff4282e0ead6923b",
+  "prior_evidence_files_unchanged": 168,
+  "qualification_only": true,
+  "quota_enforced": false,
+  "sha256": {
+    "research-workspace/STORAGE-CAPACITY-CONTRACT.md": "514065b0bdb850e34cd5b2b3843decbae662f36eaed42aff779a0e7312a8ba07",
+    "research-workspace/evidence/2026-10-17/capacity-contract/README.md": "29b967cb06f7349cfb25b493c4fd6c5863326d48aefa6bb2379602c7628aab22",
+    "research-workspace/evidence/2026-10-17/capacity-contract/REVIEW.md": "6d9960566e4c181f093186bc4d922cf0b36466b82966a76e1a963b6817d92785",
+    "research-workspace/evidence/2026-10-17/capacity-contract/broker.json": "b9a01ca2e8cdfb1ca8c4515ba4de4513f5293e204ce773c9db3b7412e8f80c52",
+    "research-workspace/evidence/2026-10-17/capacity-contract/review-broker.json": "b9a01ca2e8cdfb1ca8c4515ba4de4513f5293e204ce773c9db3b7412e8f80c52",
+    "research-workspace/evidence/2026-10-17/capacity-contract/review-waypoint.json": "0abe0f6de2429aabfec9ba9c0e4b75e0602ab9cbb6a240fb232735807890eea9",
+    "research-workspace/evidence/2026-10-17/capacity-contract/waypoint.json": "2d2e56fc7f374dad58a5ef2ef4aca89165e79f5a03a06ea14c1b8750a8e73622",
+    "research-workspace/qualification/capacity/contract-v1.json": "f9066a0cedfd740fffc8d7743865e4d5a30e15169bfccc0b1eec99014333741b",
+    "research-workspace/qualification/capacity/qualify.py": "02f35be653cb8291b0408ff027a3ab5aac134b4ca3190b9b7b794391800f4f14",
+    "research-workspace/qualification/capacity/qualify_broker.py": "40504add70e9dc9ae84495497bee0b15be69963322db976887856f036a619200",
+    "research-workspace/tests/test_capacity_qualification.py": "37eb76387b271e6a4e94f9f20d65a4a6d02b5842850f41ee44782a19e24c263a"
+  },
+  "waypoint_base": "7d5cf925ffacd16129c6851f1b3d4f8bc4c1a8a0"
+}

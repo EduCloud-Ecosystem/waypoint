@@ -1,5 +1,14 @@
 # CHANGELOG.md: Document history for the EduCloud hosting layer repo
 
+## 2026-10-17: Storage capacity contract qualification
+
+- Pin the Waypoint and Outfitter writer contracts and connect disposable capacity
+  witnesses to production operation IDs, receipts and file transitions.
+- Preserve the fifth headroom failure, expose unproved session, SQLite, guard,
+  broker and destination peaks, and keep quota admission blocked.
+- Propose a separately reviewed finite-authority slice without runtime, accepted
+  store, journal, admission-default or deletion changes.
+
 ## 2026-10-17: Final dispatch authority correction
 
 - Preserve PR37's immutable failed witness and narrow its prior acceptance claim.

@@ -1,0 +1,367 @@
+{
+  "available_capacity": "UNKNOWN",
+  "contract_version": 1,
+  "coverage": {
+    "all_writers_complete": false,
+    "not_proved": [
+      "complete runtime transitive writer reachability",
+      "filesystem physical blocks/inodes and metadata",
+      "SQLite/VFS/reader and checkpoint ceiling",
+      "global orphan/failure/retry count",
+      "real detached watchdog owner count",
+      "Docker daemon/host/cloud storage outside state root",
+      "destination whole-root migration and cutover peak"
+    ],
+    "production_regions": [
+      "Store/runtime/operation_guard/recovery/guarded_recovery; CLI/server bootstrap and lifecycle cross-reference",
+      "Outfitter ledger/broker/watchdog/recovery at pinned revision"
+    ]
+  },
+  "decision": {
+    "bounded_authority_growth": "GO for scoped proposal/implementation after root review; numeric limits not approved",
+    "quota_admission": "NO-GO until every writer/peak/uncertainty obligation is proved"
+  },
+  "format": "waypoint-capacity-contract-v1",
+  "preserved_failure": {
+    "file": "research-workspace/evidence/2026-10-17/storage-admission-blocked/observation.json",
+    "sha256": "763ec3e001ef50512fca925efe24b2f6878141f7b448b2ecb495a5b2b7db2957",
+    "witness": "fifth essential headroom failure remains FAIL/BLOCKER_REPRODUCED; this contract does not repair it"
+  },
+  "purpose": "Qualification only; never loaded by runtime. No quota authority.",
+  "quota_enforced": false,
+  "sources": {
+    "outfitter": {
+      "commit": "5827c84e9952cc67b85e91ceff4282e0ead6923b",
+      "sha256": {
+        "cmd/outfitter/main.go": "62745a03b53daf375c93e2503044f862ca6cdad3d9be2f49ff28ade24ca136db",
+        "go.mod": "bcf81d648b7f769adf99a0864b64701f350d46d3784c8b1c24fc55fbeccb341f",
+        "internal/broker/broker.go": "2f9511aebd21cad90eb8f1acdf326ec17b1b6d6b38a307e32a07c7aa8028721c",
+        "internal/broker/broker_test.go": "b63d8132d3f8d115b8f6fa415eba3a2f32336a259864ed47466e870eef378162",
+        "internal/broker/recovery_test.go": "e243cdddeb4beeaef413a4c19f652764e9d99b4f386fd4d22cbf6c376592331a",
+        "internal/broker/review_regressions_test.go": "4ecd65dab7c483c89d3f4292c74b2fb4d3f6e4191668dfb6fcd6e272e56486eb",
+        "internal/ledger/recovery.go": "7cdc7e2d91cade3e14a18036c2bccd23b97e669154dbdee23fec06da9ebbbd96",
+        "internal/ledger/recovery_test.go": "ad28e656efbd9e4ec1a773b87f3fa0a773eabb5879dbe540a3cb4ef5bd7e0ac0",
+        "internal/ledger/store.go": "2243e2e9c9f40dff06ce82478bf96729b642a2323f3cca3fd929b26b3f00776a",
+        "internal/provider/docker/docker.go": "c3bbc553674547b6ad7bbcc9b485616ae4c0cc099222468e1737ba7802ffa581",
+        "internal/provider/provider.go": "8d96ea6c07987e957ad9a482a1f7f23e94046cbd4c4f9af849e161555c61b2bf"
+      }
+    },
+    "waypoint": {
+      "commit": "7d5cf925ffacd16129c6851f1b3d4f8bc4c1a8a0",
+      "sha256": {
+        "research-workspace/environments.json": "9a206b4c96fe7365764b0e5521734a7502d4b72e8acdf6c23a404436ed4614a4",
+        "research-workspace/images.lock.json": "bf36e6c82b7b89ef438b0be7523e936dd2319b902325b8e91b0df440a2ea33af",
+        "research-workspace/recipes/recipe.R": "a3c06effab96558d8a09068adbfaf2650a3d9ab82b608ea63437dc9076fe3957",
+        "research-workspace/recipes/recipe.py": "549f064aaaa36ee8259f1f8e2902d0dfb15d071fcb6d9b60e52b266a7bbdb922",
+        "research-workspace/research_workspace/__init__.py": "d8cd56bc22ee978af2e94c63e5f3ac755934c728209cd5b3cceea7b2bc3af6e5",
+        "research-workspace/research_workspace/__main__.py": "75178fa3c3d5d41e93e0a48e722202569f2992ceaf057ae795ef3eebd06bfec8",
+        "research-workspace/research_workspace/bounded_process.py": "719856121bde1bae521a2f1e589eeb921d78af2c93ff6fdaa6cd417ba8bb3419",
+        "research-workspace/research_workspace/catalog.py": "3ea03e99bd71d61138c4278c72896d79debea1a930770adcfaf8f36eb9c68686",
+        "research-workspace/research_workspace/evidence.py": "017bc96e79a05592852f851cdbf0b59e65501d974261eb726099293b6e81ed7d",
+        "research-workspace/research_workspace/guarded_recovery.py": "73fb2f0e092aa7aa871d4b3a11925d39fcfcf256d72d3e8f4e70135b15d290c7",
+        "research-workspace/research_workspace/identity.py": "3f5c6c01e776be26fbd5bc94bbdc4d2d839c6412cc4fc7566560b3da34d86d61",
+        "research-workspace/research_workspace/operation_guard.py": "62c66cba59001f2739f56c3d3b2e95cb8f7fb84d154a97716772e819c1fed2b6",
+        "research-workspace/research_workspace/recipes.py": "c157564229c562cc5fe5ee315e3cb2be74d5588d830e0de6d4c2e7caead2114f",
+        "research-workspace/research_workspace/recovery.py": "f10950f267b69816db5af0d1dc5079c4d0a08da7ced7e9f150294869d33d8d34",
+        "research-workspace/research_workspace/reproduction.py": "a00e771b2712c4ae289098418856f3580a3d8fd5396724ecdbd685a9bff8041d",
+        "research-workspace/research_workspace/runtime.py": "8547bec90d67686ce697c2e11dede12a27700adf7a13cf2b65bf32e7c0ef79de",
+        "research-workspace/research_workspace/server.py": "6a5fc7b1afff52c2565a8435f35d70530eb3f3053522c08cb42ef031f17daf2a",
+        "research-workspace/research_workspace/storage_inventory.py": "992f0957b4e9fc10f8152c5b862f1fe4f26050298532e2e18b8c2a6e3e4b0b52",
+        "research-workspace/research_workspace/store.py": "ecf1081992fcbc8121187038f8b1331ffe9ac95c381294cdfa6b85f3b21e5702",
+        "research-workspace/tests/test_guarded_recovery.py": "ea0227938ffcffefd2b0a79da466753dedcb8d8fed32b97a76116278752a7432",
+        "research-workspace/tests/test_operation_guard.py": "9a11c4220a06cd1a732dbea5913ecf8785ab999a54af07c9b94be48428af33df",
+        "research-workspace/tests/test_recovery.py": "2d974a29065970098e3ca120a93514ebbc631d6d16f7e9b7615ab68bde7bd602",
+        "research-workspace/tests/test_workspace.py": "f1bb0fb44883adb26ce17ed9024422f48db266675cc4bfe6c2d080da5b45a34f"
+      }
+    }
+  },
+  "units": {
+    "bytes": "logical regular-file bytes, not allocated blocks or physical free space",
+    "entries": "root plus every directory and regular file; unknown files included"
+  },
+  "writers": [
+    {
+      "bounded_future_growth": "UNKNOWN: path/config serialized bounds and SQLite initialization peak not proved.",
+      "id": "waypoint-bootstrap",
+      "owner_incarnation": "New root + guard authority_id; initialize operation_id/sequence",
+      "partial_failure": "Retain incomplete root/lock/config/DB/guard temps; initialization failures never grant reuse credit.",
+      "retained": "Root/runs directories, config.json, SQLite, guard and zero-byte guard lock. Config serialized maximum UNKNOWN.",
+      "serialization_boundary": "Fresh root; guard lock and SQLite transaction. Config uses Python canonical JSON.",
+      "sites": [
+        "store.py:Store.__init__",
+        "operation_guard.py:Guard.create"
+      ],
+      "temporary": "SQLite engine files and first guard replacement; directory fsync metadata physical bytes UNKNOWN.",
+      "terminal_proof": "Initialize receipt + readable binding + durable config; not capacity proof.",
+      "whole_root_envelope": "UNKNOWN"
+    },
+    {
+      "bounded_future_growth": "UNKNOWN: complete row-count, serialized byte and index/page envelope missing. Viewer membership can INSERT via essential operation.",
+      "id": "waypoint-sql-authority",
+      "owner_incarnation": "Authority + operation_id/sequence; legacy profile has no equivalent receipt",
+      "partial_failure": "Rollback/close/commit uncertainty retains liability; files can precede row commit.",
+      "retained": "users/projects/members/runs rows and indexes; final payload <=262144 encoded bytes. 100 runs/project, 20 queued/running; these are not disk quotas.",
+      "serialization_boundary": "Guard lock -> BEGIN IMMEDIATE; SQLite commit; Python canonical JSON fields.",
+      "sites": [
+        "store.py:Store.add_user",
+        "store.py:Store.create_project",
+        "store.py:Store._guarded_project",
+        "store.py:Store.membership",
+        "store.py:Store._submit",
+        "store.py:Store.claim",
+        "store.py:Store._finish"
+      ],
+      "temporary": "Rollback/WAL/SHM, page splits, checkpoints, connections and reader coexistence UNKNOWN.",
+      "terminal_proof": "Exact Operation receipt digest and commit; file/DB agreement separately required.",
+      "whole_root_envelope": "UNKNOWN"
+    },
+    {
+      "bounded_future_growth": "UNKNOWN: essential slot reuse does not bound sessions or repeated WAL bytes.",
+      "id": "waypoint-session-admission",
+      "owner_incarnation": "Authority; new token hash per login; currently reusable essential operation incarnation",
+      "partial_failure": "Partial SQL or guard failure pauses; no orphan/temporary storage credit.",
+      "retained": "New session row per key sign-in; 8-hour expiry. Live row-count bound UNKNOWN.",
+      "serialization_boundary": "Guard + SQLite BEGIN IMMEDIATE; expired sessions deleted in same transaction.",
+      "sites": [
+        "store.py:Store.session"
+      ],
+      "temporary": "Full guard replacement and SQLite engine writes per login.",
+      "terminal_proof": "SQL committed receipt for this operation; prior receipt does not pay for a later sign-in.",
+      "whole_root_envelope": "UNKNOWN"
+    },
+    {
+      "bounded_future_growth": "UNKNOWN: logically non-growing business effect still needs finite physical/logical engine scratch.",
+      "id": "waypoint-safety-sql",
+      "owner_incarnation": "Authority + essential operation_id/sequence; may borrow an uncertain existing operation",
+      "partial_failure": "Keep revocations, conservative charges, pending operations and partial files; no deletion to regain quota.",
+      "retained": "Existing rows updated/deleted; viewer membership may add row; timestamps/errors/payloads can grow.",
+      "serialization_boundary": "Guard then SQLite, reuse essential slot only with terminal proof; borrowed operation never certified by later success.",
+      "sites": [
+        "store.py:Store.logout",
+        "store.py:Store.revoke_user",
+        "store.py:Store.rotate_user",
+        "store.py:Store.membership",
+        "store.py:Store.close_project",
+        "store.py:Store.cancel",
+        "store.py:Store.recover",
+        "store.py:Store._claim",
+        "store.py:Store._finish"
+      ],
+      "temporary": "Repeated SQLite writes + guard replacements; UNKNOWN over retries.",
+      "terminal_proof": "Matching receipt; borrowed uncertain marker remains pending despite later safety success.",
+      "whole_root_envelope": "UNKNOWN"
+    },
+    {
+      "bounded_future_growth": "UNKNOWN: runtime/VFS/compile options, page ceiling, reader lifetimes, commit/checkpoint envelope not fixed.",
+      "id": "waypoint-sql-engine",
+      "owner_incarnation": "Shared SQLite authority, all connections/readers; no per-operation inode ownership for WAL",
+      "partial_failure": "Readers may hold WAL history; closing/checkpointing changes files. Cannot debit any writer from global WAL growth.",
+      "retained": "Database pages/freelist retained; database maximum for this profile UNKNOWN.",
+      "serialization_boundary": "Production WAL/FULL; SQLite locking plus guard where present. Nominal reads also open read-write connections.",
+      "sites": [
+        "store.py:Store._connect",
+        "store.py:Store.connect",
+        "store.py:Store.transaction",
+        "store.py:Store.launch_run",
+        "operation_guard.py:Guard.resume",
+        "recovery.py:frozen_db"
+      ],
+      "temporary": "WAL/SHM/checkpoint overlap/engine journals; hard peak UNKNOWN.",
+      "terminal_proof": "Commit/barrier proves durability boundary only, not reusable future headroom.",
+      "whole_root_envelope": "UNKNOWN"
+    },
+    {
+      "bounded_future_growth": "This successful append is finite from validated CSV + pinned recipe; future request/result/broker/SQL writers separate and UNKNOWN.",
+      "id": "waypoint-run-append",
+      "owner_incarnation": "Submit operation_id/sequence + run resource_id + input/recipe SHA256",
+      "partial_failure": "Partial input/recipe retained; missing SQL row is not proof of absence; uncertain receipt gives no completed-consumption credit.",
+      "retained": "3 directories + 2 immutable files/run; CSV <=65536 UTF-8 bytes; recipe bytes pinned by source/catalog.",
+      "serialization_boundary": "Guard and SQL transaction; exclusive xb writes; file fsync then parent fsync.",
+      "sites": [
+        "store.py:Store._submit",
+        "store.py:private_write"
+      ],
+      "temporary": "No separate private_write temp; in-progress destination retained in same namespace.",
+      "terminal_proof": "Matching committed submit receipt + resource and content hashes; consume only owned files/directories.",
+      "whole_root_envelope": "UNKNOWN"
+    },
+    {
+      "bounded_future_growth": "UNKNOWN: path length, exact escaped request/receipt envelope and all failure variants not established.",
+      "id": "waypoint-request-receipt-result",
+      "owner_incarnation": "Run intent operation_id/sequence + run_id; each output path and incarnation distinguished",
+      "partial_failure": "Partial/result-before-commit/request-after-cancel files protected. Observer exit cannot discharge broker writers.",
+      "retained": "request.private.json, receipt.private.json, optional result.json <=65536 encoded bytes. Receipt/request encoded maximum UNKNOWN; bounded stdout is not identical to re-encoded JSON.",
+      "serialization_boundary": "Request/receipt writes outside SQL transaction but under durable run intent; result before settlement commit. Canonical Python JSON escaping matters.",
+      "sites": [
+        "runtime.py:Worker.execute",
+        "store.py:Store._finish",
+        "store.py:private_write"
+      ],
+      "temporary": "Exclusive destination files; no replacement temp; SQLite/guard scratch separate.",
+      "terminal_proof": "Exact run/settle receipt plus validated file hashes; compute cleanup receipt is not storage reclamation proof.",
+      "whole_root_envelope": "UNKNOWN"
+    },
+    {
+      "bounded_future_growth": "UNKNOWN across repeated failure/safety retries; successful generation does not consume next replacement scratch. Sequence/generation read validation <2^63 is not pre-write rollover enforcement.",
+      "id": "waypoint-guard-replacement",
+      "owner_incarnation": "authority_id + operation_id/sequence + old/new generation + actual temp inode; owner boot nonce",
+      "partial_failure": "Failure latches; failed temp never deleted. After-rename fsync failure leaves visible generation without complete durability proof.",
+      "retained": "operation-guard.json <=4194304 encoded bytes; 4096 ordinary slots plus one essential; failed temps additionally retained.",
+      "serialization_boundary": "Guard flock/RLock; full Python sorted compact JSON, fsync file, replace, fsync directory.",
+      "sites": [
+        "operation_guard.py:Guard.save",
+        "operation_guard.py:Guard.begin",
+        "operation_guard.py:Operation.effect",
+        "operation_guard.py:Operation.fail"
+      ],
+      "temporary": "One new temp <=4194304 bytes/1 entry per serialized save plus current file; accumulated failed temps UNKNOWN.",
+      "terminal_proof": "Receipt digest/outcome and phase, generation, successful replace+directory sync; future scratch retained separately.",
+      "whole_root_envelope": "UNKNOWN"
+    },
+    {
+      "bounded_future_growth": "UNKNOWN even with finite slot count: physical/serialized engine envelope and counter exhaustion missing.",
+      "id": "waypoint-guard-sql",
+      "owner_incarnation": "authority_id + exact operation_id/sequence/digest; essential receipt may replace older terminal receipt",
+      "partial_failure": "Failed register/commit/barrier remains pending or paused; safety retry cannot certify old uncertainty.",
+      "retained": "operation_authority plus operation_receipts; ordinary history retained, essential receipt replaced.",
+      "serialization_boundary": "Same SQLite transactions as business effects; register may be separate prepared transaction.",
+      "sites": [
+        "operation_guard.py:Operation.register",
+        "operation_guard.py:Operation.complete_sql"
+      ],
+      "temporary": "SQLite engine and repeated barrier scratch UNKNOWN.",
+      "terminal_proof": "Matched digest/outcome and authority sequence; unknown borrowed receipt not overwritten as success.",
+      "whole_root_envelope": "UNKNOWN"
+    },
+    {
+      "bounded_future_growth": "UNKNOWN: directories, unknown files, source/destination peaks and backup/manifest construction. Existing recovery manifests are not whole-root inventories.",
+      "id": "waypoint-recovery-copy",
+      "owner_incarnation": "Source authority/checkpoint digest + fresh destination + restore operation incarnation",
+      "partial_failure": "Partial destination retained; source/backup retained. No destination capacity preflight currently exists; never count eventual cleanup as headroom.",
+      "retained": "Checkpoint/restore DB, config, runs, selected guard files, broker checkpoint, manifest, directories. Inventory read bounds 10000 files/64MiB each/128MiB total are not a pre-copy quota.",
+      "serialization_boundary": "Offline lock; guard/DB snapshot fences; broker wait outside guard. Copy exclusive files with hash check and fsync.",
+      "sites": [
+        "recovery.py:fresh_directory",
+        "recovery.py:copy_files",
+        "recovery.py:checkpoint",
+        "recovery.py:restore",
+        "guarded_recovery.py:checkpoint",
+        "guarded_recovery.py:restore"
+      ],
+      "temporary": "Backup SQLite engine, destination copy, rewrite WAL/guard, broker outputs/ledger and held-state publication overlap UNKNOWN.",
+      "terminal_proof": "Verified manifest + restored fingerprint + held proof; separately reserve destination before any copy.",
+      "whole_root_envelope": "UNKNOWN"
+    },
+    {
+      "bounded_future_growth": "UNKNOWN: finite replacement buffers and entire cutover peak absent. Need destination preflight before first source seal.",
+      "id": "waypoint-recovery-replacement",
+      "owner_incarnation": "Source/destination authorities + checkpoint + paired cutover operation IDs; each replacement generation separate",
+      "partial_failure": "Helper attempts unlink temp on normal unwind, but crash/unlink/fsync uncertainty protects leftovers; no capacity credit without exact proof.",
+      "retained": "config.json and recovery.json on both authorities; encoded pre-write maximum UNKNOWN.",
+      "serialization_boundary": "Lifecycle locks in sorted path order then guard/DB; source retires before broker cutover, destination publishes later.",
+      "sites": [
+        "recovery.py:atomic_json",
+        "recovery.py:activate",
+        "guarded_recovery.py:activate"
+      ],
+      "temporary": "Current + .recovery-* per atomic update; crash leftovers/DB/guard/broker overlap UNKNOWN.",
+      "terminal_proof": "Paired receipts + provider fence + matching fingerprints; cannot reclaim based solely on retired config.",
+      "whole_root_envelope": "UNKNOWN"
+    },
+    {
+      "bounded_future_growth": "UNKNOWN for full CLI profile envelope; these entry points must be audited with all future schema changes.",
+      "id": "waypoint-locks-and-cli",
+      "owner_incarnation": "Root/path + process/lifecycle lock; bootstrap config owner",
+      "partial_failure": "Existing/partial files retained; absence/exit does not certify any other owner.",
+      "retained": "server.lock and CLI config/bootstrap files; lock empty when created by reviewed path, preexisting content protected.",
+      "serialization_boundary": "File locks, exclusive/fresh setup; CLI canonical config.",
+      "sites": [
+        "recovery.py:offline",
+        "server.py:serve",
+        "__main__.py:main"
+      ],
+      "temporary": "Bootstrap/recovery/engine peaks as above.",
+      "terminal_proof": "Lock ownership and completed initialization, never mere path existence.",
+      "whole_root_envelope": "UNKNOWN"
+    },
+    {
+      "bounded_future_growth": "Per-call current/temp ceiling exists; whole-root retries/orphan count UNKNOWN. Do not derive snapshot/watchdog bounds from this lock.",
+      "id": "broker-ledger",
+      "owner_incarnation": "Ledger owner + authority ID + request_id; replacement generation not persisted separately",
+      "partial_failure": "Outputs spill before compact record/ledger bounds. Deferred temp removal is not crash/removal success proof; rename then directory fsync can fail.",
+      "retained": "ledger.json <=67108864 encoded bytes; compact record <=98304; <=512 runs/projects; initialized and ledger.lock entries.",
+      "serialization_boundary": "ledger.lock flock covers read/mutate/output-spill/compact validation/replace. Go encoding/json.Marshal, not Python encoding.",
+      "sites": [
+        "internal/ledger/store.go:Open",
+        "internal/ledger/store.go:Store.write",
+        "internal/ledger/store.go:Store.Update"
+      ],
+      "temporary": "Current ledger + .ledger-* <=67108864 bytes/1 new entry per serialized write; crash leftovers UNKNOWN.",
+      "terminal_proof": "Validated persisted record + owner/payload hash; terminal cleanup and full charge are compute proof, not universal file ownership proof.",
+      "whole_root_envelope": "UNKNOWN"
+    },
+    {
+      "bounded_future_growth": "Per-file bound enforced; count over failed ledger updates/retries UNKNOWN.",
+      "id": "broker-output",
+      "owner_incarnation": "SHA256 encoded stdout/stderr + exact originating request + writer incarnation; dedup target may preexist",
+      "partial_failure": "Sidecar may survive failed ledger update; previous same-digest target does not pay new temp; deferred removal/crash uncertainty retains liability.",
+      "retained": "outputs/<digest>.json <=6291968 encoded bytes (6MiB+512); outputs directory; distinct orphan count UNKNOWN.",
+      "serialization_boundary": "Within ledger flock; Go JSON escaping; per-request max_output_bytes bounds raw combined output, not encoded size.",
+      "sites": [
+        "internal/ledger/store.go:Store.saveOutput",
+        "internal/ledger/store.go:Store.write"
+      ],
+      "temporary": "One .output-* <=6291968 bytes plus existing same-digest target during replace.",
+      "terminal_proof": "Persisted ledger digest/size reference plus successful directory sync; orphan still occupied.",
+      "whole_root_envelope": "UNKNOWN"
+    },
+    {
+      "bounded_future_growth": "Individual attempted tree bound; total concurrent/repeated ownership envelope UNKNOWN.",
+      "id": "broker-snapshot",
+      "owner_incarnation": "Ledger owner/request_id + snapshot request directory; stable reservation before copy",
+      "partial_failure": "Failed copies retain prefix incl extra probe byte; no automatic deletion or owner exit credit.",
+      "retained": "snapshots parent + request directory + at most1024 walked input/recipe entries; up to16777217 bytes on growth-refusal path (16MiB+1).",
+      "serialization_boundary": "Outside ledger flock; request dir exclusive creation. Multiple live/uncertain owners not fully bounded by observed active record count.",
+      "sites": [
+        "internal/broker/broker.go:snapshot",
+        "internal/broker/broker.go:Broker.Run"
+      ],
+      "temporary": "Direct exclusive destination writes; no separate temp; partial tree retained.",
+      "terminal_proof": "Successful complete copy and request identity; filesystem snapshot completion not a persisted byte-consumption receipt.",
+      "whole_root_envelope": "UNKNOWN"
+    },
+    {
+      "bounded_future_growth": "UNKNOWN: detached process survival, concurrent ownership, indefinite retries and stale readiness; no fixed multiplier justified.",
+      "id": "broker-watchdog",
+      "owner_incarnation": "Detached watchdog process + request_id + ledger owner; ready filename does not encode process incarnation",
+      "partial_failure": "Deferred ready removal not crash proof; ambiguous provider creation retains compute liability; preserve capacity liability too.",
+      "retained": "watch-<request_id>.ready 6 bytes/1 entry per path; stale/preexisting or uncertain ownership protected.",
+      "serialization_boundary": "Ready write outside ledger lock, WriteFile truncates; cancel/reconcile each acquire ledger lock separately.",
+      "sites": [
+        "cmd/outfitter/main.go:execute watchdog closure",
+        "internal/broker/broker.go:Broker.Watch"
+      ],
+      "temporary": "Watch readiness and repeated ledger/output updates independent of observer lifetime.",
+      "terminal_proof": "Independent ownership/termination evidence plus exact record; CLI observer completion insufficient.",
+      "whole_root_envelope": "UNKNOWN"
+    },
+    {
+      "bounded_future_growth": "UNKNOWN: complete destination envelope before copy and before source fence; max read bounds not pre-write capacity proofs.",
+      "id": "broker-recovery",
+      "owner_incarnation": "Source/destination authority IDs + trusted checkpoint + execution leases + ledger locks",
+      "partial_failure": "Partial destination held, source can already be fenced when dest write fails; protect leftovers and all prior charges.",
+      "retained": "New directories, initialized, execution.lock, referenced outputs, ledger, manifest; unknown/unreferenced files not covered by checkpoint.",
+      "serialization_boundary": "Checkpoint ledger flock; activate sorted execution leases and ledger locks; Go JSON serializers; snapshots/watch readiness outside this serialization.",
+      "sites": [
+        "internal/ledger/recovery.go:Store.Checkpoint",
+        "internal/ledger/recovery.go:Restore",
+        "internal/ledger/recovery.go:Store.activate",
+        "internal/ledger/recovery.go:writeExclusive",
+        "internal/ledger/recovery.go:executionLease"
+      ],
+      "temporary": "Source and destination ledger replacements + exclusive copies; full cross-root peak UNKNOWN.",
+      "terminal_proof": "Source fence and active destination reports plus checkpoint hash; do not infer old files removed.",
+      "whole_root_envelope": "UNKNOWN"
+    }
+  ]
+}
