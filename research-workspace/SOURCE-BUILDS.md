@@ -144,3 +144,9 @@ replay, and independent reproduction are separate claims. Independent-human
 and second-machine reproduction, service-owner promotion, production security
 qualification, hosted identity, real-data admission, and institutional pilot
 acceptance remain explicit gates. CI cannot substitute for the human gate.
+
+The [supplemental Documents replay observation](evidence/2026-10-17/replay-cleanup-reconciliation/README.md)
+records later verified container absence and a conservative 30 CPU-second
+ledger charge. It resolves that later resource/accounting observation while
+preserving the original failed workload, receipt, report and acceptance record
+unchanged. It does not promote candidates or satisfy human/hosted admission gates.

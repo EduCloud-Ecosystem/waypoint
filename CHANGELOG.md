@@ -354,3 +354,11 @@ Native ARM64 and AMD64 source construction and both 49-check fixture matrices
 pass with a hash-indexed acceptance record, preserved failures and immutable
 recipe/image candidate IDs. Historical replay passes; one earlier local Docker
 cleanup remains an explicit unresolved operator gate. All 136 controls pass.
+
+## 2026-10-17: Supplemental failed-replay cleanup observation
+
+Append hash-linked, read-only evidence of exact container absence and the
+matching ledger's verified cleanup and conservative 30 CPU-second charge.
+Preserve all original failed source-build/replay evidence, including the failed
+workload and saved receipt; no ledger mutation, refund or rerun. All four source
+environments remain disabled and human/hosted admission gates remain intact.
