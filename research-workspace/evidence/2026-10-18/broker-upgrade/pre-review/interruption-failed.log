@@ -1,0 +1,26 @@
+test_attempt_budget_is_durable_before_launch_and_never_replenished (test_broker_upgrade.QualificationControls.test_attempt_budget_is_durable_before_launch_and_never_replenished) ... ok
+test_attempt_refuses_over_limit_boolean_and_unreviewed_image_before_recording (test_broker_upgrade.QualificationControls.test_attempt_refuses_over_limit_boolean_and_unreviewed_image_before_recording) ... ok
+test_build_manifest_must_bind_binary_pin_metadata_and_builder (test_broker_upgrade.QualificationControls.test_build_manifest_must_bind_binary_pin_metadata_and_builder) ... ok
+test_complete_oracle_rejects_empty_partial_duplicate_false_and_unknown (test_broker_upgrade.QualificationControls.test_complete_oracle_rejects_empty_partial_duplicate_false_and_unknown) ... ok
+test_failed_body_and_failed_cleanup_cannot_report_pass (test_broker_upgrade.QualificationControls.test_failed_body_and_failed_cleanup_cannot_report_pass) ... ok
+test_interruption_after_checks_cannot_publish_pass (test_broker_upgrade.QualificationControls.test_interruption_after_checks_cannot_publish_pass) ... FAIL
+test_oracle_remains_enforced_under_optimized_python (test_broker_upgrade.QualificationControls.test_oracle_remains_enforced_under_optimized_python) ... ok
+test_output_existing_directory_file_and_symlink_refused (test_broker_upgrade.QualificationControls.test_output_existing_directory_file_and_symlink_refused) ... ok
+test_refusal_oracle_fails_when_operation_unexpectedly_succeeds (test_broker_upgrade.QualificationControls.test_refusal_oracle_fails_when_operation_unexpectedly_succeeds) ... ok
+
+======================================================================
+FAIL: test_interruption_after_checks_cannot_publish_pass (test_broker_upgrade.QualificationControls.test_interruption_after_checks_cannot_publish_pass)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-broker-upgrade/research-workspace/tests/test_broker_upgrade.py", line 110, in test_interruption_after_checks_cannot_publish_pass
+    self.assertEqual(report["status"], "FAIL")
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'PASS' != 'FAIL'
+- PASS
++ FAIL
+
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.256s
+
+FAILED (failures=1)

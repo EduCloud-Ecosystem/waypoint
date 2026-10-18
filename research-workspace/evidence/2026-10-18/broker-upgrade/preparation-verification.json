@@ -1,0 +1,80 @@
+{
+  "binaries": {
+    "baseline": {
+      "build_manifest_sha256": "8eb755f1887187cf4440b58949a8f860ee9e8a28aed8065d4ead5ce678646081",
+      "build_metadata": [
+        "\tpath\tgithub.com/EduCloud-Ecosystem/outfitter/cmd/outfitter",
+        "\tmod\tgithub.com/EduCloud-Ecosystem/outfitter\t(devel)\t",
+        "\tbuild\t-buildmode=exe",
+        "\tbuild\t-compiler=gc",
+        "\tbuild\tDefaultGODEBUG=containermaxprocs=0,cryptocustomrand=1,decoratemappings=0,tlssecpmlkem=0,tlssha1=1,updatemaxprocs=0,urlstrictcolons=0,x509sha256skid=0",
+        "\tbuild\tCGO_ENABLED=0",
+        "\tbuild\tGOARCH=arm64",
+        "\tbuild\tGOOS=darwin",
+        "\tbuild\tGOARM64=v8.0"
+      ],
+      "sha256": "bf6cd8a47d96ed04817d0f3ceac8da2392871ac1770e965a93bc14111c03f63e",
+      "source_commit": "5827c84e9952cc67b85e91ceff4282e0ead6923b",
+      "source_sha256": {
+        "cmd/outfitter/main.go": "62745a03b53daf375c93e2503044f862ca6cdad3d9be2f49ff28ade24ca136db",
+        "go.mod": "bcf81d648b7f769adf99a0864b64701f350d46d3784c8b1c24fc55fbeccb341f",
+        "internal/broker/broker.go": "2f9511aebd21cad90eb8f1acdf326ec17b1b6d6b38a307e32a07c7aa8028721c",
+        "internal/ledger/recovery.go": "7cdc7e2d91cade3e14a18036c2bccd23b97e669154dbdee23fec06da9ebbbd96",
+        "internal/ledger/store.go": "2243e2e9c9f40dff06ce82478bf96729b642a2323f3cca3fd929b26b3f00776a",
+        "internal/provider/docker/docker.go": "c3bbc553674547b6ad7bbcc9b485616ae4c0cc099222468e1737ba7802ffa581",
+        "internal/provider/jetstream2/client.go": "0549604efaafccfe7f743cb53182185ce033b174f1bf7f858baf562d1ba4e5fb",
+        "internal/provider/jetstream2/worker.go": "55067b6265c934f12212eb75d3a3dab97006ab8d645f3ef8853686129ef73cf8",
+        "internal/provider/provider.go": "8d96ea6c07987e957ad9a482a1f7f23e94046cbd4c4f9af849e161555c61b2bf"
+      },
+      "source_tree": "b14606fe5bca711a77dcb20d0c5a6a8f72773276"
+    },
+    "candidate": {
+      "build_manifest_sha256": "c51e4e0020d38fe287ba1b27eb554a88bcb6e1ba3c2bc455514d4bada68846b3",
+      "build_metadata": [
+        "\tpath\tgithub.com/EduCloud-Ecosystem/outfitter/cmd/outfitter",
+        "\tmod\tgithub.com/EduCloud-Ecosystem/outfitter\t(devel)\t",
+        "\tbuild\t-buildmode=exe",
+        "\tbuild\t-compiler=gc",
+        "\tbuild\tDefaultGODEBUG=containermaxprocs=0,cryptocustomrand=1,decoratemappings=0,tlssecpmlkem=0,tlssha1=1,updatemaxprocs=0,urlstrictcolons=0,x509sha256skid=0",
+        "\tbuild\tCGO_ENABLED=0",
+        "\tbuild\tGOARCH=arm64",
+        "\tbuild\tGOOS=darwin",
+        "\tbuild\tGOARM64=v8.0"
+      ],
+      "sha256": "8685227e429b83bd1cafecbf02f8085e0c91fa085ab47821e9f65e557c8e41d1",
+      "source_commit": "5446438985e31cb739f2048a2aa2176918831a7e",
+      "source_sha256": {
+        "cmd/outfitter/main.go": "02ee0c49e2cdd43e457811ca1c2bfec4d39c118c88e355e7f6661cd8afe3f3c8",
+        "go.mod": "bcf81d648b7f769adf99a0864b64701f350d46d3784c8b1c24fc55fbeccb341f",
+        "internal/broker/broker.go": "9456137a285e50b2cadeeb7a08398752b505f2bbd7d25593edcdd9f2a596117d",
+        "internal/broker/content.go": "01a5e298ca33082ae898430228a3bf02dd008722764128a239e5cf5c3877fab7",
+        "internal/consumer/consumer.go": "e81e241e4ca9e38d854e6c71423f4efdfdebceb0f7d7f8dc289b71181f1ac005",
+        "internal/ledger/native.go": "a3910775658d9148cf2db01b7e4502fd3a5e1df3b6a044a4feb9eff73a3ebec3",
+        "internal/ledger/recovery.go": "b49ca09ad850f9b54b0bb3fda8af63b0ac8b9de63246fa5e874c1f7bd045dcc2",
+        "internal/ledger/serialization.go": "eef5ed09e877eed6b0bf267d07173e49ba4d00c947e4da54eca7cc04c773a64b",
+        "internal/ledger/store.go": "3de6ae308ada34f55e718061421c9e132e295d6c535623e05108a91c76664b12",
+        "internal/provider/consumer.go": "0789069be29614863b4a71c1ee387d0a42e32362f699e960756cd1075ff8efcc",
+        "internal/provider/docker/docker.go": "c3bbc553674547b6ad7bbcc9b485616ae4c0cc099222468e1737ba7802ffa581",
+        "internal/provider/jetstream2/client.go": "49eff5adebb2a29dd022f8be481c30fd9b8549109da690d5d421bd646ca217c0",
+        "internal/provider/jetstream2/compatibility.go": "52f96550afacd5113fc6051b84ccc9fcf83c83f51e70acd09c02a38590788720",
+        "internal/provider/jetstream2/compatibility_decode.go": "ce2638893fb8aa23280ec3de492ae4eb606001e468f5413c8628bd485372f09a",
+        "internal/provider/jetstream2/experiment.go": "59712eb3c14b0049ed81a24a2fe285554b5e9af610e829529c35bcb5d5a6de7f",
+        "internal/provider/jetstream2/journal.go": "2aaca19c780a0bae86e80f71612b614ffceff326dc5c2734c6152898466ccb55",
+        "internal/provider/jetstream2/rescue_observer.go": "3950919ae8cd4e4279538744cf5cf635ebe3969de0f082d848df7ffd35f0f0e3",
+        "internal/provider/jetstream2/rescue_protocol.go": "d199c48b66d33b61c199a4203b194037ef13cbcf591994f941df751adb3090ee",
+        "internal/provider/jetstream2/rescue_store.go": "327f475a284c9ebc93c862d1e1676f92f19d544f85bac0411fe53467c35411b9",
+        "internal/provider/jetstream2/supervisor.go": "0fa43206d8848cfd31e29d93ec69abbf538a83a9fb3c0ff25ef0cefe75fefea8",
+        "internal/provider/jetstream2/worker.go": "a08e7eada902223b5a961470c4a2b71d20535ad7fa466169f97248fe0b4099f0",
+        "internal/provider/provider.go": "1c7e4c3fdb99a23aab0352390c48578fd55ca52738e2ff278281400a367eb140"
+      },
+      "source_tree": "b65c2c381a282f221e0cb8acfa2a47bf8b3fca4e"
+    }
+  },
+  "boundary": "Final builder and provenance validation only; no workload repeated.",
+  "builder_sha256": "5255ef9520437ff7e98e61d45433793830d71e70de8411c2bae4beea906a84b0",
+  "docker_attempts": 0,
+  "format": "waypoint-broker-upgrade-preparation-v1",
+  "pins_sha256": "f25096dd58a8d7388834d1b6333276317b0187f46ebd489975097fdfdcd8e35c",
+  "status": "PASS",
+  "verifier_sha256": "36c047ae0686dff90540dc8f5967bf4015551d268ea70923f4f04102e6b7ceea"
+}

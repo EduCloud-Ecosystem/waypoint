@@ -1,0 +1,38 @@
+"""Independent no-Docker regression probe for final accounting consistency."""
+import copy
+import json
+import sys
+import tempfile
+from pathlib import Path
+from unittest.mock import patch
+
+sys.path.insert(0, '/Users/gregchism/dev/.educloud-worktrees/waypoint-broker-upgrade/research-workspace')
+import verify_broker_upgrade as q
+
+original = json.loads((q.HERE / 'evidence/2026-10-18/broker-upgrade/verification.json').read_text())
+assert original['status'] == 'PASS'
+assert sum(a['compute']['charged_cpu_seconds'] for a in original['attempts']) == 210
+image = next(iter(json.loads((q.HERE / 'images.lock.json').read_text()).values()))
+with tempfile.TemporaryDirectory(prefix='waypoint44-cleanup-probe-') as temporary:
+    audit = q.Audit(Path(temporary) / 'audit', {})
+    audit.report = copy.deepcopy(original)
+    audit.targets = [(sys.executable, temporary, {'request_id': a['request_id'], 'project_id': a['project_id'], 'image': image}, a)
+                     for a in audit.report['attempts']]
+    requests = {r['request_id']: r for _, _, r, _ in audit.targets}
+    def changed_status(executable, state, command, flag, request_id):
+        if command != 'status':
+            raise AssertionError('Unexpected additional broker operation')
+        request = requests[request_id]
+        return 0, {'schema_version': 1, 'request_id': request_id, 'project_id': request['project_id'], 'image': image,
+                   'admitted': False, 'execution_started': False, 'cleanup_verified': True, 'unresolved_liability': False,
+                   'stdout': '', 'stderr': '', 'error': 'refused', 'exit_code': None, 'status': 'failed',
+                   'compute': {'reserved_cpu_seconds': 0, 'charged_cpu_seconds': 0, 'provenance': 'not_admitted'}}
+    with patch.object(audit, 'call', side_effect=changed_status):
+        cleanup = audit.cleanup()
+    print(json.dumps({'original_charged_cpu_seconds': 210,
+                      'final_charged_cpu_seconds': sum(a['compute']['charged_cpu_seconds'] for a in audit.report['attempts']),
+                      'cleanup_returns': cleanup, 'qualification_accepted': q.accepted(audit.report),
+                      'final_outcomes': [a['outcome'] for a in audit.report['attempts']],
+                      'docker_attempts_in_probe': 0}, sort_keys=True))
+    if cleanup is True and q.accepted(audit.report) is True:
+        raise SystemExit('CONFIRMED FALSE PASS: final accounting erased after the successful run checks')
