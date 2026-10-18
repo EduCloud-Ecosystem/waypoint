@@ -76,6 +76,11 @@ jobs:
         run: |
           python verify_recovery.py --broker "$GITHUB_WORKSPACE/outfitter/bin/outfitter" \
             --output "$RUNNER_TEMP/recovery-acceptance"
+      - name: Exercise guarded dispatch and versioned recovery
+        working-directory: waypoint/research-workspace
+        run: |
+          python verify_guard_provider.py --broker "$GITHUB_WORKSPACE/outfitter/bin/outfitter" \
+            --output "$RUNNER_TEMP/operation-guard-acceptance"
       - name: Retain only public synthetic acceptance evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -92,6 +97,7 @@ jobs:
             ${{ runner.temp }}/recovery-acceptance/verification.json
             ${{ runner.temp }}/recovery-acceptance/before.zip
             ${{ runner.temp }}/recovery-acceptance/after.zip
+            ${{ runner.temp }}/operation-guard-acceptance/verification.json
   clean-source-builds:
     if: github.event_name == 'workflow_dispatch' && inputs.clean_source_builds
     runs-on: ubuntu-latest

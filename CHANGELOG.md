@@ -1,5 +1,16 @@
 # CHANGELOG.md: Document history for the EduCloud hosting layer repo
 
+## 2026-10-17: Fresh local operation guard
+
+- Add durable intents and exact database completion receipts for an explicit
+  disposable profile, with a visible dispatch hold and preserved safety controls.
+- Fence claim and launch, retain uncertain initialization/results, preserve
+  browser drafts and idempotency, and introduce guard-aware v2 held recovery.
+- Add independent review regressions and local browser/provider acceptance;
+  storage quotas, migration and the fifth headroom witness remain blocked.
+- Keep source candidates disabled, prior failed evidence and liabilities intact,
+  and Belay, accepted state and parent worktrees untouched.
+
 ## 2026-10-17: Blocked storage admission design and evidence
 
 - Preserve an inert, hash-bound admission draft and five offline defect witnesses

@@ -35,6 +35,7 @@ def main():
     commands = parser.add_subparsers(dest="command", required=True)
     init = commands.add_parser("init", help="Create fresh private local authority")
     init.add_argument("--state", required=True)
+    init.add_argument("--operation-guard", action="store_true", help="Explicit fresh disposable operation-guard profile; no quota enforcement or migration")
     init.add_argument("--broker", required=True)
     init.add_argument("--subject", default="researcher")
     init.add_argument("--python-image")
@@ -85,10 +86,16 @@ def main():
         if not 30 <= args.total_budget_cpu_seconds <= 36000:
             raise ValueError("Choose a finite total allowance between 30 and 36,000 CPU-seconds.")
         broker = Broker(args.broker, Path(args.state) / "broker")
-        store = Store(args.state, create=True)
-        private_write(store.root / "config.json", canonical({"version": 1, "mode": "local-public-data", "broker": broker.executable,
-                      "images": images, "total_budget_cpu_seconds": args.total_budget_cpu_seconds}).encode())
-        key = store.add_user(args.subject)
+        config = {"version": 1, "mode": "local-public-data", "broker": broker.executable,
+                  "images": images, "total_budget_cpu_seconds": args.total_budget_cpu_seconds}
+        if args.operation_guard:
+            config["mode"] = "local-guarded-public-data-v1"
+            store = Store(args.state, create=True, guarded=True, config=config, subject=args.subject)
+            key = store.initial_key
+        else:
+            store = Store(args.state, create=True)
+            private_write(store.root / "config.json", canonical(config).encode())
+            key = store.add_user(args.subject)
         print(json.dumps({"subject": args.subject, "access_key": key, "note": "Save this private access key. It is displayed only once."}))
     elif args.command == "user-add":
         key = Store(args.state).add_user(args.subject)

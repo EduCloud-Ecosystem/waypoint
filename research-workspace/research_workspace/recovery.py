@@ -19,8 +19,10 @@ import tempfile
 
 from .runtime import Broker, strict_json
 from .store import Store, canonical, now, private_write, unknown_compute
+from .operation_guard import APPLICATION_ID, SCHEMA, FILE, LOCK, TEMP, GUARDED_MODES, sync_directory
 
 FORMAT = "educloud-private-checkpoint-v1"
+GUARD_FORMAT = "educloud-private-checkpoint-v2"
 MAX_FILES = 10000
 MAX_FILE = 64 * 1024 * 1024
 MAX_TOTAL = 128 * 1024 * 1024
@@ -111,7 +113,11 @@ def offline(root):
 @contextmanager
 def frozen_db(root):
     read_file(root / "workspace.sqlite3")
-    with closing(Store(root).connect()) as db:
+    store = Store(root, resume=False)
+    with ExitStack() as stack:
+        if store.guard:
+            stack.enter_context(store.guard.locked())
+        db = stack.enter_context(closing(store._connect()))
         db.execute("BEGIN IMMEDIATE")
         try:
             yield db
@@ -121,12 +127,20 @@ def frozen_db(root):
 
 def database_digest(db):
     schema = [tuple(row) for row in db.execute("SELECT type,name,tbl_name,sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' ORDER BY type,name")]
-    if any(row[0] not in ("table", "index") for row in schema) or {row[1] for row in schema if row[0] == "table"} != set(TABLES):
+    guarded = db.execute("PRAGMA application_id").fetchone()[0] == APPLICATION_ID
+    tables = TABLES + ("operation_authority", "operation_receipts") if guarded else TABLES
+    if guarded:
+        from .storage_inventory import SCHEMA_SQL, _schema
+        with closing(sqlite3.connect(":memory:")) as expected:
+            expected.executescript(";".join(SCHEMA_SQL + SCHEMA))
+            if _schema(db) != _schema(expected):
+                raise ValueError("Unsupported guarded database schema.")
+    if any(row[0] not in ("table", "index") for row in schema) or {row[1] for row in schema if row[0] == "table"} != set(tables):
         raise ValueError("Unsupported workspace database schema for recovery.")
     if db.execute("PRAGMA quick_check").fetchone()[0] != "ok":
         raise ValueError("The workspace database failed its integrity check.")
     digest = hashlib.sha256(canonical(schema).encode())
-    for table in TABLES:
+    for table in tables:
         digest.update(table.encode())
         for row in db.execute(f"SELECT rowid,* FROM {table} ORDER BY rowid"):
             digest.update(canonical(tuple(row)).encode())
@@ -135,14 +149,31 @@ def database_digest(db):
 
 def fingerprint(root, db, config=None):
     config = read_file(root / "config.json", 65536) if config is None else config
-    return sha(canonical({"database": database_digest(db), "config": sha(config),
-                          "runs": inventory(root / "runs")}).encode())
+    value = {"database": database_digest(db), "config": sha(config), "runs": inventory(root / "runs")}
+    if db.execute("PRAGMA application_id").fetchone()[0] == APPLICATION_ID:
+        value["guard_files"] = guard_files(root)
+    return sha(canonical(value).encode())
 
 
-def fresh_directory(value):
+def guard_files(root):
+    names = [FILE, LOCK] + sorted(p.name for p in root.glob(TEMP + "*"))
+    return {name: {"bytes": len(content), "sha256": sha(content)} for name in names
+            for content in [read_file(root / name)]}
+
+
+def fresh_directory(value, *, durable=False):
     path = safe_root(value)
     path.mkdir(mode=0o700, parents=False, exist_ok=False)
+    if durable:
+        sync_directory(path)
+        sync_directory(path.parent)
     return path
+
+
+def sync_tree_directories(root):
+    for directory, _, _ in os.walk(root, topdown=False, followlinks=False):
+        sync_directory(directory)
+    sync_directory(Path(root).parent)
 
 
 def copy_files(source, destination, files):
@@ -156,6 +187,9 @@ def copy_files(source, destination, files):
 
 
 def checkpoint(state, output, *, broker=None):
+    if Store(state, resume=False).guard:
+        from .guarded_recovery import checkpoint as guarded_checkpoint
+        return guarded_checkpoint(state, output, broker=broker)
     with offline(state) as root, frozen_db(root) as db:
         config_bytes = read_file(root / "config.json", 65536)
         config = strict_json(config_bytes)
@@ -194,7 +228,7 @@ def verified_checkpoint(checkpoint_path, expected):
     if sha(payload) != expected:
         raise ValueError("The checkpoint does not match the trusted digest.")
     manifest = strict_json(payload)
-    if not isinstance(manifest, dict) or set(manifest) != {"format", "created_at", "source_state", "source_fingerprint", "broker", "files"} or manifest["format"] != FORMAT:
+    if not isinstance(manifest, dict) or set(manifest) != {"format", "created_at", "source_state", "source_fingerprint", "broker", "files"} or manifest["format"] not in {FORMAT, GUARD_FORMAT}:
         raise ValueError("Unsupported private checkpoint format.")
     actual = inventory(root)
     actual.pop("manifest.json")
@@ -205,6 +239,9 @@ def verified_checkpoint(checkpoint_path, expected):
 
 def restore(checkpoint_path, output, *, trusted_sha256, broker):
     source, manifest = verified_checkpoint(checkpoint_path, trusted_sha256)
+    if manifest["format"] == GUARD_FORMAT:
+        from .guarded_recovery import restore as guarded_restore
+        return guarded_restore(checkpoint_path, output, trusted_sha256=trusted_sha256, broker=broker)
     destination = safe_root(output)
     if destination.is_relative_to(source) or destination.is_relative_to(safe_root(manifest["source_state"])):
         raise ValueError("Restore into a separate destination outside the checkpoint and original source.")
@@ -216,7 +253,7 @@ def restore(checkpoint_path, output, *, trusted_sha256, broker):
     config = strict_json(read_file(source / "config.json", 65536))
     config.update(mode="recovery-held", broker=str(Path(broker).resolve()))
     private_write(root / "config.json", canonical(config).encode())
-    with closing(Store(root).connect()) as db:
+    with closing(Store(root, resume=False).connect()) as db:
         database_digest(db)
         db.execute("BEGIN IMMEDIATE")
         db.execute("DELETE FROM sessions")
@@ -246,7 +283,7 @@ def recovery_status(state):
     root = safe_root(state)
     config = strict_json(read_file(root / "config.json", 65536))
     recovery = strict_json(read_file(root / "recovery.json", 65536)) if (root / "recovery.json").exists() else None
-    with closing(Store(root).connect()) as db:
+    with closing(Store(root, resume=False).connect()) as db:
         runs = [strict_json(row[0]) for row in db.execute("SELECT payload FROM runs ORDER BY rowid")]
     compute = Broker(config["broker"], root / "broker").call("recovery-status")
     return {"format": FORMAT, "mode": config["mode"], "recovery": recovery,
@@ -258,6 +295,9 @@ def recovery_status(state):
 
 def activate(state, source_state, checkpoint_path, *, trusted_sha256):
     archive, manifest = verified_checkpoint(checkpoint_path, trusted_sha256)
+    if manifest["format"] == GUARD_FORMAT:
+        from .guarded_recovery import activate as guarded_activate
+        return guarded_activate(state, source_state, checkpoint_path, trusted_sha256=trusted_sha256)
     destination, source = safe_root(state), safe_root(source_state)
     if destination == source or str(source) != manifest["source_state"]:
         raise ValueError("Activation requires the original source and a distinct replacement.")

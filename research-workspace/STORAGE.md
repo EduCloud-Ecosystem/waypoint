@@ -128,3 +128,7 @@ Hosted capacity, manual screen-reader/focus-order and new human acceptance,
 private/student data, operational ownership and source promotion remain open.
 The four source environments stay disabled; original failed controls and cleanup
 evidence are unchanged. Belay and parent pilot worktrees are outside this work.
+
+The separate [operation guard](OPERATION-GUARD.md) is available only through an
+explicit fresh disposable profile. It preserves uncertainty and pauses dispatch;
+it does not satisfy storage admission or the blocked headroom witness.
