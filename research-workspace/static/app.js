@@ -24,11 +24,13 @@
     projectListFingerprint: "",
     refreshInFlight: false,
     runBusy: false,
+    operationStatus: { state: "checking" },
+    projectSubmission: null,
     confirmation: null,
   };
 
   class RequestError extends Error {
-    constructor(message, status = 0) { super(message); this.status = status; }
+    constructor(message, status = 0, code = null) { super(message); this.status = status; this.code = code; }
   }
 
   function element(tag, className, text) {
@@ -65,11 +67,17 @@
     }
     if (!response.ok) {
       let message = `The request could not be completed (${response.status}).`;
-      try { const payload = await response.json(); if (typeof payload.error === "string") message = payload.error; } catch (_) { /* No untrusted HTML error bodies are displayed. */ }
+      let code = null;
+      try {
+        const payload = await response.json();
+        if (typeof payload.error === "string") message = payload.error;
+        code = payload.code;
+        if (payload.operation_status) setOperationStatus(payload.operation_status);
+      } catch (_) { /* No untrusted HTML error bodies are displayed. */ }
       if (response.status === 401 && state.subject) {
         showSignIn("Your session has ended. Sign in again to continue. Your open run drafts are kept for this page session.");
       }
-      throw new RequestError(message, response.status);
+      throw new RequestError(message, response.status, code);
     }
     if (download) return response.blob();
     if (response.status === 204) return null;
@@ -107,12 +115,36 @@
     return element("span", `badge ${classes}`, label(status));
   }
 
+  function dispatchPaused() { return state.operationStatus.state !== "ready"; }
+  function runPaused() { return dispatchPaused() || state.operationStatus.can_submit_run === false; }
+  function projectPaused() { return dispatchPaused() || state.operationStatus.can_create_project === false; }
+  function setOperationStatus(value) {
+    state.operationStatus = value;
+    const paused = runPaused() || projectPaused();
+    $("operation-status").hidden = !paused;
+    $("operation-status").textContent = !projectPaused() && runPaused()
+      ? "New runs are paused because this workspace needs an operator check before accepting more work. Your draft remains editable; queued work and cancellation remain available."
+      : value.reason === "intent_limit"
+      ? "New projects and runs are paused because this workspace needs an operator check before accepting more work. Your drafts remain editable; existing records and cancellation remain available."
+      : value.state === "paused"
+      ? "New projects and runs are paused because an earlier operation could not be verified. Your drafts remain editable. Ask the operator; existing records and cancellation remain available."
+      : "Checking whether new work is available. Your drafts remain editable.";
+    $("create-submit").disabled = projectPaused();
+    updateRunPermissions();
+  }
+  async function refreshOperationStatus() {
+    if (!state.subject) return;
+    try { setOperationStatus(await api("/api/operation-status")); }
+    catch (_) { if (state.subject) setOperationStatus({ state: "checking" }); }
+  }
+
   function stopPolling() { if (state.pollTimer) clearTimeout(state.pollTimer); state.pollTimer = null; }
   function schedulePoll() {
     stopPolling();
-    if (!state.subject || !state.selected || document.hidden) return;
+    if (!state.subject || document.hidden) return;
     const active = state.detail?.runs?.some((run) => ["queued", "running"].includes(run.status));
     state.pollTimer = setTimeout(async () => {
+      await refreshOperationStatus();
       await refreshProject({ quiet: true });
       schedulePoll();
     }, active ? 3500 : 12000);
@@ -224,7 +256,7 @@
   function updateRunPermissions() {
     const permitted = canRun();
     $("run-fields").disabled = !permitted || state.runBusy;
-    $("submit-run").disabled = !permitted || state.runBusy || !$("recipe").value || !selectedEnvironment()?.available;
+    $("submit-run").disabled = runPaused() || !permitted || state.runBusy || !$("recipe").value || !selectedEnvironment()?.available;
     const readOnly = $("read-only-message");
     readOnly.hidden = permitted || !state.detail;
     if (state.detail && !permitted) readOnly.textContent = state.detail.role === "viewer" ? "You have view access. You can inspect and export this project's evidence; ask the owner for editor access to submit a run." : "This project is closed or has reached its end date. Existing evidence remains available below.";
@@ -260,7 +292,7 @@
 
   async function enterWorkspace(subject) {
     if (state.lastSubject && state.lastSubject !== subject) {
-      state.drafts.clear(); state.submissions.clear(); state.selected = null; state.detail = null;
+      state.drafts.clear(); state.submissions.clear(); state.projectSubmission = null; state.selected = null; state.detail = null;
       $("create-form").reset();
     }
     state.lastSubject = subject;
@@ -280,6 +312,7 @@
     $("account-subject").title = subject;
     clearError();
     $("project-loading").hidden = false;
+    await refreshOperationStatus();
     const results = await Promise.allSettled([api("/api/projects"), api("/api/recipes"), api("/api/environments")]);
     if (!state.subject) return;
     if (results[0].status !== "fulfilled") {
@@ -306,7 +339,7 @@
     $("project-view").hidden = true;
     $("project-loading").hidden = true;
     document.title = "Research workspace · EduCloud";
-    stopPolling();
+    schedulePoll();
   }
 
   function renderProjectList() {
@@ -577,7 +610,7 @@
   });
   $("sign-out").addEventListener("click", async () => {
     $("sign-out").disabled = true;
-    try { await api("/api/session", { method: "DELETE" }); showSignIn(state.auth.mode === "oidc" ? "Signed out of this workspace. Your identity-provider session may still be open. Use End identity-provider session before signing in again." : ""); state.drafts.clear(); state.submissions.clear(); state.selected = null; state.detail = null; $("create-form").reset(); }
+    try { await api("/api/session", { method: "DELETE" }); showSignIn(state.auth.mode === "oidc" ? "Signed out of this workspace. Your identity-provider session may still be open. Use End identity-provider session before signing in again." : ""); state.drafts.clear(); state.submissions.clear(); state.projectSubmission = null; state.selected = null; state.detail = null; $("create-form").reset(); }
     catch (error) { if (state.subject) showError(`Sign-out was not confirmed. ${errorMessage(error)}`); }
     finally { $("sign-out").disabled = false; }
   });
@@ -608,16 +641,20 @@
   });
   $("create-form").addEventListener("submit", async (event) => {
     event.preventDefault(); formError("create-error", "");
+    if (projectPaused()) { formError("create-error", "New work is paused. Your draft is preserved."); return; }
     const end = new Date(`${$("create-end").value}T23:59:59`);
     if (!Number.isFinite(end.getTime()) || end.getTime() <= Date.now()) { formError("create-error", "Choose an end date in the future."); return; }
     const body = { name: $("create-name").value.trim(), question: $("create-question").value.trim(), success_criterion: $("create-success").value.trim(), ends_at: end.toISOString(), budget_cpu_seconds: Number($("create-budget").value) };
+    const fingerprint = JSON.stringify(body);
+    if (!state.projectSubmission || state.projectSubmission.fingerprint !== fingerprint) state.projectSubmission = { fingerprint, key: crypto.randomUUID() };
     $("create-submit").disabled = true; $("create-submit").textContent = "Creating…";
     try {
-      const project = await api("/api/projects", { method: "POST", body });
+      const project = await api("/api/projects", { method: "POST", body, headers: { "Idempotency-Key": state.projectSubmission.key } });
+      state.projectSubmission = null;
       state.projects.unshift(project); $("create-dialog").close(); $("create-form").reset();
       await selectProject(project.id); showSuccess("Project created. Add public or synthetic data to start your first run."); $("project-title").scrollIntoView({ block: "start" }); announce("Project created.");
     } catch (error) { formError("create-error", errorMessage(error)); }
-    finally { $("create-submit").disabled = false; $("create-submit").textContent = "Create project"; }
+    finally { $("create-submit").disabled = projectPaused(); $("create-submit").textContent = "Create project"; }
   });
 
   for (const name of ["workspace", "details"]) {
@@ -648,7 +685,7 @@
     event.target.value = "";
   });
   $("run-form").addEventListener("submit", async (event) => {
-    event.preventDefault(); if (!canRun() || state.runBusy || !selectedEnvironment()?.available) return;
+    event.preventDefault(); if (runPaused() || !canRun() || state.runBusy || !selectedEnvironment()?.available) return;
     updateInputSize(); if (!$("run-form").reportValidity()) return;
     const id = state.selected;
     const body = { recipe: $("recipe").value, condition: $("condition").value, csv: $("csv-input").value, parameters: {} };
@@ -662,7 +699,7 @@
       state.submissions.delete(id);
       if (state.selected === id) { showSuccess(`${conditionName(body.condition)} run submitted. Its progress will appear in Project runs.`); await refreshProject(); announce("Run submitted."); }
     } catch (error) {
-      if (error.status > 0 && error.status < 500) state.submissions.delete(id);
+      if (error.status > 0 && error.status < 500 && error.code !== "operation_busy" && error.code !== "operation_paused") state.submissions.delete(id);
       if (state.subject && state.selected === id) showError(`${errorMessage(error)}${!error.status || error.status >= 500 ? " The submission outcome is uncertain. Retry with the same recipe, condition, and data to reuse this request safely." : ""}`);
     } finally {
       state.runBusy = false; $("submit-run").textContent = "Start run"; updateRunPermissions(); schedulePoll();
@@ -670,6 +707,7 @@
   });
   $("refresh-project").addEventListener("click", async () => {
     clearError();
+    await refreshOperationStatus();
     const results = await Promise.allSettled([api("/api/recipes"), api("/api/environments")]);
     if (!state.subject) return;
     state.recipes = results[0].status === "fulfilled" ? results[0].value.recipes || [] : [];

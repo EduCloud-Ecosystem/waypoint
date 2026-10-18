@@ -1,0 +1,59 @@
+{
+  "base_commit": "640fa2d89d9e98be0d0ff8f0fbaae32e83fa74ec",
+  "boundaries": {
+    "accepted_state_migrated": false,
+    "belay_and_parent_worktrees": "Untouched by this slice.",
+    "headroom_witness": "BLOCKED",
+    "hosted_acceptance": false,
+    "manual_accessibility_acceptance": false,
+    "original_failed_cleanup_gate": "Preserved; original failed record is not replaced by later observations.",
+    "quota_enforced": false,
+    "real_data_acceptance": false,
+    "source_candidates_disabled": [
+      "summary-python-v2-2d21e7a33cfcf954a3a8822086c60065803c8c54c5e1c2cf0424bd3000ce38be",
+      "summary-r-v3-9cf75772fa71c34c9e47fd8f08dbacc124099ee0298aa201eb0d393f038f9d2f",
+      "summary-python-v3-02492c2dfdd6f8ff463dd98b61bfd403bcb84ac666dd679f1f1dbc37ad780635",
+      "summary-r-v4-c382484f8ace7bc970aee958f2f1297e4a8d7a91a243272bd4887c0ba033e2a2"
+    ]
+  },
+  "browser": {
+    "compute_execution": false,
+    "count": 9,
+    "provider": "simulated",
+    "report": "browser-verification.json",
+    "screenshot": "paused-workspace.png",
+    "status": "PASS"
+  },
+  "format": "educloud-operation-guard-acceptance-v1",
+  "incomplete_browser_attempts": [
+    "browser-attempt-1-incomplete.json",
+    "browser-attempt-3-incomplete.json"
+  ],
+  "integrity": {
+    "environment_catalog_unchanged": true,
+    "frozen_draft_patch_sha256": "aa4fa211bc0e7dff69096c21616c15c9d3d5b291eadcfc973fb033794f489c39",
+    "prior_evidence_files_unchanged": 127,
+    "prior_evidence_manifest": "prior-evidence-sha256.json",
+    "rejected_draft_files_unchanged": {
+      "research-workspace/research_workspace/runtime.py": "ffe41ea1c35f3bdd2d7c2e84d25fd9abfbaaafab13f07025f2f972a9d5a69f80",
+      "research-workspace/research_workspace/storage.py": "f26f7d87540393f7f108de9551aecbe2b35133ba8e0091f4d5b48e7f6f547128",
+      "research-workspace/research_workspace/store.py": "6070acd8c3840e2b42a01a21b256cba0be1f083690f5c746dfdcab2a8ae31bd6"
+    },
+    "verified_source_manifest": "verified-source-sha256.json"
+  },
+  "javascript_syntax": "PASS",
+  "offline_controls": {
+    "command": "PYTHONPATH=research-workspace python3 -W error::ResourceWarning -m unittest discover -s research-workspace/tests -q",
+    "count": 235,
+    "status": "PASS"
+  },
+  "provider": {
+    "boundary": "Fresh local synthetic Docker execution with reviewed legacy Python and R runtimes; v2 coordinated replacement; no accepted store migration.",
+    "count": 12,
+    "outfitter_commit": "5827c84e9952cc67b85e91ceff4282e0ead6923b",
+    "report": "provider-verification.json",
+    "status": "PASS"
+  },
+  "recorded_at": "2026-10-18T06:02:41.035623+00:00",
+  "status": "PASS_LOCAL_SCOPE"
+}

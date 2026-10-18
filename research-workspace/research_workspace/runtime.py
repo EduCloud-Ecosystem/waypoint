@@ -11,6 +11,7 @@ import time
 from .recipes import IDS, digest, validate_result
 from .store import canonical, private_write
 from .bounded_process import collect
+from .operation_guard import GuardPaused, GuardBusy
 
 
 def strict_json(content):
@@ -73,8 +74,9 @@ class Broker:
     def command(self, *args):
         return [self.executable, "--state-dir", self.state, *args]
 
-    def call(self, *args):
-        process = subprocess.Popen(self.command(*args), stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    def call(self, *args, launch=None):
+        spawn = lambda: subprocess.Popen(self.command(*args), stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        process = launch(spawn) if launch is not None else spawn()
         stdout, _ = collect(process, timeout=20)
         try:
             result = strict_json(stdout)
@@ -84,8 +86,8 @@ class Broker:
             raise ValueError("The compute broker refused the request; check its private operator diagnostics.")
         return result
 
-    def init_project(self, project_id, budget):
-        return self.call("project-init", "--project-id", project_id, "--budget-cpu-seconds", str(budget))
+    def init_project(self, project_id, budget, *, launch=None):
+        return self.call("project-init", "--project-id", project_id, "--budget-cpu-seconds", str(budget), launch=launch)
 
     def usage(self, project_id):
         return self.call("project-status", "--project-id", project_id)
@@ -100,7 +102,12 @@ class Worker:
         self.thread = threading.Thread(target=self.loop, daemon=True, name="research-worker")
 
     def start(self):
-        self.store.recover(cancel_queued=self.identity is not None)
+        try:
+            self.store.recover(cancel_queued=self.identity is not None)
+        except Exception:
+            if not self.store.guard:
+                raise
+            self.store.guard.fail()
         self.thread.start()
 
     def stop(self):
@@ -109,7 +116,17 @@ class Worker:
 
     def loop(self):
         while not self.stopped.is_set():
-            run = self.store.claim(on_cancel=self.identity.release if self.identity else None)
+            try:
+                run = self.store.claim(on_cancel=self.identity.release if self.identity else None)
+            except (GuardPaused, GuardBusy):
+                self.stopped.wait(0.25)
+                continue
+            except Exception:
+                if not self.store.guard:
+                    raise
+                self.store.guard.fail()
+                self.stopped.wait(0.25)
+                continue
             if run is None:
                 self.stopped.wait(0.25)
                 continue
@@ -118,7 +135,14 @@ class Worker:
             except Exception:
                 # Keep failures visible without leaking local paths or raw broker logs.
                 run.update(status="interrupted", metrics={}, error="Execution could not be reconciled. The operator must inspect the broker receipt; no automatic retry was made.")
-                self.store.finish(run)
+                if self.store.guard:
+                    self.store.guard.fail()
+                try:
+                    self.store.finish(run)
+                except Exception:
+                    if not self.store.guard:
+                        raise
+                    self.store.guard.fail()
             finally:
                 if self.identity:
                     self.identity.release(run["id"])
@@ -146,7 +170,7 @@ class Worker:
         content = (directory / "input/data.csv").read_bytes()
         source = (directory / "recipe" / filename).read_bytes()
         if digest(content) != run["input_sha256"] or digest(source) != run["recipe_sha256"]:
-            run.update(status="failed", error="Immutable input or recipe integrity failed before dispatch.", cleanup_verified=True)
+            run.update(status="failed", error="Immutable input or recipe integrity failed before dispatch.", cleanup_verified=True, compute={"reserved_cpu_seconds": 0, "charged_cpu_seconds": 0, "provenance": "not_admitted", "unresolved_liability": False})
             self.store.finish(run)
             return
         from .catalog import resolve_environment, recipe_source
@@ -156,7 +180,7 @@ class Worker:
         if source != recipe_source(trusted):
             raise ValueError("Queued source no longer matches the trusted environment catalog.")
         if self.store.should_cancel(run["id"]):
-            run.update(status="cancelled", error="Cancelled before dispatch.", cleanup_verified=True)
+            run.update(status="cancelled", error="Cancelled before dispatch.", cleanup_verified=True, compute={"reserved_cpu_seconds": 0, "charged_cpu_seconds": 0, "provenance": "not_admitted", "unresolved_liability": False})
             self.store.finish(run)
             return
         command = (["python", f"/recipe/{filename}"] if runtime == "python" else ["Rscript", "--vanilla", f"/recipe/{filename}"])
@@ -167,9 +191,16 @@ class Worker:
                    "cpus": 1, "memory_mb": 256, "pids_limit": 64, "timeout_seconds": 30,
                    "max_output_bytes": 65536, "isolation": "reviewed-local", "allow_supervised_reaper": True}
         request_path = directory / "request.private.json"
+        token = self.store.guard.running(run["id"]) if self.store.guard else None
+        if self.store.guard and token is None:
+            raise GuardPaused("missing_run_intent")
+        if token:
+            token.effect()
         private_write(request_path, canonical(request).encode())
-        with self.identity.publication(run["id"]) if self.identity else nullcontext(True) as authorized:
-            process = subprocess.Popen(self.broker.command("run", "--request", str(request_path)), stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE) if authorized else None
+        def spawn():
+            with self.identity.publication(run["id"]) if self.identity else nullcontext(True) as authorized:
+                return subprocess.Popen(self.broker.command("run", "--request", str(request_path)), stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE) if authorized else None
+        process = token.launch(spawn) if token else spawn()
         if process is None:
             run.update(status="cancelled", error="Identity authorization ended before broker launch.", cleanup_verified=True,
                        compute={"reserved_cpu_seconds": 0, "charged_cpu_seconds": 0, "provenance": "not_admitted", "unresolved_liability": False})

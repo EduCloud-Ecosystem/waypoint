@@ -1,0 +1,11 @@
+{
+  "README.md": "cd42cb55c03a75c86c37d56d5a8f3100b46d36e0f55efbfe6dfa66a762c98b49",
+  "acceptance.json": "cf3a6b50feba68ceded510267f0889c8c56da7571c7e5829c706f2ef8e47b392",
+  "browser-attempt-1-incomplete.json": "2483dafd92ed56fd8fc7c6e4f81275201fd1a2d20a7a10b320c784d4ca831378",
+  "browser-attempt-3-incomplete.json": "a14237e2c839d2fd560181a9c936a3e1f75c02bd06c48a02cb440546b852d963",
+  "browser-verification.json": "b653f3e33b35f48e9c5f2f985ab14bb88f07151786c9700d9c9ea6d3d55c0b8f",
+  "paused-workspace.png": "7e0e3cc2faa9d535574631bf1abc47e62d7c1ed1623168e5e5c03aeec89dab3e",
+  "prior-evidence-sha256.json": "c5077a3e7f54a9fb5fea5aa1a719ecded8e4d1c70dad5bcafbf39f670c3ef83e",
+  "provider-verification.json": "97f05543482e2a9f38d30abdd2655b89aee7b089eb69a1bd7f2be96b04dda089",
+  "verified-source-sha256.json": "b4b6d303398a7203f0874016009852e5ff651b7c17b7c963354b069ee4b3868b"
+}

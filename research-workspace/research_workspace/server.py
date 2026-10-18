@@ -13,6 +13,7 @@ from .evidence import build_bundle
 from .runtime import Broker, Worker, strict_json
 from .store import AccessError, Store
 from .identity import Identity, IdentityUnavailable
+from .operation_guard import GuardPaused, GuardBusy, GUARDED_MODES
 
 STATIC = Path(__file__).resolve().parent.parent / "static"
 WARNING = "Descriptive results from a demonstration recipe. A successful run is not scientific validation or evidence of an intervention effect."
@@ -23,9 +24,9 @@ class Application:
         self.store = Store(state)
         self.config = strict_json((self.store.root / "config.json").read_bytes())
         mode = self.config.get("mode")
-        if mode not in {"local-public-data", "local-synthetic-oidc"}:
+        if mode not in {"local-public-data", "local-synthetic-oidc"} | GUARDED_MODES:
             raise ValueError("This build requires an active local pilot mode.")
-        self.identity = Identity(self.config.get("identity"), self.store) if mode == "local-synthetic-oidc" else None
+        self.identity = Identity(self.config.get("identity"), self.store) if mode in {"local-synthetic-oidc", "local-guarded-synthetic-oidc-v1"} else None
         self.broker = Broker(self.config["broker"], self.store.root / "broker")
         self.worker = Worker(self.store, self.broker, self.identity)
 
@@ -38,6 +39,8 @@ class Application:
         ]}
 
     def dispatch(self, method, path, subject, data, request_key, context=None):
+        if path == "/api/operation-status" and method == "GET":
+            return 200, self.store.operation_status()
         if path == "/api/session" and method == "GET":
             return 200, {"subject": subject}
         if path == "/api/recipes" and method == "GET":
@@ -49,7 +52,7 @@ class Application:
             if method == "GET":
                 return 200, {"projects": self.store.projects(subject)}
             if method == "POST":
-                return 201, self.store.create_project(subject, data, self.broker, self.config["total_budget_cpu_seconds"])
+                return 201, self.store.create_project(subject, data, self.broker, self.config["total_budget_cpu_seconds"], request_key)
         match = re.fullmatch(r"/api/projects/([a-f0-9]{32})(.*)", path)
         if not match:
             return 404, {"error": "That page or action is unavailable."}
@@ -198,6 +201,8 @@ class Handler(BaseHTTPRequestHandler):
                 self.respond(401, {"error": str(exc)})
             except IdentityUnavailable as exc:
                 self.respond(503, {"error": str(exc)})
+            except Exception:
+                self.respond(503, {"error": "Sign-in could not be verified. Existing records were retained; ask the operator."})
             return
         if not path.startswith("/api/"):
             if self.command != "GET":
@@ -236,12 +241,17 @@ class Handler(BaseHTTPRequestHandler):
             status, value = self.server.app.dispatch(self.command, path, subject, data, self.headers.get("Idempotency-Key"), context)
             headers = {"Content-Disposition": 'attachment; filename="research-evidence.zip"'} if isinstance(value, bytes) else None
             self.respond(status, value, headers=headers)
+        except GuardPaused as exc:
+            self.respond(503, {"error": str(exc), "code": "operation_paused", "operation_status": self.server.app.store.operation_status()})
+        except GuardBusy as exc:
+            self.respond(409, {"error": str(exc), "code": "operation_busy"})
         except AccessError as exc:
             self.respond(403, {"error": str(exc)})
         except (ValueError, TypeError) as exc:
             self.respond(400, {"error": str(exc)[:300]})
         except Exception:
-            self.respond(503, {"error": "The operation could not be verified. Existing records were retained; ask the operator."})
+            self.respond(503, {"error": "The operation could not be verified. Existing records were retained; ask the operator.",
+                               "operation_status": self.server.app.store.operation_status()})
 
     do_GET = handle_request
     do_POST = handle_request
