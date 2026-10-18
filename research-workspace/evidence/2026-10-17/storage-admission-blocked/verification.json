@@ -1,0 +1,21 @@
+{
+  "format": "waypoint-storage-blocked-verification-v1",
+  "base_commit": "2a7d6cd08ce7881a5ea36d761e53fc0c6f0e4b71",
+  "python": "3.14.5",
+  "sqlite": "3.53.4",
+  "platform": "Darwin",
+  "architecture": "arm64",
+  "accepted_evidence_files_unchanged": 121,
+  "draft_matches_snapshot": true,
+  "application_draft_committed": false,
+  "quota_enforced": false,
+  "deletion_authorized": false,
+  "real_provider_processes_in_reproducer": 0,
+  "files": {
+    "README.md": "1ee9031b2e697d94c552f0f5f0bd049d376ea8f1da198da1945634003677aaca",
+    "draft.json": "42f45bbfd98021c8dc51066da96f9d53d081298cbb5ed5340e69e34dd4c23935",
+    "draft.patch": "aa4fa211bc0e7dff69096c21616c15c9d3d5b291eadcfc973fb033794f489c39",
+    "observation.json": "763ec3e001ef50512fca925efe24b2f6878141f7b448b2ecb495a5b2b7db2957",
+    "reproduce.py": "5f64f752df597ef0f870c622c24a6d126d167a21019a57e2138c67759a55cac5"
+  }
+}

@@ -1,0 +1,779 @@
+diff --git a/research-workspace/research_workspace/runtime.py b/research-workspace/research_workspace/runtime.py
+index 60ba755..bc7f0ff 100644
+--- a/research-workspace/research_workspace/runtime.py
++++ b/research-workspace/research_workspace/runtime.py
+@@ -98,6 +98,7 @@ class Worker:
+         self.identity = identity
+         self.stopped = threading.Event()
+         self.thread = threading.Thread(target=self.loop, daemon=True, name="research-worker")
++        self.failure = None
+ 
+     def start(self):
+         self.store.recover(cancel_queued=self.identity is not None)
+@@ -109,7 +110,13 @@ class Worker:
+ 
+     def loop(self):
+         while not self.stopped.is_set():
+-            run = self.store.claim(on_cancel=self.identity.release if self.identity else None)
++            try:
++                run = self.store.claim(on_cancel=self.identity.release if self.identity else None)
++            except Exception:
++                self.failure = "Dispatch is paused because existing work or storage could not be reconciled. Ask the operator."
++                if self.store.storage:
++                    self.store.storage.lease.broken = True
++                return
+             if run is None:
+                 self.stopped.wait(0.25)
+                 continue
+@@ -118,7 +125,13 @@ class Worker:
+             except Exception:
+                 # Keep failures visible without leaking local paths or raw broker logs.
+                 run.update(status="interrupted", metrics={}, error="Execution could not be reconciled. The operator must inspect the broker receipt; no automatic retry was made.")
+-                self.store.finish(run)
++                try:
++                    self.store.finish(run)
++                except Exception:
++                    self.failure = "Settlement could not be saved. Dispatch is paused and the existing reservation is retained."
++                    if self.store.storage:
++                        self.store.storage.lease.broken = True
++                    return
+             finally:
+                 if self.identity:
+                     self.identity.release(run["id"])
+@@ -167,7 +180,9 @@ class Worker:
+                    "cpus": 1, "memory_mb": 256, "pids_limit": 64, "timeout_seconds": 30,
+                    "max_output_bytes": 65536, "isolation": "reviewed-local", "allow_supervised_reaper": True}
+         request_path = directory / "request.private.json"
+-        private_write(request_path, canonical(request).encode())
++        request_bytes = canonical(request).encode()
++        with self.store.artifact(run, "request.private.json", request_bytes):
++            private_write(request_path, request_bytes)
+         with self.identity.publication(run["id"]) if self.identity else nullcontext(True) as authorized:
+             process = subprocess.Popen(self.broker.command("run", "--request", str(request_path)), stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE) if authorized else None
+         if process is None:
+@@ -194,7 +209,9 @@ class Worker:
+         if process.returncode != 0:
+             raise ValueError("The broker process failed; its receipt is not an accepted outcome.")
+         receipt = validate_receipt(strict_json(stdout), run)
+-        private_write(directory / "receipt.private.json", canonical(receipt).encode())
++        receipt_bytes = canonical(receipt).encode()
++        with self.store.artifact(run, "receipt.private.json", receipt_bytes):
++            private_write(directory / "receipt.private.json", receipt_bytes)
+         compute = receipt.get("compute", {})
+         run["compute"] = {key: compute[key] for key in ("reserved_cpu_seconds", "charged_cpu_seconds", "provenance") if key in compute}
+         run["compute"]["unresolved_liability"] = bool(receipt.get("unresolved_liability", True))
+diff --git a/research-workspace/research_workspace/store.py b/research-workspace/research_workspace/store.py
+index decc236..edb8e12 100644
+--- a/research-workspace/research_workspace/store.py
++++ b/research-workspace/research_workspace/store.py
+@@ -47,21 +47,47 @@ def private_write(path, content):
+         target.flush()
+         os.fsync(target.fileno())
+     path.chmod(0o600)
++    directory = os.open(path.parent, os.O_RDONLY | os.O_DIRECTORY)
++    try:
++        os.fsync(directory)
++    finally:
++        os.close(directory)
+ 
+ 
+ class AccessError(Exception):
+     pass
+ 
+ 
++class _ManagedConnection(sqlite3.Connection):
++    storage_context = None
++
++    def close(self):
++        context, self.storage_context = self.storage_context, None
++        try:
++            super().close()
++        finally:
++            if context is not None:
++                context.__exit__(None, None, None)
++
++
+ class Store:
+-    def __init__(self, root, create=False):
++    def __init__(self, root, create=False, storage_limits=None):
+         self.root = Path(root).resolve()
++        self.storage = None
++        self._creating = create
++        from .storage import Storage, limits
++        if storage_limits is not None and not create:
++            raise ValueError("Existing stores require explicit offline storage migration.")
++        if storage_limits is not None:
++            storage_limits = limits(**storage_limits)
+         if create:
+             if self.root.exists() and any(self.root.iterdir()):
+                 raise ValueError("Initialization requires a fresh empty state directory.")
+             self.root.mkdir(parents=True, exist_ok=True, mode=0o700)
+             self.root.chmod(0o700)
+             (self.root / "runs").mkdir(mode=0o700)
++            if storage_limits is not None:
++                self.storage = Storage.create(self.root, storage_limits)
+             with contextlib.closing(self.connect()) as db:
+                 db.executescript("""
+                 CREATE TABLE users(subject TEXT PRIMARY KEY, key_hash TEXT UNIQUE NOT NULL, active INTEGER NOT NULL);
+@@ -77,37 +103,96 @@ class Store:
+             (self.root / "workspace.sqlite3").chmod(0o600)
+         elif not (self.root / "workspace.sqlite3").is_file() or not (self.root / "config.json").is_file():
+             raise ValueError("Workspace authority is missing. Restore it; do not reinitialize existing state.")
++        elif Storage.present(self.root):
++            self.storage = Storage(self.root)
++        self._creating = False
+ 
+     def connect(self):
+-        db = sqlite3.connect(self.root / "workspace.sqlite3", timeout=10)
+-        db.row_factory = sqlite3.Row
+-        db.execute("PRAGMA foreign_keys=ON")
+-        db.execute("PRAGMA journal_mode=WAL")
+-        db.execute("PRAGMA synchronous=FULL")
+-        return db
++        if self.storage is None:
++            db = sqlite3.connect(self.root / "workspace.sqlite3", timeout=10)
++            db.row_factory = sqlite3.Row
++            db.execute("PRAGMA foreign_keys=ON")
++            db.execute("PRAGMA journal_mode=WAL")
++            db.execute("PRAGMA synchronous=FULL")
++            return db
++        context = self.storage.locked()
++        context.__enter__()
++        db = None
++        try:
++            self.storage.before_open()
++            db = sqlite3.connect((self.root / "workspace.sqlite3").as_uri() + "?vfs=unix", uri=True,
++                                 timeout=10, factory=_ManagedConnection)
++            self.storage.configure(db, create=self._creating)
++            db.row_factory = sqlite3.Row
++            db.execute("PRAGMA foreign_keys=ON")
++            db.storage_after_commit = []
++            db.storage_context = context
++            return db
++        except BaseException:
++            if db is not None:
++                db.close()
++            context.__exit__(None, None, None)
++            raise
+ 
+     @contextlib.contextmanager
+     def transaction(self):
+         db = self.connect()
++        intent = None
+         try:
++            if self.storage:
++                intent = self.storage.begin_db("workspace-mutation")
+             db.execute("BEGIN IMMEDIATE")
+             config_path = self.root / "config.json"
+             if config_path.exists() and json.loads(config_path.read_text()).get("mode") in ("recovery-held", "retired"):
+                 raise ValueError("This workspace is held or retired for recovery; mutations are disabled.")
+             yield db
+             db.commit()
+-        except BaseException:
++            if self.storage:
++                for callback in db.storage_after_commit:
++                    callback()
++                self.storage.end_db(intent, True)
++                intent = None
++        except BaseException as exc:
+             db.rollback()
++            if self.storage and intent is not None:
++                safe_refusal = isinstance(exc, (ValueError, AccessError)) and db.total_changes == 0 and not self.storage.lease.broken
++                self.storage.end_db(intent, safe_refusal)
+             raise
+         finally:
+             db.close()
+ 
++    def _admit_row(self, db, table):
++        if self.storage:
++            self.storage.row_admission(db, table)
++
++    def _payload(self, value, maximum):
++        text = canonical(value)
++        if self.storage and len(text.encode()) > maximum:
++            raise ValueError("The record exceeds this store's bounded settlement profile.")
++        return text
++
++    @contextlib.contextmanager
++    def artifact(self, run, name, payload):
++        if self.storage is None:
++            yield
++            return
++        from .storage import REQUEST_BYTES, RECEIPT_BYTES, StorageError
++        maximum = {"request.private.json": REQUEST_BYTES, "receipt.private.json": RECEIPT_BYTES}.get(name)
++        if maximum is None or len(payload) > maximum:
++            raise StorageError("Run artifact exceeded its reserved footprint; dispatch is held.")
++        with self.storage.locked() as data:
++            self.storage.check(data, essential=True)
++            if data["runs"].get(run["id"], {}).get("phase") != "running":
++                raise StorageError("The run has no durable execution envelope; dispatch is held.")
++            yield
++
+     def add_user(self, subject):
+         identifier(subject)
+         key = secrets.token_urlsafe(32)
+         with self.transaction() as db:
+             if db.execute("SELECT 1 FROM users WHERE subject=?", (subject,)).fetchone():
+                 raise ValueError("This subject already exists; existing credentials were preserved.")
++            self._admit_row(db, "users")
+             db.execute("INSERT INTO users VALUES(?,?,1)", (subject, digest(key.encode())))
+         return key
+ 
+@@ -128,7 +213,7 @@ class Store:
+         return key
+ 
+     def session(self, key=None, token=None):
+-        with self.transaction() as db:
++        with self.transaction() if key is not None else contextlib.closing(self.connect()) as db:
+             if key is not None:
+                 if not isinstance(key, str) or len(key) > 256:
+                     raise AccessError("Sign in with a valid access key.")
+@@ -137,6 +222,7 @@ class Store:
+                     raise AccessError("Sign in with a valid access key.")
+                 token = secrets.token_urlsafe(32)
+                 db.execute("DELETE FROM sessions WHERE expires<=?", (time.time(),))
++                self._admit_row(db, "sessions")
+                 db.execute("INSERT INTO sessions VALUES(?,?,?)", (digest(token.encode()), row["subject"], time.time()+28800))
+                 return row["subject"], token
+             if not token or len(token) > 256:
+@@ -185,9 +271,27 @@ class Store:
+             committed = sum(json.loads(row[0])["budget_cpu_seconds"] for row in db.execute("SELECT payload FROM projects"))
+             if committed+budget > global_budget:
+                 raise ValueError("The workspace's finite project allocation is exhausted. Ask the operator.")
++            if self.storage:
++                self._admit_row(db, "projects")
++                self._admit_row(db, "members")
++                self.storage.reserve_project(project["id"])
++            else:
++                broker.init_project(project["id"], budget)
++            if self.storage:
++                # Commit the durable initialization intent, not a visible
++                # project, before the unlocked provider effect below.
++                pass
++            else:
++                db.execute("INSERT INTO projects VALUES(?,?)", (project["id"], canonical(project)))
++                db.execute("INSERT INTO members VALUES(?,?,?)", (project["id"], subject, "owner"))
++        if self.storage:
+             broker.init_project(project["id"], budget)
+-            db.execute("INSERT INTO projects VALUES(?,?)", (project["id"], canonical(project)))
+-            db.execute("INSERT INTO members VALUES(?,?,?)", (project["id"], subject, "owner"))
++            with self.transaction() as db:
++                if not db.execute("SELECT 1 FROM users WHERE subject=? AND active=1", (subject,)).fetchone():
++                    raise AccessError("Project initialization requires operator reconciliation after access ended.")
++                db.execute("INSERT INTO projects VALUES(?,?)", (project["id"], self._payload(project, 65536)))
++                db.execute("INSERT INTO members VALUES(?,?,?)", (project["id"], subject, "owner"))
++                db.storage_after_commit.append(lambda: self.storage.commit_project(project["id"]))
+         return project
+ 
+     def project(self, project_id, subject):
+@@ -211,6 +315,8 @@ class Store:
+                     raise ValueError("Choose editor or viewer.")
+                 if not db.execute("SELECT 1 FROM users WHERE subject=? AND active=1", (subject,)).fetchone():
+                     raise ValueError("The operator must provision that collaborator first.")
++                if not db.execute("SELECT 1 FROM members WHERE project_id=? AND subject=?", (project_id, subject)).fetchone():
++                    self._admit_row(db, "members")
+                 db.execute("INSERT INTO members VALUES(?,?,?) ON CONFLICT(project_id,subject) DO UPDATE SET role=excluded.role", (project_id, subject, role))
+                 if role == "viewer":
+                     db.execute("UPDATE runs SET cancel_requested=1 WHERE project_id=? AND subject=? AND status IN ('queued','running')", (project_id, subject))
+@@ -219,7 +325,7 @@ class Store:
+         with self.transaction() as db:
+             project, _ = self._access(db, project_id, subject, {"owner"})
+             project["status"] = "closed"
+-            db.execute("UPDATE projects SET payload=? WHERE id=?", (canonical(project), project_id))
++            db.execute("UPDATE projects SET payload=? WHERE id=?", (self._payload(project, 65536), project_id))
+             db.execute("UPDATE runs SET cancel_requested=1 WHERE project_id=? AND status IN ('queued','running')", (project_id,))
+         return project
+ 
+@@ -259,15 +365,23 @@ class Store:
+                 raise ValueError("This pilot supports at most 100 recorded runs per project.")
+             if db.execute("SELECT count(*) FROM runs WHERE status IN ('queued','running')").fetchone()[0] >= 20:
+                 raise ValueError("The bounded queue is full. Wait for an existing run.")
++            self._admit_row(db, "runs")
++            if self.storage:
++                from .storage import INPUT_BYTES, RECIPE_BYTES
++                if len(content.encode()) > INPUT_BYTES or len(source) > RECIPE_BYTES:
++                    raise ValueError("The input or recipe exceeds its reserved footprint.")
++                self.storage.reserve_run(rid, project_id, subject, request_key, request_hash)
+             directory = self.root / "runs" / rid
+             directory.mkdir(mode=0o700)
+             for folder, file, payload in (("input", "data.csv", content.encode()), ("recipe", filename, source)):
+                 (directory / folder).mkdir(mode=0o755)
+                 private_write(directory / folder / file, payload)
+                 (directory / folder / file).chmod(0o444)
+-            db.execute("INSERT INTO runs(id,project_id,subject,status,payload,request_key,request_hash) VALUES(?,?,?,?,?,?,?)", (rid, project_id, subject, "queued", canonical(run), request_key, request_hash))
++            db.execute("INSERT INTO runs(id,project_id,subject,status,payload,request_key,request_hash) VALUES(?,?,?,?,?,?,?)", (rid, project_id, subject, "queued", self._payload(run, 262144), request_key, request_hash))
+             if authorize is not None:
+                 authorize(rid)
++            if self.storage:
++                db.storage_after_commit.append(lambda: self.storage.run_phase(rid, "queued"))
+         return run
+ 
+     def run(self, project_id, run_id, subject):
+@@ -294,13 +408,22 @@ class Store:
+                     run = json.loads(row["payload"])
+                     run.update(status="cancelled", finished_at=now(), cleanup_verified=True,
+                                error="Transient identity authorization ended at restart. Submit a new run after signing in; this run was not replayed.")
+-                    db.execute("UPDATE runs SET status='cancelled',payload=? WHERE id=?", (canonical(run), row["id"]))
++                    db.execute("UPDATE runs SET status='cancelled',payload=? WHERE id=?", (self._payload(run, 262144), row["id"]))
++                    if self.storage:
++                        db.storage_after_commit.append(lambda rid=row["id"]: self.storage.run_phase(rid, "settled"))
+             for row in db.execute("SELECT id,payload FROM runs WHERE status='running'").fetchall():
+                 run = json.loads(row["payload"])
+                 run.update(status="interrupted", finished_at=now(), error="The service restarted during execution. Operator reconciliation is required; this run was not retried.", cleanup_verified=False, compute=unknown_compute())
+-                db.execute("UPDATE runs SET status='interrupted',payload=? WHERE id=?", (canonical(run), row["id"]))
++                db.execute("UPDATE runs SET status='interrupted',payload=? WHERE id=?", (self._payload(run, 262144), row["id"]))
++                if self.storage:
++                    db.storage_after_commit.append(lambda rid=row["id"]: self.storage.run_phase(rid, "uncertain"))
+ 
+     def claim(self, on_cancel=None):
++        if self.storage:
++            with self.storage.locked() as data:
++                if self.storage.held(data):
++                    from .storage import StorageError
++                    raise StorageError("Storage uncertainty has paused dispatch. Existing work was not replayed.")
+         with self.transaction() as db:
+             for row in db.execute("SELECT * FROM runs WHERE status='queued' ORDER BY rowid").fetchall():
+                 run = json.loads(row["payload"])
+@@ -312,12 +435,16 @@ class Store:
+                 if not allowed:
+                     run.update(status="cancelled", finished_at=now(), cleanup_verified=True,
+                                error="Cancelled before dispatch; access or the project run period ended.")
+-                    db.execute("UPDATE runs SET status='cancelled',payload=? WHERE id=?", (canonical(run), row["id"]))
++                    db.execute("UPDATE runs SET status='cancelled',payload=? WHERE id=?", (self._payload(run, 262144), row["id"]))
++                    if self.storage:
++                        db.storage_after_commit.append(lambda rid=row["id"]: self.storage.run_phase(rid, "settled"))
+                     if on_cancel is not None:
+                         on_cancel(row["id"])
+                     continue
+                 run.update(status="running", started_at=now(), compute=unknown_compute())
+-                db.execute("UPDATE runs SET status='running',payload=? WHERE id=?", (canonical(run), row["id"]))
++                if self.storage:
++                    self.storage.run_phase(run["id"], "running")
++                db.execute("UPDATE runs SET status='running',payload=? WHERE id=?", (self._payload(run, 262144), row["id"]))
+                 return run
+         return None
+ 
+@@ -345,15 +472,19 @@ class Store:
+                     run.update(status="cancelled", metrics={}, error="Access, identity or the project run period ended before result publication.")
+                     result = None
+                 if result is not None:
+-                    private_write(self.root / "runs" / run["id"] / "result.json", canonical(result).encode())
++                    private_write(self.root / "runs" / run["id"] / "result.json", self._payload(result, 262144).encode())
+                 run["finished_at"] = now()
+-                db.execute("UPDATE runs SET status=?,payload=? WHERE id=?", (run["status"], canonical(run), run["id"]))
++                db.execute("UPDATE runs SET status=?,payload=? WHERE id=?", (run["status"], self._payload(run, 262144), run["id"]))
++                if self.storage:
++                    phase = "settled" if run["cleanup_verified"] is True and run["compute"].get("unresolved_liability") is False else "uncertain"
++                    db.storage_after_commit.append(lambda: self.storage.run_phase(run["id"], phase))
+                 # Commit visibility before releasing the local identity guard.
+                 # The transaction context's subsequent commit has no changes.
+                 db.commit()
+ 
+     def snapshot(self, project_id, subject):
+-        with self.transaction() as db:
++        with contextlib.closing(self.connect()) as db:
++            db.execute("BEGIN")
+             project, _ = self._access(db, project_id, subject)
+             runs = [json.loads(row[0]) for row in db.execute("SELECT payload FROM runs WHERE project_id=? ORDER BY rowid", (project_id,))]
+             files = {}
+diff --git a/research-workspace/research_workspace/storage.py b/research-workspace/research_workspace/storage.py
+new file mode 100644
+index 0000000..6425bce
+--- /dev/null
++++ b/research-workspace/research_workspace/storage.py
+@@ -0,0 +1,395 @@
++"""Versioned local capacity authority for explicitly managed synthetic stores.
++
++Logical limits do not reserve physical disk against other host writers. Durable
++intent precedes effects; uncertain and completed run envelopes are retained.
++"""
++
++from contextlib import contextmanager
++import fcntl
++import json
++import math
++import os
++from pathlib import Path
++import re
++import secrets
++import stat
++import threading
++
++FORMAT = "educloud-storage-admission-v1"
++DEFAULT_BYTES = 64 * 1024 * 1024
++DEFAULT_ENTRIES = 4096
++MAX_POLICY_BYTES = 65536
++PAGE_SIZE = 4096
++# Each table has a row limit, encoded record ceiling and index-key ceilings.
++# Overflow pages have four-byte links; 2*n+1 bounds each tree's nodes. Twice
++# the full live layout covers replacement rows/trees without relying on reuse.
++PROFILE = {
++    "users": (16, 512, (128, 128)),
++    "sessions": (16, 512, (128,)),
++    "projects": (8, 65536 + 512, (128,)),
++    "members": (32, 512, (256,)),
++    "runs": (16, 262144 + 1024, (128, 32, 256)),
++}
++LIVE_PAGES = sum(n * math.ceil(record / (PAGE_SIZE - 4)) + 2*n + 1
++                 + sum(n * math.ceil(key / (PAGE_SIZE - 4)) + 2*n + 1 for key in indexes)
++                 for n, record, indexes in PROFILE.values())
++LAYOUT_PAGES = 2 * LIVE_PAGES + 128
++DB_PAGES = 1 << (LAYOUT_PAGES - 1).bit_length()
++DB_BYTES = DB_PAGES * PAGE_SIZE
++# unix VFS, one DELETE-journal transaction, cache spill disabled. Include
++# original pages, eight bytes per page record, and generous header padding.
++JOURNAL_BYTES = DB_PAGES * (PAGE_SIZE + 8) + 65536
++APPLICATION_ID = 0x45535731
++INPUT_BYTES = RECIPE_BYTES = 65536
++REQUEST_BYTES = 65536
++RECEIPT_BYTES = 6 * 262144
++RESULT_BYTES = 262144
++OUTPUT_BYTES = 6 * 65536 + 512
++RUN_BYTES = 2*(INPUT_BYTES + RECIPE_BYTES) + REQUEST_BYTES + RECEIPT_BYTES + RESULT_BYTES + 2*OUTPUT_BYTES + 6
++RUN_ENTRIES = 18
++BROKER_RECORD_BYTES = 96 * 1024
++BOOT = secrets.token_hex(16)
++_registry_lock = threading.Lock()
++_registry = {}
++
++
++class StorageError(ValueError):
++    pass
++
++
++class CapacityError(StorageError):
++    def __init__(self):
++        super().__init__("Workspace storage is full for new work. Your draft is preserved; ask the operator. Existing work and safety controls retain their reserved space.")
++
++
++def encode(value):
++    return json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
++
++
++def decode(value):
++    def pairs(items):
++        result = {}
++        for key, item in items:
++            if key in result:
++                raise StorageError("Storage authority has duplicate fields; admission is held.")
++            result[key] = item
++        return result
++    return json.loads(value, object_pairs_hook=pairs,
++                      parse_constant=lambda _: (_ for _ in ()).throw(StorageError("Invalid storage authority.")))
++
++
++def read_private(path, maximum=MAX_POLICY_BYTES):
++    fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK | os.O_NOFOLLOW)
++    try:
++        info = os.fstat(fd)
++        if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1 or info.st_size > maximum:
++            raise StorageError("Storage authority is linked, special or oversized; admission is held.")
++        data = b""
++        while len(data) <= maximum:
++            chunk = os.read(fd, min(65536, maximum + 1 - len(data)))
++            if not chunk:
++                break
++            data += chunk
++        after = os.fstat(fd)
++        if (info.st_size, info.st_mtime_ns, info.st_ctime_ns) != (len(data), after.st_mtime_ns, after.st_ctime_ns):
++            raise StorageError("Storage authority changed during reading; admission is held.")
++        return data
++    finally:
++        os.close(fd)
++
++
++def limits(logical_bytes=DEFAULT_BYTES, filesystem_entries=DEFAULT_ENTRIES):
++    if (type(logical_bytes) is not int or type(filesystem_entries) is not int
++            or not DB_BYTES + JOURNAL_BYTES + 4*MAX_POLICY_BYTES + 65536 <= logical_bytes <= 128*1024*1024
++            or not 64 <= filesystem_entries <= 16384):
++        raise StorageError("Choose a supported finite storage policy with room for authority and settlement.")
++    return {"logical_bytes": logical_bytes, "filesystem_entries": filesystem_entries}
++
++
++def physical_preflight(parent, size, entries):
++    usage = os.statvfs(parent)
++    if usage.f_bavail * usage.f_frsize < size or (usage.f_files and usage.f_favail < entries):
++        raise CapacityError()
++
++
++class _Lease:
++    def __init__(self):
++        self.lock = threading.RLock()
++        self.depth = 0
++        self.fd = None
++        self.broken = False
++        self.active_db = set()
++
++
++class Storage:
++    def __init__(self, root):
++        self.root = Path(root).resolve()
++        with _registry_lock:
++            self.lease = _registry.setdefault(str(self.root), _Lease())
++
++    @staticmethod
++    def present(root):
++        root = Path(root)
++        path = root / "storage.json"
++        if path.exists() or path.is_symlink():
++            return True
++        database = root / "workspace.sqlite3"
++        if database.exists():
++            fd = os.open(database, os.O_RDONLY | os.O_NONBLOCK | os.O_NOFOLLOW)
++            try:
++                header = os.read(fd, 100)
++            finally:
++                os.close(fd)
++            if len(header) >= 72 and int.from_bytes(header[68:72], "big") == APPLICATION_ID:
++                raise StorageError("Managed storage authority is missing. Restore it; do not create fresh allowance.")
++        return False
++
++    @classmethod
++    def create(cls, root, policy):
++        policy = limits(**policy)
++        item = cls(root)
++        if (item.root / "storage.json").exists() or (item.root / "storage.lock").exists():
++            raise StorageError("Storage authority already exists; it cannot be reinitialized.")
++        physical_preflight(item.root, policy["logical_bytes"], policy["filesystem_entries"])
++        fd = os.open(item.root / "storage.lock", os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
++        try:
++            os.fsync(fd)
++        finally:
++            os.close(fd)
++        with item.locked(load=False):
++            item.save({"format": FORMAT, "policy": policy, "generation": 0,
++                       "pending_db": {}, "runs": {}, "projects": {}})
++        return item
++
++    @contextmanager
++    def locked(self, *, load=True):
++        with self.lease.lock:
++            outer = self.lease.depth == 0
++            if outer:
++                self.lease.fd = os.open(self.root / "storage.lock", os.O_RDWR | os.O_NOFOLLOW | os.O_NONBLOCK)
++                info = os.fstat(self.lease.fd)
++                if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
++                    os.close(self.lease.fd); self.lease.fd = None
++                    raise StorageError("Storage lock is invalid; admission is held.")
++                fcntl.flock(self.lease.fd, fcntl.LOCK_EX)
++            self.lease.depth += 1
++            try:
++                yield self.load() if load else None
++            finally:
++                self.lease.depth -= 1
++                if outer:
++                    fd = self.lease.fd; self.lease.fd = None
++                    try:
++                        current = (self.root / "storage.lock").lstat()
++                        if (current.st_dev, current.st_ino, current.st_nlink) != (info.st_dev, info.st_ino, 1):
++                            self.lease.broken = True
++                            raise StorageError("Storage lock was replaced; admission is held.")
++                    finally:
++                        os.close(fd)
++
++    def load(self):
++        try:
++            data = decode(read_private(self.root / "storage.json"))
++            if set(data) != {"format", "policy", "generation", "pending_db", "runs", "projects"} or data["format"] != FORMAT:
++                raise ValueError()
++            limits(**data["policy"])
++            if type(data["generation"]) is not int or not 0 <= data["generation"] < 2**63:
++                raise ValueError()
++            for key, maximum in (("pending_db", 16), ("runs", 16), ("projects", 8)):
++                if not isinstance(data[key], dict) or len(data[key]) > maximum:
++                    raise ValueError()
++                for identity, record in data[key].items():
++                    if not re.fullmatch(r"[a-f0-9]{32}", identity) or not isinstance(record, dict):
++                        raise ValueError()
++                    if not isinstance(record.get("boot"), str) or not re.fullmatch(r"[a-f0-9]{32}", record["boot"]):
++                        raise ValueError()
++                    if key == "pending_db":
++                        if set(record) != {"boot", "kind"} or record["kind"] != "workspace-mutation":
++                            raise ValueError()
++                    elif key == "projects":
++                        if set(record) != {"boot", "phase"} or record["phase"] not in {"preparing", "committed"}:
++                            raise ValueError()
++                    else:
++                        if (set(record) != {"project", "subject", "request_key", "request_hash", "phase", "boot"}
++                                or record["phase"] not in {"preparing", "queued", "running", "settled", "uncertain"}
++                                or not all(isinstance(record[k], str) and re.fullmatch(r"[A-Za-z0-9_-]{1,80}", record[k]) for k in ("project", "subject"))
++                                or not isinstance(record["request_hash"], str) or not re.fullmatch(r"[a-f0-9]{64}", record["request_hash"])
++                                or (record["request_key"] is not None and (not isinstance(record["request_key"], str) or not re.fullmatch(r"[A-Za-z0-9_-]{1,80}", record["request_key"])))):
++                            raise ValueError()
++            return data
++        except (OSError, ValueError, TypeError, KeyError) as exc:
++            raise StorageError("Storage authority is missing or unsupported; existing allowance is held.") from exc
++
++    def save(self, data):
++        data["generation"] += 1
++        payload = encode(data)
++        if len(payload) > MAX_POLICY_BYTES:
++            raise StorageError("Storage intent capacity is exhausted; existing records remain protected.")
++        temporary = self.root / (".storage-" + secrets.token_hex(16))
++        try:
++            fd = os.open(temporary, os.O_CREAT | os.O_EXCL | os.O_WRONLY | os.O_NOFOLLOW, 0o600)
++            with os.fdopen(fd, "wb") as target:
++                target.write(payload); target.flush(); os.fsync(target.fileno())
++            os.replace(temporary, self.root / "storage.json")
++            directory = os.open(self.root, os.O_RDONLY | os.O_DIRECTORY)
++            try:
++                os.fsync(directory)
++            finally:
++                os.close(directory)
++        except BaseException:
++            # Preserve any partial file and the preceding durable intent. No
++            # repair/write is required to keep this process from dispatching.
++            self.lease.broken = True
++            raise
++
++    def held(self, data):
++        return (self.lease.broken or any(key not in self.lease.active_db for key in data["pending_db"])
++                or any(row.get("phase") != "committed" for row in data["projects"].values())
++                or any(row.get("phase") in {"preparing", "uncertain"} or
++                       (row.get("phase") == "running" and row.get("boot") != BOOT)
++                       for row in data["runs"].values()))
++
++    def measure(self):
++        # This does not hash a live broker's files. Their future growth has
++        # already been charged in durable envelopes. Unknown entries still count.
++        entries, total = {}, 0
++        for parent, directories, files in os.walk(self.root, followlinks=False):
++            path = Path(parent)
++            for candidate in [path, *(path/name for name in files)]:
++                relative = candidate.relative_to(self.root).as_posix()
++                try:
++                    info = candidate.lstat()
++                except FileNotFoundError:
++                    if relative.startswith("broker/") and ("/.ledger-" in relative or "/.output-" in relative or re.fullmatch(r"broker/watch-[a-f0-9]{32}\.ready", relative)):
++                        continue
++                    raise StorageError("Unclassified storage changed; admission is held.")
++                if stat.S_ISDIR(info.st_mode):
++                    size = 0
++                elif stat.S_ISREG(info.st_mode) and info.st_nlink == 1:
++                    size = info.st_size
++                else:
++                    raise StorageError("Linked or special storage remains protected; admission is held.")
++                entries[relative] = size; total += size
++                if len(entries) > 16384 or total > 128*1024*1024:
++                    raise StorageError("Storage exceeds the finite inventory ceiling; usage is not zero.")
++            for name in directories:
++                if not stat.S_ISDIR((path/name).lstat().st_mode):
++                    raise StorageError("Linked or special directories remain protected; admission is held.")
++        return total, len(entries), entries
++
++    @staticmethod
++    def control_remaining(data, entries, extra_runs=0, extra_projects=0):
++        records = len(data["runs"]) + extra_runs
++        projects = len(data["projects"]) + extra_projects
++        ledger = 4096 + records*BROKER_RECORD_BYTES + projects*512
++        # Four possible broker writers: run, watchdog, one cancellation and one
++        # project-init. Failed temporary files are never assumed removed.
++        remaining = max(0, DB_BYTES - entries.get("workspace.sqlite3", 0)) + JOURNAL_BYTES
++        remaining += 4*ledger + 4*MAX_POLICY_BYTES
++        return remaining, 24
++
++    def check(self, data, *, new_run=False, new_project=False, essential=False):
++        if not essential and self.held(data):
++            raise StorageError("Storage has unfinished or uncertain work. New admission and dispatch are held; ask the operator.")
++        size, count, entries = self.measure()
++        growth, new_entries = self.control_remaining(data, entries, int(new_run), int(new_project))
++        if not essential:
++            # Envelopes are intentionally retained even after settlement. This
++            # finite pilot cannot reclaim allowance through retries or restart.
++            growth += (len(data["runs"]) + int(new_run))*RUN_BYTES
++            new_entries += (len(data["runs"]) + int(new_run))*RUN_ENTRIES
++        policy = data["policy"]
++        if size + growth > policy["logical_bytes"] or count + new_entries > policy["filesystem_entries"]:
++            raise CapacityError()
++        physical_preflight(self.root, growth, new_entries)
++        return {"logical_bytes": size, "filesystem_entries": count,
++                "reserved_growth_bytes": growth, "reserved_growth_entries": new_entries}
++
++    def begin_db(self, kind):
++        data = self.load()
++        self.check(data, essential=True)
++        if len(data["pending_db"]) >= 16:
++            raise StorageError("Uncertain database intents require operator reconciliation.")
++        identity = secrets.token_hex(16)
++        data["pending_db"][identity] = {"boot": BOOT, "kind": kind}
++        self.save(data); self.lease.active_db.add(identity)
++        return identity
++
++    def end_db(self, identity, success):
++        try:
++            if success:
++                data = self.load(); del data["pending_db"][identity]; self.save(data)
++            else:
++                self.lease.broken = True
++        finally:
++            self.lease.active_db.discard(identity)
++
++    def row_admission(self, db, table):
++        data = self.load(); self.check(data)
++        if db.execute("SELECT count(*) FROM " + table).fetchone()[0] >= PROFILE[table][0]:
++            raise CapacityError()
++
++    def reserve_run(self, rid, project, subject, request_key, request_hash):
++        data = self.load()
++        for identity, record in data["runs"].items():
++            if request_key and (record.get("project"), record.get("subject"), record.get("request_key")) == (project, subject, request_key):
++                if record.get("request_hash") != request_hash:
++                    raise StorageError("This request ID was already used for different inputs.")
++                raise StorageError("This request has an existing storage intent. Reconcile it; it will not be replayed.")
++        if len(data["runs"]) >= PROFILE["runs"][0]:
++            raise CapacityError()
++        self.check(data, new_run=True)
++        data["runs"][rid] = {"project": project, "subject": subject, "request_key": request_key,
++                              "request_hash": request_hash, "phase": "preparing", "boot": BOOT}
++        self.save(data)
++
++    def run_phase(self, rid, phase):
++        if phase not in {"queued", "running", "settled", "uncertain"}:
++            raise StorageError("Unsupported storage intent transition.")
++        data = self.load(); data["runs"][rid].update(phase=phase, boot=BOOT); self.save(data)
++
++    def reserve_project(self, pid):
++        data = self.load()
++        if len(data["projects"]) >= PROFILE["projects"][0]:
++            raise CapacityError()
++        self.check(data, new_project=True)
++        data["projects"][pid] = {"phase": "preparing", "boot": BOOT}; self.save(data)
++
++    def commit_project(self, pid):
++        data = self.load(); data["projects"][pid]["phase"] = "committed"; self.save(data)
++
++    def before_open(self):
++        for name in ("workspace.sqlite3-journal", "workspace.sqlite3-wal", "workspace.sqlite3-shm"):
++            path = self.root/name
++            if path.exists() and path.stat().st_size:
++                raise StorageError("SQLite recovery files are retained. Ordinary opening is held pending offline reconciliation.")
++        database = self.root / "workspace.sqlite3"
++        if database.exists():
++            info = database.lstat()
++            if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1 or info.st_size > DB_BYTES:
++                raise StorageError("Database is linked, special or beyond its reserved capacity.")
++
++    def configure(self, db, *, create=False):
++        if ("TEMP_STORE=0",) in db.execute("PRAGMA compile_options").fetchall():
++            raise StorageError("This SQLite build cannot keep temporary operations in memory.")
++        if not create and db.execute("PRAGMA application_id").fetchone()[0] != APPLICATION_ID:
++            raise StorageError("The database is not bound to this storage policy; use explicit offline migration.")
++        if create:
++            db.execute("PRAGMA auto_vacuum=NONE")
++            db.execute("PRAGMA encoding='UTF-8'")
++        elif db.execute("PRAGMA auto_vacuum").fetchone()[0] != 0 or db.execute("PRAGMA encoding").fetchone()[0] != "UTF-8":
++            raise StorageError("Unsupported database page layout; admission is held.")
++        settings = {"page_size": PAGE_SIZE, "max_page_count": DB_PAGES,
++                    "journal_mode": "DELETE", "synchronous": "EXTRA", "temp_store": "MEMORY", "cache_spill": "OFF"}
++        for name, value in settings.items():
++            db.execute("PRAGMA " + name + "=" + str(value))
++        expected = {"page_size": PAGE_SIZE, "max_page_count": DB_PAGES, "journal_mode": "delete",
++                    "synchronous": 3, "temp_store": 2, "cache_spill": 0}
++        if any(db.execute("PRAGMA " + name).fetchone()[0] != value for name, value in expected.items()):
++            raise StorageError("SQLite could not establish the bounded durable profile.")
++        if create:
++            db.execute("PRAGMA application_id=" + str(APPLICATION_ID))
++        else:
++            from .storage_inventory import _supported_schema
++            if not _supported_schema(db):
++                raise StorageError("Unsupported database schema; admission is held.")
