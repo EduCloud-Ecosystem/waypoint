@@ -1,0 +1,62 @@
+{
+  "base_commit": "a58001b2731fa0dc9a1150b65c8940bf656625ec",
+  "boundaries": {
+    "accepted_store_migration": false,
+    "browser_rerun": "Not required: no browser/UI code changed",
+    "headroom_gate": "BLOCKED",
+    "hosted_readiness": false,
+    "manual_accessibility_acceptance": false,
+    "original_cleanup_gate": "Unresolved and unchanged",
+    "quota_enforced": false,
+    "real_data_readiness": false,
+    "release_ci": "Required on exact correction head; recorded by GitHub separately",
+    "root_recheck": "Required before merge; pending immutable correction head"
+  },
+  "checks": {
+    "focused_dispatch": {
+      "count": 60,
+      "result": "PASS"
+    },
+    "focused_dispatch_and_bounded_process": {
+      "count": 68,
+      "result": "PASS"
+    },
+    "full_suite": {
+      "command": "PYTHONPATH=research-workspace python3 -W error::ResourceWarning -m unittest discover -s research-workspace/tests -v",
+      "count": 295,
+      "result": "PASS"
+    },
+    "independent_targeted_review": {
+      "count": 14,
+      "result": "PASS"
+    },
+    "original_red_witness": "Byte-identical FAIL observation reproduced; zero real processes"
+  },
+  "format": "waypoint-final-dispatch-local-verification-v1",
+  "preservation": {
+    "catalog_unchanged": true,
+    "disabled_source_candidates": [
+      "summary-python-v2-2d21e7a33cfcf954a3a8822086c60065803c8c54c5e1c2cf0424bd3000ce38be",
+      "summary-r-v3-9cf75772fa71c34c9e47fd8f08dbacc124099ee0298aa201eb0d393f038f9d2f",
+      "summary-python-v3-02492c2dfdd6f8ff463dd98b61bfd403bcb84ac666dd679f1f1dbc37ad780635",
+      "summary-r-v4-c382484f8ace7bc970aee958f2f1297e4a8d7a91a243272bd4887c0ba033e2a2"
+    ],
+    "frozen_rejected_patch_sha256": "aa4fa211bc0e7dff69096c21616c15c9d3d5b291eadcfc973fb033794f489c39",
+    "prior_evidence_files": 137,
+    "prior_evidence_unchanged": true,
+    "rejected_draft_hashes": {
+      "research-workspace/research_workspace/runtime.py": "ffe41ea1c35f3bdd2d7c2e84d25fd9abfbaaafab13f07025f2f972a9d5a69f80",
+      "research-workspace/research_workspace/storage.py": "f26f7d87540393f7f108de9551aecbe2b35133ba8e0091f4d5b48e7f6f547128",
+      "research-workspace/research_workspace/store.py": "6070acd8c3840e2b42a01a21b256cba0be1f083690f5c746dfdcab2a8ae31bd6"
+    },
+    "root_witness_manifest_sha256": "28eae870ef94d3d257508289324991c01c4b839875024c517ceef900b39aecab"
+  },
+  "recorded_at": "2026-10-18T06:30:45.230839+00:00",
+  "source_sha256": {
+    "research-workspace/research_workspace/bounded_process.py": "719856121bde1bae521a2f1e589eeb921d78af2c93ff6fdaa6cd417ba8bb3419",
+    "research-workspace/research_workspace/runtime.py": "8547bec90d67686ce697c2e11dede12a27700adf7a13cf2b65bf32e7c0ef79de",
+    "research-workspace/research_workspace/store.py": "ecf1081992fcbc8121187038f8b1331ffe9ac95c381294cdfa6b85f3b21e5702",
+    "research-workspace/tests/test_final_dispatch.py": "bfe42796be2301c74299da84141f0e7fbae28a6fc24a961390accc4283699318"
+  },
+  "status": "PASS_OFFLINE_SCOPE"
+}

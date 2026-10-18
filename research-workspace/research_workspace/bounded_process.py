@@ -9,6 +9,19 @@ STDOUT_LIMIT = 262144
 STDERR_LIMIT = 65536
 
 
+def stop_observer(process):
+    """Bound CLI teardown; this does not prove provider cleanup or zero charge."""
+    try:
+        if process.poll() is None:
+            process.kill()
+            process.wait(timeout=5)
+    finally:
+        try:
+            process.stdout.close()
+        finally:
+            process.stderr.close()
+
+
 def collect(process, *, timeout, tick=None):
     """Drain both pipes incrementally; cap memory even for an endless producer.
 
@@ -60,10 +73,4 @@ def collect(process, *, timeout, tick=None):
                 raise ValueError("Broker observation deadline exceeded; retained work requires reconciliation.")
         return bytes(buffers["stdout"]), bytes(buffers["stderr"])
     finally:
-        try:
-            if process.poll() is None:
-                process.kill()
-                process.wait(timeout=5)
-        finally:
-            process.stdout.close()
-            process.stderr.close()
+        stop_observer(process)

@@ -68,12 +68,31 @@ barrier can establish that exact completion without replaying any effect.
 
 Claim checks the hold and changes run state under the same coordinator lock.
 The actual broker spawn is fenced against hold creation and current identity.
+The final run fence also obtains a SQLite write reservation, then local identity
+publication, then reads the current running row, cancellation flag, active user,
+membership role, project status and expiry before invoking Popen. This orders
+local safety-control commits against spawn in both legacy and guarded modes.
+Expiry is sampled after waiting for identity publication. Held or retired
+authority cannot dispatch. No remote identity call runs inside this fence.
 Storage/database locks are released before waiting for broker execution. A
 spawn attempt with an uncertain outcome remains possibly launched, never
 silently classified as never dispatched. Cancellation remains available. Local
 lock order is lifecycle, guard, SQLite, then local identity publication; remote
 identity checks precede these locks. Popen and filesystem synchronization have no
 hard latency guarantee in this slice.
+
+A refusal before any spawn attempt settles as cancelled with zero reserved and
+charged compute, not_admitted provenance and verified no-launch cleanup. If
+recovery or another settlement has superseded the running row, the worker leaves
+that current record and its accounting/files intact. Exceptions after a possible
+spawn, including rollback or close errors, retain uncertainty. A later local
+denial prevents result publication but does not erase the provider receipt or
+conservative charge.
+Worker settlement checks the running row again in its publication transaction,
+including early refusals and failures, so superseding recovery cannot be erased
+after the dispatch fence releases. Process ownership is retained across fence
+cleanup failures; CLI teardown runs outside the locks with its existing bounded
+wait and pipe closure, without claiming provider cleanup or zero liability.
 
 Final run/result records are serialized and bounded before result-file writes.
 Any subsequent error, including ValueError, retains the intent and any result
@@ -137,3 +156,6 @@ The [local acceptance record](evidence/2026-10-17/operation-guard/README.md)
 contains 235 passing offline controls, nine real browser/HTTP checks and twelve
 local Docker/provider checks, with retained incomplete browser attempts and
 hash-bound prior evidence. These checks accept only the fresh local profile.
+That original PR37 record did not cover local denial between request writing
+and spawn. The [final-dispatch correction](FINAL-DISPATCH.md) retains the failed
+immutable-head witness and defines the narrower additional acceptance boundary.

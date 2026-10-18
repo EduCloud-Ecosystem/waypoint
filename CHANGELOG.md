@@ -1,5 +1,14 @@
 # CHANGELOG.md: Document history for the EduCloud hosting layer repo
 
+## 2026-10-17: Final dispatch authority correction
+
+- Preserve PR37's immutable failed witness and narrow its prior acceptance claim.
+- Recheck local cancellation, access, project state and expiry in the final
+  serialized launch fence in legacy and guarded modes; preserve superseded
+  records, unknown outcomes, result evidence and compute charges.
+- Add concurrent boundary and compatibility controls without enabling source
+  candidates, implementing quotas or changing accepted stores and protected worktrees.
+
 ## 2026-10-17: Fresh local operation guard
 
 - Add durable intents and exact database completion receipts for an explicit

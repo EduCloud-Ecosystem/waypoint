@@ -1,0 +1,28 @@
+{
+  "created_at_utc": "2026-10-18T06:20:37.872803+00:00",
+  "finding": {
+    "lines": [
+      182,
+      200,
+      201,
+      202,
+      203
+    ],
+    "path": "research-workspace/research_workspace/runtime.py",
+    "priority": "P2",
+    "summary": "Final guard callback does not revalidate local cancellation, active user/membership, or project closure after the earlier authority check."
+  },
+  "harness_exit_code": 0,
+  "limits": [
+    "This is deterministic simulated-provider evidence, not actual Docker acceptance.",
+    "Previously passing browser/Docker controls remain unchanged.",
+    "No shared worktree or private user data is included.",
+    "No fix is verified by this record."
+  ],
+  "provider_processes": 0,
+  "source_files": 22,
+  "source_head": "68fe54960d9d3e56b39bd6aa51f21728f532b4c9",
+  "source_merge": "a58001b2731fa0dc9a1150b65c8940bf656625ec",
+  "source_read_method": "git show immutable blob; no checkout or working-tree edits",
+  "source_tree": "a547faa8925d8e70df7b8bf5045eea81a1b2d26e"
+}

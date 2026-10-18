@@ -1,0 +1,11 @@
+# PR37 final dispatch boundary failure witness
+
+This private audit preserves source from merged PR37 head `68fe54960d9d3e56b39bd6aa51f21728f532b4c9`, merge `a58001b2731fa0dc9a1150b65c8940bf656625ec`. It contains public repository source and sanitized observations only. Temporary synthetic authority stores are cleaned by each fixture. No access key, session, absolute fixture path, raw broker output, real provider invocation, or private user data is included in the observation.
+
+Run `python3 reproduce.py` from any directory. The script checks every source digest before importing the preserved snapshot. It writes JSON to stdout. It uses Python's standard library, the repository's existing synthetic GuardFixture, and a Popen interception which creates no process. Exit 0 means the known defect was reproduced, not that the product passed.
+
+For each of cancellation, user revocation, and project closure, the earlier-denial control commits the denial before Worker.execute and observes zero launches. The failing case commits the same denial immediately after request.private.json is written, asserts Store.should_cancel is true, then intercepts one broker launch. This places the denial after runtime.py's early check and before the final token.launch callback. No concurrency timing or provider availability is needed.
+
+The product invariant is FAIL for all three exact-boundary cases. The owner should preserve this record, then add separate fixed-source evidence. Recheck current Store authority in the final serialized dispatch path and preserve the existing identity check and guard/SQLite/identity lock order. A proven pre-dispatch denial must settle as cancelled/not_admitted without launching. This is a missed boundary in PR37's final dispatch acceptance, not a claim that the underlying early-check pattern was newly introduced by PR37.
+
+`source-sha256.json` identifies the immutable source snapshot. `observation.json` is the sanitized executed probe output. `provenance.json` contains exact source/merge/tree and execution scope. `sha256.json` hashes all files except itself; its own digest should be retained externally. This packet does not supersede previous passing browser/local Docker records, original rejected storage evidence, unknown cleanup records, or NOT RUN gates.

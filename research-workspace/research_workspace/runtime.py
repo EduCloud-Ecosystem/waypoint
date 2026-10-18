@@ -1,7 +1,6 @@
 """Outfitter integration; the web service never executes submitted code itself."""
 
 import json
-from contextlib import nullcontext
 from pathlib import Path
 import re
 import subprocess
@@ -9,8 +8,8 @@ import threading
 import time
 
 from .recipes import IDS, digest, validate_result
-from .store import canonical, private_write
-from .bounded_process import collect
+from .store import DispatchSuperseded, canonical, private_write
+from .bounded_process import collect, stop_observer
 from .operation_guard import GuardPaused, GuardBusy
 
 
@@ -138,7 +137,7 @@ class Worker:
                 if self.store.guard:
                     self.store.guard.fail()
                 try:
-                    self.store.finish(run)
+                    self.store.finish(run, claimed=True)
                 except Exception:
                     if not self.store.guard:
                         raise
@@ -163,7 +162,7 @@ class Worker:
             run.update(status="cancelled", error="Current identity could not be verified before dispatch. No automatic retry was made.",
                        cleanup_verified=True, compute={"reserved_cpu_seconds": 0, "charged_cpu_seconds": 0,
                        "provenance": "not_admitted", "unresolved_liability": False})
-            self.store.finish(run)
+            self.store.finish(run, claimed=True)
             return
         directory = self.store.root / "runs" / run["id"]
         runtime, filename = IDS[run["recipe"]]
@@ -171,7 +170,7 @@ class Worker:
         source = (directory / "recipe" / filename).read_bytes()
         if digest(content) != run["input_sha256"] or digest(source) != run["recipe_sha256"]:
             run.update(status="failed", error="Immutable input or recipe integrity failed before dispatch.", cleanup_verified=True, compute={"reserved_cpu_seconds": 0, "charged_cpu_seconds": 0, "provenance": "not_admitted", "unresolved_liability": False})
-            self.store.finish(run)
+            self.store.finish(run, claimed=True)
             return
         from .catalog import resolve_environment, recipe_source
         trusted = resolve_environment(run["recipe"], run["recipe_sha256"], run["environment"]["image"])
@@ -181,7 +180,7 @@ class Worker:
             raise ValueError("Queued source no longer matches the trusted environment catalog.")
         if self.store.should_cancel(run["id"]):
             run.update(status="cancelled", error="Cancelled before dispatch.", cleanup_verified=True, compute={"reserved_cpu_seconds": 0, "charged_cpu_seconds": 0, "provenance": "not_admitted", "unresolved_liability": False})
-            self.store.finish(run)
+            self.store.finish(run, claimed=True)
             return
         command = (["python", f"/recipe/{filename}"] if runtime == "python" else ["Rscript", "--vanilla", f"/recipe/{filename}"])
         command += ["/input/data.csv", run["condition"]]
@@ -197,14 +196,27 @@ class Worker:
         if token:
             token.effect()
         private_write(request_path, canonical(request).encode())
+        process = None
         def spawn():
-            with self.identity.publication(run["id"]) if self.identity else nullcontext(True) as authorized:
-                return subprocess.Popen(self.broker.command("run", "--request", str(request_path)), stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE) if authorized else None
-        process = token.launch(spawn) if token else spawn()
+            nonlocal process
+            process = subprocess.Popen(self.broker.command("run", "--request", str(request_path)), stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            return process
+        try:
+            process = self.store.launch_run(run, spawn, publication=self.identity.publication(run["id"]) if self.identity else None)
+        except DispatchSuperseded:
+            # Recovery or another settlement already owns the current record.
+            # Preserve its accounting and files instead of inventing a refusal.
+            return
+        except BaseException:
+            # Ownership transfers at Popen, before fence rollback/close. After
+            # those locks unwind, bound observer cleanup without clearing debt.
+            if process is not None:
+                stop_observer(process)
+            raise
         if process is None:
-            run.update(status="cancelled", error="Identity authorization ended before broker launch.", cleanup_verified=True,
+            run.update(status="cancelled", error="Cancelled before broker launch; current access or the project run period ended.", cleanup_verified=True,
                        compute={"reserved_cpu_seconds": 0, "charged_cpu_seconds": 0, "provenance": "not_admitted", "unresolved_liability": False})
-            self.store.finish(run)
+            self.store.finish(run, claimed=True)
             return
         cancellation_sent = False
         identity_denied = False
@@ -250,7 +262,7 @@ class Worker:
         if identity_denied or not self.identity_allowed(run):
             run.update(status="cancelled", metrics={}, error="Current identity ended or could not be verified before publication. Compute accounting was retained; no automatic retry was made.")
             result = None
-        self.store.finish(run, result, publication=self.identity.publication(run["id"]) if self.identity else None)
+        self.store.finish(run, result, publication=self.identity.publication(run["id"]) if self.identity else None, claimed=True)
 
 
 def validate_images(images, *, require_active=True):
