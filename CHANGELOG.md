@@ -1,5 +1,15 @@
 # CHANGELOG.md: Document history for the EduCloud hosting layer repo
 
+## 2026-10-18: Fixed guard scratch for a fresh opt-in profile
+
+- Add version-bound ordinary and safety scratch roles, preserving failed
+  candidates and refusing safety mutations when required publication is blocked.
+- Require exact-incarnation durability qualification on takeover and recheck
+  namespace, receipt outcomes and holds before each mutation, including when
+  current is unchanged. New-profile essential intents cannot be borrowed.
+- Preserve existing profiles, bounded exports, settings, broker pin and all
+  prior evidence. The conditional 12 MiB named-payload bound is not a disk quota.
+
 ## 2026-10-18: Scoped readers for a fresh export profile
 
 - Add an explicit local-key export profile with independently bound policy,

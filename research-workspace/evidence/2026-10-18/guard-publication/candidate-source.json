@@ -1,0 +1,25 @@
+{
+  "base": "66a48dfe29d61d3f6f48f016f2c474e1ac6af4f6",
+  "source_sha256": {
+    "research-workspace/research_workspace/__init__.py": "d8cd56bc22ee978af2e94c63e5f3ac755934c728209cd5b3cceea7b2bc3af6e5",
+    "research-workspace/research_workspace/__main__.py": "958585aac75cf16f49d6b3cd69d549cc11250719caff415cbb33f7fcbdaaac2d",
+    "research-workspace/research_workspace/bounded_export.py": "2900079a2f4bcd19ed09a7e27ee1eaa5c0b49e8ab4967eb7c8adf0dd026e22dc",
+    "research-workspace/research_workspace/bounded_process.py": "719856121bde1bae521a2f1e589eeb921d78af2c93ff6fdaa6cd417ba8bb3419",
+    "research-workspace/research_workspace/catalog.py": "3ea03e99bd71d61138c4278c72896d79debea1a930770adcfaf8f36eb9c68686",
+    "research-workspace/research_workspace/evidence.py": "017bc96e79a05592852f851cdbf0b59e65501d974261eb726099293b6e81ed7d",
+    "research-workspace/research_workspace/finite_authority.py": "1b9c1bf3baecb6779bb5fa621d5d90dcf93ee351f99fd4cb7887583cc9976808",
+    "research-workspace/research_workspace/guard_publication.py": "73c3b5754d1738b34d63f7893a727687a275aa4b9ddc3aedd55435d47dd7def7",
+    "research-workspace/research_workspace/guarded_recovery.py": "5c50fbf092a5fd7d46b0d201bcf779d5212d268d457c2abeddc20bcc682110ee",
+    "research-workspace/research_workspace/identity.py": "5bd7f9f1639812837406c6adaf5b90b8aa28179415e02bdbdbfbb8ea055907d8",
+    "research-workspace/research_workspace/operation_guard.py": "86b215608c6a67eb79e283c01f0ff4128c56c8dd1da89edc71b72b7a1c345d12",
+    "research-workspace/research_workspace/recipes.py": "c157564229c562cc5fe5ee315e3cb2be74d5588d830e0de6d4c2e7caead2114f",
+    "research-workspace/research_workspace/recovery.py": "97b12675c26b808b1f6d362da457f6785f3b2225274eab811352006366baa6cd",
+    "research-workspace/research_workspace/reproduction.py": "a00e771b2712c4ae289098418856f3580a3d8fd5396724ecdbd685a9bff8041d",
+    "research-workspace/research_workspace/runtime.py": "768fbe1c8d2610d655c9e89a63fcc4e0e9f5f2c21036ca1dd19bf6c420b88141",
+    "research-workspace/research_workspace/server.py": "140bdcde9ee1b6a1db91f6f16229d8832b5f967386d285032de0d187be146770",
+    "research-workspace/research_workspace/storage_inventory.py": "992f0957b4e9fc10f8152c5b862f1fe4f26050298532e2e18b8c2a6e3e4b0b52",
+    "research-workspace/research_workspace/store.py": "dee3938d6e761cd17452cf9ff6666e3b9adc55f84a82dc2ce4ad6136c76a1db0",
+    "research-workspace/tests/test_guard_publication.py": "ccf6207c20ad6d435d6b1fe302f0e363f80482cca30be397e0ed4ac2b58f6374"
+  },
+  "corrected_from": "cf8befca9cef418d7e1238945872bed45d7fc6f2"
+}

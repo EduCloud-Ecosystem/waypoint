@@ -9,6 +9,7 @@ from pathlib import Path
 import re
 import secrets
 import stat
+import sys
 import threading
 from . import finite_authority as finite
 
@@ -37,7 +38,13 @@ _registry_lock = threading.Lock()
 class GuardPaused(RuntimeError):
     def __init__(self, code="unfinished_operation"):
         self.code = code
-        super().__init__("New work is paused because an earlier operation could not be verified. Your draft is preserved; ask the operator.")
+        if code in {"safety_slot_exhausted", "essential_intent_unresolved"}:
+            message = "This action was not completed because a required safety step is unavailable or remains unverified. Existing records and obligations are preserved; ask the operator."
+        elif code == "publication_unverified":
+            message = "This action could not be verified. The workspace is held and existing records and obligations are preserved; ask the operator."
+        else:
+            message = "New work is paused because an earlier operation could not be verified. Your draft is preserved; ask the operator."
+        super().__init__(message)
 
 
 class GuardBusy(RuntimeError):
@@ -88,6 +95,8 @@ class Lease:
         self.fd = None
         self.active = {}
         self.failure = None
+        self.publication_failed = False
+        self.durable_incarnation = None
 
 
 class Guard:
@@ -105,22 +114,35 @@ class Guard:
         self.connect = connect
         with _registry_lock:
             self.lease = _registry.setdefault(str(self.root), Lease())
+        self.publication = None
+        if self.profile_version == 3:
+            from .guard_publication import Publication
+            self.publication = Publication(self)
 
     @classmethod
     def create(cls, root, connect=None, *, finite_profile=False, profile_version=1):
-        guard_format = finite.GUARD_FORMAT if profile_version == 1 else finite.EXPORT_GUARD_FORMAT
+        guard_format = finite.PROFILE_GUARDS[profile_version]
         binding = {"format": guard_format if finite_profile else FORMAT, "authority_id": secrets.token_hex(16)}
         if finite_profile:
             binding["logical_authority_sha256"] = finite.profile_digest(profile_version)
         guard = cls(root, binding, connect)
-        fd = os.open(guard.root / LOCK, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
-        try:
-            os.fsync(fd)
-        finally:
-            os.close(fd)
-        sync_directory(guard.root)
+        if guard.publication:
+            guard.publication.initializing = True
+        if guard.publication:
+            from .guard_publication import descriptor
+            with guard.publication._root() as directory:
+                with descriptor(LOCK, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, dir_fd=directory) as fd:
+                    os.fsync(fd)
+                os.fsync(directory)
+        else:
+            fd = os.open(guard.root / LOCK, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+            try:
+                os.fsync(fd)
+            finally:
+                os.close(fd)
+            sync_directory(guard.root)
         with guard.locked():
-            guard.save({**binding, "generation": 0, "sequence": 0, "operations": {}})
+            guard.publish({**binding, "generation": 0, "sequence": 0, "operations": {}}, stage="bootstrap")
         return guard
 
     @contextmanager
@@ -130,40 +152,65 @@ class Guard:
             if outer:
                 fd = os.open(self.root / LOCK, os.O_RDWR | os.O_NOFOLLOW | os.O_NONBLOCK)
                 try:
-                    original = os.fstat(fd)
-                    if not stat.S_ISREG(original.st_mode) or original.st_nlink != 1 or original.st_size:
+                    lock_info = os.fstat(fd)
+                    if not stat.S_ISREG(lock_info.st_mode) or lock_info.st_nlink != 1 or lock_info.st_size:
                         raise GuardPaused("invalid_lock")
                     fcntl.flock(fd, fcntl.LOCK_EX)
                     self.lease.fd = fd
-                except BaseException:
-                    os.close(fd)
+                except BaseException as original:
                     self.lease.failure = "lock_failure"
+                    if self.publication:
+                        self.lease.publication_failed = True
+                    try:
+                        os.close(fd)
+                    except BaseException:
+                        if not self.publication:
+                            raise
+                        original.add_note("The guard lock close also failed.")
                     raise
             self.lease.depth += 1
             try:
                 yield
             finally:
+                body_error = sys.exception()
                 self.lease.depth -= 1
                 if outer:
                     fd, self.lease.fd = self.lease.fd, None
                     try:
                         current = (self.root / LOCK).lstat()
-                        if (current.st_dev, current.st_ino, current.st_nlink, current.st_size) != (original.st_dev, original.st_ino, 1, 0):
+                        if (current.st_dev, current.st_ino, current.st_nlink, current.st_size) != (lock_info.st_dev, lock_info.st_ino, 1, 0):
                             self.lease.failure = "lock_replaced"
                             raise GuardPaused("lock_replaced")
                     except BaseException:
                         self.lease.failure = "lock_failure"
                         self.lease.active.clear()
-                        raise
+                        if self.publication:
+                            self.lease.publication_failed = True
+                        if self.publication and body_error is not None:
+                            body_error.add_note("The guard lock identity could not be verified.")
+                        else:
+                            raise
                     finally:
+                        pending = sys.exception() or body_error
                         try:
                             os.close(fd)
                         except BaseException:
                             self.lease.failure = "lock_failure"
                             self.lease.active.clear()
-                            raise
+                            if self.publication:
+                                self.lease.publication_failed = True
+                            if self.publication and pending is not None:
+                                pending.add_note("The guard lock close also failed.")
+                            else:
+                                raise
 
     def load(self):
+        if self.publication:
+            with self.locked():
+                return self._load()
+        return self._load()
+
+    def _load(self):
         def pairs(items):
             result = {}
             for key, value in items:
@@ -172,9 +219,10 @@ class Guard:
                 result[key] = value
             return result
         try:
-            data = json.loads(read(self.root / FILE), object_pairs_hook=pairs,
+            content = self.publication.current()[1] if self.publication else read(self.root / FILE)
+            data = json.loads(content, object_pairs_hook=pairs,
                               parse_constant=lambda _: (_ for _ in ()).throw(ValueError("nonfinite")))
-            if (set(data) != set(self.binding) | {"generation", "sequence", "operations"}
+            if (set(data) != set(self.binding) | {"generation", "sequence", "operations"} | ({"publication"} if self.publication else set())
                     or any(data[k] != v for k, v in self.binding.items())
                     or type(data["generation"]) is not int or not 0 <= data["generation"] < 2**63
                     or type(data["sequence"]) is not int or not 0 <= data["sequence"] < 2**63
@@ -195,11 +243,22 @@ class Guard:
             if (len({x["sequence"] for x in data["operations"].values()}) != len(data["operations"])
                     or sum(x["essential"] for x in data["operations"].values()) > 1):
                 raise ValueError("sequence")
+            if self.publication:
+                from .guard_publication import validate
+                validate(data)
             return data
         except (OSError, ValueError, TypeError, KeyError) as exc:
             raise GuardPaused("invalid_authority") from exc
 
-    def save(self, data):
+    def publish(self, data, *, identity=None, stage=None):
+        if self.publication:
+            return self.save(data, identity=identity, stage=stage)
+        return self.save(data)
+
+    def save(self, data, *, identity=None, stage=None):
+        if self.publication:
+            with self.locked():
+                return self.publication.save(data, identity=identity, stage=stage)
         if self.finite and (data["generation"] >= finite.COUNTER_LIMIT or data["sequence"] > finite.COUNTER_LIMIT):
             raise GuardPaused("intent_limit")
         data["generation"] += 1
@@ -236,6 +295,12 @@ class Guard:
             expected.close()
 
     def receipts(self):
+        if self.publication:
+            with self.locked():
+                return self._receipts()
+        return self._receipts()
+
+    def _receipts(self):
         # Pure observation: no journal-mode changes, barrier or provider calls.
         import sqlite3
         db = sqlite3.connect((self.root / "workspace.sqlite3").as_uri() + "?mode=ro", uri=True, timeout=10)
@@ -277,6 +342,8 @@ class Guard:
     def resume(self):
         """Establish durability of observed proof before a fresh process admits work."""
         with self.locked():
+            if self.publication:
+                return self.publication.qualify()
             data = self.load()
             self.proof(data)
             db = None
@@ -298,6 +365,23 @@ class Guard:
                     except BaseException:
                         self.lease.failure = "durability_unverified"
 
+    def barrier(self):
+        """New-profile takeover barrier; never inside a business transaction."""
+        db = self.connect()
+        try:
+            db.execute("BEGIN IMMEDIATE")
+            db.execute("UPDATE operation_authority SET barrier=? WHERE authority_id=?",
+                       (secrets.token_hex(16), self.binding["authority_id"]))
+            db.commit()
+        except BaseException as original:
+            try:
+                db.close()
+            except BaseException:
+                original.add_note("The guard barrier connection close also failed.")
+            raise
+        else:
+            db.close()
+
     def queued_ids(self):
         import sqlite3
         db = sqlite3.connect((self.root / "workspace.sqlite3").as_uri() + "?mode=ro", uri=True, timeout=10)
@@ -313,7 +397,12 @@ class Guard:
     def status_locked(self, data=None):
         data = self.load() if data is None else data
         reason = self.lease.failure
-        if any(self.root.glob(TEMP + "*")):
+        if self.publication:
+            try:
+                self.publication._slots(False)
+            except GuardPaused as exc:
+                reason = reason or exc.code
+        elif any(self.root.glob(TEMP + "*")):
             reason = reason or "unfinished_authority_write"
         try:
             receipts = self.proof(data)
@@ -346,7 +435,7 @@ class Guard:
             return {"guard_enabled": True, "state": "paused", "reason": "invalid_authority", "quota_enforced": False}
 
     def check(self, *, essential=False, kind=None, admitted=None):
-        data = self.load()
+        data = self.publication.gate(essential=essential, operation=admitted) if self.publication else self.load()
         if essential:
             # Safety controls may bypass a valid uncertainty hold, never an
             # unsupported schema or malformed receipt representation.
@@ -384,6 +473,8 @@ class Guard:
             raise ValueError("Use a bounded request identity.")
         digest = request_hash(request)
         with self.locked():
+            if self.publication and bootstrap and not self.publication.initializing:
+                raise GuardPaused("invalid_bootstrap")
             data = self.load() if bootstrap else self.check(essential=essential, kind=kind)
             if not essential and not bootstrap:
                 queued = self.queued_ids()
@@ -402,6 +493,8 @@ class Guard:
                 except Exception:
                     terminal = False
                 if not terminal:
+                    if self.publication:
+                        raise GuardPaused("essential_intent_unresolved")
                     # The earlier durable dirty marker covers subsequent safety writes.
                     # Never replace it or let a later success certify it.
                     return Operation(self, oid, kind, borrowed=True)
@@ -413,7 +506,7 @@ class Guard:
             data["operations"][identity] = {"kind": kind, "phase": "prepared", "resource_id": resource_id,
                 "subject": subject, "request_key": request_key, "request_hash": digest, "owner": BOOT, "reason": None,
                 "sequence": data["sequence"], "essential": essential}
-            self.save(data)  # failure means no business effects and no active lease
+            self.publish(data, identity=identity, stage="prepare")  # before business effects
             token = Operation(self, identity, kind)
             self.lease.active[identity] = token
             if not bootstrap:
@@ -423,8 +516,12 @@ class Guard:
                     db.execute("BEGIN IMMEDIATE")
                     token.register(db, data)
                     db.commit()
-                    db.close()
-                    db = None
+                    if self.publication:
+                        closing, db = db, None
+                        closing.close()
+                    else:
+                        db.close()
+                        db = None
                 except BaseException:
                     token.fail()
                     raise
@@ -444,7 +541,24 @@ class Guard:
                     return self.lease.active.get(identity)
         return None
 
-    def fail(self, reason="worker_failed"):
+    def fail(self, reason="worker_failed", *, origin=None, operation=None, error=None):
+        if self.publication:
+            if origin not in {"ordinary", "safety"}:
+                raise ValueError("An explicit failure origin is required.")
+            with self.locked():
+                try:
+                    token = operation or self.begin("mutation", essential=origin == "safety")
+                    item = self.load()["operations"][token.identity]
+                    if item["essential"] != (origin == "safety"):
+                        raise ValueError("Failure origin differs from its operation.")
+                    token.fail(reason, error=error)
+                except BaseException:
+                    if error is None:
+                        raise
+                    error.add_note("The required guard failure note could not be published.")
+                finally:
+                    self.lease.failure = self.lease.failure or reason
+            return
         with self.lease.lock:
             self.lease.failure = reason
             for token in list(self.lease.active.values()):
@@ -466,6 +580,8 @@ class Operation:
         self.borrowed = borrowed
 
     def register(self, db, data=None):
+        if self.guard.publication:
+            self.guard.publication.registration(self.identity)
         data = self.guard.load() if data is None else data
         item = data["operations"][self.identity]
         if item["essential"]:
@@ -479,32 +595,47 @@ class Operation:
         with self.guard.locked():
             data = self.guard.load()
             item = data["operations"][self.identity]
+            if self.guard.publication:
+                self.guard.publication.gate(essential=item["essential"], operation=self, takeover=False)
             if item["phase"] == "prepared":
                 item["phase"] = "effect"
-                self.guard.save(data)
+                self.guard.publish(data, identity=self.identity, stage="effect")
             self.effects = True
 
-    def complete_sql(self, db, *, refused=False):
+    def check_publication(self):
+        with self.guard.locked():
+            item = self.guard.load()["operations"][self.identity]
+            self.guard.publication.gate(essential=item["essential"], operation=self, takeover=False)
+
+    def complete_sql(self, db, *, refused=False, authority=None):
         if self.borrowed:
             return
         if refused and self.effects:
             raise GuardPaused("effect_refusal")
         item = self.guard.load()["operations"][self.identity]
+        if self.guard.publication:
+            token = authority or self
+            authorizing = self.guard.load()["operations"][token.identity]
+            self.guard.publication.gate(essential=authorizing["essential"], operation=token, takeover=False)
         if item["phase"] == "uncertain":
             return
         db.execute("UPDATE operation_receipts SET outcome=? WHERE id=? AND digest=? AND outcome='started'",
                    ("refused" if refused else "committed", self.identity, self.guard.intent_digest(self.identity, item)))
 
-    def fail(self, reason="operation_failed"):
+    def fail(self, reason="operation_failed", *, error=None):
+        original = error or sys.exception()
         with self.guard.lease.lock:
             self.guard.lease.failure = reason
             try:
                 with self.guard.locked():
                     data = self.guard.load()
                     data["operations"][self.identity].update(phase="uncertain", reason=reason)
-                    self.guard.save(data)
+                    self.guard.publish(data, identity=self.identity, stage="uncertainty-note")
             except BaseException:
-                pass
+                if self.guard.publication:
+                    if original is None:
+                        raise
+                    original.add_note("The required guard failure note could not be published.")
             finally:
                 self.release()
 

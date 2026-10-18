@@ -1,0 +1,26 @@
+test_takeover_performs_real_barrier_before_business (__main__.IndependentControls.test_takeover_performs_real_barrier_before_business) ... FAIL
+
+======================================================================
+FAIL: test_takeover_performs_real_barrier_before_business (__main__.IndependentControls.test_takeover_performs_real_barrier_before_business)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/guard-publication-independent-20261018/adversarial_controls.py", line 127, in test_takeover_performs_real_barrier_before_business
+    self.assertEqual(events,['barrier-write','barrier-commit','barrier-close','business-begin'])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['business-begin'] != ['barrier-write', 'barrier-commit', 'barrier-close', 'business-begin']
+
+First differing element 0:
+'business-begin'
+'barrier-write'
+
+Second list contains 3 additional elements.
+First extra element 1:
+'barrier-commit'
+
+- ['business-begin']
++ ['barrier-write', 'barrier-commit', 'barrier-close', 'business-begin']
+
+----------------------------------------------------------------------
+Ran 1 test in 0.221s
+
+FAILED (failures=1)

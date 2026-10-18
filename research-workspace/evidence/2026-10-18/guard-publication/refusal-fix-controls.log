@@ -1,0 +1,8 @@
+test_predispatch_refusal_retains_token_through_commit_and_close (test_guard_publication.GuardPublicationTests.test_predispatch_refusal_retains_token_through_commit_and_close) ... ok
+test_predispatch_refusal_commit_and_close_failures_preserve_uncertainty (test_guard_publication.GuardPublicationTests.test_predispatch_refusal_commit_and_close_failures_preserve_uncertainty) ... ok
+test_released_tokens_cannot_authorize_another_effect (test_guard_publication.GuardPublicationTests.test_released_tokens_cannot_authorize_another_effect) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 4.611s
+
+OK

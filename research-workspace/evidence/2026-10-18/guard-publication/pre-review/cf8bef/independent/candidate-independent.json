@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-W",
+    "error::ResourceWarning",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "tests",
+    "-p",
+    "test_guard_publication.py",
+    "-v"
+  ],
+  "cwd": "/private/tmp/guard-publication-independent-20261018/checkout/research-workspace",
+  "exit_code": 0,
+  "seconds": 15.617367000028025,
+  "head": "cf8befca9cef418d7e1238945872bed45d7fc6f2"
+}

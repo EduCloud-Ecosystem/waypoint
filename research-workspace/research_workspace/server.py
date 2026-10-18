@@ -98,7 +98,7 @@ class Application:
             response = self.store.project(project_id, subject)
             return 200, {"runs": response["runs"], "warning": WARNING}
         if action == "/export" and method == "GET":
-            if self.store.profile_version == 2:
+            if self.store.profile_version in (2, 3):
                 return 200, self.store.export_bundle(project_id, subject, local_session_token)
             project, runs, files = self.store.snapshot(project_id, subject)
             return 200, build_bundle(project, runs, files)

@@ -1,0 +1,22 @@
+{
+  "head": "cf8befca9cef418d7e1238945872bed45d7fc6f2",
+  "original_failure_reproduced": true,
+  "scripts": [
+    {
+      "script": "claim_refusal_witness.py",
+      "exit_code": 0
+    }
+  ],
+  "coordinating_failure_reproduced": {
+    "execute": "refused",
+    "code": "durability_unverified",
+    "incarnation_changed": true,
+    "existing_launch_gate_callback_count": 1,
+    "provider_calls": 0,
+    "profile_version": 3
+  },
+  "store_sha256": "08074a58f8a3fff01ac7474436cd6342e7bebcba6f33fcbfb0d57ed2ecbc600a",
+  "script_sha256": {
+    "claim_refusal_witness.py": "211b3d5e72793737d20c3ac692e36c4d8aaef8e6fb836da5b2013bf291a849fc"
+  }
+}
