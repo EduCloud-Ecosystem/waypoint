@@ -12,6 +12,7 @@ import stat
 import sys
 import threading
 from . import finite_authority as finite
+from . import sqlite_ownership as owned
 
 
 FORMAT = "educloud-operation-guard-v1"
@@ -115,7 +116,7 @@ class Guard:
         with _registry_lock:
             self.lease = _registry.setdefault(str(self.root), Lease())
         self.publication = None
-        if self.profile_version == 3:
+        if self.profile_version in (3, 4):
             from .guard_publication import Publication
             self.publication = Publication(self)
 
@@ -159,6 +160,8 @@ class Guard:
                     self.lease.fd = fd
                 except BaseException as original:
                     self.lease.failure = "lock_failure"
+                    if self.profile_version == 4:
+                        owned.hold(self.root)
                     if self.publication:
                         self.lease.publication_failed = True
                     try:
@@ -183,6 +186,8 @@ class Guard:
                             raise GuardPaused("lock_replaced")
                     except BaseException:
                         self.lease.failure = "lock_failure"
+                        if self.profile_version == 4:
+                            owned.hold(self.root)
                         self.lease.active.clear()
                         if self.publication:
                             self.lease.publication_failed = True
@@ -196,6 +201,8 @@ class Guard:
                             os.close(fd)
                         except BaseException:
                             self.lease.failure = "lock_failure"
+                            if self.profile_version == 4:
+                                owned.hold(self.root)
                             self.lease.active.clear()
                             if self.publication:
                                 self.lease.publication_failed = True
@@ -284,6 +291,8 @@ class Guard:
 
     @staticmethod
     def validate_schema(db):
+        if isinstance(db, owned.Owner):
+            return owned.validate_schema(db)
         import sqlite3
         from .storage_inventory import SCHEMA_SQL, _schema
         expected = sqlite3.connect(":memory:")
@@ -301,6 +310,19 @@ class Guard:
         return self._receipts()
 
     def _receipts(self):
+        if self.profile_version == 4:
+            with owned.Owner(self.root, "guard-proof", guard=self, readonly=True) as db:
+                authority = db.execute("SELECT authority_id,sequence FROM operation_authority").fetchmany(2)
+                rows = db.execute("SELECT id,sequence,digest,outcome,essential FROM operation_receipts").fetchmany(MAX_OPERATIONS + 2)
+                if len(rows) > MAX_OPERATIONS + 1 or len({row[0] for row in rows}) != len(rows):
+                    raise GuardPaused("invalid_receipts")
+                for oid, sequence, digest, outcome, essential in rows:
+                    if (not isinstance(oid, str) or not re.fullmatch(r"[a-f0-9]{32}", oid)
+                            or type(sequence) is not int or not 1 <= sequence < 2**63
+                            or not isinstance(digest, str) or not re.fullmatch(r"[a-f0-9]{64}", digest)
+                            or outcome not in TERMINAL | {"started"} or type(essential) is not int or essential not in (0, 1)):
+                        raise GuardPaused("invalid_receipts")
+                return authority, {row[0]: row[1:] for row in rows}
         # Pure observation: no journal-mode changes, barrier or provider calls.
         import sqlite3
         db = sqlite3.connect((self.root / "workspace.sqlite3").as_uri() + "?mode=ro", uri=True, timeout=10)
@@ -367,6 +389,17 @@ class Guard:
 
     def barrier(self):
         """New-profile takeover barrier; never inside a business transaction."""
+        if self.profile_version == 4:
+            try:
+                with self.connect(role="barrier") as db:
+                    db.execute("BEGIN IMMEDIATE")
+                    db.execute("UPDATE operation_authority SET barrier=? WHERE authority_id=?",
+                               (secrets.token_hex(16), self.binding["authority_id"]))
+                    db.commit()
+            except BaseException:
+                owned.hold(self.root)
+                raise
+            return
         db = self.connect()
         try:
             db.execute("BEGIN IMMEDIATE")
@@ -383,6 +416,10 @@ class Guard:
             db.close()
 
     def queued_ids(self):
+        if self.profile_version == 4:
+            with owned.Owner(self.root,"guard-proof",guard=self,readonly=True) as db:
+                rows = db.execute("SELECT id FROM runs WHERE status='queued' LIMIT 21").fetchall()
+                return {row[0] for row in rows}
         import sqlite3
         db = sqlite3.connect((self.root / "workspace.sqlite3").as_uri() + "?mode=ro", uri=True, timeout=10)
         try:
@@ -428,6 +465,9 @@ class Guard:
                 "can_submit_run": can_submit and not reason}
 
     def status(self):
+        if self.profile_version == 4 and owned.held(self.root):
+            return {"guard_enabled": True, "state": "paused", "reason": "sqlite_ownership_unconfirmed",
+                    "quota_enforced": False, "can_create_project": False, "can_submit_run": False}
         try:
             with self.locked():
                 return self.status_locked()
@@ -435,6 +475,8 @@ class Guard:
             return {"guard_enabled": True, "state": "paused", "reason": "invalid_authority", "quota_enforced": False}
 
     def check(self, *, essential=False, kind=None, admitted=None):
+        if self.profile_version == 4:
+            owned.available(self.root)
         data = self.publication.gate(essential=essential, operation=admitted) if self.publication else self.load()
         if essential:
             # Safety controls may bypass a valid uncertainty hold, never an
@@ -464,6 +506,8 @@ class Guard:
 
     def begin(self, kind, *, resource_id="workspace", subject="operator", request=None,
               request_key=None, essential=False, bootstrap=False):
+        if self.profile_version == 4:
+            owned.available(self.root)
         if kind not in KINDS:
             raise ValueError("Unsupported operation kind.")
         for value in (resource_id, subject):
@@ -509,6 +553,16 @@ class Guard:
             self.publish(data, identity=identity, stage="prepare")  # before business effects
             token = Operation(self, identity, kind)
             self.lease.active[identity] = token
+            if not bootstrap and self.profile_version == 4:
+                try:
+                    with self.connect(role="started-receipt") as db:
+                        db.execute("BEGIN IMMEDIATE")
+                        token.register(db, data)
+                        db.commit()
+                except BaseException as original:
+                    token.fail(error=original)
+                    raise
+                return token
             if not bootstrap:
                 db = None
                 try:
@@ -542,6 +596,13 @@ class Guard:
         return None
 
     def fail(self, reason="worker_failed", *, origin=None, operation=None, error=None):
+        if self.profile_version == 4 and operation is None:
+            # Untokened failure cannot manufacture an intent for diagnostics.
+            self.lease.failure = reason
+            owned.hold(self.root)
+            if error is not None:
+                error.add_note("This process remains held without a new diagnostic intent.")
+            return
         if self.publication:
             if origin not in {"ordinary", "safety"}:
                 raise ValueError("An explicit failure origin is required.")
@@ -592,6 +653,8 @@ class Operation:
                    (data["sequence"], self.guard.binding["authority_id"]))
 
     def effect(self):
+        if self.guard.profile_version == 4:
+            owned.available(self.guard.root)
         with self.guard.locked():
             data = self.guard.load()
             item = data["operations"][self.identity]
@@ -603,6 +666,8 @@ class Operation:
             self.effects = True
 
     def check_publication(self):
+        if self.guard.profile_version == 4:
+            owned.available(self.guard.root)
         with self.guard.locked():
             item = self.guard.load()["operations"][self.identity]
             self.guard.publication.gate(essential=item["essential"], operation=self, takeover=False)
@@ -624,6 +689,21 @@ class Operation:
 
     def fail(self, reason="operation_failed", *, error=None):
         original = error or sys.exception()
+        if self.guard.profile_version == 4:
+            with self.guard.lease.lock:
+                self.guard.lease.failure = reason
+                try:
+                    with self.guard.locked(), owned.diagnostic(self):
+                        data = self.guard.load()
+                        data["operations"][self.identity].update(phase="uncertain",reason=reason)
+                        self.guard.publish(data,identity=self.identity,stage="uncertainty-note")
+                except BaseException:
+                    if original is None:
+                        raise
+                    original.add_note("The single original-role guard failure note could not be published.")
+                finally:
+                    self.release()
+            return
         with self.guard.lease.lock:
             self.guard.lease.failure = reason
             try:

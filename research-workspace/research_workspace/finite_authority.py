@@ -24,10 +24,14 @@ PUBLICATION_MODE = "local-finite-public-data-v3"
 PUBLICATION_FORMAT = "educloud-finite-authority-v3"
 PUBLICATION_GUARD_FORMAT = "educloud-operation-guard-v4"
 PUBLICATION_USER_VERSION = 0x45464133
-PROFILE_MODES = {1: MODE, 2: EXPORT_MODE, 3: PUBLICATION_MODE}
-PROFILE_FORMATS = {1: FORMAT, 2: EXPORT_FORMAT, 3: PUBLICATION_FORMAT}
-PROFILE_GUARDS = {1: GUARD_FORMAT, 2: EXPORT_GUARD_FORMAT, 3: PUBLICATION_GUARD_FORMAT}
-PROFILE_DATABASES = {1: USER_VERSION, 2: EXPORT_USER_VERSION, 3: PUBLICATION_USER_VERSION}
+SCOPED_MODE = "local-finite-public-data-v4"
+SCOPED_FORMAT = "educloud-finite-authority-v4"
+SCOPED_GUARD_FORMAT = "educloud-operation-guard-v5"
+SCOPED_USER_VERSION = 0x45464134
+PROFILE_MODES = {1: MODE, 2: EXPORT_MODE, 3: PUBLICATION_MODE, 4: SCOPED_MODE}
+PROFILE_FORMATS = {1: FORMAT, 2: EXPORT_FORMAT, 3: PUBLICATION_FORMAT, 4: SCOPED_FORMAT}
+PROFILE_GUARDS = {1: GUARD_FORMAT, 2: EXPORT_GUARD_FORMAT, 3: PUBLICATION_GUARD_FORMAT, 4: SCOPED_GUARD_FORMAT}
+PROFILE_DATABASES = {1: USER_VERSION, 2: EXPORT_USER_VERSION, 3: PUBLICATION_USER_VERSION, 4: SCOPED_USER_VERSION}
 MODES = set(PROFILE_MODES.values())
 GUARD_FORMATS = set(PROFILE_GUARDS.values())
 USER_VERSIONS = set(PROFILE_DATABASES.values())
@@ -58,15 +62,23 @@ def profile(version=1):
     result = {"format": PROFILE_FORMATS[version], "row_limits": dict(ROW_LIMITS),
             "encoded_limits": dict(ENCODED_LIMITS), "path_utf8_bytes": PATH_LIMIT,
             "counter_limit": COUNTER_LIMIT}
-    if version in (2, 3):
+    if version in (2, 3, 4):
         result["export_protocol"] = "educloud-bounded-export-v1"
-    if version == 3:
+    if version in (3, 4):
         result["guard_publication"] = {
             "format": "educloud-bounded-guard-publication-v1",
             "ordinary_scratch": ".operation-guard-ordinary.pending",
             "safety_scratch": ".operation-guard-safety.pending",
             "max_payload_bytes": 4194304, "unresolved_essential": "refuse",
             "residue": "preserve", "failure_notes": "origin_role"}
+    if version == 4:
+        result["sqlite_ownership"] = {
+            "format": "educloud-scoped-sqlite-v1", "online_read_open": "existing-ro",
+            "online_write_open": "existing-rw", "online_immutable": False,
+            "lock_order": "guard-before-database", "read_result": "bounded-materialized",
+            "raw_handle_escape": "refuse", "close_policy": "one-attempt-preserve-error",
+            "uncertain_owner": "process-hold", "diagnostic_read_exception": "one-existing-origin-note-attempt",
+            "offline_backup": "distinct-frozen-owner"}
     return result
 
 
@@ -172,8 +184,15 @@ def refuse_unqualified_recovery(archive):
     """Inspect both config and immutable checkpoint DB before destination effects."""
     config = read_config(archive)
     binding = config.get("operation_guard")
-    with closing(sqlite3.connect((Path(archive) / "workspace.sqlite3").as_uri() + "?mode=ro&immutable=1", uri=True)) as db:
-        version = db.execute("PRAGMA user_version").fetchone()[0]
+    if (config.get("mode") == SCOPED_MODE
+            or isinstance(config.get("logical_authority"), dict) and config["logical_authority"].get("format") == SCOPED_FORMAT
+            or isinstance(binding, dict) and binding.get("format") == SCOPED_GUARD_FORMAT):
+        from .sqlite_ownership import Owner
+        with Owner(archive,"archive-rejection",readonly=True,archive=True,validate=False) as db:
+            version = db.execute("PRAGMA user_version").fetchone()[0]
+    else:
+        with closing(sqlite3.connect((Path(archive) / "workspace.sqlite3").as_uri() + "?mode=ro&immutable=1", uri=True)) as db:
+            version = db.execute("PRAGMA user_version").fetchone()[0]
     if (version or "logical_authority" in config or config.get("mode") in MODES
             or isinstance(binding, dict) and binding.get("format") in GUARD_FORMATS):
         raise ValueError("Finite-profile restore/cutover is not qualified. The checkpoint and source are preserved; no destination or provider effect was created.")

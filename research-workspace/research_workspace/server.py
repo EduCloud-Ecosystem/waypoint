@@ -98,7 +98,7 @@ class Application:
             response = self.store.project(project_id, subject)
             return 200, {"runs": response["runs"], "warning": WARNING}
         if action == "/export" and method == "GET":
-            if self.store.profile_version in (2, 3):
+            if self.store.profile_version in (2, 3, 4):
                 return 200, self.store.export_bundle(project_id, subject, local_session_token)
             project, runs, files = self.store.snapshot(project_id, subject)
             return 200, build_bundle(project, runs, files)
@@ -234,6 +234,12 @@ class Handler(BaseHTTPRequestHandler):
             return
         except IdentityUnavailable as exc:
             self.respond(503, {"error": str(exc)})
+            return
+        except Exception:
+            if self.server.app.store.profile_version != 4:
+                raise
+            self.respond(503, {"error": "This action could not be verified. Existing records and obligations were retained; ask the operator.",
+                               "operation_status": self.server.app.store.operation_status()})
             return
         try:
             if path == "/api/session" and self.command == "DELETE":

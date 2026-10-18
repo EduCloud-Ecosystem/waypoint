@@ -60,6 +60,9 @@ For separately selected disposable profiles, see [finite logical authority](FINI
 and [bounded guard publication](BOUNDED-GUARD-PUBLICATION.md). The latter can
 refuse safety actions when required publication is unavailable; it requires a
 fresh explicit opt-in and does not change the default commands above.
+The separately selected [scoped SQLite profile](SQLITE-OWNERSHIP.md) adds owned
+connection lifetimes and a process hold after unconfirmed cleanup, including
+visible refusal of safety actions while held.
 
 1. Create a project with a question, success criterion, end date and a 120
    CPU-second allowance. The workspace commits that allowance from its finite

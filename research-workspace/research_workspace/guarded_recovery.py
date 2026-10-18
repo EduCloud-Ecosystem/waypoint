@@ -28,8 +28,15 @@ def checkpoint(state, output, *, broker=None):
         target = r.fresh_directory(output, durable=True)
         with store.guard.locked(), r.frozen_db(root) as db:
             before = r.fingerprint(root, db)
-            with closing(sqlite3.connect(root / "workspace.sqlite3")) as reader, closing(sqlite3.connect(target / "workspace.sqlite3")) as backup:
-                reader.backup(backup)
+            if store.profile_version == 4:
+                from .sqlite_ownership import Owner
+                with Owner(root,"backup-source",guard=store.guard,readonly=True) as reader:
+                    with Owner(root,"backup-destination",guard=store.guard,path=target / "workspace.sqlite3",
+                               initialize=True,validate=False) as backup:
+                        reader.backup_to(backup)
+            else:
+                with closing(sqlite3.connect(root / "workspace.sqlite3")) as reader, closing(sqlite3.connect(target / "workspace.sqlite3")) as backup:
+                    reader.backup(backup)
             (target / "workspace.sqlite3").chmod(0o600)
             private_write(target / "config.json", config_bytes)
             (target / "runs").mkdir(mode=0o700)
@@ -38,15 +45,30 @@ def checkpoint(state, output, *, broker=None):
         # The lifecycle lock remains held. Any operator write during this wait
         # invalidates the snapshot in the second comparison below.
         report = Broker(broker or config["broker"], root / "broker").call("checkpoint", "--output", str(target / "broker"))
-        with store.guard.locked(), r.frozen_db(root) as db:
-            if before != r.fingerprint(root, db):
-                raise ValueError("Workspace authority changed during checkpoint; no manifest was published.")
-            r.sync_tree_directories(target)
-            manifest = {"format": r.GUARD_FORMAT, "created_at": now(), "source_state": str(root),
-                        "source_fingerprint": before, "broker": report, "files": r.inventory(target)}
-            payload = store.serialized(manifest, "checkpoint_manifest").encode()
-            private_write(target / "manifest.json", payload)
-            sync_directory(target)
+        if store.profile_version == 4:
+            with store.guard.locked():
+                with r.frozen_db(root) as db:
+                    if before != r.fingerprint(root, db):
+                        raise ValueError("Workspace authority changed during checkpoint; no manifest was published.")
+                    r.sync_tree_directories(target)
+                    manifest = {"format": r.GUARD_FORMAT, "created_at": now(), "source_state": str(root),
+                                "source_fingerprint": before, "broker": report, "files": r.inventory(target)}
+                    payload = store.serialized(manifest, "checkpoint_manifest").encode()
+                # Cleanup is part of success. Lifecycle + guard still fence
+                # cooperating writers; no claim about raw SQLite writers after
+                # the frozen fingerprint comparison is introduced.
+                private_write(target / "manifest.json", payload)
+                sync_directory(target)
+        else:
+            with store.guard.locked(), r.frozen_db(root) as db:
+                if before != r.fingerprint(root, db):
+                    raise ValueError("Workspace authority changed during checkpoint; no manifest was published.")
+                r.sync_tree_directories(target)
+                manifest = {"format": r.GUARD_FORMAT, "created_at": now(), "source_state": str(root),
+                            "source_fingerprint": before, "broker": report, "files": r.inventory(target)}
+                payload = store.serialized(manifest, "checkpoint_manifest").encode()
+                private_write(target / "manifest.json", payload)
+                sync_directory(target)
         return {"format": r.GUARD_FORMAT, "checkpoint_sha256": r.sha(payload), "created_at": manifest["created_at"],
                 "files": len(manifest["files"]), "broker": report, "quota_enforced": False,
                 "warning": "Private backup contains credentials and research authority. Retain its digest separately."}

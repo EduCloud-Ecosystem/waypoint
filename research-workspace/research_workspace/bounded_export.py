@@ -52,7 +52,7 @@ def _capture(store, project_id, subject, token):
         raise AccessError("A current local session is required for export.")
     token_hash = hashlib.sha256(token.encode()).hexdigest()
     with store.guard.locked():
-        with closing(store.connect()) as db:
+        with store.read() as db:
             db.execute("BEGIN")
             sessions = _rows(db, "sessions", "token_hash=?", (token_hash,),
                              [_text("token_hash", 64), _text("subject", 80),

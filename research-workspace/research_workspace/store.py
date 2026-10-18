@@ -15,6 +15,7 @@ import uuid
 from .recipes import IDS, digest, parse_csv, recipe_bytes
 from .operation_guard import Guard, GuardPaused, GuardBusy, APPLICATION_ID, GUARDED_MODES, SCHEMA, FILE, LOCK, TEMP, sync_directory
 from . import finite_authority as finite
+from . import sqlite_ownership as owned
 
 
 def now():
@@ -84,6 +85,7 @@ class TrackedConnection:
 class Store:
     def __init__(self, root, create=False, *, guarded=False, config=None, subject=None, resume=True):
         self.root = Path(root).resolve()
+        owned.available(self.root)
         self.guard = None
         self.finite = bool(create and isinstance(config, dict) and
                            (config.get("mode") in finite.MODES or "logical_authority" in config))
@@ -115,13 +117,13 @@ class Store:
                 if not isinstance(config, dict) or config.get("mode") not in GUARDED_MODES or subject is None:
                     raise ValueError("Guarded initialization requires an explicit fresh profile and subject.")
                 identifier(subject)
-                self.guard = Guard.create(self.root, self._connect, finite_profile=self.finite,
+                self.guard = Guard.create(self.root, self.write if self.profile_version == 4 else self._connect, finite_profile=self.finite,
                                           profile_version=self.profile_version or 1)
                 bootstrap = self.guard.begin("initialize", subject=subject, request=config, bootstrap=True)
             try:
                 with self.guard.locked() if self.guard and self.guard.publication else contextlib.nullcontext():
                     (self.root / "runs").mkdir(mode=0o700)
-                    with contextlib.closing(self._connect()) as db:
+                    with self.write(role="initialize" if self._initializing else "dispatch-reservation") as db:
                         db.executescript("""
                         CREATE TABLE users(subject TEXT PRIMARY KEY, key_hash TEXT UNIQUE NOT NULL, active INTEGER NOT NULL);
                         CREATE TABLE sessions(token_hash TEXT PRIMARY KEY, subject TEXT NOT NULL, expires REAL NOT NULL);
@@ -166,11 +168,15 @@ class Store:
         self._initializing = False
         if self.guard and self.guard.publication:
             self.guard.publication.initializing = False
+        if not create and self._open_scoped(resume):
+            return
         if not create:
             with contextlib.closing(sqlite3.connect((self.root / "workspace.sqlite3").as_uri() + "?mode=ro", uri=True)) as probe:
                 guarded_db = probe.execute("PRAGMA application_id").fetchone()[0] == APPLICATION_ID
                 guarded_tables = probe.execute("SELECT count(*) FROM sqlite_master WHERE name IN ('operation_authority','operation_receipts')").fetchone()[0]
                 version = probe.execute("PRAGMA user_version").fetchone()[0]
+            if version == finite.SCOPED_USER_VERSION:
+                raise finite.InvalidProfile("Stripped or mixed scoped authority cannot use legacy discovery.")
             config = finite.read_config(self.root) if version else json.loads((self.root / "config.json").read_bytes())
             evidence = guarded_db or guarded_tables or any((self.root / name).exists() for name in (FILE, LOCK)) or any(self.root.glob(TEMP + "*"))
             binding = config.get("operation_guard")
@@ -199,7 +205,55 @@ class Store:
                     # Valid held stores remain available for reads and safety controls.
                     self.guard.lease.failure = "durability_unverified"
 
+    def _open_scoped(self, resume):
+        try:
+            config = finite.read_config(self.root)
+        except (ValueError, OSError):
+            return False  # Existing rejection-only legacy discriminator.
+        binding = config.get("operation_guard")
+        policy = config.get("logical_authority")
+        recognizable = (config.get("mode") == finite.SCOPED_MODE
+                        or isinstance(binding, dict) and binding.get("format") == finite.SCOPED_GUARD_FORMAT
+                        or isinstance(policy, dict) and policy.get("format") == finite.SCOPED_FORMAT)
+        if not recognizable:
+            return False
+        if finite.validate_config(config, binding=binding) != 4:
+            raise finite.InvalidProfile("The scoped binding must match its complete policy.")
+        self.profile_version, self.finite = 4, True
+        self.guard = Guard(self.root, binding, self.write)
+        with self.read(role="discovery"):
+            pass
+        self.guard.receipts()
+        try:
+            if resume:
+                self.guard.resume()
+        except Exception:
+            if owned.held(self.root):
+                raise
+            self.guard.lease.failure = "durability_unverified"
+        return True
+
+    @contextlib.contextmanager
+    def read(self, *, role="online-read"):
+        if self.profile_version == 4:
+            with owned.Owner(self.root, role, guard=self.guard, readonly=True) as db:
+                yield db
+        else:
+            with contextlib.closing(self.connect()) as db:
+                yield db
+
+    @contextlib.contextmanager
+    def write(self, *, role="mutation"):
+        if self.profile_version == 4:
+            with owned.Owner(self.root, role, guard=self.guard, initialize=self._initializing) as db:
+                yield db
+        else:
+            with contextlib.closing(self._connect()) as db:
+                yield db
+
     def _connect(self):
+        if self.profile_version == 4:
+            raise ValueError("Use a scoped SQLite owner for this profile.")
         db = sqlite3.connect(self.root / "workspace.sqlite3", timeout=10)
         try:
             db.row_factory = sqlite3.Row
@@ -232,6 +286,9 @@ class Store:
         return db
 
     def operation_status(self):
+        if self.profile_version == 4 and owned.held(self.root):
+            return {"guard_enabled": True, "state": "paused", "reason": "sqlite_ownership_unconfirmed",
+                    "quota_enforced": False, "can_create_project": False, "can_submit_run": False}
         return self.guard.status() if self.guard else {"guard_enabled": False, "state": "ready", "reason": None, "quota_enforced": False}
 
     def serialized(self, value, kind):
@@ -239,10 +296,16 @@ class Store:
 
     @contextlib.contextmanager
     def transaction(self, *, essential=False, operation=None, keep=False, kind="mutation", resource_id="workspace", subject="operator", request=None, request_key=None, preflight=None):
+        if self.profile_version == 4:
+            with self._scoped_transaction(essential=essential, operation=operation, keep=keep, kind=kind,
+                    resource_id=resource_id, subject=subject, request=request, request_key=request_key,
+                    preflight=preflight) as db:
+                yield db
+            return
         if self.guard:
             with self.guard.locked():
                 if self.finite and preflight is not None:
-                    with contextlib.closing(self.connect()) as probe:
+                    with self.read() as probe:
                         preflight(probe)
                 token = operation or self.guard.begin(kind, resource_id=resource_id, subject=subject, request=request,
                                                        request_key=request_key, essential=essential)
@@ -309,6 +372,55 @@ class Store:
         finally:
             db.close()
 
+    @contextlib.contextmanager
+    def _scoped_transaction(self, *, essential, operation, keep, kind, resource_id,
+                            subject, request, request_key, preflight):
+        with self.guard.locked():
+            owned.available(self.root)
+            if preflight is not None:
+                with self.read() as probe:
+                    preflight(probe)
+            token = operation or self.guard.begin(kind, resource_id=resource_id, subject=subject,
+                    request=request, request_key=request_key, essential=essential)
+            adapter = None
+            failed = True
+            body_error = None
+            try:
+                if operation is not None:
+                    item = self.guard.load()["operations"][token.identity]
+                    self.guard.check(essential=item["essential"], admitted=token)
+                with self.write() as db:
+                    try:
+                        db.execute("BEGIN IMMEDIATE")
+                        if preflight is not None:
+                            preflight(db)
+                        if finite.read_config(self.root).get("mode") in {"recovery-held", "retired"}:
+                            raise ValueError("This workspace is held or retired for recovery; mutations are disabled.")
+                        adapter = owned.Mutation(db,token,keep)
+                        yield adapter
+                        adapter.commit()
+                    except BaseException as original:
+                        body_error = original
+                        if token.effects:
+                            token.fail(error=original)
+                        try:
+                            db.rollback()
+                            if not token.effects and not owned.held(self.root):
+                                db.execute("BEGIN IMMEDIATE")
+                                token.complete_sql(db,refused=True)
+                                db.commit()
+                        except BaseException:
+                            token.fail(error=original)
+                        raise
+                failed = False
+            except BaseException as original:
+                if original is not body_error or owned.held(self.root):
+                    token.fail(error=original)
+                raise
+            finally:
+                if failed or not keep or adapter is not None and not adapter.keep:
+                    token.release()
+
     def add_user(self, subject):
         identifier(subject)
         key = secrets.token_urlsafe(32)
@@ -355,7 +467,7 @@ class Store:
                 db.execute("DELETE FROM sessions WHERE expires<=?", (sampled,))
                 db.execute("INSERT INTO sessions VALUES(?,?,?)", (digest(token.encode()), row["subject"], sampled+28800))
                 return row["subject"], token
-        with self.transaction(essential=True) if key is not None else contextlib.closing(self.connect()) as db:
+        with self.transaction(essential=True) if key is not None else self.read() as db:
             if key is not None:
                 if not isinstance(key, str) or len(key) > 256:
                     raise AccessError("Sign in with a valid access key.")
@@ -388,7 +500,7 @@ class Store:
         return project, row["role"]
 
     def projects(self, subject):
-        with contextlib.closing(self.connect()) as db:
+        with self.read() as db:
             if not db.execute("SELECT 1 FROM users WHERE subject=? AND active=1", (subject,)).fetchone():
                 raise AccessError("This identity is no longer active.")
             return [json.loads(row[0]) for row in db.execute("SELECT p.payload FROM projects p JOIN members m ON m.project_id=p.id JOIN users u ON u.subject=m.subject WHERE m.subject=? AND u.active=1 ORDER BY p.rowid DESC", (subject,))]
@@ -432,12 +544,12 @@ class Store:
                     raise ValueError("This request ID was already used for different inputs.")
                 proof = self.guard.proof(self.guard.load())
                 if proof[oid][2] == "committed" and intent["phase"] != "uncertain":
-                    with contextlib.closing(self.connect()) as db:
+                    with self.read() as db:
                         self._access(db, intent["resource_id"], subject)
                         return json.loads(db.execute("SELECT payload FROM projects WHERE id=?", (intent["resource_id"],)).fetchone()[0])
                 raise GuardPaused("existing_intent")
             if self.finite:
-                with contextlib.closing(self.connect()) as db:
+                with self.read() as db:
                     finite.admit(db, projects=1, members=1)
             token = self.guard.begin("project", resource_id=project["id"], subject=subject, request=data, request_key=request_key)
             try:
@@ -470,7 +582,7 @@ class Store:
             token.release()
 
     def project(self, project_id, subject):
-        with contextlib.closing(self.connect()) as db:
+        with self.read() as db:
             project, role = self._access(db, project_id, subject)
             members = [dict(row) for row in db.execute("SELECT subject,role FROM members WHERE project_id=? ORDER BY subject", (project_id,))]
             runs = [json.loads(row[0]) for row in db.execute("SELECT payload FROM runs WHERE project_id=? ORDER BY rowid DESC", (project_id,))]
@@ -479,7 +591,7 @@ class Store:
     def membership(self, project_id, actor, subject, role=None):
         if self.finite:
             with self.guard.locked():
-                with contextlib.closing(self.connect()) as db:
+                with self.read() as db:
                     existing = db.execute("SELECT role FROM members WHERE project_id=? AND subject=?", (project_id, subject)).fetchone()
                 return self._membership(project_id, actor, subject, role,
                                         insertion=existing is None and role is not None)
@@ -532,7 +644,7 @@ class Store:
         if request_key:
             identifier(request_key)
         if self.guard and request_key:
-            with contextlib.closing(self.connect()) as db:
+            with self.read() as db:
                 self._access(db, project_id, subject, {"owner", "editor"}, active=True)
                 previous = db.execute("SELECT request_hash,payload FROM runs WHERE project_id=? AND subject=? AND request_key=?", (project_id, subject, request_key)).fetchone()
                 if previous:
@@ -582,7 +694,7 @@ class Store:
         return run
 
     def run(self, project_id, run_id, subject):
-        with contextlib.closing(self.connect()) as db:
+        with self.read() as db:
             self._access(db, project_id, subject)
             row = db.execute("SELECT payload FROM runs WHERE id=? AND project_id=?", (run_id, project_id)).fetchone()
             if row is None:
@@ -615,7 +727,7 @@ class Store:
         if self.guard:
             with self.guard.locked():
                 self.guard.check(kind="claim")
-                with contextlib.closing(self.connect()) as db:
+                with self.read() as db:
                     row = db.execute("SELECT id,subject FROM runs WHERE status='queued' ORDER BY rowid LIMIT 1").fetchone()
                 if row is None:
                     return None
@@ -655,7 +767,7 @@ class Store:
         return None
 
     def should_cancel(self, run_id):
-        with contextlib.closing(self.connect()) as db:
+        with self.read() as db:
             row = db.execute("SELECT * FROM runs WHERE id=?", (run_id,)).fetchone()
             if row is None or row["cancel_requested"]:
                 return True
@@ -670,7 +782,7 @@ class Store:
         def current_launch():
             # BEGIN IMMEDIATE orders controls from other Store instances and
             # processes too. No remote check or broker wait belongs in this fence.
-            with contextlib.closing(self._connect()) as db:
+            with self.write(role="initialize" if self._initializing else "dispatch-reservation") as db:
                 try:
                     db.execute("BEGIN IMMEDIATE")
                     if self.guard:
@@ -692,14 +804,16 @@ class Store:
                             return None
                         return spawn()
                 finally:
-                    # Failure here after spawn is uncertain, never a refusal.
-                    db.rollback()
+                    # v4 owner cleanup preserves a spawn error if rollback fails.
+                    # Failure after spawn remains uncertain, never a refusal.
+                    if self.profile_version != 4:
+                        db.rollback()
 
         if self.guard:
             with self.guard.locked():
                 token = self.guard.running(run["id"])
                 if token is None:
-                    with contextlib.closing(self.connect()) as db:
+                    with self.read() as db:
                         row = db.execute("SELECT status FROM runs WHERE id=?", (run["id"],)).fetchone()
                     if row is None or row["status"] != "running":
                         raise DispatchSuperseded("The claimed run is no longer current.")
@@ -759,7 +873,10 @@ class Store:
                            and all(type(value) is int for value in accounting[:2])
                            and accounting in {(0, 0, "not_admitted"), (30, 30, "estimated_upper_bound")})
                 if run_token and settled:
-                    run_token.complete_sql(db.raw, authority=db.operation if self.guard.publication else None)
+                    if self.profile_version == 4:
+                        db.complete(run_token, authority=db.operation)
+                    else:
+                        run_token.complete_sql(db.raw, authority=db.operation if self.guard.publication else None)
                 elif run_token:
                     run_token.fail("unresolved_compute")
                 # Commit visibility before releasing the local identity guard.
@@ -769,9 +886,9 @@ class Store:
                     run_token.release()
 
     def snapshot(self, project_id, subject):
-        if self.profile_version in (2, 3):
+        if self.profile_version in (2, 3, 4):
             raise ValueError("This profile requires the complete authorized export operation.")
-        with contextlib.closing(self.connect()) as db:
+        with self.read() as db:
             db.execute("BEGIN")
             project, _ = self._access(db, project_id, subject)
             runs = [json.loads(row[0]) for row in db.execute("SELECT payload FROM runs WHERE project_id=? ORDER BY rowid", (project_id,))]
@@ -786,7 +903,7 @@ class Store:
             return project, runs, files
 
     def export_bundle(self, project_id, subject, token):
-        if self.profile_version not in (2, 3):
+        if self.profile_version not in (2, 3, 4):
             raise ValueError("Bounded export requires its explicit fresh profile.")
         from .bounded_export import export_bundle
         return export_bundle(self, project_id, subject, token)
