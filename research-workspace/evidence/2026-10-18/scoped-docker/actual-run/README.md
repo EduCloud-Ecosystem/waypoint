@@ -74,6 +74,13 @@ The existing CI jobs remain separate evidence: their actual-Docker job exercises
 older profiles and does not independently reproduce this fresh-v4 exercise.
 The optional source-build job remains opt-in; no workflow changed.
 
+The [actual-evidence review summary](independent-review.json) records separate
+export/provenance and broker/accounting CLEAR reviews, including independent
+fraction arithmetic and unchanged private evidence. It preserves each original
+review's scope and report hash. These were read-only reviews of retained facts,
+with no additional execution or fresh container observation; raw actual review
+reports and state remain private.
+
 All four source environments remain disabled. OIDC and finite-profile restore
 remain refused, available physical capacity remains UNKNOWN, `quota_enforced`
 remains false, and the historical fifth-headroom result remains FAIL. Browser,

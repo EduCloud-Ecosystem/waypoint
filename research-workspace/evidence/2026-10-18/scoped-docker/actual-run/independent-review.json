@@ -1,0 +1,47 @@
+{
+  "coordinating_public_docs_projection_review": "CLEAR at recorded public packet head; no findings.",
+  "exercise": "waypoint-v4-docker-20261018-01",
+  "format": "waypoint-v4-actual-review-summary-v1",
+  "harness_commit": "fe4788c47a378e6234648dc4131ec4b870a8e713",
+  "limits": [
+    "These reviews correlate captured evidence; they are not independent person/machine acceptance.",
+    "Recorded container absence was checked; no additional provider action or fresh container observation was performed.",
+    "All remaining qualification limits are unchanged.",
+    "Final exact-head CI and explicit coordinating merge CLEAR remain separate gates."
+  ],
+  "manifest_sha256": "ad701c8d5b164666133a1d06f241a80ab052ccbeb02a48c499a663589e537295",
+  "new_actual_attempts_during_review": 0,
+  "private_actual_report_sha256": "8234b728d1b94ae7046777c93185ca3868aa40310e4fbf5a4ca68f12d3d22c40",
+  "private_reports": "Retained privately at their original locations. Only their hashes and an explicit safe summary are published.",
+  "public_packet_reviewed_head": "8f5f5bb2cdde5d12e4eb16f9eead998752d86c1f",
+  "public_summary_sha256": "43387ada697cc6bd7a31f1b40bf93de2a551d730a783de6fe5a4907b8e67e324",
+  "reviews": [
+    {
+      "disposition": "CLEAR",
+      "independent_arithmetic": "Exact Fraction calculations from exported input fixtures",
+      "public_exports": 2,
+      "required_controls": 18,
+      "retained_artifact_bindings_verified": 40,
+      "review": "export-provenance",
+      "review_report_sha256": "1fb3374368614947309c5bd39aea0ad6161184164e68bceca766d8bc11b7c6e5",
+      "scope": "Read-only retained actual-run evidence; no new execution or fresh container observation.",
+      "source_files_verified": 34,
+      "zero_dispatch_refusal_records": 2
+    },
+    {
+      "actual_attempts_reviewed": 4,
+      "all_cleanup_verified_in_retained_evidence": true,
+      "diagnostic_and_absence_bindings_verified": true,
+      "disposition": "CLEAR",
+      "per_attempt_charged_cpu_seconds": 30,
+      "per_attempt_reserved_cpu_seconds": 30,
+      "private_evidence_files_unchanged": 122,
+      "review": "broker-accounting",
+      "review_report_sha256": "c62ee9cf121b4e66cad174987c5f759f5bd018b51264a20c05f75c5d58f8623a",
+      "scope": "Read-only retained actual-run evidence; no new execution or fresh container observation.",
+      "total_charged_cpu_seconds": 120,
+      "unresolved_liability": false
+    }
+  ],
+  "source_archive_sha256": "6fcfce9bf3db5b57b4f503574f379123a43739c44fc69f9af9b40a8cc17055b5"
+}
