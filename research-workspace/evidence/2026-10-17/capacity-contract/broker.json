@@ -1,0 +1,42 @@
+{
+  "boundary": "Actual pinned ledger/snapshot/recovery writers; fake provider and watchdog readiness callback. No detached watchdog or Docker process.",
+  "classification": "enforced bound on uncertainty/compute settlement; no storage envelope proved",
+  "command_exit_code": 0,
+  "commit": "5827c84e9952cc67b85e91ceff4282e0ead6923b",
+  "expected_tests": [
+    "TestUnknownCreateRetainsLiabilityAcrossReopen",
+    "TestCleanupFailureNeverClaimsSuccess",
+    "TestNoWatchdogNoProviderEffect",
+    "TestDiagnosticWriteFailureCannotBlockTerminalAccounting",
+    "TestReviewAmbiguousCreationCannotSettleBeforeLateProviderCompletion",
+    "TestRecoveryRetainsUnknownReservationsWithoutReplayAndRequiresReconciliation",
+    "TestRecoveryCrashAfterFenceLeavesBothNonAdmittingAndRetryable"
+  ],
+  "format": "waypoint-capacity-broker-qualification-v1",
+  "git_archive_sha256": "8a47a2428a1626cdb7c4e1388dd524c25863c2dde335bd960d1cacef2cbc0ca8",
+  "passed_tests": [
+    "TestCleanupFailureNeverClaimsSuccess",
+    "TestDiagnosticWriteFailureCannotBlockTerminalAccounting",
+    "TestNoWatchdogNoProviderEffect",
+    "TestRecoveryCrashAfterFenceLeavesBothNonAdmittingAndRetryable",
+    "TestRecoveryRetainsUnknownReservationsWithoutReplayAndRequiresReconciliation",
+    "TestReviewAmbiguousCreationCannotSettleBeforeLateProviderCompletion",
+    "TestUnknownCreateRetainsLiabilityAcrossReopen"
+  ],
+  "quota_enforced": false,
+  "real_watchdog_ownership_and_peak": "NOT RUN",
+  "source_sha256": {
+    "cmd/outfitter/main.go": "62745a03b53daf375c93e2503044f862ca6cdad3d9be2f49ff28ade24ca136db",
+    "go.mod": "bcf81d648b7f769adf99a0864b64701f350d46d3784c8b1c24fc55fbeccb341f",
+    "internal/broker/broker.go": "2f9511aebd21cad90eb8f1acdf326ec17b1b6d6b38a307e32a07c7aa8028721c",
+    "internal/broker/broker_test.go": "b63d8132d3f8d115b8f6fa415eba3a2f32336a259864ed47466e870eef378162",
+    "internal/broker/recovery_test.go": "e243cdddeb4beeaef413a4c19f652764e9d99b4f386fd4d22cbf6c376592331a",
+    "internal/broker/review_regressions_test.go": "4ecd65dab7c483c89d3f4292c74b2fb4d3f6e4191668dfb6fcd6e272e56486eb",
+    "internal/ledger/recovery.go": "7cdc7e2d91cade3e14a18036c2bccd23b97e669154dbdee23fec06da9ebbbd96",
+    "internal/ledger/recovery_test.go": "ad28e656efbd9e4ec1a773b87f3fa0a773eabb5879dbe540a3cb4ef5bd7e0ac0",
+    "internal/ledger/store.go": "2243e2e9c9f40dff06ce82478bf96729b642a2323f3cca3fd929b26b3f00776a",
+    "internal/provider/docker/docker.go": "c3bbc553674547b6ad7bbcc9b485616ae4c0cc099222468e1737ba7802ffa581",
+    "internal/provider/provider.go": "8d96ea6c07987e957ad9a482a1f7f23e94046cbd4c4f9af849e161555c61b2bf"
+  },
+  "whole_root_capacity": "UNKNOWN"
+}

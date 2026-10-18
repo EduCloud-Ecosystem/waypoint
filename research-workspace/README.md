@@ -147,3 +147,6 @@ accepted by this local proof of concept.
 The separate [local synthetic OIDC pilot](OIDC-PILOT.md) exercises current identity and project access while keeping hosted and real-data admission gates open.
 Read-only storage inventory and retention review are documented in [STORAGE.md](STORAGE.md).
 These reports do not enforce admission or authorize deletion.
+The [capacity qualification contract](STORAGE-CAPACITY-CONTRACT.md) maps pinned
+writers and disposable failure controls. Whole-store quotas remain blocked by
+unknown authority, replacement, broker and destination peaks.
