@@ -40,7 +40,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: EduCloud-Ecosystem/outfitter
-          ref: 5827c84e9952cc67b85e91ceff4282e0ead6923b
+          ref: 5446438985e31cb739f2048a2aa2176918831a7e
           path: outfitter
       - uses: actions/setup-python@v5
         with:
