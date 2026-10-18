@@ -1,0 +1,15 @@
+test_caught_cursor_close_failure_cannot_turn_scope_exit_into_success (test_sqlite_ownership.OwnershipTests.test_caught_cursor_close_failure_cannot_turn_scope_exit_into_success) ... FAIL
+
+======================================================================
+FAIL: test_caught_cursor_close_failure_cannot_turn_scope_exit_into_success (test_sqlite_ownership.OwnershipTests.test_caught_cursor_close_failure_cannot_turn_scope_exit_into_success)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 242, in test_caught_cursor_close_failure_cannot_turn_scope_exit_into_success
+    with self.assertRaisesRegex(OSError,"uncertain cursor close"):
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: OSError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.225s
+
+FAILED (failures=1)

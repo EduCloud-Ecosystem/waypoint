@@ -1,0 +1,16 @@
+test_backup_admission_requires_live_immediate_parent (test_sqlite_ownership.OwnershipTests.test_backup_admission_requires_live_immediate_parent) ... 
+  test_backup_admission_requires_live_immediate_parent (test_sqlite_ownership.OwnershipTests.test_backup_admission_requires_live_immediate_parent) (boundary='deferred-begin') ... FAIL
+
+======================================================================
+FAIL: test_backup_admission_requires_live_immediate_parent (test_sqlite_ownership.OwnershipTests.test_backup_admission_requires_live_immediate_parent) (boundary='deferred-begin')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 432, in test_backup_admission_requires_live_immediate_parent
+    with self.assertRaises(ValueError):freeze.execute("BEGIN")
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.549s
+
+FAILED (failures=1)

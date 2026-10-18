@@ -1,0 +1,9 @@
+{
+  "wrong_thread_exception": "AttributeError(\"'_thread._local' object has no attribute 'owners'\")",
+  "thread_stopped": true,
+  "active_in_original_scope": false,
+  "original_scope_query_exception": "RuntimeError('SQLite scope has ended or belongs to another thread.')",
+  "original_exit_exception": "RuntimeError('SQLite owner cleanup was already attempted.')",
+  "held": true,
+  "guard_depth": 1
+}

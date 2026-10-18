@@ -1,0 +1,6 @@
+{
+  "exception": null,
+  "held": true,
+  "business_write_committed": true,
+  "new_intent_created": false
+}

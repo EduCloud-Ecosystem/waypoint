@@ -1,0 +1,165 @@
+{
+  "sql": "SELECT CASE WHEN (random() & 1)=0 THEN subject ELSE CAST(zeroblob(1000000) AS TEXT) END AS subject FROM users LIMIT 1",
+  "attempts": [
+    {
+      "attempt": 0,
+      "exception": "ReadBounds('Unregistered observation projection or predicate.')",
+      "held": false
+    },
+    {
+      "attempt": 1,
+      "exception": "ReadBounds('Unregistered observation projection or predicate.')",
+      "held": false
+    },
+    {
+      "attempt": 2,
+      "exception": "ReadBounds('Unregistered observation projection or predicate.')",
+      "held": false
+    },
+    {
+      "attempt": 3,
+      "exception": "ReadBounds('Unregistered observation projection or predicate.')",
+      "held": false
+    },
+    {
+      "attempt": 4,
+      "exception": "ReadBounds('Unregistered observation projection or predicate.')",
+      "held": false
+    },
+    {
+      "attempt": 5,
+      "exception": "ReadBounds('Unregistered observation projection or predicate.')",
+      "held": false
+    },
+    {
+      "attempt": 6,
+      "exception": "ReadBounds('Unregistered observation projection or predicate.')",
+      "held": false
+    },
+    {
+      "attempt": 7,
+      "exception": "ReadBounds('Unregistered observation projection or predicate.')",
+      "held": false
+    },
+    {
+      "attempt": 8,
+      "exception": "ReadBounds('Unregistered observation projection or predicate.')",
+      "held": false
+    },
+    {
+      "attempt": 9,
+      "exception": "ReadBounds('Unregistered observation projection or predicate.')",
+      "held": false
+    },
+    {
+      "attempt": 10,
+      "exception": "ReadBounds('Unregistered observation projection or predicate.')",
+      "held": false
+    },
+    {
+      "attempt": 11,
+      "exception": "ReadBounds('Unregistered observation projection or predicate.')",
+      "held": false
+    },
+    {
+      "attempt": 12,
+      "exception": "ReadBounds('Unregistered observation projection or predicate.')",
+      "held": false
+    },
+    {
+      "attempt": 13,
+      "exception": "ReadBounds('Unregistered observation projection or predicate.')",
+      "held": false
+    },
+    {
+      "attempt": 14,
+      "exception": "ReadBounds('Unregistered observation projection or predicate.')",
+      "held": false
+    },
+    {
+      "attempt": 15,
+      "exception": "ReadBounds('Unregistered observation projection or predicate.')",
+      "held": false
+    },
+    {
+      "attempt": 16,
+      "exception": "ReadBounds('Unregistered observation projection or predicate.')",
+      "held": false
+    },
+    {
+      "attempt": 17,
+      "exception": "ReadBounds('Unregistered observation projection or predicate.')",
+      "held": false
+    },
+    {
+      "attempt": 18,
+      "exception": "ReadBounds('Unregistered observation projection or predicate.')",
+      "held": false
+    },
+    {
+      "attempt": 19,
+      "exception": "ReadBounds('Unregistered observation projection or predicate.')",
+      "held": false
+    },
+    {
+      "attempt": 20,
+      "exception": "ReadBounds('Unregistered observation projection or predicate.')",
+      "held": false
+    },
+    {
+      "attempt": 21,
+      "exception": "ReadBounds('Unregistered observation projection or predicate.')",
+      "held": false
+    },
+    {
+      "attempt": 22,
+      "exception": "ReadBounds('Unregistered observation projection or predicate.')",
+      "held": false
+    },
+    {
+      "attempt": 23,
+      "exception": "ReadBounds('Unregistered observation projection or predicate.')",
+      "held": false
+    },
+    {
+      "attempt": 24,
+      "exception": "ReadBounds('Unregistered observation projection or predicate.')",
+      "held": false
+    },
+    {
+      "attempt": 25,
+      "exception": "ReadBounds('Unregistered observation projection or predicate.')",
+      "held": false
+    },
+    {
+      "attempt": 26,
+      "exception": "ReadBounds('Unregistered observation projection or predicate.')",
+      "held": false
+    },
+    {
+      "attempt": 27,
+      "exception": "ReadBounds('Unregistered observation projection or predicate.')",
+      "held": false
+    },
+    {
+      "attempt": 28,
+      "exception": "ReadBounds('Unregistered observation projection or predicate.')",
+      "held": false
+    },
+    {
+      "attempt": 29,
+      "exception": "ReadBounds('Unregistered observation projection or predicate.')",
+      "held": false
+    },
+    {
+      "attempt": 30,
+      "exception": "ReadBounds('Unregistered observation projection or predicate.')",
+      "held": false
+    },
+    {
+      "attempt": 31,
+      "exception": "ReadBounds('Unregistered observation projection or predicate.')",
+      "held": false
+    }
+  ]
+}

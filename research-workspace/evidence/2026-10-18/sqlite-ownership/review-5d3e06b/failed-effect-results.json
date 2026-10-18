@@ -1,0 +1,26 @@
+[
+  {
+    "stage": "write",
+    "caught": "write acknowledgement lost",
+    "scope_exception": null,
+    "business_write_committed": true,
+    "guard_state": "ready",
+    "held": false,
+    "native_calls": {
+      "commit": 1,
+      "write": 1
+    }
+  },
+  {
+    "stage": "commit",
+    "caught": "commit acknowledgement lost",
+    "scope_exception": null,
+    "business_write_committed": true,
+    "guard_state": "ready",
+    "held": false,
+    "native_calls": {
+      "commit": 2,
+      "write": 1
+    }
+  }
+]

@@ -1,0 +1,16 @@
+test_caught_write_or_commit_acknowledgement_failure_cannot_succeed (test_sqlite_ownership.OwnershipTests.test_caught_write_or_commit_acknowledgement_failure_cannot_succeed) ... 
+  test_caught_write_or_commit_acknowledgement_failure_cannot_succeed (test_sqlite_ownership.OwnershipTests.test_caught_write_or_commit_acknowledgement_failure_cannot_succeed) (stage='commit') ... FAIL
+
+======================================================================
+FAIL: test_caught_write_or_commit_acknowledgement_failure_cannot_succeed (test_sqlite_ownership.OwnershipTests.test_caught_write_or_commit_acknowledgement_failure_cannot_succeed) (stage='commit')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 400, in test_caught_write_or_commit_acknowledgement_failure_cannot_succeed
+    self.assertEqual(selected[0].commit_calls,0 if stage=="write" else 1)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 2 != 1
+
+----------------------------------------------------------------------
+Ran 1 test in 0.451s
+
+FAILED (failures=1)

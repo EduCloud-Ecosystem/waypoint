@@ -1,0 +1,15 @@
+test_owner_guard_and_database_path_are_bound_to_resolved_root (test_sqlite_ownership.OwnershipTests.test_owner_guard_and_database_path_are_bound_to_resolved_root) ... FAIL
+
+======================================================================
+FAIL: test_owner_guard_and_database_path_are_bound_to_resolved_root (test_sqlite_ownership.OwnershipTests.test_owner_guard_and_database_path_are_bound_to_resolved_root)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 368, in test_owner_guard_and_database_path_are_bound_to_resolved_root
+    with self.assertRaises(ValueError):o.Owner(clone,"online-read",guard=self.store.guard,readonly=True)
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.153s
+
+FAILED (failures=1)

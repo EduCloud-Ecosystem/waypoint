@@ -1,0 +1,15 @@
+test_observation_bindings_copied_once_and_custom_adapters_refused (test_sqlite_ownership.OwnershipTests.test_observation_bindings_copied_once_and_custom_adapters_refused) ... ERROR
+
+======================================================================
+ERROR: test_observation_bindings_copied_once_and_custom_adapters_refused (test_sqlite_ownership.OwnershipTests.test_observation_bindings_copied_once_and_custom_adapters_refused)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 550, in test_observation_bindings_copied_once_and_custom_adapters_refused
+    with self.store.read() as db:self.assertEqual(db.execute(sql,parameters).fetchone()[0],canonical(self.project))
+                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+TypeError: 'NoneType' object is not subscriptable
+
+----------------------------------------------------------------------
+Ran 1 test in 0.125s
+
+FAILED (errors=1)

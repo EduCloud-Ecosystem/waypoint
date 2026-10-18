@@ -1,0 +1,41 @@
+test_primary_spawn_and_offline_errors_survive_rollback_failure (test_sqlite_ownership.OwnershipTests.test_primary_spawn_and_offline_errors_survive_rollback_failure) ... ERROR
+
+======================================================================
+ERROR: test_primary_spawn_and_offline_errors_survive_rollback_failure (test_sqlite_ownership.OwnershipTests.test_primary_spawn_and_offline_errors_survive_rollback_failure)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private<captured-source>/research_workspace/store.py", line 805, in current_launch
+    return spawn()
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 266, in <lambda>
+    self.store.launch_run(run,lambda:(_ for _ in ()).throw(ValueError("original spawn")))
+                                     ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 266, in <genexpr>
+    self.store.launch_run(run,lambda:(_ for _ in ()).throw(ValueError("original spawn")))
+ValueError: original spawn
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 266, in test_primary_spawn_and_offline_errors_survive_rollback_failure
+    self.store.launch_run(run,lambda:(_ for _ in ()).throw(ValueError("original spawn")))
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private<captured-source>/research_workspace/store.py", line 821, in launch_run
+    return token.launch(current_launch)
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "/private<captured-source>/research_workspace/operation_guard.py", line 732, in launch
+    return callback()
+  File "/private<captured-source>/research_workspace/store.py", line 810, in current_launch
+    db.rollback()
+    ~~~~~~~~~~~^^
+  File "/private<captured-source>/research_workspace/sqlite_ownership.py", line 406, in rollback
+    self.__connection.rollback()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 138, in rollback
+    if self.selected and stage=="rollback":raise OSError("rollback failure")
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: rollback failure
+
+----------------------------------------------------------------------
+Ran 1 test in 0.169s
+
+FAILED (errors=1)

@@ -1,0 +1,36 @@
+test_diagnostic_role_rejects_join_union_subquery_and_business_pragma (test_sqlite_ownership.OwnershipTests.test_diagnostic_role_rejects_join_union_subquery_and_business_pragma) ... 
+  test_diagnostic_role_rejects_join_union_subquery_and_business_pragma (test_sqlite_ownership.OwnershipTests.test_diagnostic_role_rejects_join_union_subquery_and_business_pragma) (sql='SELECT u.subject FROM operation_authority a JOIN users u ON 1=1') ... FAIL
+  test_diagnostic_role_rejects_join_union_subquery_and_business_pragma (test_sqlite_ownership.OwnershipTests.test_diagnostic_role_rejects_join_union_subquery_and_business_pragma) (sql='SELECT (SELECT subject FROM users LIMIT 1) AS authority_id FROM operation_authority') ... FAIL
+  test_diagnostic_role_rejects_join_union_subquery_and_business_pragma (test_sqlite_ownership.OwnershipTests.test_diagnostic_role_rejects_join_union_subquery_and_business_pragma) (sql="SELECT id FROM runs WHERE status='queued' LIMIT 21") ... FAIL
+
+======================================================================
+FAIL: test_diagnostic_role_rejects_join_union_subquery_and_business_pragma (test_sqlite_ownership.OwnershipTests.test_diagnostic_role_rejects_join_union_subquery_and_business_pragma) (sql='SELECT u.subject FROM operation_authority a JOIN users u ON 1=1')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 305, in test_diagnostic_role_rejects_join_union_subquery_and_business_pragma
+    with self.subTest(sql=sql),self.assertRaises(ValueError):db.execute(sql)
+                               ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_diagnostic_role_rejects_join_union_subquery_and_business_pragma (test_sqlite_ownership.OwnershipTests.test_diagnostic_role_rejects_join_union_subquery_and_business_pragma) (sql='SELECT (SELECT subject FROM users LIMIT 1) AS authority_id FROM operation_authority')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 305, in test_diagnostic_role_rejects_join_union_subquery_and_business_pragma
+    with self.subTest(sql=sql),self.assertRaises(ValueError):db.execute(sql)
+                               ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_diagnostic_role_rejects_join_union_subquery_and_business_pragma (test_sqlite_ownership.OwnershipTests.test_diagnostic_role_rejects_join_union_subquery_and_business_pragma) (sql="SELECT id FROM runs WHERE status='queued' LIMIT 21")
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 305, in test_diagnostic_role_rejects_join_union_subquery_and_business_pragma
+    with self.subTest(sql=sql),self.assertRaises(ValueError):db.execute(sql)
+                               ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.103s
+
+FAILED (failures=3)

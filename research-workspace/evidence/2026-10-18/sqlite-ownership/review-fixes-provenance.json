@@ -1,0 +1,74 @@
+{
+  "artifact_sha256": {
+    "candidate-3/candidate-source.tar.gz": "28fba3312a6839e83dad49460fadee87ddf50b2994267c606d74934f7a689670",
+    "candidate-3/controls.log": "1fcb63b98ce13a067fc0089159748e8aac6b134e8e72c505de59bf2baf60b76c",
+    "candidate-3/diagnostic-business-join.log": "46d0c3ffe011d1c99cc2514eb1c948802d30d402facc4d9ae10b693818d5428b",
+    "candidate-3/missing-connection-close.log": "a69263ad8b28a5a918bbbbd36795d0410c3f7bf16ea149e8875f757ba5a7cbfa",
+    "candidate-3/primary-dispatch-error-lost.log": "3f35b4c50f535c5b28e05411bd8cb45b3911ef5af665d02634a129724f6a6303",
+    "candidate-3/proof-role-business-write.log": "844a426d9cc8c5184db2f95cd0eb67fdea1a7495c54304f925ad51047b2baf23",
+    "candidate-3/report.json": "199d1641ee131567a4491b1096afcef62ddac0c63f9f38f04d7e92311bf69444",
+    "candidate-3/reusable-diagnostic-token.log": "65281767571becc43830c51af219376deaa18953aeaa9de9faabc81da0485b2c",
+    "candidate-3/reusable-owner.log": "3f3a24127fd417289bd343cbffd53a10d8c91caaf4c82a98d7460a12c4b5962c",
+    "candidate-3/skip-export-recapture.log": "46f9cf51522e5edff39f0cd7a73580c925232acb9f95df96ed727b1cdf887604",
+    "candidate-3/source-sha256.json": "a867f96eabefeff8c6c77be106f3c3f81ea402c735b25e01c7697f856c4d203b",
+    "candidate-3/spawn-after-reservation-close.log": "88a9ad01918f8694649de516f3060667dc0a329a34d353faf08d30b98442fad0",
+    "candidate-3/swallowed-cursor-close.log": "1b4c87cf2e1db5cb36ff3e0365a871315ef4b853631be0e31030e4e99aca06f2",
+    "candidate-3/writable-reader.log": "6863aae3229909e1005892ae435d3cffe23c1b632bc74d32f9045672692115a1",
+    "ci-d59edb4.json": "6998e8e3c57749de9bbbc6a2b1b5f31dd56ca6bd44a4404c7f4414e4f1bdf242",
+    "full-suite-5d3e06b.log": "e3eda081dad5da0152a47bcee99b10d0492a39a652a6e8d87970ba938a530372",
+    "iteration-logs/qualification-third.log": "042aeddce8b49ae35c914607dcf1435aef13b352b3415264837394f0a6a8ebe3",
+    "iteration-logs/review-fixes-first.log": "685c4077d37202de00a6a5028e68b6b8712a99757c0d95cfbbdf1f6f19ca9d21",
+    "review-1837c55/32-controls-exit.json": "df4d721d233a2334088d2d2e0110346ae9e509ff46bf0b379fbcfa85c715af4d",
+    "review-1837c55/32-controls.log": "d61ead756eb018256bb894b242795f76b1bafc2e659f65af53a678455c38113f",
+    "review-1837c55/adversarial-results.json": "50cb086a2a600823b8c3683998a02a0a83766367e428866957c9d5035a73ade5",
+    "review-1837c55/adversarial_candidate.py": "dabf7c52bf17356f6e3f429ff662ac2cbc41a2adefaf559fd263f8c16b6370a0",
+    "review-1837c55/candidate-source.tar.gz": "4278838e043de0139d3d27c648ec9ae963783d62d47dbd02a5442ee31b2a2d35",
+    "review-1837c55/cross-thread-exit.json": "ad409d056a0361494cb036dc817a37e99189ab2cdb7f6ddf40daec74cef9cd65",
+    "review-1837c55/cross_thread_exit.py": "a05291c239e5d215d79b608f24acfde020bba46dba7873ec1470fa5c30835dbe",
+    "review-1837c55/preservation.json": "657b9471af6cb62e6161cc16dfa53946b30a361ee63035a2fffc881c3e0afc14",
+    "review-1837c55/prior-fix-results.json": "d82a2fccee7684198d65bc18b637d2fee0b93e150cfcf78825ea565697d40843",
+    "review-1837c55/prior_fix_review.py": "4429f6a7a989b6ffe3946adbcd48565709baf7fdc140feafdd73c65391ea4ce5",
+    "review-1837c55/review.json": "e54bc0ddd8e26f96c06169e10609eef1b121cce68548aac95aea025cf78e6b4d",
+    "review-1837c55/source-manifest.json": "6e3e5fbc358991aac7eddab65e454ab17d55f330c284ffebb656e32325f69505"
+  },
+  "boundaries": {
+    "available_capacity": "UNKNOWN",
+    "cleanup_gate": "UNRESOLVED_UNCHANGED",
+    "fifth_headroom": "FAIL_UNCHANGED",
+    "provider_v4": "NOT_RUN",
+    "quota_enforced": false,
+    "source_environments": "DISABLED_UNCHANGED",
+    "workflow_and_pins": "ACCEPTED45_UNCHANGED"
+  },
+  "canonical_policy_sha256": "ed235fd6d6bb3c10632c0c5dc2bb20c8d3cb9076ebb157c71c1cc9c8072a656e",
+  "coordinating_clear": "REQUIRED",
+  "exact_head_ci": "PENDING",
+  "final_independent_review": "PENDING",
+  "format": "waypoint-sqlite-ownership-review-fixes-provenance-v1",
+  "historical_evidence_unchanged": 343,
+  "preserved_base_files": 395,
+  "proposal_sha256": "5b03af41faa8b22830e9af792f185b0716867fd4918075389c2732dc1264ebb2",
+  "qualification_source_archive_sha256": "28fba3312a6839e83dad49460fadee87ddf50b2994267c606d74934f7a689670",
+  "retained_review": "review-1837c55/review.json",
+  "review_findings_fixed": [
+    "R4 owner reuse/reentry and invalid-thread exit",
+    "R5 diagnostic business reads through joins",
+    "R6 proof writer business mutations"
+  ],
+  "runtime_commit": "5d3e06b02c0e131acdcf99f16c9cc520257ce122",
+  "source_files_equal_runtime_commit": 91,
+  "supersedes_runtime_commit": "1837c55b5e851a63688a0b14ea5bcc9bcb0c20b7",
+  "validation": {
+    "full_suite": {
+      "log": "full-suite-5d3e06b.log",
+      "status": "PASS",
+      "tests": 419
+    },
+    "v4_controls": {
+      "negative_controls_detected": 10,
+      "report": "candidate-3/report.json",
+      "status": "PASS",
+      "tests": 35
+    }
+  }
+}

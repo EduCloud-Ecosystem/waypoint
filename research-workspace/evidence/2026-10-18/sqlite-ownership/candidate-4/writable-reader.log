@@ -1,0 +1,15 @@
+test_online_read_guard_before_existing_ro_and_same_snapshot (test_sqlite_ownership.OwnershipTests.test_online_read_guard_before_existing_ro_and_same_snapshot) ... FAIL
+
+======================================================================
+FAIL: test_online_read_guard_before_existing_ro_and_same_snapshot (test_sqlite_ownership.OwnershipTests.test_online_read_guard_before_existing_ro_and_same_snapshot)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 188, in test_online_read_guard_before_existing_ro_and_same_snapshot
+    self.assertTrue(all(u==":memory:" or u.endswith("?mode=ro") for u in uris))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 1 test in 0.411s
+
+FAILED (failures=1)

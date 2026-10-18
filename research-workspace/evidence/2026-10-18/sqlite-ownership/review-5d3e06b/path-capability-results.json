@@ -1,0 +1,9 @@
+{
+  "guard_root_equals_owner_root": true,
+  "database_outside_owner_root": true,
+  "business_rows_returned": [
+    [
+      "alice"
+    ]
+  ]
+}

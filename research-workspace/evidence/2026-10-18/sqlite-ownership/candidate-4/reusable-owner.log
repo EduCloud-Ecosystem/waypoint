@@ -1,0 +1,27 @@
+test_owner_reentry_reuse_and_wrong_thread_refuse_before_any_open (test_sqlite_ownership.OwnershipTests.test_owner_reentry_reuse_and_wrong_thread_refuse_before_any_open) ... ERROR
+
+======================================================================
+ERROR: test_owner_reentry_reuse_and_wrong_thread_refuse_before_any_open (test_sqlite_ownership.OwnershipTests.test_owner_reentry_reuse_and_wrong_thread_refuse_before_any_open)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 286, in test_owner_reentry_reuse_and_wrong_thread_refuse_before_any_open
+    with self.assertRaisesRegex(RuntimeError,"single-use"):
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: RuntimeError not raised
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 276, in test_owner_reentry_reuse_and_wrong_thread_refuse_before_any_open
+    with owner as db:
+         ^^^^^
+  File "/private<captured-source>/research_workspace/sqlite_ownership.py", line 475, in __exit__
+    raise RuntimeError("SQLite owner cleanup was already attempted.")
+RuntimeError: SQLite owner cleanup was already attempted.
+
+----------------------------------------------------------------------
+Ran 1 test in 0.139s
+
+FAILED (errors=1)
+Exception ignored while finalizing database connection <sqlite3.Connection object at 0x107279f30>:
+ResourceWarning: unclosed database in <sqlite3.Connection object at 0x107279f30>

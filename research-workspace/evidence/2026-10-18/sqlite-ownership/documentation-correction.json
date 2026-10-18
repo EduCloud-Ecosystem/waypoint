@@ -1,0 +1,38 @@
+{
+  "accepted_observation": {
+    "charge_provenance": "estimated_upper_bound",
+    "charged_cpu_seconds": 30,
+    "cleanup_verified": true,
+    "path": "research-workspace/evidence/2026-10-17/replay-cleanup-reconciliation/observation.json",
+    "refunded_cpu_seconds": 0,
+    "resource_cleanup": "RESOLVED_AT_OBSERVATION",
+    "sha256": "02f6ae6d1bb782aca9d14aadc81f1d840b755efc13cd399590c806cd37771205",
+    "unresolved_liability": false
+  },
+  "cleared_runtime_commit": "43890cbf10a02cd522da627f6ea5a841820a4762",
+  "documentation_sha256": {
+    "research-workspace/SQLITE-OWNERSHIP.md": "f0ef5ea49b4dabea258645182efa2aaba373a6be56a640e4c278e27ce1df19fa",
+    "research-workspace/evidence/2026-10-18/sqlite-ownership/README.md": "cd2b9360989189380856da461b2d777a6daa10bee019d395d9f230d6b207a6b3"
+  },
+  "format": "waypoint-sqlite-ownership-documentation-correction-v1",
+  "original_evidence": {
+    "cleanup_verified": false,
+    "proposal_and_review_artifacts": "UNCHANGED_HISTORICAL_RECORDS",
+    "saved_receipt": "UNKNOWN_UNCHANGED",
+    "unresolved_liability": true,
+    "workload": "FAIL_UNCHANGED"
+  },
+  "qualification_boundary": "Candidate8 remains the exact source snapshot of cleared runtime43890cb including its then-current documentation. Current documentation correction does not change runtime or tests.",
+  "reason": "Coordinating review found current documentation incorrectly described the later settled resource/accounting observation as an unresolved cleanup gate. The original failed receipt remains historical evidence.",
+  "remaining_gates": [
+    "source candidate promotion",
+    "independent-human second-machine reproduction",
+    "hosted admission",
+    "real-data admission",
+    "final-head CI",
+    "coordinating CLEAR"
+  ],
+  "runtime_tests_and_workflows_unchanged": true,
+  "superseded_evidence_head": "b2972b2dd9690a90fc9dcae3e8cc481fcca33d74",
+  "superseded_provenance_sha256": "adbfc147002ca5f2f04f8080f3c5f087d5bd4d152ff55c8eb7c573ea0c477799"
+}

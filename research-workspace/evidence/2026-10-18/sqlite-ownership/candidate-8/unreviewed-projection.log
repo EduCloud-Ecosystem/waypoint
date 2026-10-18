@@ -1,0 +1,112 @@
+test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation (test_sqlite_ownership.OwnershipTests.test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation) ... 
+  test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation (test_sqlite_ownership.OwnershipTests.test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation) (role='online-read', sql='SELECT CASE WHEN (random() & 1)=0 THEN subject ELSE CAST(zeroblob(1000000) AS TEXT) END AS subject FROM users LIMIT 1') ... FAIL
+  test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation (test_sqlite_ownership.OwnershipTests.test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation) (role='online-read', sql='SELECT subject FROM users WHERE (random() & 1)=0') ... FAIL
+  test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation (test_sqlite_ownership.OwnershipTests.test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation) (role='online-read', sql='SELECT COALESCE(NULL, subject) AS subject FROM users') ... FAIL
+  test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation (test_sqlite_ownership.OwnershipTests.test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation) (role='mutation', sql='SELECT CASE WHEN (random() & 1)=0 THEN subject ELSE CAST(zeroblob(1000000) AS TEXT) END AS subject FROM users LIMIT 1') ... FAIL
+  test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation (test_sqlite_ownership.OwnershipTests.test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation) (role='mutation', sql='SELECT subject FROM users WHERE (random() & 1)=0') ... FAIL
+  test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation (test_sqlite_ownership.OwnershipTests.test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation) (role='mutation', sql='SELECT COALESCE(NULL, subject) AS subject FROM users') ... FAIL
+  test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation (test_sqlite_ownership.OwnershipTests.test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation) (role='offline-freeze', sql='SELECT CASE WHEN (random() & 1)=0 THEN subject ELSE CAST(zeroblob(1000000) AS TEXT) END AS subject FROM users LIMIT 1') ... FAIL
+  test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation (test_sqlite_ownership.OwnershipTests.test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation) (role='offline-freeze', sql='SELECT subject FROM users WHERE (random() & 1)=0') ... FAIL
+  test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation (test_sqlite_ownership.OwnershipTests.test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation) (role='offline-freeze', sql='SELECT COALESCE(NULL, subject) AS subject FROM users') ... FAIL
+test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation (test_sqlite_ownership.OwnershipTests.test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation) ... FAIL
+
+======================================================================
+FAIL: test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation (test_sqlite_ownership.OwnershipTests.test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation) (role='online-read', sql='SELECT CASE WHEN (random() & 1)=0 THEN subject ELSE CAST(zeroblob(1000000) AS TEXT) END AS subject FROM users LIMIT 1')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 523, in test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation
+    with self.subTest(role=role,sql=attack),self.assertRaisesRegex(o.ReadBounds,"projection or predicate"):
+                                            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ReadBounds not raised
+
+======================================================================
+FAIL: test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation (test_sqlite_ownership.OwnershipTests.test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation) (role='online-read', sql='SELECT subject FROM users WHERE (random() & 1)=0')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 523, in test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation
+    with self.subTest(role=role,sql=attack),self.assertRaisesRegex(o.ReadBounds,"projection or predicate"):
+                                            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ReadBounds not raised
+
+======================================================================
+FAIL: test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation (test_sqlite_ownership.OwnershipTests.test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation) (role='online-read', sql='SELECT COALESCE(NULL, subject) AS subject FROM users')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 523, in test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation
+    with self.subTest(role=role,sql=attack),self.assertRaisesRegex(o.ReadBounds,"projection or predicate"):
+                                            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ReadBounds not raised
+
+======================================================================
+FAIL: test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation (test_sqlite_ownership.OwnershipTests.test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation) (role='mutation', sql='SELECT CASE WHEN (random() & 1)=0 THEN subject ELSE CAST(zeroblob(1000000) AS TEXT) END AS subject FROM users LIMIT 1')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 523, in test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation
+    with self.subTest(role=role,sql=attack),self.assertRaisesRegex(o.ReadBounds,"projection or predicate"):
+                                            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ReadBounds not raised
+
+======================================================================
+FAIL: test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation (test_sqlite_ownership.OwnershipTests.test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation) (role='mutation', sql='SELECT subject FROM users WHERE (random() & 1)=0')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 523, in test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation
+    with self.subTest(role=role,sql=attack),self.assertRaisesRegex(o.ReadBounds,"projection or predicate"):
+                                            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ReadBounds not raised
+
+======================================================================
+FAIL: test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation (test_sqlite_ownership.OwnershipTests.test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation) (role='mutation', sql='SELECT COALESCE(NULL, subject) AS subject FROM users')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 523, in test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation
+    with self.subTest(role=role,sql=attack),self.assertRaisesRegex(o.ReadBounds,"projection or predicate"):
+                                            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ReadBounds not raised
+
+======================================================================
+FAIL: test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation (test_sqlite_ownership.OwnershipTests.test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation) (role='offline-freeze', sql='SELECT CASE WHEN (random() & 1)=0 THEN subject ELSE CAST(zeroblob(1000000) AS TEXT) END AS subject FROM users LIMIT 1')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 523, in test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation
+    with self.subTest(role=role,sql=attack),self.assertRaisesRegex(o.ReadBounds,"projection or predicate"):
+                                            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ReadBounds not raised
+
+======================================================================
+FAIL: test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation (test_sqlite_ownership.OwnershipTests.test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation) (role='offline-freeze', sql='SELECT subject FROM users WHERE (random() & 1)=0')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 523, in test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation
+    with self.subTest(role=role,sql=attack),self.assertRaisesRegex(o.ReadBounds,"projection or predicate"):
+                                            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ReadBounds not raised
+
+======================================================================
+FAIL: test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation (test_sqlite_ownership.OwnershipTests.test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation) (role='offline-freeze', sql='SELECT COALESCE(NULL, subject) AS subject FROM users')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 523, in test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation
+    with self.subTest(role=role,sql=attack),self.assertRaisesRegex(o.ReadBounds,"projection or predicate"):
+                                            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ReadBounds not raised
+
+======================================================================
+FAIL: test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation (test_sqlite_ownership.OwnershipTests.test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 526, in test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation
+    self.assertEqual(evaluated,[]);self.assertFalse(o.held(self.root))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['SELECT CASE WHEN (random() & 1)=0 THEN s[640 chars]ers'] != []
+
+First list contains 9 additional elements.
+First extra element 0:
+'SELECT CASE WHEN (random() & 1)=0 THEN subject ELSE CAST(zeroblob(1000000) AS TEXT) END AS subject FROM users LIMIT 1'
+
+Diff is 737 characters long. Set self.maxDiff to None to see it.
+
+----------------------------------------------------------------------
+Ran 1 test in 0.124s
+
+FAILED (failures=10)

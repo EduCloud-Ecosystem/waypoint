@@ -1,0 +1,321 @@
+{
+  "available_capacity": "UNKNOWN",
+  "baseline": {
+    "exit_code": 0,
+    "log": "controls.log",
+    "log_sha256": "decab04b0592fe8789129179e78cf865ca80b4be103629fb99cbe52dc3f9dd41"
+  },
+  "boundary": "Disposable synthetic application failure injection, real process contention; not power-loss, VFS, provider, Docker, capacity or global quiescence evidence.",
+  "fifth_headroom": "FAIL_UNCHANGED",
+  "format": "waypoint-scoped-sqlite-qualification-v1",
+  "negative_controls": [
+    {
+      "detected": true,
+      "exit_code": 1,
+      "log": "reader-after-rollback.log",
+      "log_sha256": "923e3b051ec45501a79dde9d881930c244e838f4e7b5fc2d2e37ca9d236ddfbe",
+      "mutated_source_sha256": "d0bb592cbdd3ef34bf300aea1ce8589503c62cf19c6d1d646a4e3c6849c3e616",
+      "name": "reader-after-rollback",
+      "replacements": [
+        {
+          "after": "",
+          "before": " or self._read_ended"
+        }
+      ],
+      "source_file": "research_workspace/sqlite_ownership.py"
+    },
+    {
+      "detected": true,
+      "exit_code": 1,
+      "log": "skipped-validation.log",
+      "log_sha256": "f6cb23830b1eaab9a67a68ff324901143b67dbbc0f92a5819d6db0d859736475",
+      "mutated_source_sha256": "5d6cb1230b520316ea46189c5ebcd0c8755c019fabb64525726cb83426b0803d",
+      "name": "skipped-validation",
+      "replacements": [
+        {
+          "after": "False and role not in",
+          "before": "not validate and role not in"
+        }
+      ],
+      "source_file": "research_workspace/sqlite_ownership.py"
+    },
+    {
+      "detected": true,
+      "exit_code": 1,
+      "log": "wrong-root-guard.log",
+      "log_sha256": "16557d539d53954630218fd58af4fe1dcaa617c6a37420b95714325cf21f028a",
+      "mutated_source_sha256": "51baea6748696aed77ad0f7739c473f20bbc99fced733dff1092c121640a6148",
+      "name": "wrong-root-guard",
+      "replacements": [
+        {
+          "after": "if False:",
+          "before": "if guard is not None and Path(guard.root).resolve() != self.root:"
+        }
+      ],
+      "source_file": "research_workspace/sqlite_ownership.py"
+    },
+    {
+      "detected": true,
+      "exit_code": 1,
+      "log": "wrong-database-path.log",
+      "log_sha256": "5a106f7b332851386b6d4d05a7189d8a75adc02bb0178767f7174ddbc41b7d22",
+      "mutated_source_sha256": "dbb58d14e8a4d7500a10dbde694aa8324196152e748961268d9d397619a1ecad",
+      "name": "wrong-database-path",
+      "replacements": [
+        {
+          "after": "if False:",
+          "before": "if path is not None and role != \"backup-destination\":"
+        }
+      ],
+      "source_file": "research_workspace/sqlite_ownership.py"
+    },
+    {
+      "detected": true,
+      "exit_code": 1,
+      "log": "retry-failed-diagnostic.log",
+      "log_sha256": "7dde50d7312d4f9f8fa9363440c76d8d186e9c2ca224a2317d62b5a2ed9903e2",
+      "mutated_source_sha256": "4216ebaeb02c6ed9e91310a4de4abee30843aa51f135a47b556373f507287215",
+      "name": "retry-failed-diagnostic",
+      "replacements": [
+        {
+          "after": "if False:",
+          "before": "if token is not None and token.guard.root == Path(root).resolve():"
+        }
+      ],
+      "source_file": "research_workspace/sqlite_ownership.py"
+    },
+    {
+      "detected": true,
+      "exit_code": 1,
+      "log": "caught-write-ack.log",
+      "log_sha256": "6644e5137c7c6b113032d6e76da30eb91960472f1e7d964ecc2dca918c0761d6",
+      "mutated_source_sha256": "2b0bcb8f0d419f7b3d9acd896692f7ae30ee0d52029ad595441a0f8ddcbaa428",
+      "name": "caught-write-ack",
+      "replacements": [
+        {
+          "after": "            cursor.execute(sql, parameters)",
+          "before": "            try:\n                cursor.execute(sql, parameters)\n            except BaseException as failure:\n                hold(self.root,self,failure)\n                raise"
+        }
+      ],
+      "source_file": "research_workspace/sqlite_ownership.py"
+    },
+    {
+      "detected": true,
+      "exit_code": 1,
+      "log": "caught-commit-ack.log",
+      "log_sha256": "85757f6304479471032d35b64b0ad158a5c55b40f3e6bd051d68df55332842ac",
+      "mutated_source_sha256": "220632f3d8aed26e52e7c6ba7ee219111eba077a1ad114c1544208591f275e21",
+      "name": "caught-commit-ack",
+      "replacements": [
+        {
+          "after": "        except BaseException:\n            raise\n\n    def rollback",
+          "before": "        except BaseException as failure:\n            hold(self.root,self,failure)\n            raise\n\n    def rollback"
+        }
+      ],
+      "source_file": "research_workspace/sqlite_ownership.py"
+    },
+    {
+      "detected": true,
+      "exit_code": 1,
+      "log": "caught-backup-ack.log",
+      "log_sha256": "98266a7ec48679a1b8b88a2e7a5b2e728df752ffd0a15c397c6582ee836de2f5",
+      "mutated_source_sha256": "70a0a833e84ae7584a68a9b23def3559f46f6540d41582c30148da7bbf887e65",
+      "name": "caught-backup-ack",
+      "replacements": [
+        {
+          "after": "            pass  # deliberately lose backup uncertainty",
+          "before": "            hold(self.root,self,failure)\n            hold(destination.root,destination,failure)"
+        }
+      ],
+      "source_file": "research_workspace/sqlite_ownership.py"
+    },
+    {
+      "detected": true,
+      "exit_code": 1,
+      "log": "ambiguous-projection.log",
+      "log_sha256": "3677254726de4d5de304e7b9744a27fa4429d3bab2a8fc9a8d9f3dc0448acb24",
+      "mutated_source_sha256": "822795cc79c152e20def1696140cc7e3c159acd7289bc9630bc053f8a460c438",
+      "name": "ambiguous-projection",
+      "replacements": [
+        {
+          "after": "",
+          "before": "            if len({name.casefold() for name in names}) != len(names):\n                raise ReadBounds(\"Ambiguous SQLite projection names are not permitted.\")\n"
+        }
+      ],
+      "source_file": "research_workspace/sqlite_ownership.py"
+    },
+    {
+      "detected": true,
+      "exit_code": 1,
+      "log": "diagnostic-attach-script.log",
+      "log_sha256": "51d21785cace9ec24ec2104e79cd15f6edb33567641affaadeda68bd811e9658",
+      "mutated_source_sha256": "dd140d2e7d4855a616f6d2033f3396c0d2ca62616a444e98b7df0409492603d7",
+      "name": "diagnostic-attach-script",
+      "replacements": [
+        {
+          "after": "if not self.initialize:",
+          "before": "if not _schema_allowed(self.role, sql, script=True):"
+        }
+      ],
+      "source_file": "research_workspace/sqlite_ownership.py"
+    },
+    {
+      "detected": true,
+      "exit_code": 1,
+      "log": "reusable-owner.log",
+      "log_sha256": "b27b27c68ed0788fd52319760abce9a08f685727db4c474b1f02cc9e7e7af6de",
+      "mutated_source_sha256": "b439bcc794b636f9130606e0c0c8c8d7baa45f779ffc5827cc75b424408d5390",
+      "name": "reusable-owner",
+      "replacements": [
+        {
+          "after": "if self._thread != threading.get_ident():",
+          "before": "if self._thread != threading.get_ident() or self._entered:"
+        }
+      ],
+      "source_file": "research_workspace/sqlite_ownership.py"
+    },
+    {
+      "detected": true,
+      "exit_code": 1,
+      "log": "diagnostic-business-join.log",
+      "log_sha256": "aaff3a5e7d4ddd442ef5c59857d562db3265345d058c0a1df1b69c01f84e34b9",
+      "mutated_source_sha256": "d4a759e24b309769852b2e87cd0e684501a420bf30c69f66739646887a512e0b",
+      "name": "diagnostic-business-join",
+      "replacements": [
+        {
+          "after": "if self.role in _ROLE_READS and not normalized.startswith('SELECT '):",
+          "before": "if self.role in _ROLE_READS:"
+        }
+      ],
+      "source_file": "research_workspace/sqlite_ownership.py"
+    },
+    {
+      "detected": true,
+      "exit_code": 1,
+      "log": "proof-role-business-write.log",
+      "log_sha256": "3c9865ceee63578f5a4717afcc7cb4203142943927b06b6da3cd765e9d1f138c",
+      "mutated_source_sha256": "3f7db4a84c07f4eb716c22cddbdcab222128ff531cfdabfbb6d9234d062cec2c",
+      "name": "proof-role-business-write",
+      "replacements": [
+        {
+          "after": "if self.role in _ROLE_READS and not normalized.startswith('UPDATE '):",
+          "before": "if self.role in _ROLE_READS:"
+        }
+      ],
+      "source_file": "research_workspace/sqlite_ownership.py"
+    },
+    {
+      "detected": true,
+      "exit_code": 1,
+      "log": "writable-reader.log",
+      "log_sha256": "d5cc2a0942e4a4ad31997701ab3e6061342d86895eae94220a9717e96a142b4b",
+      "mutated_source_sha256": "fa53cf7bc6e556a88e9adedf89fe90003307385c37d215d98760a1716d6a01aa",
+      "name": "writable-reader",
+      "replacements": [
+        {
+          "after": "\"rw\" if self.readonly else \"rw\"",
+          "before": "\"ro\" if self.readonly else \"rw\""
+        }
+      ],
+      "source_file": "research_workspace/sqlite_ownership.py"
+    },
+    {
+      "detected": true,
+      "exit_code": 1,
+      "log": "missing-connection-close.log",
+      "log_sha256": "a62ec258907eb7c91e5ce3931564a5ac29219f07103b62a582cc041f97571e47",
+      "mutated_source_sha256": "2293c86d749182f268c4a227c606b2275d803d627a0ec9d60efc865efd397a8c",
+      "name": "missing-connection-close",
+      "replacements": [
+        {
+          "after": "                    pass  # deliberate missing close",
+          "before": "                    self.__connection.close()"
+        }
+      ],
+      "source_file": "research_workspace/sqlite_ownership.py"
+    },
+    {
+      "detected": true,
+      "exit_code": 1,
+      "log": "swallowed-cursor-close.log",
+      "log_sha256": "0e2fbbc46021931d6e28209a4b9a47425f908e36137dfefee0810dabef6ece5f",
+      "mutated_source_sha256": "ce49e2d8b39de25b044e13493327b4f8fef91bf6a2e4c72db669aacc6c2326ee",
+      "name": "swallowed-cursor-close",
+      "replacements": [
+        {
+          "after": "",
+          "before": "        if original is None:\n            try:\n                if self._uncertain:\n                    raise self._cleanup_error or OwnershipFailure()\n                _permit(self.root,self.role,self.guard)\n            except BaseException as failure:\n                original=failure\n"
+        }
+      ],
+      "source_file": "research_workspace/sqlite_ownership.py"
+    },
+    {
+      "detected": true,
+      "exit_code": 1,
+      "log": "reusable-diagnostic-token.log",
+      "log_sha256": "776026f6f750b59fef93c0b6afb4bc9f4bee6441b4947e09114e77ce80d4e4b5",
+      "mutated_source_sha256": "3666407b604654d914fc9c73cf6ac588b952c411f7197118491587e58aba76fc",
+      "name": "reusable-diagnostic-token",
+      "replacements": [
+        {
+          "after": "False",
+          "before": "getattr(token, \"_ownership_diagnostic_used\", False)"
+        }
+      ],
+      "source_file": "research_workspace/sqlite_ownership.py"
+    },
+    {
+      "detected": true,
+      "exit_code": 1,
+      "log": "primary-dispatch-error-lost.log",
+      "log_sha256": "ac2aa5a7b4d237970dea684b0b7170670e3cee264d43e0d7d122c7ea2b24c23c",
+      "mutated_source_sha256": "7c2bf690b1e551d7f44bdafb03dff9f3009043e38bf61a46c569f137e035e149",
+      "name": "primary-dispatch-error-lost",
+      "replacements": [
+        {
+          "after": "if True:\n                        db.rollback()",
+          "before": "if self.profile_version != 4:\n                        db.rollback()"
+        }
+      ],
+      "source_file": "research_workspace/store.py"
+    },
+    {
+      "detected": true,
+      "exit_code": 1,
+      "log": "spawn-after-reservation-close.log",
+      "log_sha256": "afd458dae5e253e9912b95fd45546640f7469ccb410b1b934e4a8d33ebf7ecf2",
+      "mutated_source_sha256": "9c2893d448f76bc46f401301bcedcbe70970d713a43a435dca7db86e38f7e9b2",
+      "name": "spawn-after-reservation-close",
+      "replacements": [
+        {
+          "after": "                        return spawn",
+          "before": "                        return spawn()"
+        },
+        {
+          "after": "                callback = token.launch(current_launch)\n                return callback()",
+          "before": "                return token.launch(current_launch)"
+        }
+      ],
+      "source_file": "research_workspace/store.py"
+    },
+    {
+      "detected": true,
+      "exit_code": 1,
+      "log": "skip-export-recapture.log",
+      "log_sha256": "30b020689dcecf16ae9f757ccc24fd275f042519a0eabf6a42a6fe00f12b2d52",
+      "mutated_source_sha256": "ec3766d472210c59ea8e9a00f992e9b7fcb4524c901e2bb17e0ccf6f26588b0e",
+      "name": "skip-export-recapture",
+      "replacements": [
+        {
+          "after": "current = manifest",
+          "before": "current = _capture(store, project_id, subject, token)"
+        }
+      ],
+      "source_file": "research_workspace/bounded_export.py"
+    }
+  ],
+  "quota_enforced": false,
+  "source_archive_sha256": "2a38b25ed980019c0bb6e78f08e085298db104e5ed8529b34ca99a79cfb754df",
+  "source_manifest_sha256": "6253fcfdb233af44f8db11451aa8b5e0064a74188cff37a405cc3bbd40b4b65b",
+  "status": "PASS"
+}

@@ -1,0 +1,87 @@
+{
+  "status": "BLOCKED_PRELIMINARY_REVIEW_NOT_FINAL_CANDIDATE",
+  "base_commit": "4606cc6076999c6bae507bdb6beab4bbd0b0819a",
+  "scope": "Uncommitted runtime snapshot captured before owner fixes; no source changes by reviewer.",
+  "snapshot_sha256": "e15746e2810af4721d5ebaed901af2652c7f2bcb39b7177210736fecc8c4c840",
+  "findings": [
+    {
+      "id": "R1",
+      "priority": "P1",
+      "title": "Final backup manifest precedes freeze cleanup",
+      "source": "research_workspace/guarded_recovery.py",
+      "lines": [
+        48,
+        56
+      ],
+      "evidence": "Source inspection: payload written and directory synced before exiting frozen_db. Phase-two close failure can leave manifest. Owner independently identified issue and has reported a fix; exact final candidate not yet verified."
+    },
+    {
+      "id": "R2",
+      "priority": "P2",
+      "title": "Unconditional rollback replaces primary error",
+      "sources": [
+        {
+          "file": "research_workspace/recovery.py",
+          "lines": [
+            123,
+            126
+          ]
+        },
+        {
+          "file": "research_workspace/store.py",
+          "lines": [
+            806,
+            808
+          ]
+        }
+      ],
+      "evidence": "Two independent adversarial controls inject a primary ValueError then rollback OSError; both return rollback failure rather than primary error, with no notes. Process remains held."
+    },
+    {
+      "id": "R3",
+      "priority": "P2",
+      "title": "Caught cursor-close failure permits successful owner exit",
+      "source": "research_workspace/sqlite_ownership.py",
+      "lines": [
+        384,
+        420
+      ],
+      "evidence": "Independent control catches cursor-close OSError in owned read body. Connection closes, __exit__ returns success with held=True. Owner must refuse successful exit when its cleanup became unconfirmed."
+    }
+  ],
+  "targeted_controls": {
+    "run": 9,
+    "passed": 8,
+    "errors": 1,
+    "error_class": "Known preliminary test harness: mock connect positional uri parameter conflicts with sqlite3.connect(uri=True). Preserved, not treated as runtime failure."
+  },
+  "adversarial_controls": {
+    "run": 3,
+    "reproduced_contract_failures": 3,
+    "log": "adversarial-results.json"
+  },
+  "checked_boundaries": [
+    "Resolved-root process hold, thread sharing and unrelated roots",
+    "Once-per-token diagnostic allowance and failed-diagnostic no retry",
+    "No raw Store factory handle for v4",
+    "Two queued runs claim one",
+    "Binding refusal without creating missing database",
+    "Predispatch clean-refusal token lifetime",
+    "Commit acknowledgement and close uncertainty"
+  ],
+  "not_claimed": [
+    "Final immutable candidate approval",
+    "Full runtime qualification",
+    "CI success",
+    "Owner merge CLEAR",
+    "Checkpoint or storage capacity",
+    "Provider or Docker acceptance"
+  ],
+  "protections": "No protected worktrees, historical evidence, source environments, provider state, workflow or pins edited; no historical qualification harness run.",
+  "files_sha256": {
+    "adversarial_review.py": "5a8cbaedcd0029a0ec79aea449f6b4fbfac13edbaeb5348050b983b604fd1094",
+    "adversarial-results.json": "23b7db9163fa9d1b5e35f48a02ffdf3af1ca74204f5d762b14df71fff2d2b3f4",
+    "targeted-controls.log": "4a9473765e6174070df93f945227535a1250d2ae79a735a56c2859928aef9e7d",
+    "initial-harness-failure.txt": "c2f9356bffce8060329a9bf281803a34bce49521dcff0c3cecd8077d5b03b09e"
+  }
+}

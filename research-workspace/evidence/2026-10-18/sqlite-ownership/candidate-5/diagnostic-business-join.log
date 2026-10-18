@@ -1,0 +1,88 @@
+test_diagnostic_role_rejects_join_union_subquery_and_business_pragma (test_sqlite_ownership.OwnershipTests.test_diagnostic_role_rejects_join_union_subquery_and_business_pragma) ... 
+  test_diagnostic_role_rejects_join_union_subquery_and_business_pragma (test_sqlite_ownership.OwnershipTests.test_diagnostic_role_rejects_join_union_subquery_and_business_pragma) (sql='SELECT u.subject FROM operation_authority a JOIN users u ON 1=1') ... FAIL
+  test_diagnostic_role_rejects_join_union_subquery_and_business_pragma (test_sqlite_ownership.OwnershipTests.test_diagnostic_role_rejects_join_union_subquery_and_business_pragma) (sql='SELECT (SELECT subject FROM users LIMIT 1) AS authority_id FROM operation_authority') ... ERROR
+  test_diagnostic_role_rejects_join_union_subquery_and_business_pragma (test_sqlite_ownership.OwnershipTests.test_diagnostic_role_rejects_join_union_subquery_and_business_pragma) (sql='PRAGMA table_info(users)') ... ERROR
+  test_diagnostic_role_rejects_join_union_subquery_and_business_pragma (test_sqlite_ownership.OwnershipTests.test_diagnostic_role_rejects_join_union_subquery_and_business_pragma) (sql="SELECT id FROM runs WHERE status='queued' LIMIT 21") ... ERROR
+test_diagnostic_role_rejects_join_union_subquery_and_business_pragma (test_sqlite_ownership.OwnershipTests.test_diagnostic_role_rejects_join_union_subquery_and_business_pragma) ... ERROR
+
+======================================================================
+ERROR: test_diagnostic_role_rejects_join_union_subquery_and_business_pragma (test_sqlite_ownership.OwnershipTests.test_diagnostic_role_rejects_join_union_subquery_and_business_pragma) (sql='SELECT (SELECT subject FROM users LIMIT 1) AS authority_id FROM operation_authority')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 311, in test_diagnostic_role_rejects_join_union_subquery_and_business_pragma
+    with self.subTest(sql=sql),self.assertRaises(ValueError):db.execute(sql)
+                                                             ~~~~~~~~~~^^^^^
+  File "/private<captured-source>/research_workspace/sqlite_ownership.py", line 372, in execute
+    self._check()
+    ~~~~~~~~~~~^^
+  File "/private<captured-source>/research_workspace/sqlite_ownership.py", line 277, in _check
+    _permit(self.root, self.role, self.guard)
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private<captured-source>/research_workspace/sqlite_ownership.py", line 102, in _permit
+    raise OwnershipFailure()
+research_workspace.sqlite_ownership.OwnershipFailure: SQLite ownership is unconfirmed. This process is held; the requested action was not confirmed. Existing access and obligations remain subject to their recorded state.
+
+======================================================================
+ERROR: test_diagnostic_role_rejects_join_union_subquery_and_business_pragma (test_sqlite_ownership.OwnershipTests.test_diagnostic_role_rejects_join_union_subquery_and_business_pragma) (sql='PRAGMA table_info(users)')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 311, in test_diagnostic_role_rejects_join_union_subquery_and_business_pragma
+    with self.subTest(sql=sql),self.assertRaises(ValueError):db.execute(sql)
+                                                             ~~~~~~~~~~^^^^^
+  File "/private<captured-source>/research_workspace/sqlite_ownership.py", line 372, in execute
+    self._check()
+    ~~~~~~~~~~~^^
+  File "/private<captured-source>/research_workspace/sqlite_ownership.py", line 277, in _check
+    _permit(self.root, self.role, self.guard)
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private<captured-source>/research_workspace/sqlite_ownership.py", line 102, in _permit
+    raise OwnershipFailure()
+research_workspace.sqlite_ownership.OwnershipFailure: SQLite ownership is unconfirmed. This process is held; the requested action was not confirmed. Existing access and obligations remain subject to their recorded state.
+
+======================================================================
+ERROR: test_diagnostic_role_rejects_join_union_subquery_and_business_pragma (test_sqlite_ownership.OwnershipTests.test_diagnostic_role_rejects_join_union_subquery_and_business_pragma) (sql="SELECT id FROM runs WHERE status='queued' LIMIT 21")
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 311, in test_diagnostic_role_rejects_join_union_subquery_and_business_pragma
+    with self.subTest(sql=sql),self.assertRaises(ValueError):db.execute(sql)
+                                                             ~~~~~~~~~~^^^^^
+  File "/private<captured-source>/research_workspace/sqlite_ownership.py", line 372, in execute
+    self._check()
+    ~~~~~~~~~~~^^
+  File "/private<captured-source>/research_workspace/sqlite_ownership.py", line 277, in _check
+    _permit(self.root, self.role, self.guard)
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private<captured-source>/research_workspace/sqlite_ownership.py", line 102, in _permit
+    raise OwnershipFailure()
+research_workspace.sqlite_ownership.OwnershipFailure: SQLite ownership is unconfirmed. This process is held; the requested action was not confirmed. Existing access and obligations remain subject to their recorded state.
+
+======================================================================
+ERROR: test_diagnostic_role_rejects_join_union_subquery_and_business_pragma (test_sqlite_ownership.OwnershipTests.test_diagnostic_role_rejects_join_union_subquery_and_business_pragma)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 312, in test_diagnostic_role_rejects_join_union_subquery_and_business_pragma
+    self.assertEqual(len(db.execute("SELECT authority_id,sequence FROM operation_authority").fetchall()),1)
+                         ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private<captured-source>/research_workspace/sqlite_ownership.py", line 372, in execute
+    self._check()
+    ~~~~~~~~~~~^^
+  File "/private<captured-source>/research_workspace/sqlite_ownership.py", line 277, in _check
+    _permit(self.root, self.role, self.guard)
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private<captured-source>/research_workspace/sqlite_ownership.py", line 102, in _permit
+    raise OwnershipFailure()
+research_workspace.sqlite_ownership.OwnershipFailure: SQLite ownership is unconfirmed. This process is held; the requested action was not confirmed. Existing access and obligations remain subject to their recorded state.
+
+======================================================================
+FAIL: test_diagnostic_role_rejects_join_union_subquery_and_business_pragma (test_sqlite_ownership.OwnershipTests.test_diagnostic_role_rejects_join_union_subquery_and_business_pragma) (sql='SELECT u.subject FROM operation_authority a JOIN users u ON 1=1')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 311, in test_diagnostic_role_rejects_join_union_subquery_and_business_pragma
+    with self.subTest(sql=sql),self.assertRaises(ValueError):db.execute(sql)
+                               ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.232s
+
+FAILED (failures=1, errors=4)

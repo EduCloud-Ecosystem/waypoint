@@ -1,0 +1,26 @@
+[
+  {
+    "name": "readonly_rollback",
+    "returncode": 0,
+    "stdout": "{\"name\": \"readonly_rollback\", \"exception\": \"RuntimeError('SQLite scope has ended or belongs to another thread.')\"}\n",
+    "stderr": ""
+  },
+  {
+    "name": "disabled_validation",
+    "returncode": 0,
+    "stdout": "{\"name\": \"disabled_validation\", \"exception\": \"ValueError('Existing authority owners require binding and schema validation.')\"}\n",
+    "stderr": ""
+  },
+  {
+    "name": "mismatched_guard",
+    "returncode": 0,
+    "stdout": "{\"name\": \"mismatched_guard\", \"exception\": \"ValueError('The SQLite owner and guard must have the same resolved root.')\"}\n",
+    "stderr": ""
+  },
+  {
+    "name": "diagnostic_retry",
+    "returncode": 0,
+    "stdout": "{\"name\": \"diagnostic_retry\", \"exception\": \"OwnershipFailure('SQLite ownership is unconfirmed. This process is held; the requested action was not confirmed. Existing access and obligations remain subject to their recorded state.')\"}\n",
+    "stderr": ""
+  }
+]

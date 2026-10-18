@@ -1,0 +1,25 @@
+{
+  "sql": "SELECT CASE WHEN (random() & 1)=0 THEN subject ELSE CAST(zeroblob(1000000) AS TEXT) END AS subject FROM users LIMIT 1",
+  "attempts": [
+    {
+      "attempt": 0,
+      "exception": "ReadBounds('SQLite observation exceeds its row, type or field bounds.')",
+      "held": false
+    },
+    {
+      "attempt": 1,
+      "returned_bytes": 5,
+      "held": false
+    },
+    {
+      "attempt": 2,
+      "exception": "ReadBounds('SQLite observation exceeds its row, type or field bounds.')",
+      "held": false
+    },
+    {
+      "attempt": 3,
+      "returned_bytes": 1000000,
+      "held": false
+    }
+  ]
+}

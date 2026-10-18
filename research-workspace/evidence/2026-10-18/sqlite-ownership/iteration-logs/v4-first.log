@@ -1,0 +1,106 @@
+test_backup_failure_retains_partial_output_without_manifest_or_provider (test_sqlite_ownership.OwnershipTests.test_backup_failure_retains_partial_output_without_manifest_or_provider) ... 
+  test_backup_failure_retains_partial_output_without_manifest_or_provider (test_sqlite_ownership.OwnershipTests.test_backup_failure_retains_partial_output_without_manifest_or_provider) (role='backup-source') ... ERROR
+  test_backup_failure_retains_partial_output_without_manifest_or_provider (test_sqlite_ownership.OwnershipTests.test_backup_failure_retains_partial_output_without_manifest_or_provider) (role='backup-destination') ... ERROR
+  test_backup_failure_retains_partial_output_without_manifest_or_provider (test_sqlite_ownership.OwnershipTests.test_backup_failure_retains_partial_output_without_manifest_or_provider) (role='offline-freeze') ... ERROR
+test_bootstrap_missing_stripped_and_mixed_binding_never_creates_database (test_sqlite_ownership.OwnershipTests.test_bootstrap_missing_stripped_and_mixed_binding_never_creates_database) ... ok
+test_claim_commit_and_close_failure_preserve_uncertainty (test_sqlite_ownership.OwnershipTests.test_claim_commit_and_close_failure_preserve_uncertainty) ... ok
+test_clean_denial_and_two_queued_runs_do_not_trigger_uniqueness_refusal (test_sqlite_ownership.OwnershipTests.test_clean_denial_and_two_queued_runs_do_not_trigger_uniqueness_refusal) ... ok
+test_diagnostic_allowance_is_once_per_token_not_nested_owner (test_sqlite_ownership.OwnershipTests.test_diagnostic_allowance_is_once_per_token_not_nested_owner) ... ok
+test_exact_fresh_binding_and_no_raw_factory_escape (test_sqlite_ownership.OwnershipTests.test_exact_fresh_binding_and_no_raw_factory_escape) ... ok
+test_export_rechecks_authority (test_sqlite_ownership.OwnershipTests.test_export_rechecks_authority) ... ok
+test_failed_diagnostic_and_untokened_failure_do_not_open_another_owner (test_sqlite_ownership.OwnershipTests.test_failed_diagnostic_and_untokened_failure_do_not_open_another_owner) ... ok
+test_hold_is_shared_by_resolved_root_threads_and_constructors (test_sqlite_ownership.OwnershipTests.test_hold_is_shared_by_resolved_root_threads_and_constructors) ... ok
+test_http_stream_releases_readers (test_sqlite_ownership.OwnershipTests.test_http_stream_releases_readers) ... ok
+test_offline_backup_distinct_owners_freeze_and_restore_refusal (test_sqlite_ownership.OwnershipTests.test_offline_backup_distinct_owners_freeze_and_restore_refusal) ... ok
+test_online_read_guard_before_existing_ro_and_same_snapshot (test_sqlite_ownership.OwnershipTests.test_online_read_guard_before_existing_ro_and_same_snapshot) ... ERROR
+test_open_setup_cursor_rollback_close_failure_matrix (test_sqlite_ownership.OwnershipTests.test_open_setup_cursor_rollback_close_failure_matrix) ... ok
+test_original_error_survives_multiple_cleanup_failures (test_sqlite_ownership.OwnershipTests.test_original_error_survives_multiple_cleanup_failures) ... ok
+test_predispatch_refusal_retains_token_through_close (test_sqlite_ownership.OwnershipTests.test_predispatch_refusal_retains_token_through_close) ... ok
+test_read_bounds_and_clean_query_error_do_not_poison (test_sqlite_ownership.OwnershipTests.test_read_bounds_and_clean_query_error_do_not_poison) ... ok
+test_slow_artifacts_and_zip_release_readers (test_sqlite_ownership.OwnershipTests.test_slow_artifacts_and_zip_release_readers) ... ok
+test_two_process_read_snapshot_then_artifact_wait_does_not_retain_reader (test_sqlite_ownership.OwnershipTests.test_two_process_read_snapshot_then_artifact_wait_does_not_retain_reader) ... ok
+test_unrelated_publication_qualifies_before_request_and_final_spawn_fenced (test_sqlite_ownership.OwnershipTests.test_unrelated_publication_qualifies_before_request_and_final_spawn_fenced) ... ok
+
+======================================================================
+ERROR: test_backup_failure_retains_partial_output_without_manifest_or_provider (test_sqlite_ownership.OwnershipTests.test_backup_failure_retains_partial_output_without_manifest_or_provider) (role='backup-source')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-sqlite-ownership-design/research-workspace/tests/test_sqlite_ownership.py", line 379, in test_backup_failure_retains_partial_output_without_manifest_or_provider
+    with self.assertRaises(OSError):r.checkpoint(c.root,target)
+                                    ~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-sqlite-ownership-design/research-workspace/research_workspace/recovery.py", line 202, in checkpoint
+    return guarded_checkpoint(state, output, broker=broker)
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-sqlite-ownership-design/research-workspace/research_workspace/guarded_recovery.py", line 36, in checkpoint
+    reader.backup_to(backup)
+    ~~~~~~~~~~~~~~~~^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-sqlite-ownership-design/research-workspace/research_workspace/sqlite_ownership.py", line 382, in backup_to
+    self.__connection.backup(destination.__connection)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: backup() argument 'target' must be sqlite3.Connection, not Connection
+SQLite connection close also failed: OSError
+
+======================================================================
+ERROR: test_backup_failure_retains_partial_output_without_manifest_or_provider (test_sqlite_ownership.OwnershipTests.test_backup_failure_retains_partial_output_without_manifest_or_provider) (role='backup-destination')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-sqlite-ownership-design/research-workspace/tests/test_sqlite_ownership.py", line 379, in test_backup_failure_retains_partial_output_without_manifest_or_provider
+    with self.assertRaises(OSError):r.checkpoint(c.root,target)
+                                    ~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-sqlite-ownership-design/research-workspace/research_workspace/recovery.py", line 202, in checkpoint
+    return guarded_checkpoint(state, output, broker=broker)
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-sqlite-ownership-design/research-workspace/research_workspace/guarded_recovery.py", line 36, in checkpoint
+    reader.backup_to(backup)
+    ~~~~~~~~~~~~~~~~^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-sqlite-ownership-design/research-workspace/research_workspace/sqlite_ownership.py", line 382, in backup_to
+    self.__connection.backup(destination.__connection)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: backup() argument 'target' must be sqlite3.Connection, not Connection
+SQLite connection close also failed: OSError
+
+======================================================================
+ERROR: test_backup_failure_retains_partial_output_without_manifest_or_provider (test_sqlite_ownership.OwnershipTests.test_backup_failure_retains_partial_output_without_manifest_or_provider) (role='offline-freeze')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-sqlite-ownership-design/research-workspace/tests/test_sqlite_ownership.py", line 379, in test_backup_failure_retains_partial_output_without_manifest_or_provider
+    with self.assertRaises(OSError):r.checkpoint(c.root,target)
+                                    ~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-sqlite-ownership-design/research-workspace/research_workspace/recovery.py", line 202, in checkpoint
+    return guarded_checkpoint(state, output, broker=broker)
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-sqlite-ownership-design/research-workspace/research_workspace/guarded_recovery.py", line 36, in checkpoint
+    reader.backup_to(backup)
+    ~~~~~~~~~~~~~~~~^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-sqlite-ownership-design/research-workspace/research_workspace/sqlite_ownership.py", line 382, in backup_to
+    self.__connection.backup(destination.__connection)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: backup() argument 'target' must be sqlite3.Connection, not Connection
+SQLite connection close also failed: OSError
+
+======================================================================
+ERROR: test_online_read_guard_before_existing_ro_and_same_snapshot (test_sqlite_ownership.OwnershipTests.test_online_read_guard_before_existing_ro_and_same_snapshot)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-sqlite-ownership-design/research-workspace/tests/test_sqlite_ownership.py", line 146, in test_online_read_guard_before_existing_ro_and_same_snapshot
+    with self.store.read() as db:
+         ~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/contextlib.py", line 141, in __enter__
+    return next(self.gen)
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-sqlite-ownership-design/research-workspace/research_workspace/store.py", line 239, in read
+    with owned.Owner(self.root, role, guard=self.guard, readonly=True) as db:
+         ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-sqlite-ownership-design/research-workspace/research_workspace/sqlite_ownership.py", line 241, in __enter__
+    self.__connection = sqlite3.connect(uri, uri=True, timeout=10)
+                        ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/mock.py", line 1176, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/mock.py", line 1180, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/mock.py", line 1247, in _execute_mock_call
+    result = effect(*args, **kwargs)
+TypeError: OwnershipTests.test_online_read_guard_before_existing_ro_and_same_snapshot.<locals>.connect() got multiple values for argument 'uri'
+
+----------------------------------------------------------------------
+Ran 19 tests in 12.347s
+
+FAILED (errors=4)

@@ -118,8 +118,11 @@ def frozen_db(root):
     with ExitStack() as stack:
         if store.guard:
             stack.enter_context(store.guard.locked())
-        db = stack.enter_context(closing(store._connect()))
+        db = stack.enter_context(store.write(role="offline-freeze"))
         db.execute("BEGIN IMMEDIATE")
+        if store.profile_version == 4:
+            yield db  # The owner preserves the body error while ending/closing.
+            return
         try:
             yield db
         finally:
@@ -135,7 +138,10 @@ def database_digest(db):
     tables = TABLES + ("operation_authority", "operation_receipts") if guarded else TABLES
     if guarded:
         from .storage_inventory import SCHEMA_SQL, _schema
-        with closing(sqlite3.connect(":memory:")) as expected:
+        from . import sqlite_ownership as owned
+        reference = (owned.Owner(db.root,"memory-reference",guard=db.guard,memory=True,initialize=True,validate=False)
+                     if isinstance(db,owned.Owner) else closing(sqlite3.connect(":memory:")))
+        with reference as expected:
             expected.executescript(";".join(SCHEMA_SQL + SCHEMA))
             if _schema(db) != _schema(expected):
                 raise ValueError("Unsupported guarded database schema.")
@@ -291,7 +297,7 @@ def recovery_status(state):
     root = safe_root(state)
     config = strict_json(read_file(root / "config.json", 65536))
     recovery = strict_json(read_file(root / "recovery.json", 65536)) if (root / "recovery.json").exists() else None
-    with closing(Store(root, resume=False).connect()) as db:
+    with Store(root, resume=False).read() as db:
         runs = [strict_json(row[0]) for row in db.execute("SELECT payload FROM runs ORDER BY rowid")]
     compute = Broker(config["broker"], root / "broker").call("recovery-status")
     return {"format": FORMAT, "mode": config["mode"], "recovery": recovery,

@@ -1,0 +1,26 @@
+[
+  {
+    "name": "readonly_rollback",
+    "returncode": 0,
+    "stdout": "{\"name\": \"readonly_rollback\", \"invalid_version\": 0, \"business_rows_returned\": [[\"alice\"]], \"held\": false}\n",
+    "stderr": ""
+  },
+  {
+    "name": "disabled_validation",
+    "returncode": 0,
+    "stdout": "{\"name\": \"disabled_validation\", \"business_rows_returned\": [[\"alice\"]], \"held\": false}\n",
+    "stderr": ""
+  },
+  {
+    "name": "mismatched_guard",
+    "returncode": 0,
+    "stdout": "{\"name\": \"mismatched_guard\", \"database_root\": \"/private/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmpqx6zzb1t/other-root\", \"guard_root\": \"/private/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmpqx6zzb1t/state\", \"business_rows_returned\": [[\"alice\"]]}\n",
+    "stderr": ""
+  },
+  {
+    "name": "diagnostic_retry",
+    "returncode": 0,
+    "stdout": "{\"name\": \"diagnostic_retry\", \"first_error\": \"first diagnostic open failed\", \"proof_open_attempts\": 2, \"second_attempt_returned_rows\": 1, \"token_allowance_consumed\": true, \"held\": true}\n",
+    "stderr": ""
+  }
+]

@@ -1,0 +1,27 @@
+[
+  {
+    "name": "offline_rollback_original",
+    "observed_exception": "ValueError('ORIGINAL offline body failure')",
+    "notes": [
+      "SQLite transaction cleanup also failed: OSError"
+    ],
+    "original_preserved": true,
+    "held": true
+  },
+  {
+    "name": "dispatch_rollback_original",
+    "observed_exception": "ValueError('ORIGINAL spawn failure')",
+    "notes": [
+      "SQLite transaction cleanup also failed: OSError"
+    ],
+    "original_preserved": true,
+    "held": true
+  },
+  {
+    "name": "swallowed_cursor_close",
+    "observed_exception": "OSError('ORIGINAL cursor-close failure')",
+    "caught": "OSError('ORIGINAL cursor-close failure')",
+    "scope_returned_success": false,
+    "held": true
+  }
+]

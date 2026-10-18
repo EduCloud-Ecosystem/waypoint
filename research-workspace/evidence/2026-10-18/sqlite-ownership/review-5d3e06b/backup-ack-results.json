@@ -1,0 +1,7 @@
+{
+  "caught": "backup acknowledgement lost",
+  "scope_exception": null,
+  "destination_exists": true,
+  "held": false,
+  "guard_depth": 0
+}

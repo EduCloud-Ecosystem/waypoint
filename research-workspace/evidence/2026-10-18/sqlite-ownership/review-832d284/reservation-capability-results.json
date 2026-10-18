@@ -1,0 +1,32 @@
+[
+  {
+    "boundary": "valid-immediate",
+    "raw_other_process": "reservation-blocked",
+    "backup_source_admitted": true,
+    "backup_error": null
+  },
+  {
+    "boundary": "before-begin",
+    "raw_other_process": "reservation-acquired",
+    "backup_source_admitted": true,
+    "backup_error": null
+  },
+  {
+    "boundary": "after-commit",
+    "raw_other_process": "reservation-acquired",
+    "backup_source_admitted": true,
+    "backup_error": null
+  },
+  {
+    "boundary": "after-rollback",
+    "raw_other_process": "reservation-acquired",
+    "backup_source_admitted": true,
+    "backup_error": null
+  },
+  {
+    "boundary": "deferred-begin",
+    "raw_other_process": "reservation-acquired",
+    "backup_source_admitted": true,
+    "backup_error": null
+  }
+]

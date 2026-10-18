@@ -40,6 +40,7 @@ def main():
     profiles.add_argument("--finite-authority", action="store_true", help="Fresh opt-in local key profile with logical row/field limits; no storage quota")
     profiles.add_argument("--bounded-export", action="store_true", help="Fresh local key profile with finite limits and scoped export readers; no storage quota")
     profiles.add_argument("--bounded-guard-publication", action="store_true", help="Fresh finite local profile with fixed guard scratch; exhaustion refuses safety actions and retains debt; no storage quota")
+    profiles.add_argument("--scoped-sqlite", action="store_true", help="Fresh finite local profile with scoped SQLite ownership; uncertain cleanup holds this process including safety controls; no storage quota")
     init.add_argument("--broker", required=True)
     init.add_argument("--subject", default="researcher")
     init.add_argument("--python-image")
@@ -92,11 +93,11 @@ def main():
         broker = Broker(args.broker, Path(args.state) / "broker")
         config = {"version": 1, "mode": "local-public-data", "broker": broker.executable,
                   "images": images, "total_budget_cpu_seconds": args.total_budget_cpu_seconds}
-        if args.operation_guard or args.finite_authority or args.bounded_export or args.bounded_guard_publication:
+        if args.operation_guard or args.finite_authority or args.bounded_export or args.bounded_guard_publication or args.scoped_sqlite:
             config["mode"] = "local-guarded-public-data-v1"
-            if args.finite_authority or args.bounded_export or args.bounded_guard_publication:
+            if args.finite_authority or args.bounded_export or args.bounded_guard_publication or args.scoped_sqlite:
                 from . import finite_authority as finite
-                version = 3 if args.bounded_guard_publication else 2 if args.bounded_export else 1
+                version = 4 if args.scoped_sqlite else 3 if args.bounded_guard_publication else 2 if args.bounded_export else 1
                 config.update(mode=finite.PROFILE_MODES[version], logical_authority=finite.profile(version))
             store = Store(args.state, create=True, guarded=True, config=config, subject=args.subject)
             key = store.initial_key

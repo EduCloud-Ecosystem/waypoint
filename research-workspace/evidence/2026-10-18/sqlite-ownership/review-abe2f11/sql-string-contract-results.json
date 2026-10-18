@@ -1,0 +1,20 @@
+[
+  {
+    "case": "proof-execute-subclass",
+    "business_rows_returned": [
+      [
+        "alice"
+      ]
+    ]
+  },
+  {
+    "case": "barrier-execute-subclass",
+    "scope_success": true,
+    "alice_active": 0
+  },
+  {
+    "case": "schema-script-subclass",
+    "scope_success": true,
+    "alice_active": 0
+  }
+]

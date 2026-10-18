@@ -1,0 +1,6 @@
+test_sql_string_subclasses_cannot_disguise_reads_writes_or_scripts (test_sqlite_ownership.OwnershipTests.test_sql_string_subclasses_cannot_disguise_reads_writes_or_scripts) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.108s
+
+OK

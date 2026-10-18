@@ -1,0 +1,7 @@
+{
+  "caught": "backup acknowledgement lost",
+  "scope_exception": "OSError('backup acknowledgement lost')",
+  "destination_exists": true,
+  "held": true,
+  "guard_depth": 0
+}

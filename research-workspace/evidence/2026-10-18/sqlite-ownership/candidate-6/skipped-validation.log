@@ -1,0 +1,96 @@
+test_existing_authority_cannot_disable_validation (test_sqlite_ownership.OwnershipTests.test_existing_authority_cannot_disable_validation) ... 
+  test_existing_authority_cannot_disable_validation (test_sqlite_ownership.OwnershipTests.test_existing_authority_cannot_disable_validation) (role='online-read') ... FAIL
+  test_existing_authority_cannot_disable_validation (test_sqlite_ownership.OwnershipTests.test_existing_authority_cannot_disable_validation) (role='guard-proof') ... FAIL
+  test_existing_authority_cannot_disable_validation (test_sqlite_ownership.OwnershipTests.test_existing_authority_cannot_disable_validation) (role='discovery') ... FAIL
+  test_existing_authority_cannot_disable_validation (test_sqlite_ownership.OwnershipTests.test_existing_authority_cannot_disable_validation) (role='mutation') ... FAIL
+  test_existing_authority_cannot_disable_validation (test_sqlite_ownership.OwnershipTests.test_existing_authority_cannot_disable_validation) (role='barrier') ... FAIL
+  test_existing_authority_cannot_disable_validation (test_sqlite_ownership.OwnershipTests.test_existing_authority_cannot_disable_validation) (role='started-receipt') ... FAIL
+  test_existing_authority_cannot_disable_validation (test_sqlite_ownership.OwnershipTests.test_existing_authority_cannot_disable_validation) (role='dispatch-reservation') ... FAIL
+  test_existing_authority_cannot_disable_validation (test_sqlite_ownership.OwnershipTests.test_existing_authority_cannot_disable_validation) (role='offline-freeze') ... FAIL
+  test_existing_authority_cannot_disable_validation (test_sqlite_ownership.OwnershipTests.test_existing_authority_cannot_disable_validation) (role='backup-source') ... FAIL
+
+======================================================================
+FAIL: test_existing_authority_cannot_disable_validation (test_sqlite_ownership.OwnershipTests.test_existing_authority_cannot_disable_validation) (role='online-read')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 361, in test_existing_authority_cannot_disable_validation
+    with self.assertRaises(ValueError):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_existing_authority_cannot_disable_validation (test_sqlite_ownership.OwnershipTests.test_existing_authority_cannot_disable_validation) (role='guard-proof')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 361, in test_existing_authority_cannot_disable_validation
+    with self.assertRaises(ValueError):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_existing_authority_cannot_disable_validation (test_sqlite_ownership.OwnershipTests.test_existing_authority_cannot_disable_validation) (role='discovery')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 361, in test_existing_authority_cannot_disable_validation
+    with self.assertRaises(ValueError):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_existing_authority_cannot_disable_validation (test_sqlite_ownership.OwnershipTests.test_existing_authority_cannot_disable_validation) (role='mutation')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 361, in test_existing_authority_cannot_disable_validation
+    with self.assertRaises(ValueError):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_existing_authority_cannot_disable_validation (test_sqlite_ownership.OwnershipTests.test_existing_authority_cannot_disable_validation) (role='barrier')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 361, in test_existing_authority_cannot_disable_validation
+    with self.assertRaises(ValueError):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_existing_authority_cannot_disable_validation (test_sqlite_ownership.OwnershipTests.test_existing_authority_cannot_disable_validation) (role='started-receipt')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 361, in test_existing_authority_cannot_disable_validation
+    with self.assertRaises(ValueError):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_existing_authority_cannot_disable_validation (test_sqlite_ownership.OwnershipTests.test_existing_authority_cannot_disable_validation) (role='dispatch-reservation')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 361, in test_existing_authority_cannot_disable_validation
+    with self.assertRaises(ValueError):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_existing_authority_cannot_disable_validation (test_sqlite_ownership.OwnershipTests.test_existing_authority_cannot_disable_validation) (role='offline-freeze')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 361, in test_existing_authority_cannot_disable_validation
+    with self.assertRaises(ValueError):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_existing_authority_cannot_disable_validation (test_sqlite_ownership.OwnershipTests.test_existing_authority_cannot_disable_validation) (role='backup-source')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<captured-source>/tests/test_sqlite_ownership.py", line 361, in test_existing_authority_cannot_disable_validation
+    with self.assertRaises(ValueError):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.113s
+
+FAILED (failures=9)

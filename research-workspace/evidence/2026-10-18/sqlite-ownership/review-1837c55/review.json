@@ -1,0 +1,155 @@
+{
+  "format": "waypoint-scoped-sqlite-independent-review-v1",
+  "candidate_commit": "1837c55b5e851a63688a0b14ea5bcc9bcb0c20b7",
+  "precode_commit": "4606cc6076999c6bae507bdb6beab4bbd0b0819a",
+  "disposition": "HOLD_CHANGES_REQUIRED",
+  "candidate_archive_sha256": "94107cf250ceb16342278577918dce7552fbe4e5309bee301fe4f848a4a09275",
+  "captured_files": 449,
+  "captured_files_modified_by_review": [],
+  "changed_files_from_precode": [
+    "research-workspace/README.md",
+    "research-workspace/SQLITE-OWNERSHIP.md",
+    "research-workspace/qualify_sqlite_ownership.py",
+    "research-workspace/research_workspace/__main__.py",
+    "research-workspace/research_workspace/bounded_export.py",
+    "research-workspace/research_workspace/finite_authority.py",
+    "research-workspace/research_workspace/guarded_recovery.py",
+    "research-workspace/research_workspace/operation_guard.py",
+    "research-workspace/research_workspace/recovery.py",
+    "research-workspace/research_workspace/server.py",
+    "research-workspace/research_workspace/sqlite_ownership.py",
+    "research-workspace/research_workspace/store.py",
+    "research-workspace/tests/test_sqlite_ownership.py"
+  ],
+  "resolved_findings": [
+    {
+      "id": "R1",
+      "status": "VERIFIED_FIXED",
+      "evidence": "Phase-two close-failure control passes; guarded_recovery.py:48-61 publishes only after frozen_db cleanup, retaining lifecycle and outer guard, with raw-writer boundary explicitly documented."
+    },
+    {
+      "id": "R2",
+      "status": "VERIFIED_FIXED",
+      "evidence": "Independent original offline-body and spawn-error witnesses return the original ValueError with rollback OSError annotated, preserving held=True."
+    },
+    {
+      "id": "R3",
+      "status": "VERIFIED_FIXED",
+      "evidence": "Independent swallowed-cursor-close witness now refuses successful scope exit with original cursor-close OSError and held=True."
+    }
+  ],
+  "open_findings": [
+    {
+      "id": "R4",
+      "priority": "P2",
+      "title": "Reject invalid owner entry and exit before mutating ownership state",
+      "file": "research_workspace/sqlite_ownership.py",
+      "lines": [
+        242,
+        273
+      ],
+      "additional_lines": [
+        [
+          428,
+          430
+        ],
+        [
+          450,
+          461
+        ]
+      ],
+      "evidence": "A closed online-read Owner can enter again and open a second database; __exit__ then stops at _close_attempted before cleanup. Observed opens=2, closes=1, active=True, guard depth=1, held=False. Recursive proof-owner entry overwrites an owned connection. Wrong-thread exit invalidates rightful owner, raises AttributeError from thread-local owner stack, and leaves guard depth=1.",
+      "required_change": "Use single-use entry state before thread/guard mutation; reject reused/reentrant/wrong-thread entry and invalid/wrong-thread exit without disturbing the valid active owner. Keep cleanup state changes within the owning thread and preserve the original error."
+    },
+    {
+      "id": "R5",
+      "priority": "P2",
+      "title": "Enforce diagnostic and proof read statement capabilities, not first FROM table",
+      "file": "research_workspace/sqlite_ownership.py",
+      "lines": [
+        340,
+        348
+      ],
+      "evidence": "While process is held, diagnostic guard-proof owner returns business subject alice from SELECT u.subject FROM operation_authority a JOIN users u ON 1=1. _query_limit finds only operation_authority, so joined business SQL is admitted.",
+      "required_change": "Restrict proof/discovery/schema-reference observations to exact reviewed statements; refuse joins, unions, subqueries and alternate SQL outside that statement set before execution. Keep queued_ids exception outside diagnostics only."
+    },
+    {
+      "id": "R6",
+      "priority": "P2",
+      "title": "Constrain barrier and started-receipt writers to their actual roles",
+      "file": "research_workspace/sqlite_ownership.py",
+      "lines": [
+        328,
+        338
+      ],
+      "evidence": "Both store.write(role=barrier) and store.write(role=started-receipt) commit UPDATE users SET active=0 WHERE subject=alice with no new intent and held=False. Generic mutation regex admits all business tables for both roles.",
+      "required_change": "Use explicit role-specific statement allowlists for durability barrier and started-receipt writes. Refuse business mutations and additional SQL clauses before native execute; test admitted statement behavior and forbidden cross-role mutations."
+    }
+  ],
+  "tests": {
+    "candidate_v4_controls": {
+      "run": 32,
+      "passed": 32,
+      "exit_code": 0,
+      "log": "32-controls.log"
+    },
+    "independent_prior_cleanup_witnesses": {
+      "run": 3,
+      "fixed": 3,
+      "file": "prior-fix-results.json"
+    },
+    "independent_additional_adversarial_cases": {
+      "run": 6,
+      "reproduced_contract_failures": 6,
+      "files": [
+        "adversarial-results.json",
+        "cross-thread-exit.json"
+      ]
+    },
+    "full_legacy_suite": "Not independently rerun here; coordinating owner runs separately. No claim based on an unfinished run.",
+    "historical_harnesses": "NOT RUN"
+  },
+  "design_clauses": [
+    {
+      "clause": 1,
+      "result": "Ordinary paths PASS; shared resolved-root/thread hold, independent other roots and no constructor/status/restart reset covered. Invalid lifetime misuse exposes R4 and blocks overall approval."
+    },
+    {
+      "clause": 2,
+      "result": "Once-per-existing-token consumption and no retry/new intent/barrier paths PASS, but joined business observations bypass diagnostic role restriction (R5)."
+    },
+    {
+      "clause": 3,
+      "result": "Two queued runs claim one PASS; valid keyed lookups retain schema uniqueness and bounded snapshot behavior."
+    },
+    {
+      "clause": 4,
+      "result": "Source branches preserve v0-v3 connection/memory helper paths. Full legacy suite not independently rerun."
+    },
+    {
+      "clause": 5,
+      "result": "Independent run of full-cap safety controls and held revocation/settlement/HTTP logout refusal PASS; no access-removed or debt-discharged claim on hold."
+    }
+  ],
+  "regressions_43": "Both cancellation/revocation/closure/expiry clean refusal and cross-process request qualification/final spawn fence controls PASS on captured commit.",
+  "failure_matrix": "32 controls cover native open/setup/query/cursor/rollback/connection/guard failures, primary-error preservation, token uncertainty, native contention, backup boundaries and held safety refusal. R4-R6 expose missing lifecycle/capability controls, so matrix is not sufficient for approval.",
+  "security_boundary": "Findings are concrete internal capability and ownership-contract violations. No remotely reachable exploit is claimed.",
+  "protected_boundaries": "No source edits by reviewer; captured sources rehashed unchanged. No workflow/pin/historical evidence changes in candidate diff. No protected worktree, provider or Docker action. Source environments remain disabled; cleanup gate unresolved; capacity UNKNOWN, quota_enforced false.",
+  "not_authorized_by_review": [
+    "merge",
+    "publication",
+    "provider promotion",
+    "checkpoint or capacity acceptance"
+  ],
+  "evidence_sha256": {
+    "source-manifest.json": "6e3e5fbc358991aac7eddab65e454ab17d55f330c284ffebb656e32325f69505",
+    "prior_fix_review.py": "4429f6a7a989b6ffe3946adbcd48565709baf7fdc140feafdd73c65391ea4ce5",
+    "cross_thread_exit.py": "a05291c239e5d215d79b608f24acfde020bba46dba7873ec1470fa5c30835dbe",
+    "adversarial-results.json": "50cb086a2a600823b8c3683998a02a0a83766367e428866957c9d5035a73ade5",
+    "32-controls.log": "d61ead756eb018256bb894b242795f76b1bafc2e659f65af53a678455c38113f",
+    "prior-fix-results.json": "d82a2fccee7684198d65bc18b637d2fee0b93e150cfcf78825ea565697d40843",
+    "32-controls-exit.json": "df4d721d233a2334088d2d2e0110346ae9e509ff46bf0b379fbcfa85c715af4d",
+    "cross-thread-exit.json": "ad409d056a0361494cb036dc817a37e99189ab2cdb7f6ddf40daec74cef9cd65",
+    "adversarial_candidate.py": "dabf7c52bf17356f6e3f429ff662ac2cbc41a2adefaf559fd263f8c16b6370a0"
+  }
+}

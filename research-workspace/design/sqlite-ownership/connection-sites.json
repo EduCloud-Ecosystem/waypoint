@@ -1,0 +1,359 @@
+{
+  "base_commit": "d84311621653e2d8e853092cae7c90d0eea02098",
+  "application_tree_matches_accepted_pr43": true,
+  "scope": "Production connection creation/factory/backup call sites; excludes frozen fixtures and tests. Nested closures and call sites are locations, not simultaneously live connection counts.",
+  "sites": [
+    {
+      "file": "research-workspace/research_workspace/bounded_export.py",
+      "scope": "_capture",
+      "line": 55,
+      "end_line": 55,
+      "call": "store.connect()",
+      "kind": "open"
+    },
+    {
+      "file": "research-workspace/research_workspace/finite_authority.py",
+      "scope": "refuse_unqualified_recovery",
+      "line": 175,
+      "end_line": 175,
+      "call": "sqlite3.connect((Path(archive) / 'workspace.sqlite3').as_uri() + '?mode=ro&immutable=1', uri=True)",
+      "kind": "open"
+    },
+    {
+      "file": "research-workspace/research_workspace/guarded_recovery.py",
+      "scope": "checkpoint",
+      "line": 31,
+      "end_line": 31,
+      "call": "sqlite3.connect(root / 'workspace.sqlite3')",
+      "kind": "open"
+    },
+    {
+      "file": "research-workspace/research_workspace/guarded_recovery.py",
+      "scope": "checkpoint",
+      "line": 31,
+      "end_line": 31,
+      "call": "sqlite3.connect(target / 'workspace.sqlite3')",
+      "kind": "open"
+    },
+    {
+      "file": "research-workspace/research_workspace/guarded_recovery.py",
+      "scope": "checkpoint",
+      "line": 32,
+      "end_line": 32,
+      "call": "reader.backup(backup)",
+      "kind": "backup"
+    },
+    {
+      "file": "research-workspace/research_workspace/guarded_recovery.py",
+      "scope": "restore",
+      "line": 77,
+      "end_line": 77,
+      "call": "store._connect()",
+      "kind": "open"
+    },
+    {
+      "file": "research-workspace/research_workspace/guarded_recovery.py",
+      "scope": "restore",
+      "line": 99,
+      "end_line": 99,
+      "call": "store._connect()",
+      "kind": "open"
+    },
+    {
+      "file": "research-workspace/research_workspace/guarded_recovery.py",
+      "scope": "_finish",
+      "line": 118,
+      "end_line": 118,
+      "call": "store._connect()",
+      "kind": "open"
+    },
+    {
+      "file": "research-workspace/research_workspace/identity.py",
+      "scope": "Identity._active_subject",
+      "line": 141,
+      "end_line": 141,
+      "call": "self.store.connect()",
+      "kind": "open"
+    },
+    {
+      "file": "research-workspace/research_workspace/operation_guard.py",
+      "scope": "Guard.validate_schema",
+      "line": 289,
+      "end_line": 289,
+      "call": "sqlite3.connect(':memory:')",
+      "kind": "open"
+    },
+    {
+      "file": "research-workspace/research_workspace/operation_guard.py",
+      "scope": "Guard._receipts",
+      "line": 306,
+      "end_line": 306,
+      "call": "sqlite3.connect((self.root / 'workspace.sqlite3').as_uri() + '?mode=ro', uri=True, timeout=10)",
+      "kind": "open"
+    },
+    {
+      "file": "research-workspace/research_workspace/operation_guard.py",
+      "scope": "Guard.resume",
+      "line": 351,
+      "end_line": 351,
+      "call": "self.connect()",
+      "kind": "open"
+    },
+    {
+      "file": "research-workspace/research_workspace/operation_guard.py",
+      "scope": "Guard.barrier",
+      "line": 370,
+      "end_line": 370,
+      "call": "self.connect()",
+      "kind": "open"
+    },
+    {
+      "file": "research-workspace/research_workspace/operation_guard.py",
+      "scope": "Guard.queued_ids",
+      "line": 387,
+      "end_line": 387,
+      "call": "sqlite3.connect((self.root / 'workspace.sqlite3').as_uri() + '?mode=ro', uri=True, timeout=10)",
+      "kind": "open"
+    },
+    {
+      "file": "research-workspace/research_workspace/operation_guard.py",
+      "scope": "Guard.begin",
+      "line": 515,
+      "end_line": 515,
+      "call": "self.connect()",
+      "kind": "open"
+    },
+    {
+      "file": "research-workspace/research_workspace/recovery.py",
+      "scope": "frozen_db",
+      "line": 121,
+      "end_line": 121,
+      "call": "store._connect()",
+      "kind": "open"
+    },
+    {
+      "file": "research-workspace/research_workspace/recovery.py",
+      "scope": "database_digest",
+      "line": 138,
+      "end_line": 138,
+      "call": "sqlite3.connect(':memory:')",
+      "kind": "open"
+    },
+    {
+      "file": "research-workspace/research_workspace/recovery.py",
+      "scope": "checkpoint",
+      "line": 213,
+      "end_line": 213,
+      "call": "sqlite3.connect(root / 'workspace.sqlite3')",
+      "kind": "open"
+    },
+    {
+      "file": "research-workspace/research_workspace/recovery.py",
+      "scope": "checkpoint",
+      "line": 213,
+      "end_line": 213,
+      "call": "sqlite3.connect(target / 'workspace.sqlite3')",
+      "kind": "open"
+    },
+    {
+      "file": "research-workspace/research_workspace/recovery.py",
+      "scope": "checkpoint",
+      "line": 214,
+      "end_line": 214,
+      "call": "reader.backup(backup)",
+      "kind": "backup"
+    },
+    {
+      "file": "research-workspace/research_workspace/recovery.py",
+      "scope": "restore",
+      "line": 264,
+      "end_line": 264,
+      "call": "Store(root, resume=False).connect()",
+      "kind": "open"
+    },
+    {
+      "file": "research-workspace/research_workspace/recovery.py",
+      "scope": "recovery_status",
+      "line": 294,
+      "end_line": 294,
+      "call": "Store(root, resume=False).connect()",
+      "kind": "open"
+    },
+    {
+      "file": "research-workspace/research_workspace/storage_inventory.py",
+      "scope": "_supported_schema",
+      "line": 41,
+      "end_line": 41,
+      "call": "sqlite3.connect(':memory:')",
+      "kind": "open"
+    },
+    {
+      "file": "research-workspace/research_workspace/storage_inventory.py",
+      "scope": "_authority",
+      "line": 215,
+      "end_line": 215,
+      "call": "sqlite3.connect(':memory:')",
+      "kind": "open"
+    },
+    {
+      "file": "research-workspace/research_workspace/store.py",
+      "scope": "Store.__init__",
+      "line": 124,
+      "end_line": 124,
+      "call": "self._connect()",
+      "kind": "open"
+    },
+    {
+      "file": "research-workspace/research_workspace/store.py",
+      "scope": "Store.__init__",
+      "line": 170,
+      "end_line": 170,
+      "call": "sqlite3.connect((self.root / 'workspace.sqlite3').as_uri() + '?mode=ro', uri=True)",
+      "kind": "open"
+    },
+    {
+      "file": "research-workspace/research_workspace/store.py",
+      "scope": "Store._connect",
+      "line": 203,
+      "end_line": 203,
+      "call": "sqlite3.connect(self.root / 'workspace.sqlite3', timeout=10)",
+      "kind": "open"
+    },
+    {
+      "file": "research-workspace/research_workspace/store.py",
+      "scope": "Store.connect",
+      "line": 229,
+      "end_line": 229,
+      "call": "self._connect()",
+      "kind": "open"
+    },
+    {
+      "file": "research-workspace/research_workspace/store.py",
+      "scope": "Store.transaction",
+      "line": 245,
+      "end_line": 245,
+      "call": "self.connect()",
+      "kind": "open"
+    },
+    {
+      "file": "research-workspace/research_workspace/store.py",
+      "scope": "Store.transaction",
+      "line": 256,
+      "end_line": 256,
+      "call": "self._connect()",
+      "kind": "open"
+    },
+    {
+      "file": "research-workspace/research_workspace/store.py",
+      "scope": "Store.transaction",
+      "line": 298,
+      "end_line": 298,
+      "call": "self.connect()",
+      "kind": "open"
+    },
+    {
+      "file": "research-workspace/research_workspace/store.py",
+      "scope": "Store.session",
+      "line": 358,
+      "end_line": 358,
+      "call": "self.connect()",
+      "kind": "open"
+    },
+    {
+      "file": "research-workspace/research_workspace/store.py",
+      "scope": "Store.projects",
+      "line": 391,
+      "end_line": 391,
+      "call": "self.connect()",
+      "kind": "open"
+    },
+    {
+      "file": "research-workspace/research_workspace/store.py",
+      "scope": "Store._guarded_project",
+      "line": 435,
+      "end_line": 435,
+      "call": "self.connect()",
+      "kind": "open"
+    },
+    {
+      "file": "research-workspace/research_workspace/store.py",
+      "scope": "Store._guarded_project",
+      "line": 440,
+      "end_line": 440,
+      "call": "self.connect()",
+      "kind": "open"
+    },
+    {
+      "file": "research-workspace/research_workspace/store.py",
+      "scope": "Store.project",
+      "line": 473,
+      "end_line": 473,
+      "call": "self.connect()",
+      "kind": "open"
+    },
+    {
+      "file": "research-workspace/research_workspace/store.py",
+      "scope": "Store.membership",
+      "line": 482,
+      "end_line": 482,
+      "call": "self.connect()",
+      "kind": "open"
+    },
+    {
+      "file": "research-workspace/research_workspace/store.py",
+      "scope": "Store._submit",
+      "line": 535,
+      "end_line": 535,
+      "call": "self.connect()",
+      "kind": "open"
+    },
+    {
+      "file": "research-workspace/research_workspace/store.py",
+      "scope": "Store.run",
+      "line": 585,
+      "end_line": 585,
+      "call": "self.connect()",
+      "kind": "open"
+    },
+    {
+      "file": "research-workspace/research_workspace/store.py",
+      "scope": "Store.claim",
+      "line": 618,
+      "end_line": 618,
+      "call": "self.connect()",
+      "kind": "open"
+    },
+    {
+      "file": "research-workspace/research_workspace/store.py",
+      "scope": "Store.should_cancel",
+      "line": 658,
+      "end_line": 658,
+      "call": "self.connect()",
+      "kind": "open"
+    },
+    {
+      "file": "research-workspace/research_workspace/store.py",
+      "scope": "Store.launch_run.current_launch",
+      "line": 673,
+      "end_line": 673,
+      "call": "self._connect()",
+      "kind": "open"
+    },
+    {
+      "file": "research-workspace/research_workspace/store.py",
+      "scope": "Store.launch_run",
+      "line": 702,
+      "end_line": 702,
+      "call": "self.connect()",
+      "kind": "open"
+    },
+    {
+      "file": "research-workspace/research_workspace/store.py",
+      "scope": "Store.snapshot",
+      "line": 774,
+      "end_line": 774,
+      "call": "self.connect()",
+      "kind": "open"
+    }
+  ]
+}

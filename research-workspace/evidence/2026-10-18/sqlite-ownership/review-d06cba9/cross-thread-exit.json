@@ -1,0 +1,7 @@
+{
+  "wrong_thread_exception": "RuntimeError('Only the owning thread may end an entered SQLite scope.')",
+  "thread_stopped": true,
+  "active_in_original_scope": true,
+  "held": false,
+  "guard_depth": 0
+}

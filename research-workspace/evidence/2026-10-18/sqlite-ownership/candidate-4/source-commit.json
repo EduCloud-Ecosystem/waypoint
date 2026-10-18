@@ -1,0 +1,6 @@
+{
+  "runtime_commit": "1c3a97aa568b2f0b98c33f9d63754f6a38d668bd",
+  "source_files_verified": 91,
+  "status": "SUPERSEDED_INCOMPLETE_REVIEW_FIXES",
+  "full_suite_log": "Unbound working-tree iteration only; source edits began while full-schema-fix process was running. Not exact-commit qualification."
+}
