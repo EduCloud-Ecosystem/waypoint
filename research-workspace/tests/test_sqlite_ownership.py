@@ -492,10 +492,63 @@ class OwnershipTests(Fixture):
             def __init__(self,db):self.db=db
             def __getattr__(self,key):return getattr(self.db,key)
             def cursor(self):return Cursor(self.db.cursor())
-        with patch.object(o.sqlite3,"connect",side_effect=lambda *args,**kw:Connection(native(*args,**kw))):
+        # Isolate the duplicate-name defense beneath the complete-query gate.
+        with patch.object(o,"_SELECTS",o._SELECTS|{attack}),patch.object(o.sqlite3,"connect",side_effect=lambda *args,**kw:Connection(native(*args,**kw))):
             with self.store.read() as db:
                 with self.assertRaisesRegex(o.ReadBounds,"projection"):db.execute(attack)
         self.assertEqual(fetched,[]);self.assertFalse(o.held(self.root))
+
+    def test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation(self):
+        attacks=(
+            "SELECT CASE WHEN (random() & 1)=0 THEN subject ELSE CAST(zeroblob(1000000) AS TEXT) END AS subject FROM users LIMIT 1",
+            "SELECT subject FROM users WHERE (random() & 1)=0",
+            "SELECT COALESCE(NULL, subject) AS subject FROM users",
+        )
+        native=sqlite3.connect;evaluated=[]
+        class Cursor:
+            def __init__(self,db):self.db=db
+            def __getattr__(self,key):return getattr(self.db,key)
+            def execute(self,sql,*args):
+                if sql in attacks:evaluated.append(sql)
+                return self.db.execute(sql,*args)
+        class Connection:
+            def __init__(self,db):self.db=db
+            def __getattr__(self,key):return getattr(self.db,key)
+            def cursor(self):return Cursor(self.db.cursor())
+        with patch.object(o.sqlite3,"connect",side_effect=lambda *args,**kw:Connection(native(*args,**kw))):
+            for role in ("online-read","mutation","offline-freeze"):
+                context=self.store.read() if role=="online-read" else self.store.write(role=role)
+                with context as db:
+                    for attack in attacks:
+                        with self.subTest(role=role,sql=attack),self.assertRaisesRegex(o.ReadBounds,"projection or predicate"):
+                            db.execute(attack)
+                    self.assertEqual(len(db.execute("SELECT subject FROM users").fetchall()),1)
+        self.assertEqual(evaluated,[]);self.assertFalse(o.held(self.root))
+
+    def test_observation_bindings_copied_once_and_custom_adapters_refused(self):
+        adapted=[];project_id=self.pid
+        class ChangingValue:
+            def __conform__(self,protocol):adapted.append(True);return project_id if len(adapted)%2 else "different"
+        with self.store.read() as db:
+            with self.assertRaisesRegex(o.ReadBounds,"scalar bindings"):
+                db.execute("SELECT payload FROM projects WHERE id=?",(ChangingValue(),))
+        self.assertEqual(adapted,[])
+        native=sqlite3.connect;parameters=[self.pid];observed=[]
+        sql="SELECT payload FROM projects WHERE id=?"
+        class Cursor:
+            def __init__(self,db):self.db=db
+            def __getattr__(self,key):return getattr(self.db,key)
+            def execute(self,query,bindings=()):
+                if query==sql or "FROM ("+sql+")" in query:
+                    observed.append(tuple(bindings));parameters[0]="changed-between-evaluations"
+                return self.db.execute(query,bindings)
+        class Connection:
+            def __init__(self,db):self.db=db
+            def __getattr__(self,key):return getattr(self.db,key)
+            def cursor(self):return Cursor(self.db.cursor())
+        with patch.object(o.sqlite3,"connect",side_effect=lambda *args,**kw:Connection(native(*args,**kw))):
+            with self.store.read() as db:self.assertEqual(db.execute(sql,parameters).fetchone()[0],canonical(self.project))
+        self.assertEqual(observed,[(self.pid,),(self.pid,)])
 
     def test_primary_spawn_and_offline_errors_survive_rollback_failure(self):
         run=self.submit();run=self.store.claim()
@@ -751,7 +804,7 @@ sys.stdin.readline()
             with self.subTest(action=name),fresh() as c:
                 actions=c.safety_actions()
                 with c.store.read() as db:
-                    run=json.loads(db.execute("SELECT payload FROM runs WHERE status='running'").fetchone()[0])
+                    run=json.loads(db.execute("SELECT id,payload FROM runs WHERE status='running'").fetchone()["payload"])
                 c.fill_caps(run)
                 with self.assertRaises((f.LogicalLimit,g.GuardPaused)):c.store.add_user("over-cap")
                 actions[name]()

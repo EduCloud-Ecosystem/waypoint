@@ -48,6 +48,11 @@ with two eligible runs still permits one bounded claim.
 Duplicate projection names are rejected before payload transfer. Explicitly
 ending a reader transaction also ends its validated read capability; that owner
 cannot continue reading a different snapshot.
+All observations match complete reviewed deterministic statements, including
+the export's fixed preflight expressions. Caller-supplied projections and
+predicates are refused before SQL evaluation. Bindings are copied once as
+primitive scalar values; custom adapters are refused. Metadata and payload
+evaluations therefore use the same query, bindings and validated snapshot.
 
 Writers use distinct roles for initialization, mutations, started receipts,
 barriers, final dispatch and offline backup. Existing writable connections

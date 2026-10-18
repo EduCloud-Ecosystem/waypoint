@@ -178,6 +178,67 @@ _ROLE_WRITES = {
     },
 }
 
+# These complete, deterministic statements share a validated transaction with
+# their metadata preflight. Caller-supplied expressions are never evaluated.
+_SELECTS = frozenset({
+    _SCHEMA_SELECT, _AUTHORITY_SELECT, _RECEIPTS_SELECT, _QUEUED_SELECT,
+    "SELECT type,name,tbl_name,sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' ORDER BY type,name",
+    "SELECT 1 FROM users WHERE subject=?",
+    "SELECT 1 FROM users WHERE subject=? AND active=1",
+    "SELECT subject FROM users",
+    "SELECT subject FROM users ORDER BY subject",
+    "SELECT subject FROM users WHERE key_hash=? AND active=1",
+    "SELECT s.subject FROM sessions s JOIN users u ON u.subject=s.subject WHERE s.token_hash=? AND s.expires>? AND u.active=1",
+    "SELECT p.payload,m.role FROM projects p JOIN members m ON m.project_id=p.id JOIN users u ON u.subject=m.subject WHERE p.id=? AND m.subject=? AND u.active=1",
+    "SELECT p.payload FROM projects p JOIN members m ON m.project_id=p.id JOIN users u ON u.subject=m.subject WHERE m.subject=? AND u.active=1 ORDER BY p.rowid DESC",
+    "SELECT payload FROM projects",
+    "SELECT payload FROM projects WHERE id=?",
+    "SELECT subject,role FROM members WHERE project_id=? ORDER BY subject",
+    "SELECT role FROM members WHERE project_id=? AND subject=?",
+    "SELECT payload FROM runs WHERE project_id=? ORDER BY rowid DESC",
+    "SELECT payload FROM runs WHERE project_id=? ORDER BY rowid",
+    "SELECT payload FROM runs ORDER BY rowid",
+    "SELECT request_hash,payload FROM runs WHERE project_id=? AND subject=? AND request_key=?",
+    "SELECT count(*) FROM runs WHERE project_id=?",
+    "SELECT count(*) FROM runs WHERE status IN ('queued','running')",
+    "SELECT count(*) FROM sessions WHERE expires>?",
+    "SELECT count(*) FROM sessions WHERE expires>? AND subject=?",
+    "SELECT payload FROM runs WHERE id=? AND project_id=?",
+    "SELECT id,payload FROM runs WHERE status='queued'",
+    "SELECT id,payload FROM runs WHERE status='running'",
+    "SELECT id,payload,status FROM runs WHERE status IN ('queued','running')",
+    "SELECT id,subject FROM runs WHERE status='queued' ORDER BY rowid LIMIT 1",
+    "SELECT * FROM runs WHERE status='queued' ORDER BY rowid",
+    "SELECT * FROM runs WHERE id=?",
+    "SELECT status FROM runs WHERE id=?",
+} | {"SELECT count(*) FROM " + table for table in _TABLES - {"sqlite_master"}}
+  | {"SELECT rowid,* FROM " + table + " ORDER BY rowid" for table in _TABLES - {"sqlite_master"}})
+
+
+def _export_selects():
+    # Exact bounded_export._capture projections, predicates and limits. No
+    # externally supplied SQL, field specification or expression enters here.
+    specs = (
+        ("sessions", "token_hash=?", ("token_hash","subject","expires"), 1),
+        ("users", "subject=?", ("subject","key_hash","active"), 1),
+        ("members", "project_id=? AND subject=?", ("project_id","subject","role"), 1),
+        ("projects", "id=?", ("id","payload"), 1),
+        ("runs", "project_id=?", ("id","project_id","subject","status","payload","cancel_requested","request_key","request_hash"), 100),
+    )
+    statements = set()
+    for table, where, names, limit in specs:
+        checks = []
+        for name in names:
+            kinds, maximum, nullable = _field(name, table)
+            check = "typeof(" + name + ") IN (" + ",".join("'" + kind + "'" for kind in kinds) + ")"
+            if maximum is not None:
+                check += f" AND length(CAST({name} AS BLOB)) <= {maximum}"
+            checks.append("(" + check + (f" OR {name} IS NULL)" if nullable else ")"))
+        suffix = f" FROM {table} WHERE {where} ORDER BY rowid LIMIT {limit + 1}"
+        statements.add("SELECT " + " AND ".join(checks) + suffix)
+        statements.add("SELECT " + ",".join(names) + suffix)
+    return statements
+
 
 def _schema_allowed(role, sql, *, script):
     from .storage_inventory import SCHEMA_SQL
@@ -454,6 +515,14 @@ class Owner:
         return result
 
     def _select(self, sql, parameters):
+        if " ".join(sql.split()) not in _SELECTS | _export_selects():
+            raise ReadBounds("Unregistered observation projection or predicate.")
+        if type(parameters) not in (tuple, list):
+            raise ReadBounds("Observation parameters must be copied scalar bindings.")
+        parameters = tuple(parameters)
+        if any(type(value) not in (str, bytes, int, float, type(None))
+               or type(value) is float and not math.isfinite(value) for value in parameters):
+            raise ReadBounds("Observation parameters must be copied scalar bindings.")
         limit, table = _query_limit(sql)
         if self.archive:
             raise ValueError("Archive rejection only observes format markers.")

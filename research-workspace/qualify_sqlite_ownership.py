@@ -53,6 +53,9 @@ def main():
         (output/"candidate-source.tar.gz").write_bytes(gzip.compress(buffer.getvalue(),mtime=0))
         baseline=run(captured,["test_sqlite_ownership"],output/"controls.log")
         variants=[
+          ("unreviewed-projection","research_workspace/sqlite_ownership.py",[("if \" \".join(sql.split()) not in _SELECTS | _export_selects():","if False:")],"test_unreviewed_projection_and_predicate_refuse_before_sql_evaluation"),
+          ("mutable-observation-bindings","research_workspace/sqlite_ownership.py",[("        parameters = tuple(parameters)","        parameters = parameters")],"test_observation_bindings_copied_once_and_custom_adapters_refused"),
+          ("custom-observation-adapter","research_workspace/sqlite_ownership.py",[("        if any(type(value) not in (str, bytes, int, float, type(None))\n               or type(value) is float and not math.isfinite(value) for value in parameters):","        if False:")],"test_observation_bindings_copied_once_and_custom_adapters_refused"),
           ("backup-without-freeze","research_workspace/sqlite_ownership.py",[("                freezes[0]._require_freeze()","                pass  # deliberately trust the role alone")],"test_backup_admission_requires_live_immediate_parent"),
           ("deferred-freeze","research_workspace/sqlite_ownership.py",[("if self.role in {\"offline-freeze\",\"dispatch-reservation\"} and normalized == \"BEGIN\":","if False:")],"test_backup_admission_requires_live_immediate_parent"),
           ("release-parent-before-children","research_workspace/sqlite_ownership.py",[("        if self._dependents():\n            raise RuntimeError(\"End child SQLite scopes before releasing their parent reservation.\")\n        if self._rollback_attempted:","        if self._rollback_attempted:")],"test_backup_parent_cannot_release_children_and_blocks_other_process"),
