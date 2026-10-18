@@ -1,0 +1,164 @@
+{
+  "review": "Independent scoped v4 Docker qualification harness review",
+  "generated_at_utc": "2026-10-18T11:11:19.138729+00:00",
+  "candidate": "5fd7d445855b191fd2f20eee218a4860961cf38e",
+  "disposition": "HOLD",
+  "execution_authorized": false,
+  "original_worktree": "/Users/gregchism/dev/.educloud-worktrees/waypoint-v4-docker-qualification",
+  "immutable_capture": {
+    "path": "/Users/gregchism/Documents/Codex/2026-10-18/waypoint-scoped-docker-independent-review/final-5fd7d44/source",
+    "archive": "/Users/gregchism/Documents/Codex/2026-10-18/waypoint-scoped-docker-independent-review/final-5fd7d44/candidate-source.tar",
+    "archive_sha256": "ca875b67a55901b6a84e091c26558d66e4a9432b9b47999e51d624abf180393a",
+    "source_files": 1071,
+    "source_manifest_sha256": "5ae8911ac6a0bd6d4ad1b4f052ab9289fd12b0a6a7f2eb08c2eec002e1c4d4f1"
+  },
+  "review_scope": [
+    "qualify_scoped_docker.py",
+    "tests/test_scoped_docker_qualification.py",
+    "SCOPED-DOCKER-QUALIFICATION.md",
+    "Relevant production Worker, scoped owner, checkpoint and exact P1 broker diagnostic semantics read-only"
+  ],
+  "findings": [
+    {
+      "id": "D1",
+      "priority": "P2",
+      "disposition": "blocking qualification readiness",
+      "title": "Receipt output is not correlated to the retained broker diagnostic blob",
+      "source": "research-workspace/qualify_scoped_docker.py",
+      "lines": [
+        228,
+        249
+      ],
+      "additional_lines": [
+        [
+          272,
+          275
+        ],
+        [
+          373,
+          388
+        ],
+        [
+          545,
+          548
+        ]
+      ],
+      "evidence": "verify_settlement validates request identity, accounting, container identity and receipt/application numeric output, but never checks output_error, output_sha256, output_bytes or the broker diagnostic sidecar. accepted reconstructs an authority with only the retained run record and repeats this incomplete validation.",
+      "witnesses": [
+        "independent-ledger-probe-results.json",
+        "missing-output-binding-report.json",
+        "wrong-output-binding-report.json",
+        "independent_diagnostic_correlation_probe.py",
+        "mismatched-diagnostics-result.json",
+        "mismatched-diagnostics-report.json"
+      ],
+      "observed": "The full synthetic exercise returned PASS with missing diagnostics references and with inconsistent hash/size/error fields. A separate final-oracle probe accepted all four compact ledger records referencing valid, bounded, correctly hashed JSON diagnostic files whose stdout and stderr differ from the retained successful receipts.",
+      "limitation": "External effects and checkpoint are simulated in the full-wiring fixture. A real P1 checkpoint checks the size/hash of present references, so the malformed-reference probe alone does not establish a real complete-exercise PASS. The stronger diagnostic witness satisfies those size/hash checks; P1 checkpoint does not compare the sidecar to the separately retained receipt. This is an independent qualification-evidence gap, not a claim that the reviewed producer normally emits inconsistent evidence.",
+      "requested": "For each settlement, require an absent/empty diagnostic error and a valid nonempty reference, read the referenced regular bounded file, verify exact bytes/hash, parse the reviewed diagnostic shape and compare both stdout and stderr to the receipt. Retain the diagnostic bytes and their exact record binding outside SQLite owners, recheck them at final acceptance, and add negative controls for missing/error/wrong/stale/mismatched diagnostics."
+    },
+    {
+      "id": "D2",
+      "priority": "P2",
+      "disposition": "blocking qualification readiness",
+      "title": "PASS does not verify the exact two-project ledger authority or its 60-second budgets",
+      "source": "research-workspace/qualify_scoped_docker.py",
+      "lines": [
+        336,
+        344
+      ],
+      "additional_lines": [
+        [
+          212,
+          215
+        ],
+        [
+          273,
+          280
+        ],
+        [
+          459,
+          467
+        ],
+        [
+          545,
+          551
+        ]
+      ],
+      "evidence": "The HTTP creation requests ask for two 60-CPU-second projects, but the harness never compares the ledger projects map with those exact IDs and budgets. ledger_identity only checks authority state/path. Prior/final checks constrain runs and their charges; accepted does not retain or reconstruct the project authority at all.",
+      "witnesses": [
+        "independent_ledger_probes.py",
+        "independent-ledger-probe-results.json",
+        "wrong-project-budget-report.json",
+        "extra-ledger-project-report.json"
+      ],
+      "observed": "The full synthetic exercise returned PASS with both broker project budgets changed from 60 to 600 and separately with an additional unplanned 600-CPU-second project. Both reports still contain exactly four settled runs and 120 charged CPU-seconds.",
+      "limitation": "This does not bypass the durable marker or four-launch guard and does not demonstrate a fifth launch. It shows that PASS cannot establish the specified two-project/120-CPU-second authority even though each requested run is charged correctly.",
+      "requested": "Capture the exact two created project IDs and require the broker projects map to contain exactly those IDs with integer budgets of 60, each matching its map key. Check this after creation, before every launch and at final acceptance; retain it in the report so the final oracle independently verifies the authority. Add controls for changed/missing/extra projects and wrong budget types."
+    }
+  ],
+  "positive_observations": [
+    "Exclusive fixed external marker claims the entire exercise before initialization; output relocation does not renew the allowance.",
+    "Exactly four single-use pending dispatch slots; consumption occurs before Popen and there is no restart/resume/retry/refund path.",
+    "Fixed request caps, ordered project/fixture/runtime matrix, prelaunch request bytes and final binary hash are checked.",
+    "Current loopback HTTP sessions and production Worker are used; queued cancellation and revoked editor access produce zero run dispatch in the synthetic wiring tests.",
+    "Source environments remain unavailable; OIDC and finite-profile restore are refused; project exports are bounded and have exact expected run IDs.",
+    "FAIL is saved before server cleanup after an exception; cleanup acknowledgement failure cannot produce PASS.",
+    "The exact nonempty set of 18 controls, full integer 30/30 charges, cleanup true and liability false are required.",
+    "Artifact writes are outside SQLite owners by static call-order review and the synthetic owner-lifetime assertion. before_launch inside the dispatch fence only reads files and consumes in-memory launch state.",
+    "Prepared manifest and all 32 prepared archive members match the captured immutable source; all 1071 captured source hashes remain unchanged."
+  ],
+  "validation": {
+    "focused_synthetic_tests": "16/16 PASS; 8.570 seconds test time",
+    "focused_log_sha256": "abe5f041091146b2e69ff3369c65dded93ad806c633352de243ed89156c6c4a6",
+    "independent_red_controls": 5,
+    "independent_red_controls_result": "All five intentionally inconsistent observations were accepted; failures retained as findings, not erased or presented as qualification success.",
+    "full_suite": "Not rerun independently; owner reported 449 PASS. This is not used to waive findings.",
+    "prepared_attachment": {
+      "attachment_commit": "7f0bba78d68a0f5a62809c350259e9afdaa7386a",
+      "manifest_sha256": "05d222c318359d546b91b05b13448693c0db154808aff2fba44d58e7b59389e4",
+      "source_archive_sha256": "038fc4ebf21acdb2f6142a374e93662005a69b4ce6e633820eb361c3183b5300",
+      "manifest_source_commit": "5fd7d445855b191fd2f20eee218a4860961cf38e",
+      "prepared_source_count": 32,
+      "prepared_sources_match_capture": true,
+      "source_errors": [],
+      "archive_member_count": 32,
+      "archive_member_errors": [],
+      "captured_file_count": 1071,
+      "captured_source_changes": [],
+      "manifest_status": "PENDING_REVIEW"
+    }
+  },
+  "bounded_evidence": [
+    "No Docker command, real broker command, production CLI init, image operation, run command, prepare command or historical qualification was executed by this reviewer.",
+    "Focused tests use temporary synthetic stores and real loopback HTTP/Store/Worker; all CLI/provider/checkout external effects are mocked.",
+    "No owner, accepted46, Belay, parent pilot, provider, workflow, pin or historical evidence was modified. Review files are confined to this fresh Documents folder.",
+    "Candidate01 remains unexecuted. A revised immutable candidate and its exact broker/manifest/source identity require re-review. Parent-reported move to accepted-current Outfitter16 is outside this 5fd7d44/P1 disposition.",
+    "Source environments remain disabled; available capacity UNKNOWN and historical fifth-headroom FAIL are unchanged. Existing accepted PR32 read-only observation resolves its specific old resource/accounting state without changing the immutable failed workload or receipt. New unknown cleanup must remain unresolved."
+  ],
+  "evidence_sha256": {
+    "broker-reference/internal/ledger/recovery.go": "7cdc7e2d91cade3e14a18036c2bccd23b97e669154dbdee23fec06da9ebbbd96",
+    "broker-reference/internal/ledger/store.go": "2243e2e9c9f40dff06ce82478bf96729b642a2323f3cca3fd929b26b3f00776a",
+    "broker-reference/internal/provider/provider.go": "8d96ea6c07987e957ad9a482a1f7f23e94046cbd4c4f9af849e161555c61b2bf",
+    "broker-reference/provenance.json": "1ad396266f0a926866d10078e2f1750676275dd154c7f023a5e27e9ffa7e7e74",
+    "candidate-source.tar": "ca875b67a55901b6a84e091c26558d66e4a9432b9b47999e51d624abf180393a",
+    "extra-ledger-project-report.json": "1e05e5b05bf000916eb3780809a19010683836b58353347bba2fd59b7353d90e",
+    "focused-synthetic-tests.json": "c32b83b6dcf959f6ef44d749d10ff733230127064642aa05cd14dc35d4e94162",
+    "focused-synthetic-tests.log": "abe5f041091146b2e69ff3369c65dded93ad806c633352de243ed89156c6c4a6",
+    "independent-ledger-probe-results.json": "089de3508e6e8a75404f7ba4ff6aac06bfd7f6cee570262f63d4c49814d92c0d",
+    "independent_diagnostic_correlation_probe.py": "04364431b1de1ef119cacd864a87779546163eb4b6db5f8dca665e8fe1620969",
+    "independent_ledger_probes.py": "56481fdb55941b4676311cda806ea8a48f18d3d711d775d94f7e852c90c76a20",
+    "mismatched-diagnostics/5ae1472927a0fca1e50056c63d638494da9ff3b01f4958a722c8ec20c21f437d.json": "5ae1472927a0fca1e50056c63d638494da9ff3b01f4958a722c8ec20c21f437d",
+    "mismatched-diagnostics/733ed0b5cdb1c5bce3f33dc00283b09045f0ab72c20bacf9d4eba58566101205.json": "733ed0b5cdb1c5bce3f33dc00283b09045f0ab72c20bacf9d4eba58566101205",
+    "mismatched-diagnostics/8fb36686977863d0a01409d378d59c5bb863175702b40e02c89a4a5339aaff79.json": "8fb36686977863d0a01409d378d59c5bb863175702b40e02c89a4a5339aaff79",
+    "mismatched-diagnostics/c11976e8bed22ff06087fbfa0c712fd2ed23b6d656047048a2c32c013d8c6722.json": "c11976e8bed22ff06087fbfa0c712fd2ed23b6d656047048a2c32c013d8c6722",
+    "mismatched-diagnostics-report.json": "9081e51d71d9fa9289b52c1da29c87ab5f138d1e0f68f409141c26f163b1a66b",
+    "mismatched-diagnostics-result.json": "22921b58ce8a00bfe18ab28c20e5296d5fe88fd9a503e504c8e37753da0270d5",
+    "missing-output-binding-report.json": "e755d31ffdd150e494b1e78d03e4d784e6b7d0cc6fd6564c296316caa611a618",
+    "prepared-attachment/manifest.json": "05d222c318359d546b91b05b13448693c0db154808aff2fba44d58e7b59389e4",
+    "prepared-attachment/source.tar.gz": "038fc4ebf21acdb2f6142a374e93662005a69b4ce6e633820eb361c3183b5300",
+    "prepared-attachment/verification.json": "d5f8ad97cd1775e4342ce31055524abe3de8f3bfe1054c2f736d9fe273bf3fcf",
+    "source-manifest.json": "5ae8911ac6a0bd6d4ad1b4f052ab9289fd12b0a6a7f2eb08c2eec002e1c4d4f1",
+    "wrong-output-binding-report.json": "e86be98603627de53cc767810c09d74df6209241b2b2deadc3ce0c6e404ad30f",
+    "wrong-project-budget-report.json": "b300e2fda1b3d9f79ef19d2c785d40beb29ae6d11c4b2c7bea6ad3093dcaa264"
+  }
+}

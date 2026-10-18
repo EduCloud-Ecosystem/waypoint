@@ -1,0 +1,1411 @@
+{
+  "format": "waypoint-v4-docker-qualification-v1",
+  "exercise": "waypoint-v4-docker-20261018-01",
+  "status": "PASS",
+  "manifest_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "checks": {
+    "fresh_v4_cli": true,
+    "anonymous_refused": true,
+    "source_candidates_disabled": true,
+    "two_projects": true,
+    "queued_cancel_zero_dispatch": true,
+    "current_access_zero_dispatch": true,
+    "oidc_refused": true,
+    "first-python-baseline": true,
+    "first-r-alternative": true,
+    "second-r-baseline": true,
+    "second-python-alternative": true,
+    "four_exact_settlements": true,
+    "first_export": true,
+    "second_export": true,
+    "removed_member_export_refused": true,
+    "server_closed": true,
+    "restore_refused": true,
+    "final_ledger_120": true
+  },
+  "attempts": [
+    {
+      "binding": {
+        "exercise": "waypoint-v4-docker-20261018-01",
+        "index": 0,
+        "slot": "first-python-baseline",
+        "request_id": "b2cd0c1b7c8342d3bd41c324f8b1a785",
+        "project_id": "d6a80eb11b6943c39f5c8a87bfb0790c",
+        "image": "python@sha256:229a2c5bfa27522db7815ea81f9bed70af17ccb9de9fc7ad142b1877b5830d36",
+        "image_id": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "manifest_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "source_commit": "cccccccccccccccccccccccccccccccccccccccc",
+        "source_archive_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "broker_sha256": "2477b47fa3ae65b9574eb18a15edb364e96948eaa1875ad3f1c80d780efc9c12",
+        "broker_source_commit": "5827c84e9952cc67b85e91ceff4282e0ead6923b",
+        "ledger_path": "/private/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmp333o2i4d/synthetic/state.private/broker",
+        "ledger_identity": {
+          "owner": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "authority_id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "path_sha256": "46dbee18ab071f454f923493874e2c64bf5d5b9030a307288d5841ce8b36ed58"
+        },
+        "request_sha256": "5b19f6e40381e0af1bbc84486b2c1090c60c085ae72fb9bddf249dc0f2cb9960",
+        "input_sha256": "054ee89fec327e9a9292e1008d465c3190cfe3819a259ddce2d32e9e5a6a5360",
+        "recipe_sha256": "549f064aaaa36ee8259f1f8e2902d0dfb15d071fcb6d9b60e52b266a7bbdb922"
+      },
+      "binding_sha256": "44259bd886b9a893ad25bd2d1d382c4d98bc5abfd26dad48fc64fea7f07146b4",
+      "outcome": "succeeded",
+      "final_receipt": {
+        "admitted": true,
+        "cleanup_verified": true,
+        "compute": {
+          "charged_cpu_seconds": 30,
+          "provenance": "estimated_upper_bound",
+          "reserved_cpu_seconds": 30
+        },
+        "error": "",
+        "execution_started": true,
+        "exit_code": 0,
+        "image": "python@sha256:229a2c5bfa27522db7815ea81f9bed70af17ccb9de9fc7ad142b1877b5830d36",
+        "project_id": "d6a80eb11b6943c39f5c8a87bfb0790c",
+        "request_id": "b2cd0c1b7c8342d3bd41c324f8b1a785",
+        "schema_version": 1,
+        "status": "succeeded",
+        "stderr": "",
+        "stdout": "{\"condition\": \"baseline\", \"count\": 10, \"mean\": 18, \"groups\": [{\"group\": \"alpha\", \"count\": 5, \"mean\": 22}, {\"group\": \"beta\", \"count\": 5, \"mean\": 14}]}",
+        "unresolved_liability": false
+      },
+      "ledger_verified": true,
+      "container_absent": true,
+      "metrics": {
+        "condition": "baseline",
+        "count": 10,
+        "groups": [
+          {
+            "count": 5,
+            "group": "alpha",
+            "mean": 22
+          },
+          {
+            "count": 5,
+            "group": "beta",
+            "mean": 14
+          }
+        ],
+        "mean": 18
+      },
+      "request": {
+        "allow_supervised_reaper": true,
+        "command": [
+          "python",
+          "/recipe/recipe.py",
+          "/input/data.csv",
+          "baseline"
+        ],
+        "cpus": 1,
+        "image": "python@sha256:229a2c5bfa27522db7815ea81f9bed70af17ccb9de9fc7ad142b1877b5830d36",
+        "input_dir": "/private/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmp333o2i4d/synthetic/state.private/runs/b2cd0c1b7c8342d3bd41c324f8b1a785/input",
+        "isolation": "reviewed-local",
+        "max_output_bytes": 65536,
+        "memory_mb": 256,
+        "pids_limit": 64,
+        "project_id": "d6a80eb11b6943c39f5c8a87bfb0790c",
+        "recipe_dir": "/private/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmp333o2i4d/synthetic/state.private/runs/b2cd0c1b7c8342d3bd41c324f8b1a785/recipe",
+        "request_id": "b2cd0c1b7c8342d3bd41c324f8b1a785",
+        "schema_version": 1,
+        "timeout_seconds": 30
+      },
+      "run": {
+        "cleanup_verified": true,
+        "compute": {
+          "charged_cpu_seconds": 30,
+          "provenance": "estimated_upper_bound",
+          "reserved_cpu_seconds": 30,
+          "unresolved_liability": false
+        },
+        "condition": "baseline",
+        "created_at": "2026-10-18T11:07:14.678246+00:00",
+        "environment": {
+          "image": "python@sha256:229a2c5bfa27522db7815ea81f9bed70af17ccb9de9fc7ad142b1877b5830d36",
+          "runner": "outfitter-docker-v1",
+          "runtime": "python",
+          "specification": {
+            "conditions": {
+              "alternative": "Within each group containing at least five rows, remove one smallest and one largest value; retain all values in smaller groups. Report descriptive counts and means.",
+              "baseline": "Retain every value and report each group count and arithmetic mean, plus the overall count and mean."
+            },
+            "dependencies": {
+              "additional_packages": [],
+              "standard_library": [
+                "csv",
+                "json",
+                "sys"
+              ],
+              "statement": "No packages beyond the runtime standard library are required."
+            },
+            "id": "summary-python-v1",
+            "image": "python@sha256:229a2c5bfa27522db7815ea81f9bed70af17ccb9de9fc7ad142b1877b5830d36",
+            "limitations": [
+              "Public or synthetic data only.",
+              "Descriptive results do not establish scientific validity or statistical significance.",
+              "No independent operator or second-machine reproduction has been recorded."
+            ],
+            "limits": {
+              "cpus": 1,
+              "max_input_bytes": 65536,
+              "max_input_rows": 1000,
+              "max_output_bytes": 65536,
+              "memory_mb": 256,
+              "pids_limit": 64,
+              "timeout_seconds": 30
+            },
+            "name": "Python group summary \u00b7 version 1",
+            "platforms": [
+              {
+                "architecture": "arm64",
+                "evidence_boundary": "Both pinned local image IDs were inspected as linux/arm64 on 2026-10-17. This records image platform identity; execution evidence is stated separately. Other platforms have not been verified.",
+                "evidence_status": "PASS",
+                "os": "linux"
+              }
+            ],
+            "provenance": {
+              "build_inputs": [],
+              "build_inputs_status": "NOT RECORDED",
+              "clean_rebuild": {
+                "boundary": "No image was rebuilt from pinned source/build inputs. Recorded execution of an existing image does not establish reproducible image construction.",
+                "status": "NOT RUN"
+              },
+              "execution_evidence": {
+                "boundary": "Original local browser acceptance executed the synthetic baseline in this pinned image. Its 23 checks are historical evidence, not a repeat acceptance of the later catalog or another machine.",
+                "reference": "research-workspace/evidence/2026-10-17/browser-verification.json",
+                "status": "PASS"
+              },
+              "image_origin": "Pre-existing local runtime image identified by immutable digest. Upstream build source and base-image inputs were not captured.",
+              "repository": "https://github.com/EduCloud-Ecosystem/waypoint",
+              "source_revision": "da4c65530b4ec34676823a466cdce475612fd0fe"
+            },
+            "recipe": "summary-python",
+            "recipe_sha256": "549f064aaaa36ee8259f1f8e2902d0dfb15d071fcb6d9b60e52b266a7bbdb922",
+            "runtime": {
+              "id": "python",
+              "version": "3.12.13",
+              "version_evidence": "PYTHON_VERSION in the pinned local image configuration, inspected 2026-10-17. The runtime version command was not independently executed for this catalog."
+            },
+            "source": "recipes/recipe.py",
+            "status": "active",
+            "validation": {
+              "absolute_tolerance": 1e-09,
+              "exact_fields": [
+                "condition",
+                "group",
+                "count"
+              ],
+              "independent_check": "The service recomputes descriptive results from the submitted input. Mean comparisons use the stated tolerances; object keys, conditions, group strings and counts must match exactly.",
+              "relative_tolerance": 1e-12
+            },
+            "version": 1
+          }
+        },
+        "error": "",
+        "finished_at": "2026-10-18T11:07:14.808308+00:00",
+        "id": "b2cd0c1b7c8342d3bd41c324f8b1a785",
+        "input_sha256": "054ee89fec327e9a9292e1008d465c3190cfe3819a259ddce2d32e9e5a6a5360",
+        "metrics": {
+          "condition": "baseline",
+          "count": 10,
+          "groups": [
+            {
+              "count": 5,
+              "group": "alpha",
+              "mean": 22
+            },
+            {
+              "count": 5,
+              "group": "beta",
+              "mean": 14
+            }
+          ],
+          "mean": 18
+        },
+        "parameters": {},
+        "project_id": "d6a80eb11b6943c39f5c8a87bfb0790c",
+        "recipe": "summary-python",
+        "recipe_sha256": "549f064aaaa36ee8259f1f8e2902d0dfb15d071fcb6d9b60e52b266a7bbdb922",
+        "started_at": "2026-10-18T11:07:14.749593+00:00",
+        "status": "succeeded"
+      },
+      "ledger_record": {
+        "admitted": true,
+        "broker_pid": 123,
+        "cleanup_verified": true,
+        "compute": {
+          "charged_cpu_seconds": 30,
+          "provenance": "estimated_upper_bound",
+          "reserved_cpu_seconds": 30
+        },
+        "container_name": "outfitter-c6de8343f6033c07b4df961d05fd7982",
+        "create_ambiguous": false,
+        "create_attempted": true,
+        "create_finished": true,
+        "error": "",
+        "execution_started": true,
+        "exit_code": 0,
+        "image": "python@sha256:229a2c5bfa27522db7815ea81f9bed70af17ccb9de9fc7ad142b1877b5830d36",
+        "owner": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "payload_hash": "2006a8dc0d5802cd1a2237998f420cd389023f8941df9b1a1fab83beda138383",
+        "project_id": "d6a80eb11b6943c39f5c8a87bfb0790c",
+        "request": {
+          "allow_supervised_reaper": true,
+          "command": [
+            "python",
+            "/recipe/recipe.py",
+            "/input/data.csv",
+            "baseline"
+          ],
+          "cpus": 1,
+          "image": "python@sha256:229a2c5bfa27522db7815ea81f9bed70af17ccb9de9fc7ad142b1877b5830d36",
+          "input_dir": "/private/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmp333o2i4d/synthetic/state.private/runs/b2cd0c1b7c8342d3bd41c324f8b1a785/input",
+          "isolation": "reviewed-local",
+          "max_output_bytes": 65536,
+          "memory_mb": 256,
+          "pids_limit": 64,
+          "project_id": "d6a80eb11b6943c39f5c8a87bfb0790c",
+          "recipe_dir": "/private/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmp333o2i4d/synthetic/state.private/runs/b2cd0c1b7c8342d3bd41c324f8b1a785/recipe",
+          "request_id": "b2cd0c1b7c8342d3bd41c324f8b1a785",
+          "schema_version": 1,
+          "timeout_seconds": 30
+        },
+        "request_id": "b2cd0c1b7c8342d3bd41c324f8b1a785",
+        "schema_version": 1,
+        "status": "succeeded",
+        "stderr": "",
+        "stdout": "{\"condition\": \"baseline\", \"count\": 10, \"mean\": 18, \"groups\": [{\"group\": \"alpha\", \"count\": 5, \"mean\": 22}, {\"group\": \"beta\", \"count\": 5, \"mean\": 14}]}",
+        "unresolved_liability": false
+      },
+      "ledger_identity": {
+        "owner": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority_id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "path_sha256": "46dbee18ab071f454f923493874e2c64bf5d5b9030a307288d5841ce8b36ed58"
+      }
+    },
+    {
+      "binding": {
+        "exercise": "waypoint-v4-docker-20261018-01",
+        "index": 1,
+        "slot": "first-r-alternative",
+        "request_id": "495139adc4c44d8fa568204698d527e4",
+        "project_id": "d6a80eb11b6943c39f5c8a87bfb0790c",
+        "image": "r-base@sha256:fa1972f31def171b83e0911e947ab8b57db143f0fc8a67af4c0d5ac329041646",
+        "image_id": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "manifest_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "source_commit": "cccccccccccccccccccccccccccccccccccccccc",
+        "source_archive_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "broker_sha256": "2477b47fa3ae65b9574eb18a15edb364e96948eaa1875ad3f1c80d780efc9c12",
+        "broker_source_commit": "5827c84e9952cc67b85e91ceff4282e0ead6923b",
+        "ledger_path": "/private/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmp333o2i4d/synthetic/state.private/broker",
+        "ledger_identity": {
+          "owner": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "authority_id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "path_sha256": "46dbee18ab071f454f923493874e2c64bf5d5b9030a307288d5841ce8b36ed58"
+        },
+        "request_sha256": "1c985c93dd1800f8f5f393302791c0612e1f56af4fb40ed0969e87946d52f775",
+        "input_sha256": "054ee89fec327e9a9292e1008d465c3190cfe3819a259ddce2d32e9e5a6a5360",
+        "recipe_sha256": "a3c06effab96558d8a09068adbfaf2650a3d9ab82b608ea63437dc9076fe3957"
+      },
+      "binding_sha256": "ba28cdce8cedcb6127f8ddb071da3403ee54d68d090ab3a180757b77cd9bcdc5",
+      "outcome": "succeeded",
+      "final_receipt": {
+        "admitted": true,
+        "cleanup_verified": true,
+        "compute": {
+          "charged_cpu_seconds": 30,
+          "provenance": "estimated_upper_bound",
+          "reserved_cpu_seconds": 30
+        },
+        "error": "",
+        "execution_started": true,
+        "exit_code": 0,
+        "image": "r-base@sha256:fa1972f31def171b83e0911e947ab8b57db143f0fc8a67af4c0d5ac329041646",
+        "project_id": "d6a80eb11b6943c39f5c8a87bfb0790c",
+        "request_id": "495139adc4c44d8fa568204698d527e4",
+        "schema_version": 1,
+        "status": "succeeded",
+        "stderr": "",
+        "stdout": "{\"condition\": \"alternative\", \"count\": 6, \"mean\": 8.5, \"groups\": [{\"group\": \"alpha\", \"count\": 3, \"mean\": 3}, {\"group\": \"beta\", \"count\": 3, \"mean\": 14}]}",
+        "unresolved_liability": false
+      },
+      "ledger_verified": true,
+      "container_absent": true,
+      "metrics": {
+        "condition": "alternative",
+        "count": 6,
+        "groups": [
+          {
+            "count": 3,
+            "group": "alpha",
+            "mean": 3
+          },
+          {
+            "count": 3,
+            "group": "beta",
+            "mean": 14
+          }
+        ],
+        "mean": 8.5
+      },
+      "request": {
+        "allow_supervised_reaper": true,
+        "command": [
+          "Rscript",
+          "--vanilla",
+          "/recipe/recipe.R",
+          "/input/data.csv",
+          "alternative"
+        ],
+        "cpus": 1,
+        "image": "r-base@sha256:fa1972f31def171b83e0911e947ab8b57db143f0fc8a67af4c0d5ac329041646",
+        "input_dir": "/private/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmp333o2i4d/synthetic/state.private/runs/495139adc4c44d8fa568204698d527e4/input",
+        "isolation": "reviewed-local",
+        "max_output_bytes": 65536,
+        "memory_mb": 256,
+        "pids_limit": 64,
+        "project_id": "d6a80eb11b6943c39f5c8a87bfb0790c",
+        "recipe_dir": "/private/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmp333o2i4d/synthetic/state.private/runs/495139adc4c44d8fa568204698d527e4/recipe",
+        "request_id": "495139adc4c44d8fa568204698d527e4",
+        "schema_version": 1,
+        "timeout_seconds": 30
+      },
+      "run": {
+        "cleanup_verified": true,
+        "compute": {
+          "charged_cpu_seconds": 30,
+          "provenance": "estimated_upper_bound",
+          "reserved_cpu_seconds": 30,
+          "unresolved_liability": false
+        },
+        "condition": "alternative",
+        "created_at": "2026-10-18T11:07:14.848893+00:00",
+        "environment": {
+          "image": "r-base@sha256:fa1972f31def171b83e0911e947ab8b57db143f0fc8a67af4c0d5ac329041646",
+          "runner": "outfitter-docker-v1",
+          "runtime": "r",
+          "specification": {
+            "conditions": {
+              "alternative": "Within each group containing at least five rows, remove one smallest and one largest value; retain all values in smaller groups. Report descriptive counts and means.",
+              "baseline": "Retain every value and report each group count and arithmetic mean, plus the overall count and mean."
+            },
+            "dependencies": {
+              "additional_packages": [],
+              "standard_library": [
+                "base",
+                "utils"
+              ],
+              "statement": "No packages beyond the runtime standard library are required."
+            },
+            "id": "summary-r-v2",
+            "image": "r-base@sha256:fa1972f31def171b83e0911e947ab8b57db143f0fc8a67af4c0d5ac329041646",
+            "limitations": [
+              "Public or synthetic data only.",
+              "Descriptive results do not establish scientific validity or statistical significance.",
+              "No independent operator or second-machine reproduction has been recorded."
+            ],
+            "limits": {
+              "cpus": 1,
+              "max_input_bytes": 65536,
+              "max_input_rows": 1000,
+              "max_output_bytes": 65536,
+              "memory_mb": 256,
+              "pids_limit": 64,
+              "timeout_seconds": 30
+            },
+            "name": "R group summary \u00b7 version 2",
+            "platforms": [
+              {
+                "architecture": "arm64",
+                "evidence_boundary": "Both pinned local image IDs were inspected as linux/arm64 on 2026-10-17. This records image platform identity; execution evidence is stated separately. Other platforms have not been verified.",
+                "evidence_status": "PASS",
+                "os": "linux"
+              }
+            ],
+            "provenance": {
+              "build_inputs": [],
+              "build_inputs_status": "NOT RECORDED",
+              "clean_rebuild": {
+                "boundary": "No image was rebuilt from pinned source/build inputs. Recorded execution of an existing image does not establish reproducible image construction.",
+                "status": "NOT RUN"
+              },
+              "execution_evidence": {
+                "boundary": "The corrected recipe preserves group labels as strings and uses the shared finite decimal grammar. Local Docker HTTP regression evidence is bounded by the source hashes recorded in that report; it is not an image rebuild or an independent operator reproduction.",
+                "reference": "research-workspace/evidence/2026-10-17/http-docker-verification.json",
+                "status": "PASS"
+              },
+              "image_origin": "Pre-existing local runtime image identified by immutable digest. Upstream build source and base-image inputs were not captured.",
+              "repository": "https://github.com/EduCloud-Ecosystem/waypoint",
+              "source_revision": "da4c65530b4ec34676823a466cdce475612fd0fe"
+            },
+            "recipe": "summary-r",
+            "recipe_sha256": "a3c06effab96558d8a09068adbfaf2650a3d9ab82b608ea63437dc9076fe3957",
+            "runtime": {
+              "id": "r",
+              "version": "4.5.1",
+              "version_evidence": "R_BASE_VERSION in the pinned local image configuration, inspected 2026-10-17. The runtime version command was not independently executed for this catalog."
+            },
+            "source": "recipes/recipe.R",
+            "status": "active",
+            "validation": {
+              "absolute_tolerance": 1e-09,
+              "exact_fields": [
+                "condition",
+                "group",
+                "count"
+              ],
+              "independent_check": "The service recomputes descriptive results from the submitted input. Mean comparisons use the stated tolerances; object keys, conditions, group strings and counts must match exactly.",
+              "relative_tolerance": 1e-12
+            },
+            "version": 2
+          }
+        },
+        "error": "",
+        "finished_at": "2026-10-18T11:07:14.994987+00:00",
+        "id": "495139adc4c44d8fa568204698d527e4",
+        "input_sha256": "054ee89fec327e9a9292e1008d465c3190cfe3819a259ddce2d32e9e5a6a5360",
+        "metrics": {
+          "condition": "alternative",
+          "count": 6,
+          "groups": [
+            {
+              "count": 3,
+              "group": "alpha",
+              "mean": 3
+            },
+            {
+              "count": 3,
+              "group": "beta",
+              "mean": 14
+            }
+          ],
+          "mean": 8.5
+        },
+        "parameters": {},
+        "project_id": "d6a80eb11b6943c39f5c8a87bfb0790c",
+        "recipe": "summary-r",
+        "recipe_sha256": "a3c06effab96558d8a09068adbfaf2650a3d9ab82b608ea63437dc9076fe3957",
+        "started_at": "2026-10-18T11:07:14.932669+00:00",
+        "status": "succeeded"
+      },
+      "ledger_record": {
+        "admitted": true,
+        "broker_pid": 123,
+        "cleanup_verified": true,
+        "compute": {
+          "charged_cpu_seconds": 30,
+          "provenance": "estimated_upper_bound",
+          "reserved_cpu_seconds": 30
+        },
+        "container_name": "outfitter-8091ba9cab06f3273d59318f12555817",
+        "create_ambiguous": false,
+        "create_attempted": true,
+        "create_finished": true,
+        "error": "",
+        "execution_started": true,
+        "exit_code": 0,
+        "image": "r-base@sha256:fa1972f31def171b83e0911e947ab8b57db143f0fc8a67af4c0d5ac329041646",
+        "owner": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "payload_hash": "18a94b0b49221960d751b24b57271f93fb2788f53eed17b7d97de3d3339feab4",
+        "project_id": "d6a80eb11b6943c39f5c8a87bfb0790c",
+        "request": {
+          "allow_supervised_reaper": true,
+          "command": [
+            "Rscript",
+            "--vanilla",
+            "/recipe/recipe.R",
+            "/input/data.csv",
+            "alternative"
+          ],
+          "cpus": 1,
+          "image": "r-base@sha256:fa1972f31def171b83e0911e947ab8b57db143f0fc8a67af4c0d5ac329041646",
+          "input_dir": "/private/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmp333o2i4d/synthetic/state.private/runs/495139adc4c44d8fa568204698d527e4/input",
+          "isolation": "reviewed-local",
+          "max_output_bytes": 65536,
+          "memory_mb": 256,
+          "pids_limit": 64,
+          "project_id": "d6a80eb11b6943c39f5c8a87bfb0790c",
+          "recipe_dir": "/private/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmp333o2i4d/synthetic/state.private/runs/495139adc4c44d8fa568204698d527e4/recipe",
+          "request_id": "495139adc4c44d8fa568204698d527e4",
+          "schema_version": 1,
+          "timeout_seconds": 30
+        },
+        "request_id": "495139adc4c44d8fa568204698d527e4",
+        "schema_version": 1,
+        "status": "succeeded",
+        "stderr": "",
+        "stdout": "{\"condition\": \"alternative\", \"count\": 6, \"mean\": 8.5, \"groups\": [{\"group\": \"alpha\", \"count\": 3, \"mean\": 3}, {\"group\": \"beta\", \"count\": 3, \"mean\": 14}]}",
+        "unresolved_liability": false
+      },
+      "ledger_identity": {
+        "owner": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority_id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "path_sha256": "46dbee18ab071f454f923493874e2c64bf5d5b9030a307288d5841ce8b36ed58"
+      }
+    },
+    {
+      "binding": {
+        "exercise": "waypoint-v4-docker-20261018-01",
+        "index": 2,
+        "slot": "second-r-baseline",
+        "request_id": "cc6f4e7035d04670a1d6587ae462ec89",
+        "project_id": "1ee42560319f4ef88a3f3ce90b05662d",
+        "image": "r-base@sha256:fa1972f31def171b83e0911e947ab8b57db143f0fc8a67af4c0d5ac329041646",
+        "image_id": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "manifest_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "source_commit": "cccccccccccccccccccccccccccccccccccccccc",
+        "source_archive_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "broker_sha256": "2477b47fa3ae65b9574eb18a15edb364e96948eaa1875ad3f1c80d780efc9c12",
+        "broker_source_commit": "5827c84e9952cc67b85e91ceff4282e0ead6923b",
+        "ledger_path": "/private/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmp333o2i4d/synthetic/state.private/broker",
+        "ledger_identity": {
+          "owner": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "authority_id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "path_sha256": "46dbee18ab071f454f923493874e2c64bf5d5b9030a307288d5841ce8b36ed58"
+        },
+        "request_sha256": "130298381a5d8e0eedf3772131893930ecb5c7f654c361e5c63af688978224f1",
+        "input_sha256": "0eb98eaefd071f55e7d43d85a15120b4705cf18394f8d5efeb0d3617dbbc6982",
+        "recipe_sha256": "a3c06effab96558d8a09068adbfaf2650a3d9ab82b608ea63437dc9076fe3957"
+      },
+      "binding_sha256": "51d78ef3cb2003aaddf91b80c2d10c59d7f07849da210a715bbb32a07d0c13ab",
+      "outcome": "succeeded",
+      "final_receipt": {
+        "admitted": true,
+        "cleanup_verified": true,
+        "compute": {
+          "charged_cpu_seconds": 30,
+          "provenance": "estimated_upper_bound",
+          "reserved_cpu_seconds": 30
+        },
+        "error": "",
+        "execution_started": true,
+        "exit_code": 0,
+        "image": "r-base@sha256:fa1972f31def171b83e0911e947ab8b57db143f0fc8a67af4c0d5ac329041646",
+        "project_id": "1ee42560319f4ef88a3f3ce90b05662d",
+        "request_id": "cc6f4e7035d04670a1d6587ae462ec89",
+        "schema_version": 1,
+        "status": "succeeded",
+        "stderr": "",
+        "stdout": "{\"condition\": \"baseline\", \"count\": 10, \"mean\": 9, \"groups\": [{\"group\": \"comparison\", \"count\": 5, \"mean\": 12}, {\"group\": \"control\", \"count\": 5, \"mean\": 6}]}",
+        "unresolved_liability": false
+      },
+      "ledger_verified": true,
+      "container_absent": true,
+      "metrics": {
+        "condition": "baseline",
+        "count": 10,
+        "groups": [
+          {
+            "count": 5,
+            "group": "comparison",
+            "mean": 12
+          },
+          {
+            "count": 5,
+            "group": "control",
+            "mean": 6
+          }
+        ],
+        "mean": 9
+      },
+      "request": {
+        "allow_supervised_reaper": true,
+        "command": [
+          "Rscript",
+          "--vanilla",
+          "/recipe/recipe.R",
+          "/input/data.csv",
+          "baseline"
+        ],
+        "cpus": 1,
+        "image": "r-base@sha256:fa1972f31def171b83e0911e947ab8b57db143f0fc8a67af4c0d5ac329041646",
+        "input_dir": "/private/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmp333o2i4d/synthetic/state.private/runs/cc6f4e7035d04670a1d6587ae462ec89/input",
+        "isolation": "reviewed-local",
+        "max_output_bytes": 65536,
+        "memory_mb": 256,
+        "pids_limit": 64,
+        "project_id": "1ee42560319f4ef88a3f3ce90b05662d",
+        "recipe_dir": "/private/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmp333o2i4d/synthetic/state.private/runs/cc6f4e7035d04670a1d6587ae462ec89/recipe",
+        "request_id": "cc6f4e7035d04670a1d6587ae462ec89",
+        "schema_version": 1,
+        "timeout_seconds": 30
+      },
+      "run": {
+        "cleanup_verified": true,
+        "compute": {
+          "charged_cpu_seconds": 30,
+          "provenance": "estimated_upper_bound",
+          "reserved_cpu_seconds": 30,
+          "unresolved_liability": false
+        },
+        "condition": "baseline",
+        "created_at": "2026-10-18T11:07:15.039050+00:00",
+        "environment": {
+          "image": "r-base@sha256:fa1972f31def171b83e0911e947ab8b57db143f0fc8a67af4c0d5ac329041646",
+          "runner": "outfitter-docker-v1",
+          "runtime": "r",
+          "specification": {
+            "conditions": {
+              "alternative": "Within each group containing at least five rows, remove one smallest and one largest value; retain all values in smaller groups. Report descriptive counts and means.",
+              "baseline": "Retain every value and report each group count and arithmetic mean, plus the overall count and mean."
+            },
+            "dependencies": {
+              "additional_packages": [],
+              "standard_library": [
+                "base",
+                "utils"
+              ],
+              "statement": "No packages beyond the runtime standard library are required."
+            },
+            "id": "summary-r-v2",
+            "image": "r-base@sha256:fa1972f31def171b83e0911e947ab8b57db143f0fc8a67af4c0d5ac329041646",
+            "limitations": [
+              "Public or synthetic data only.",
+              "Descriptive results do not establish scientific validity or statistical significance.",
+              "No independent operator or second-machine reproduction has been recorded."
+            ],
+            "limits": {
+              "cpus": 1,
+              "max_input_bytes": 65536,
+              "max_input_rows": 1000,
+              "max_output_bytes": 65536,
+              "memory_mb": 256,
+              "pids_limit": 64,
+              "timeout_seconds": 30
+            },
+            "name": "R group summary \u00b7 version 2",
+            "platforms": [
+              {
+                "architecture": "arm64",
+                "evidence_boundary": "Both pinned local image IDs were inspected as linux/arm64 on 2026-10-17. This records image platform identity; execution evidence is stated separately. Other platforms have not been verified.",
+                "evidence_status": "PASS",
+                "os": "linux"
+              }
+            ],
+            "provenance": {
+              "build_inputs": [],
+              "build_inputs_status": "NOT RECORDED",
+              "clean_rebuild": {
+                "boundary": "No image was rebuilt from pinned source/build inputs. Recorded execution of an existing image does not establish reproducible image construction.",
+                "status": "NOT RUN"
+              },
+              "execution_evidence": {
+                "boundary": "The corrected recipe preserves group labels as strings and uses the shared finite decimal grammar. Local Docker HTTP regression evidence is bounded by the source hashes recorded in that report; it is not an image rebuild or an independent operator reproduction.",
+                "reference": "research-workspace/evidence/2026-10-17/http-docker-verification.json",
+                "status": "PASS"
+              },
+              "image_origin": "Pre-existing local runtime image identified by immutable digest. Upstream build source and base-image inputs were not captured.",
+              "repository": "https://github.com/EduCloud-Ecosystem/waypoint",
+              "source_revision": "da4c65530b4ec34676823a466cdce475612fd0fe"
+            },
+            "recipe": "summary-r",
+            "recipe_sha256": "a3c06effab96558d8a09068adbfaf2650a3d9ab82b608ea63437dc9076fe3957",
+            "runtime": {
+              "id": "r",
+              "version": "4.5.1",
+              "version_evidence": "R_BASE_VERSION in the pinned local image configuration, inspected 2026-10-17. The runtime version command was not independently executed for this catalog."
+            },
+            "source": "recipes/recipe.R",
+            "status": "active",
+            "validation": {
+              "absolute_tolerance": 1e-09,
+              "exact_fields": [
+                "condition",
+                "group",
+                "count"
+              ],
+              "independent_check": "The service recomputes descriptive results from the submitted input. Mean comparisons use the stated tolerances; object keys, conditions, group strings and counts must match exactly.",
+              "relative_tolerance": 1e-12
+            },
+            "version": 2
+          }
+        },
+        "error": "",
+        "finished_at": "2026-10-18T11:07:15.170323+00:00",
+        "id": "cc6f4e7035d04670a1d6587ae462ec89",
+        "input_sha256": "0eb98eaefd071f55e7d43d85a15120b4705cf18394f8d5efeb0d3617dbbc6982",
+        "metrics": {
+          "condition": "baseline",
+          "count": 10,
+          "groups": [
+            {
+              "count": 5,
+              "group": "comparison",
+              "mean": 12
+            },
+            {
+              "count": 5,
+              "group": "control",
+              "mean": 6
+            }
+          ],
+          "mean": 9
+        },
+        "parameters": {},
+        "project_id": "1ee42560319f4ef88a3f3ce90b05662d",
+        "recipe": "summary-r",
+        "recipe_sha256": "a3c06effab96558d8a09068adbfaf2650a3d9ab82b608ea63437dc9076fe3957",
+        "started_at": "2026-10-18T11:07:15.111103+00:00",
+        "status": "succeeded"
+      },
+      "ledger_record": {
+        "admitted": true,
+        "broker_pid": 123,
+        "cleanup_verified": true,
+        "compute": {
+          "charged_cpu_seconds": 30,
+          "provenance": "estimated_upper_bound",
+          "reserved_cpu_seconds": 30
+        },
+        "container_name": "outfitter-efa70228931a5818c044704883b3439e",
+        "create_ambiguous": false,
+        "create_attempted": true,
+        "create_finished": true,
+        "error": "",
+        "execution_started": true,
+        "exit_code": 0,
+        "image": "r-base@sha256:fa1972f31def171b83e0911e947ab8b57db143f0fc8a67af4c0d5ac329041646",
+        "owner": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "payload_hash": "fa0fa4b26ddc5dc4727b3e7b71ee60e1cacd47c69f7cfa6df3f47f4ee3ee23ba",
+        "project_id": "1ee42560319f4ef88a3f3ce90b05662d",
+        "request": {
+          "allow_supervised_reaper": true,
+          "command": [
+            "Rscript",
+            "--vanilla",
+            "/recipe/recipe.R",
+            "/input/data.csv",
+            "baseline"
+          ],
+          "cpus": 1,
+          "image": "r-base@sha256:fa1972f31def171b83e0911e947ab8b57db143f0fc8a67af4c0d5ac329041646",
+          "input_dir": "/private/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmp333o2i4d/synthetic/state.private/runs/cc6f4e7035d04670a1d6587ae462ec89/input",
+          "isolation": "reviewed-local",
+          "max_output_bytes": 65536,
+          "memory_mb": 256,
+          "pids_limit": 64,
+          "project_id": "1ee42560319f4ef88a3f3ce90b05662d",
+          "recipe_dir": "/private/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmp333o2i4d/synthetic/state.private/runs/cc6f4e7035d04670a1d6587ae462ec89/recipe",
+          "request_id": "cc6f4e7035d04670a1d6587ae462ec89",
+          "schema_version": 1,
+          "timeout_seconds": 30
+        },
+        "request_id": "cc6f4e7035d04670a1d6587ae462ec89",
+        "schema_version": 1,
+        "status": "succeeded",
+        "stderr": "",
+        "stdout": "{\"condition\": \"baseline\", \"count\": 10, \"mean\": 9, \"groups\": [{\"group\": \"comparison\", \"count\": 5, \"mean\": 12}, {\"group\": \"control\", \"count\": 5, \"mean\": 6}]}",
+        "unresolved_liability": false
+      },
+      "ledger_identity": {
+        "owner": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority_id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "path_sha256": "46dbee18ab071f454f923493874e2c64bf5d5b9030a307288d5841ce8b36ed58"
+      }
+    },
+    {
+      "binding": {
+        "exercise": "waypoint-v4-docker-20261018-01",
+        "index": 3,
+        "slot": "second-python-alternative",
+        "request_id": "926ad4309d0f49caaa38b2ee9451b7cc",
+        "project_id": "1ee42560319f4ef88a3f3ce90b05662d",
+        "image": "python@sha256:229a2c5bfa27522db7815ea81f9bed70af17ccb9de9fc7ad142b1877b5830d36",
+        "image_id": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "manifest_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "source_commit": "cccccccccccccccccccccccccccccccccccccccc",
+        "source_archive_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "broker_sha256": "2477b47fa3ae65b9574eb18a15edb364e96948eaa1875ad3f1c80d780efc9c12",
+        "broker_source_commit": "5827c84e9952cc67b85e91ceff4282e0ead6923b",
+        "ledger_path": "/private/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmp333o2i4d/synthetic/state.private/broker",
+        "ledger_identity": {
+          "owner": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "authority_id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "path_sha256": "46dbee18ab071f454f923493874e2c64bf5d5b9030a307288d5841ce8b36ed58"
+        },
+        "request_sha256": "3fb4e2cb02274ebe953af186ac57529f03c37c607ad6f344008336ac3cdf3519",
+        "input_sha256": "0eb98eaefd071f55e7d43d85a15120b4705cf18394f8d5efeb0d3617dbbc6982",
+        "recipe_sha256": "549f064aaaa36ee8259f1f8e2902d0dfb15d071fcb6d9b60e52b266a7bbdb922"
+      },
+      "binding_sha256": "4e46112696729aa93813f26db01fba265354537571311be94b08a064e7317eeb",
+      "outcome": "succeeded",
+      "final_receipt": {
+        "admitted": true,
+        "cleanup_verified": true,
+        "compute": {
+          "charged_cpu_seconds": 30,
+          "provenance": "estimated_upper_bound",
+          "reserved_cpu_seconds": 30
+        },
+        "error": "",
+        "execution_started": true,
+        "exit_code": 0,
+        "image": "python@sha256:229a2c5bfa27522db7815ea81f9bed70af17ccb9de9fc7ad142b1877b5830d36",
+        "project_id": "1ee42560319f4ef88a3f3ce90b05662d",
+        "request_id": "926ad4309d0f49caaa38b2ee9451b7cc",
+        "schema_version": 1,
+        "status": "succeeded",
+        "stderr": "",
+        "stdout": "{\"condition\": \"alternative\", \"count\": 6, \"mean\": 7.5, \"groups\": [{\"group\": \"comparison\", \"count\": 3, \"mean\": 9}, {\"group\": \"control\", \"count\": 3, \"mean\": 6}]}",
+        "unresolved_liability": false
+      },
+      "ledger_verified": true,
+      "container_absent": true,
+      "metrics": {
+        "condition": "alternative",
+        "count": 6,
+        "groups": [
+          {
+            "count": 3,
+            "group": "comparison",
+            "mean": 9
+          },
+          {
+            "count": 3,
+            "group": "control",
+            "mean": 6
+          }
+        ],
+        "mean": 7.5
+      },
+      "request": {
+        "allow_supervised_reaper": true,
+        "command": [
+          "python",
+          "/recipe/recipe.py",
+          "/input/data.csv",
+          "alternative"
+        ],
+        "cpus": 1,
+        "image": "python@sha256:229a2c5bfa27522db7815ea81f9bed70af17ccb9de9fc7ad142b1877b5830d36",
+        "input_dir": "/private/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmp333o2i4d/synthetic/state.private/runs/926ad4309d0f49caaa38b2ee9451b7cc/input",
+        "isolation": "reviewed-local",
+        "max_output_bytes": 65536,
+        "memory_mb": 256,
+        "pids_limit": 64,
+        "project_id": "1ee42560319f4ef88a3f3ce90b05662d",
+        "recipe_dir": "/private/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmp333o2i4d/synthetic/state.private/runs/926ad4309d0f49caaa38b2ee9451b7cc/recipe",
+        "request_id": "926ad4309d0f49caaa38b2ee9451b7cc",
+        "schema_version": 1,
+        "timeout_seconds": 30
+      },
+      "run": {
+        "cleanup_verified": true,
+        "compute": {
+          "charged_cpu_seconds": 30,
+          "provenance": "estimated_upper_bound",
+          "reserved_cpu_seconds": 30,
+          "unresolved_liability": false
+        },
+        "condition": "alternative",
+        "created_at": "2026-10-18T11:07:15.209413+00:00",
+        "environment": {
+          "image": "python@sha256:229a2c5bfa27522db7815ea81f9bed70af17ccb9de9fc7ad142b1877b5830d36",
+          "runner": "outfitter-docker-v1",
+          "runtime": "python",
+          "specification": {
+            "conditions": {
+              "alternative": "Within each group containing at least five rows, remove one smallest and one largest value; retain all values in smaller groups. Report descriptive counts and means.",
+              "baseline": "Retain every value and report each group count and arithmetic mean, plus the overall count and mean."
+            },
+            "dependencies": {
+              "additional_packages": [],
+              "standard_library": [
+                "csv",
+                "json",
+                "sys"
+              ],
+              "statement": "No packages beyond the runtime standard library are required."
+            },
+            "id": "summary-python-v1",
+            "image": "python@sha256:229a2c5bfa27522db7815ea81f9bed70af17ccb9de9fc7ad142b1877b5830d36",
+            "limitations": [
+              "Public or synthetic data only.",
+              "Descriptive results do not establish scientific validity or statistical significance.",
+              "No independent operator or second-machine reproduction has been recorded."
+            ],
+            "limits": {
+              "cpus": 1,
+              "max_input_bytes": 65536,
+              "max_input_rows": 1000,
+              "max_output_bytes": 65536,
+              "memory_mb": 256,
+              "pids_limit": 64,
+              "timeout_seconds": 30
+            },
+            "name": "Python group summary \u00b7 version 1",
+            "platforms": [
+              {
+                "architecture": "arm64",
+                "evidence_boundary": "Both pinned local image IDs were inspected as linux/arm64 on 2026-10-17. This records image platform identity; execution evidence is stated separately. Other platforms have not been verified.",
+                "evidence_status": "PASS",
+                "os": "linux"
+              }
+            ],
+            "provenance": {
+              "build_inputs": [],
+              "build_inputs_status": "NOT RECORDED",
+              "clean_rebuild": {
+                "boundary": "No image was rebuilt from pinned source/build inputs. Recorded execution of an existing image does not establish reproducible image construction.",
+                "status": "NOT RUN"
+              },
+              "execution_evidence": {
+                "boundary": "Original local browser acceptance executed the synthetic baseline in this pinned image. Its 23 checks are historical evidence, not a repeat acceptance of the later catalog or another machine.",
+                "reference": "research-workspace/evidence/2026-10-17/browser-verification.json",
+                "status": "PASS"
+              },
+              "image_origin": "Pre-existing local runtime image identified by immutable digest. Upstream build source and base-image inputs were not captured.",
+              "repository": "https://github.com/EduCloud-Ecosystem/waypoint",
+              "source_revision": "da4c65530b4ec34676823a466cdce475612fd0fe"
+            },
+            "recipe": "summary-python",
+            "recipe_sha256": "549f064aaaa36ee8259f1f8e2902d0dfb15d071fcb6d9b60e52b266a7bbdb922",
+            "runtime": {
+              "id": "python",
+              "version": "3.12.13",
+              "version_evidence": "PYTHON_VERSION in the pinned local image configuration, inspected 2026-10-17. The runtime version command was not independently executed for this catalog."
+            },
+            "source": "recipes/recipe.py",
+            "status": "active",
+            "validation": {
+              "absolute_tolerance": 1e-09,
+              "exact_fields": [
+                "condition",
+                "group",
+                "count"
+              ],
+              "independent_check": "The service recomputes descriptive results from the submitted input. Mean comparisons use the stated tolerances; object keys, conditions, group strings and counts must match exactly.",
+              "relative_tolerance": 1e-12
+            },
+            "version": 1
+          }
+        },
+        "error": "",
+        "finished_at": "2026-10-18T11:07:15.363011+00:00",
+        "id": "926ad4309d0f49caaa38b2ee9451b7cc",
+        "input_sha256": "0eb98eaefd071f55e7d43d85a15120b4705cf18394f8d5efeb0d3617dbbc6982",
+        "metrics": {
+          "condition": "alternative",
+          "count": 6,
+          "groups": [
+            {
+              "count": 3,
+              "group": "comparison",
+              "mean": 9
+            },
+            {
+              "count": 3,
+              "group": "control",
+              "mean": 6
+            }
+          ],
+          "mean": 7.5
+        },
+        "parameters": {},
+        "project_id": "1ee42560319f4ef88a3f3ce90b05662d",
+        "recipe": "summary-python",
+        "recipe_sha256": "549f064aaaa36ee8259f1f8e2902d0dfb15d071fcb6d9b60e52b266a7bbdb922",
+        "started_at": "2026-10-18T11:07:15.279974+00:00",
+        "status": "succeeded"
+      },
+      "ledger_record": {
+        "admitted": true,
+        "broker_pid": 123,
+        "cleanup_verified": true,
+        "compute": {
+          "charged_cpu_seconds": 30,
+          "provenance": "estimated_upper_bound",
+          "reserved_cpu_seconds": 30
+        },
+        "container_name": "outfitter-ba7790fc9d0ec20b2ad2a8969058215e",
+        "create_ambiguous": false,
+        "create_attempted": true,
+        "create_finished": true,
+        "error": "",
+        "execution_started": true,
+        "exit_code": 0,
+        "image": "python@sha256:229a2c5bfa27522db7815ea81f9bed70af17ccb9de9fc7ad142b1877b5830d36",
+        "owner": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "payload_hash": "966f9e7e48ca26e9b60ef27bb2fa7d5c4e885e7c9f48af2ca193121f1d4691c9",
+        "project_id": "1ee42560319f4ef88a3f3ce90b05662d",
+        "request": {
+          "allow_supervised_reaper": true,
+          "command": [
+            "python",
+            "/recipe/recipe.py",
+            "/input/data.csv",
+            "alternative"
+          ],
+          "cpus": 1,
+          "image": "python@sha256:229a2c5bfa27522db7815ea81f9bed70af17ccb9de9fc7ad142b1877b5830d36",
+          "input_dir": "/private/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmp333o2i4d/synthetic/state.private/runs/926ad4309d0f49caaa38b2ee9451b7cc/input",
+          "isolation": "reviewed-local",
+          "max_output_bytes": 65536,
+          "memory_mb": 256,
+          "pids_limit": 64,
+          "project_id": "1ee42560319f4ef88a3f3ce90b05662d",
+          "recipe_dir": "/private/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/tmp333o2i4d/synthetic/state.private/runs/926ad4309d0f49caaa38b2ee9451b7cc/recipe",
+          "request_id": "926ad4309d0f49caaa38b2ee9451b7cc",
+          "schema_version": 1,
+          "timeout_seconds": 30
+        },
+        "request_id": "926ad4309d0f49caaa38b2ee9451b7cc",
+        "schema_version": 1,
+        "status": "succeeded",
+        "stderr": "",
+        "stdout": "{\"condition\": \"alternative\", \"count\": 6, \"mean\": 7.5, \"groups\": [{\"group\": \"comparison\", \"count\": 3, \"mean\": 9}, {\"group\": \"control\", \"count\": 3, \"mean\": 6}]}",
+        "unresolved_liability": false
+      },
+      "ledger_identity": {
+        "owner": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority_id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "path_sha256": "46dbee18ab071f454f923493874e2c64bf5d5b9030a307288d5841ce8b36ed58"
+      }
+    }
+  ],
+  "refusal_controls": {
+    "queued_cancel": {
+      "cleanup_verified": true,
+      "compute": {
+        "charged_cpu_seconds": 0,
+        "provenance": "not_admitted",
+        "reserved_cpu_seconds": 0,
+        "unresolved_liability": false
+      },
+      "condition": "baseline",
+      "created_at": "2026-10-18T11:07:14.347728+00:00",
+      "environment": {
+        "image": "python@sha256:229a2c5bfa27522db7815ea81f9bed70af17ccb9de9fc7ad142b1877b5830d36",
+        "runner": "outfitter-docker-v1",
+        "runtime": "python",
+        "specification": {
+          "conditions": {
+            "alternative": "Within each group containing at least five rows, remove one smallest and one largest value; retain all values in smaller groups. Report descriptive counts and means.",
+            "baseline": "Retain every value and report each group count and arithmetic mean, plus the overall count and mean."
+          },
+          "dependencies": {
+            "additional_packages": [],
+            "standard_library": [
+              "csv",
+              "json",
+              "sys"
+            ],
+            "statement": "No packages beyond the runtime standard library are required."
+          },
+          "id": "summary-python-v1",
+          "image": "python@sha256:229a2c5bfa27522db7815ea81f9bed70af17ccb9de9fc7ad142b1877b5830d36",
+          "limitations": [
+            "Public or synthetic data only.",
+            "Descriptive results do not establish scientific validity or statistical significance.",
+            "No independent operator or second-machine reproduction has been recorded."
+          ],
+          "limits": {
+            "cpus": 1,
+            "max_input_bytes": 65536,
+            "max_input_rows": 1000,
+            "max_output_bytes": 65536,
+            "memory_mb": 256,
+            "pids_limit": 64,
+            "timeout_seconds": 30
+          },
+          "name": "Python group summary \u00b7 version 1",
+          "platforms": [
+            {
+              "architecture": "arm64",
+              "evidence_boundary": "Both pinned local image IDs were inspected as linux/arm64 on 2026-10-17. This records image platform identity; execution evidence is stated separately. Other platforms have not been verified.",
+              "evidence_status": "PASS",
+              "os": "linux"
+            }
+          ],
+          "provenance": {
+            "build_inputs": [],
+            "build_inputs_status": "NOT RECORDED",
+            "clean_rebuild": {
+              "boundary": "No image was rebuilt from pinned source/build inputs. Recorded execution of an existing image does not establish reproducible image construction.",
+              "status": "NOT RUN"
+            },
+            "execution_evidence": {
+              "boundary": "Original local browser acceptance executed the synthetic baseline in this pinned image. Its 23 checks are historical evidence, not a repeat acceptance of the later catalog or another machine.",
+              "reference": "research-workspace/evidence/2026-10-17/browser-verification.json",
+              "status": "PASS"
+            },
+            "image_origin": "Pre-existing local runtime image identified by immutable digest. Upstream build source and base-image inputs were not captured.",
+            "repository": "https://github.com/EduCloud-Ecosystem/waypoint",
+            "source_revision": "da4c65530b4ec34676823a466cdce475612fd0fe"
+          },
+          "recipe": "summary-python",
+          "recipe_sha256": "549f064aaaa36ee8259f1f8e2902d0dfb15d071fcb6d9b60e52b266a7bbdb922",
+          "runtime": {
+            "id": "python",
+            "version": "3.12.13",
+            "version_evidence": "PYTHON_VERSION in the pinned local image configuration, inspected 2026-10-17. The runtime version command was not independently executed for this catalog."
+          },
+          "source": "recipes/recipe.py",
+          "status": "active",
+          "validation": {
+            "absolute_tolerance": 1e-09,
+            "exact_fields": [
+              "condition",
+              "group",
+              "count"
+            ],
+            "independent_check": "The service recomputes descriptive results from the submitted input. Mean comparisons use the stated tolerances; object keys, conditions, group strings and counts must match exactly.",
+            "relative_tolerance": 1e-12
+          },
+          "version": 1
+        }
+      },
+      "error": "Cancelled before dispatch; access or the project run period ended.",
+      "finished_at": "2026-10-18T11:07:14.454566+00:00",
+      "id": "bd51c2bb23cd4b49ba94ea83ec47ae29",
+      "input_sha256": "054ee89fec327e9a9292e1008d465c3190cfe3819a259ddce2d32e9e5a6a5360",
+      "metrics": {},
+      "parameters": {},
+      "project_id": "d6a80eb11b6943c39f5c8a87bfb0790c",
+      "recipe": "summary-python",
+      "recipe_sha256": "549f064aaaa36ee8259f1f8e2902d0dfb15d071fcb6d9b60e52b266a7bbdb922",
+      "started_at": null,
+      "status": "cancelled"
+    },
+    "current_access": {
+      "cleanup_verified": true,
+      "compute": {
+        "charged_cpu_seconds": 0,
+        "provenance": "not_admitted",
+        "reserved_cpu_seconds": 0,
+        "unresolved_liability": false
+      },
+      "condition": "baseline",
+      "created_at": "2026-10-18T11:07:14.507607+00:00",
+      "environment": {
+        "image": "python@sha256:229a2c5bfa27522db7815ea81f9bed70af17ccb9de9fc7ad142b1877b5830d36",
+        "runner": "outfitter-docker-v1",
+        "runtime": "python",
+        "specification": {
+          "conditions": {
+            "alternative": "Within each group containing at least five rows, remove one smallest and one largest value; retain all values in smaller groups. Report descriptive counts and means.",
+            "baseline": "Retain every value and report each group count and arithmetic mean, plus the overall count and mean."
+          },
+          "dependencies": {
+            "additional_packages": [],
+            "standard_library": [
+              "csv",
+              "json",
+              "sys"
+            ],
+            "statement": "No packages beyond the runtime standard library are required."
+          },
+          "id": "summary-python-v1",
+          "image": "python@sha256:229a2c5bfa27522db7815ea81f9bed70af17ccb9de9fc7ad142b1877b5830d36",
+          "limitations": [
+            "Public or synthetic data only.",
+            "Descriptive results do not establish scientific validity or statistical significance.",
+            "No independent operator or second-machine reproduction has been recorded."
+          ],
+          "limits": {
+            "cpus": 1,
+            "max_input_bytes": 65536,
+            "max_input_rows": 1000,
+            "max_output_bytes": 65536,
+            "memory_mb": 256,
+            "pids_limit": 64,
+            "timeout_seconds": 30
+          },
+          "name": "Python group summary \u00b7 version 1",
+          "platforms": [
+            {
+              "architecture": "arm64",
+              "evidence_boundary": "Both pinned local image IDs were inspected as linux/arm64 on 2026-10-17. This records image platform identity; execution evidence is stated separately. Other platforms have not been verified.",
+              "evidence_status": "PASS",
+              "os": "linux"
+            }
+          ],
+          "provenance": {
+            "build_inputs": [],
+            "build_inputs_status": "NOT RECORDED",
+            "clean_rebuild": {
+              "boundary": "No image was rebuilt from pinned source/build inputs. Recorded execution of an existing image does not establish reproducible image construction.",
+              "status": "NOT RUN"
+            },
+            "execution_evidence": {
+              "boundary": "Original local browser acceptance executed the synthetic baseline in this pinned image. Its 23 checks are historical evidence, not a repeat acceptance of the later catalog or another machine.",
+              "reference": "research-workspace/evidence/2026-10-17/browser-verification.json",
+              "status": "PASS"
+            },
+            "image_origin": "Pre-existing local runtime image identified by immutable digest. Upstream build source and base-image inputs were not captured.",
+            "repository": "https://github.com/EduCloud-Ecosystem/waypoint",
+            "source_revision": "da4c65530b4ec34676823a466cdce475612fd0fe"
+          },
+          "recipe": "summary-python",
+          "recipe_sha256": "549f064aaaa36ee8259f1f8e2902d0dfb15d071fcb6d9b60e52b266a7bbdb922",
+          "runtime": {
+            "id": "python",
+            "version": "3.12.13",
+            "version_evidence": "PYTHON_VERSION in the pinned local image configuration, inspected 2026-10-17. The runtime version command was not independently executed for this catalog."
+          },
+          "source": "recipes/recipe.py",
+          "status": "active",
+          "validation": {
+            "absolute_tolerance": 1e-09,
+            "exact_fields": [
+              "condition",
+              "group",
+              "count"
+            ],
+            "independent_check": "The service recomputes descriptive results from the submitted input. Mean comparisons use the stated tolerances; object keys, conditions, group strings and counts must match exactly.",
+            "relative_tolerance": 1e-12
+          },
+          "version": 1
+        }
+      },
+      "error": "Cancelled before dispatch.",
+      "finished_at": "2026-10-18T11:07:14.646735+00:00",
+      "id": "fd40f5155b364dd2b441bb9a27f4efd3",
+      "input_sha256": "054ee89fec327e9a9292e1008d465c3190cfe3819a259ddce2d32e9e5a6a5360",
+      "metrics": {},
+      "parameters": {},
+      "project_id": "d6a80eb11b6943c39f5c8a87bfb0790c",
+      "recipe": "summary-python",
+      "recipe_sha256": "549f064aaaa36ee8259f1f8e2902d0dfb15d071fcb6d9b60e52b266a7bbdb922",
+      "started_at": "2026-10-18T11:07:14.576116+00:00",
+      "status": "cancelled"
+    }
+  },
+  "artifacts": {
+    "projects.json": {
+      "sha256": "08b9ce7ce3a275197daed5033166f75589fbaaa7e6a5c1747bfeec526db1a345",
+      "bytes": 89
+    },
+    "1-request.private.json": {
+      "sha256": "5b19f6e40381e0af1bbc84486b2c1090c60c085ae72fb9bddf249dc0f2cb9960",
+      "bytes": 726
+    },
+    "1-ledger-before.private.json": {
+      "sha256": "ef27b43f69428a86f614143f83d9f972a7069b72a496b1d3e8f170b973c37f5b",
+      "bytes": 578
+    },
+    "1-binding.private.json": {
+      "sha256": "44259bd886b9a893ad25bd2d1d382c4d98bc5abfd26dad48fc64fea7f07146b4",
+      "bytes": 1300
+    },
+    "1-receipt.private.json": {
+      "sha256": "be163a6ef89127e256fe87b1cbc857089eb93a219c49e3e5d5078244f68f5e6d",
+      "bytes": 644
+    },
+    "1-ledger-after.private.json": {
+      "sha256": "31d2b738d84595ea0abfc98b90347962c6ed869e020cb68c2a8e2742f75038e3",
+      "bytes": 2270
+    },
+    "1-run.json": {
+      "sha256": "45b65a02ea7cefb3e03787898bdb9a93a4ea63ac7472979602a02a328019557a",
+      "bytes": 3809
+    },
+    "1-container-observation.json": {
+      "sha256": "d48ee3f9b7d799fc4a6f4d45405eaa521c2de97fc12e0270856fdd992641dac6",
+      "bytes": 223
+    },
+    "2-request.private.json": {
+      "sha256": "1c985c93dd1800f8f5f393302791c0612e1f56af4fb40ed0969e87946d52f775",
+      "bytes": 741
+    },
+    "2-ledger-before.private.json": {
+      "sha256": "31d2b738d84595ea0abfc98b90347962c6ed869e020cb68c2a8e2742f75038e3",
+      "bytes": 2270
+    },
+    "2-binding.private.json": {
+      "sha256": "ba28cdce8cedcb6127f8ddb071da3403ee54d68d090ab3a180757b77cd9bcdc5",
+      "bytes": 1298
+    },
+    "2-receipt.private.json": {
+      "sha256": "d77411ab860185132de1b4a7ff6a474f4b975c6b3373db6b4b30c9cf84b3d7ca",
+      "bytes": 646
+    },
+    "2-ledger-after.private.json": {
+      "sha256": "be094c7186e108674562fcd43605157bc67aed7475fbe0c237d9d290728f6e74",
+      "bytes": 3980
+    },
+    "2-run.json": {
+      "sha256": "44e01b9d7a9e1464c06598495d00bfb8e5a92121a4e8acecf96faa92eebc8541",
+      "bytes": 3851
+    },
+    "2-container-observation.json": {
+      "sha256": "af3ebcd1fd8db0af0435e6d8110e2dc900b58e75ee649bea95e3b3dc32c23016",
+      "bytes": 223
+    },
+    "3-request.private.json": {
+      "sha256": "130298381a5d8e0eedf3772131893930ecb5c7f654c361e5c63af688978224f1",
+      "bytes": 738
+    },
+    "3-ledger-before.private.json": {
+      "sha256": "be094c7186e108674562fcd43605157bc67aed7475fbe0c237d9d290728f6e74",
+      "bytes": 3980
+    },
+    "3-binding.private.json": {
+      "sha256": "51d78ef3cb2003aaddf91b80c2d10c59d7f07849da210a715bbb32a07d0c13ab",
+      "bytes": 1296
+    },
+    "3-receipt.private.json": {
+      "sha256": "3711c90658deb17833161fff7e5cfd2181661b318725f9a2b0253170780c6005",
+      "bytes": 650
+    },
+    "3-ledger-after.private.json": {
+      "sha256": "def5ce3a967f2aed68f14e4831b3b61096731dfc11258abf825c16e5dc1e67fa",
+      "bytes": 5691
+    },
+    "3-run.json": {
+      "sha256": "cc26906f7ff3402f104bcbefa88bade2876ec6e4859dcffbf92867ccba0d64c6",
+      "bytes": 3852
+    },
+    "3-container-observation.json": {
+      "sha256": "b35cb438c88c1aec3043e4e40b57bcdada58dabaee43169d5d60ee571368650e",
+      "bytes": 223
+    },
+    "4-request.private.json": {
+      "sha256": "3fb4e2cb02274ebe953af186ac57529f03c37c607ad6f344008336ac3cdf3519",
+      "bytes": 729
+    },
+    "4-ledger-before.private.json": {
+      "sha256": "def5ce3a967f2aed68f14e4831b3b61096731dfc11258abf825c16e5dc1e67fa",
+      "bytes": 5691
+    },
+    "4-binding.private.json": {
+      "sha256": "4e46112696729aa93813f26db01fba265354537571311be94b08a064e7317eeb",
+      "bytes": 1304
+    },
+    "4-receipt.private.json": {
+      "sha256": "2cdbbaf84fccfd78d7112a1da583e013fc9b034710284c76f9e5c5eba4b31464",
+      "bytes": 653
+    },
+    "4-ledger-after.private.json": {
+      "sha256": "3b8f065a6d388907ec70367b08bd7c094fdce2b925d22fe9a39c77bca1f0d907",
+      "bytes": 7396
+    },
+    "4-run.json": {
+      "sha256": "363bf57978d7536d32555a68673810918a1240a9a16f5523b663333571fa39b9",
+      "bytes": 3821
+    },
+    "4-container-observation.json": {
+      "sha256": "76d607c6c727b96fd378da934dfa726f04acef5291050f0c4694175b4017e241",
+      "bytes": 223
+    },
+    "first-project.zip": {
+      "sha256": "059bf73a78c8a8f7cefec1583ce9a5649579c798753be4fe9eb00791675fb26b",
+      "bytes": 34771
+    },
+    "second-project.zip": {
+      "sha256": "2fde017a43c89cc0264c1b3dd869f7773825cf125f9ea9ef8491e5b4d096366f",
+      "bytes": 21673
+    },
+    "final-ledger.private.json": {
+      "sha256": "3b8f065a6d388907ec70367b08bd7c094fdce2b925d22fe9a39c77bca1f0d907",
+      "bytes": 7396
+    }
+  },
+  "attempt_limit": 4,
+  "conservative_cpu_seconds": 120,
+  "charged_cpu_seconds": 120,
+  "quota_enforced": false,
+  "available_capacity": "UNKNOWN",
+  "fifth_headroom": "FAIL_UNCHANGED",
+  "failure_boundary": "Interrupted/partial exercise requires manual review; no resume or new allowance."
+}

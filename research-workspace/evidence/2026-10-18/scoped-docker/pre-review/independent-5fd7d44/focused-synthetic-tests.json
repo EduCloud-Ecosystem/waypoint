@@ -1,0 +1,6 @@
+{
+  "candidate": "5fd7d445855b191fd2f20eee218a4860961cf38e",
+  "returncode": 0,
+  "seconds": 8.875738999980967,
+  "scope": "Focused synthetic test module; Docker, real broker and production CLI init are mocked."
+}

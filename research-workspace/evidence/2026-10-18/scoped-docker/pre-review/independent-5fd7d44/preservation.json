@@ -1,0 +1,83 @@
+{
+  "original_directory": "/Users/gregchism/Documents/Codex/2026-10-18/waypoint-scoped-docker-independent-review/final-5fd7d44",
+  "retained_files": {
+    "extra-ledger-project-report.json": {
+      "sha256": "1e05e5b05bf000916eb3780809a19010683836b58353347bba2fd59b7353d90e",
+      "bytes": 63010
+    },
+    "focused-synthetic-tests.json": {
+      "sha256": "c32b83b6dcf959f6ef44d749d10ff733230127064642aa05cd14dc35d4e94162",
+      "bytes": 214
+    },
+    "focused-synthetic-tests.log": {
+      "sha256": "abe5f041091146b2e69ff3369c65dded93ad806c633352de243ed89156c6c4a6",
+      "bytes": 2920
+    },
+    "independent-ledger-probe-results.json": {
+      "sha256": "089de3508e6e8a75404f7ba4ff6aac06bfd7f6cee570262f63d4c49814d92c0d",
+      "bytes": 893
+    },
+    "independent_diagnostic_correlation_probe.py": {
+      "sha256": "04364431b1de1ef119cacd864a87779546163eb4b6db5f8dca665e8fe1620969",
+      "bytes": 2636
+    },
+    "independent_ledger_probes.py": {
+      "sha256": "56481fdb55941b4676311cda806ea8a48f18d3d711d775d94f7e852c90c76a20",
+      "bytes": 1710
+    },
+    "mismatched-diagnostics/5ae1472927a0fca1e50056c63d638494da9ff3b01f4958a722c8ec20c21f437d.json": {
+      "sha256": "5ae1472927a0fca1e50056c63d638494da9ff3b01f4958a722c8ec20c21f437d",
+      "bytes": 225
+    },
+    "mismatched-diagnostics/733ed0b5cdb1c5bce3f33dc00283b09045f0ab72c20bacf9d4eba58566101205.json": {
+      "sha256": "733ed0b5cdb1c5bce3f33dc00283b09045f0ab72c20bacf9d4eba58566101205",
+      "bytes": 226
+    },
+    "mismatched-diagnostics/8fb36686977863d0a01409d378d59c5bb863175702b40e02c89a4a5339aaff79.json": {
+      "sha256": "8fb36686977863d0a01409d378d59c5bb863175702b40e02c89a4a5339aaff79",
+      "bytes": 218
+    },
+    "mismatched-diagnostics/c11976e8bed22ff06087fbfa0c712fd2ed23b6d656047048a2c32c013d8c6722.json": {
+      "sha256": "c11976e8bed22ff06087fbfa0c712fd2ed23b6d656047048a2c32c013d8c6722",
+      "bytes": 219
+    },
+    "mismatched-diagnostics-report.json": {
+      "sha256": "9081e51d71d9fa9289b52c1da29c87ab5f138d1e0f68f409141c26f163b1a66b",
+      "bytes": 27396
+    },
+    "mismatched-diagnostics-result.json": {
+      "sha256": "22921b58ce8a00bfe18ab28c20e5296d5fe88fd9a503e504c8e37753da0270d5",
+      "bytes": 2608
+    },
+    "missing-output-binding-report.json": {
+      "sha256": "e755d31ffdd150e494b1e78d03e4d784e6b7d0cc6fd6564c296316caa611a618",
+      "bytes": 63298
+    },
+    "review-sha256.json": {
+      "sha256": "537c02b60ee3d8b9db6eddb14c6667e043df4d4a68bb321c499248589f04a9b3",
+      "bytes": 171
+    },
+    "review.json": {
+      "sha256": "ce992af00fe20e2051198c79e1fc56a698c16a9c88a1f1cdb887a658731ede92",
+      "bytes": 12176
+    },
+    "review.md": {
+      "sha256": "5d9fe0a7d4b64a186644197bbf7e6f325bc66eb246cea16bef763c84edb8a0de",
+      "bytes": 2743
+    },
+    "source-manifest.json": {
+      "sha256": "5ae8911ac6a0bd6d4ad1b4f052ab9289fd12b0a6a7f2eb08c2eec002e1c4d4f1",
+      "bytes": 161823
+    },
+    "wrong-output-binding-report.json": {
+      "sha256": "e86be98603627de53cc767810c09d74df6209241b2b2deadc3ce0c6e404ad30f",
+      "bytes": 63678
+    },
+    "wrong-project-budget-report.json": {
+      "sha256": "b300e2fda1b3d9f79ef19d2c785d40beb29ae6d11c4b2c7bea6ad3093dcaa264",
+      "bytes": 63010
+    }
+  },
+  "originals_unchanged": true,
+  "scope": "Synthetic review witnesses only; no actual Docker execution."
+}

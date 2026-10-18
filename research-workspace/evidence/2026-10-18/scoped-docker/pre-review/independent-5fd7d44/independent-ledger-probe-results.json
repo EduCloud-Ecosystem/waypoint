@@ -1,0 +1,34 @@
+[
+  {
+    "case": "missing-output-binding",
+    "observed_status": "PASS",
+    "failure": null,
+    "attempts": 4,
+    "charged_cpu_seconds": 120,
+    "provider": "all external effects simulated by retained test fixture"
+  },
+  {
+    "case": "wrong-output-binding",
+    "observed_status": "PASS",
+    "failure": null,
+    "attempts": 4,
+    "charged_cpu_seconds": 120,
+    "provider": "all external effects simulated by retained test fixture"
+  },
+  {
+    "case": "wrong-project-budget",
+    "observed_status": "PASS",
+    "failure": null,
+    "attempts": 4,
+    "charged_cpu_seconds": 120,
+    "provider": "all external effects simulated by retained test fixture"
+  },
+  {
+    "case": "extra-ledger-project",
+    "observed_status": "PASS",
+    "failure": null,
+    "attempts": 4,
+    "charged_cpu_seconds": 120,
+    "provider": "all external effects simulated by retained test fixture"
+  }
+]

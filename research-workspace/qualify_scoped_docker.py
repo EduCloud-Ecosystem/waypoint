@@ -16,6 +16,7 @@ import math
 import os
 from pathlib import Path
 import signal
+import stat
 import subprocess
 import sys
 import tarfile
@@ -30,15 +31,16 @@ from research_workspace.identity import Identity
 from research_workspace.runtime import Broker, strict_json, validate_receipt
 from research_workspace.server import Application, Handler, Server
 from research_workspace.store import canonical
+PINS = Path(__file__).resolve().parent / 'qualification/broker-upgrade/pins.json'
 
 HERE = Path(__file__).resolve().parent
 BASE = '0efc6fd734e7f812cabc3822d2ea93b8c1063752'
 EXERCISE = 'waypoint-v4-docker-20261018-01'
 DESTINATION = Path('/Users/gregchism/Documents/Codex/2026-10-18') / EXERCISE
-# Already reviewed P1 executable, retained unchanged in its original worktree.
-BROKER = Path('/Users/gregchism/dev/.educloud-worktrees/outfitter-recovery/bin/outfitter')
-BROKER_SHA = '598462bd0ac50dbffa3392792b574c5e6837ebc8235f23c98922b39ceaf4a32e'
-BROKER_COMMIT = '5827c84e9952cc67b85e91ceff4282e0ead6923b'
+# Retained PR44 preparation for the accepted current Outfitter16 broker.
+BROKER = Path('/private/var/folders/kl/3pnz2w2j2858c3gfr4429gn40000gn/T/educloud-broker-upgrade-build-_kdcsi3d/qualified/candidate')
+BROKER_SHA = '1bf1ce898d6d10e574ab7b2f79a830fa94fa740867e208470bfc15790dc41bb1'
+BROKER_COMMIT = '5446438985e31cb739f2048a2aa2176918831a7e'
 IMAGES = {
     'python': 'python@sha256:229a2c5bfa27522db7815ea81f9bed70af17ccb9de9fc7ad142b1877b5830d36',
     'r': 'r-base@sha256:fa1972f31def171b83e0911e947ab8b57db143f0fc8a67af4c0d5ac329041646',
@@ -110,12 +112,27 @@ def source_hashes():
     files = {p for folder in ('research_workspace', 'recipes', 'static', 'examples')
              for p in (HERE / folder).rglob('*') if p.is_file() and '__pycache__' not in p.parts}
     files.update(HERE / name for name in ('qualify_scoped_docker.py', 'tests/test_scoped_docker_qualification.py',
-                 'environments.json', 'images.lock.json'))
+                 'environments.json', 'images.lock.json', 'qualification/broker-upgrade/pins.json',
+                 'evidence/2026-10-18/broker-upgrade/verification.json'))
     return {p.relative_to(HERE).as_posix(): file_hash(p) for p in sorted(files)}
 
 
 def prerequisites(bound=None):
     require(file_hash(BROKER) == BROKER_SHA and os.access(BROKER, os.X_OK), 'Reviewed existing broker unavailable')
+    pin = strict_json(PINS.read_bytes())['candidate']
+    identity = strict_json((HERE / 'evidence/2026-10-18/broker-upgrade/verification.json').read_bytes())['provenance']['candidate']
+    attestation_path = BROKER.with_name('candidate.provenance.json')
+    attestation = strict_json(attestation_path.read_bytes())
+    metadata = observe(['go', 'version', '-m', str(BROKER)]).decode().splitlines()[1:]
+    require(identity['source_commit'] == BROKER_COMMIT and identity['sha256'] == BROKER_SHA
+            and identity['source_sha256'] == pin['source_sha256'] and identity['source_tree'] == pin['tree']
+            and identity['build_manifest_sha256'] == file_hash(attestation_path)
+            and identity['build_metadata'] == metadata, 'Accepted broker provenance mismatch')
+    require(attestation['format'] == 'waypoint-broker-build-v1' and attestation['pin'] == pin
+            and attestation['binary_sha256'] == BROKER_SHA and attestation['build_metadata'] == metadata
+            and attestation['pins_sha256'] == file_hash(PINS), 'Retained broker preparation mismatch')
+    for name, expected in pin['source_sha256'].items():
+        require(file_hash(BROKER.parent / 'candidate-source' / name) == expected, 'Retained compiled source changed')
     if bound is None:
         require(not os.environ.get('DOCKER_HOST') and not os.environ.get('DOCKER_CONTEXT'), 'Use the reviewed local Docker context without overrides')
         context = observe(['docker', 'context', 'show']).decode().strip()
@@ -138,7 +155,7 @@ def prerequisites(bound=None):
         images[runtime] = dict(reference=image, id=details['Id'], platform='linux/arm64')
     return dict(context=context, endpoint=endpoint, endpoint_sha256=digest(endpoint.encode()), daemon_id_sha256=digest(info['ID'].encode()),
                 server_version=info['ServerVersion'], ncpu=info['NCPU'], memory_bytes=info['MemTotal'], images=images,
-                broker_sha256=BROKER_SHA, broker_source_commit=BROKER_COMMIT,
+                broker_sha256=BROKER_SHA, broker_source_commit=BROKER_COMMIT, broker_provenance=identity,
                 broker_build_metadata=observe(['go', 'version', '-m', str(BROKER)]).decode().splitlines()[1:],
                 capacity_boundary='Existing local machine with required caps; no free-capacity, quota or termination guarantee.')
 
@@ -160,7 +177,7 @@ def prepare(destination):
                     source_commit=observe(['git', '-C', str(HERE), 'rev-parse', 'HEAD']).decode().strip(),
                     runtime_base=BASE, sources=sources, source_archive_sha256=digest(archive),
                     broker_path=str(BROKER), broker_sha256=BROKER_SHA, broker_source_commit=BROKER_COMMIT,
-                    broker_evidence='evidence/2026-10-17/p1/http-docker-verification.json',
+                    broker_evidence='evidence/2026-10-18/broker-upgrade/verification.json',
                     images=IMAGES, attempts=MATRIX, oracles=ORACLES, limits=CAPS,
                     attempt_limit=4, conservative_cpu_seconds=120, project_budget_cpu_seconds=60,
                     required_controls=sorted(REQUIRED), status='PENDING_REVIEW',
@@ -225,8 +242,43 @@ def planned_request(index, rid, pid, state):
                 isolation='reviewed-local', allow_supervised_reaper=True)
 
 
-def verify_settlement(binding, request, receipt, data, run):
+def verify_projects(data, projects):
+    require(set(projects) == {'first', 'second'} and len(set(projects.values())) == 2, 'Exactly two project identities required')
+    expected = {pid: dict(project_id=pid, budget_cpu_seconds=60) for pid in projects.values()}
+    require(set(data) == {'version', 'owner', 'authority', 'projects', 'runs'}, 'Unexpected ledger authority population')
+    require(encoded(data['projects']) == encoded(expected), 'Ledger project population or budgets differ from manifest')
+    return digest(encoded(expected))
+
+
+def read_diagnostic(state, record):
+    reference = record.get('output_sha256')
+    require(type(reference) is str and len(reference) == 64 and all(c in '0123456789abcdef' for c in reference), 'Missing diagnostic reference')
+    size = record.get('output_bytes')
+    require(type(size) is int and 0 < size <= 6 * CAPS['max_output_bytes'] + 512, 'Invalid diagnostic byte count')
+    path = Path(state) / 'outputs' / (reference + '.json')
+    descriptor = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+    with os.fdopen(descriptor, 'rb') as source:
+        info = os.fstat(source.fileno())
+        require(stat.S_ISREG(info.st_mode) and info.st_size == size, 'Diagnostic is not the retained bounded regular file')
+        content = source.read(size + 1)
+    require(len(content) == size and digest(content) == reference, 'Diagnostic byte/hash mismatch')
+    return content
+
+
+def verify_diagnostic(record, receipt, content):
+    require(type(content) is bytes and len(content) <= 6 * CAPS['max_output_bytes'] + 512, 'Invalid diagnostic content')
+    require(type(record.get('output_bytes')) is int and len(content) == record['output_bytes']
+            and digest(content) == record.get('output_sha256'), 'Ledger diagnostic binding differs')
+    require(not record.get('output_error') and not receipt.get('output_error'), 'Diagnostic persistence/retrieval failed')
+    expected = dict(stdout=receipt['stdout'], stderr=receipt['stderr'])
+    require(encoded(strict_json(content)) == encoded(expected), 'Receipt differs from retained ledger diagnostics')
+    require(sum(len(v.encode()) for v in expected.values()) <= CAPS['max_output_bytes'], 'Combined diagnostic output exceeds cap')
+
+
+def verify_settlement(binding, request, receipt, data, run, diagnostics, projects):
     """Join the generic receipt to retained prelaunch, ledger and application evidence."""
+    require(verify_projects(data, projects) == binding['project_authority_sha256'], 'Project authority changed')
+    require(binding['project_id'] == projects[MATRIX[binding['index']]['project']], 'Wrong planned project')
     validate_receipt(receipt, run)
     require(settled(receipt), 'Partial/unknown/zero-charge receipt is not qualification success')
     planned = planned_request(binding['index'], binding['request_id'], binding['project_id'], binding['ledger_path'])
@@ -237,6 +289,7 @@ def verify_settlement(binding, request, receipt, data, run):
     require(ledger_identity(data, Path(binding['ledger_path'])) == binding['ledger_identity'], 'Ledger identity changed')
     for key in ('request_id', 'project_id', 'image'):
         require(record[key] == receipt[key] == request[key] == binding[key], 'Receipt/request/ledger identity mismatch')
+    verify_diagnostic(record, receipt, diagnostics)
     require(record['owner'] == binding['ledger_identity']['owner'], 'Wrong request owner')
     require(encoded(record['request']) == encoded(request), 'Ledger request differs from prelaunch bytes')
     require(settled(record) and record['compute'] == receipt['compute'], 'Ledger must independently retain the full charge')
@@ -247,6 +300,38 @@ def verify_settlement(binding, request, receipt, data, run):
             and encoded({k: run['compute'][k] for k in receipt['compute']}) == encoded(receipt['compute']), 'Application accounting differs')
     require(oracle_matches(run['metrics'], ORACLES[binding['index']]) and oracle_matches(strict_json(receipt['stdout']), ORACLES[binding['index']]), 'Independent fixture result mismatch')
     return record['container_name']
+
+
+PROJECT_FIELDS = {'id', 'name', 'question', 'success_criterion', 'created_at', 'ends_at', 'budget_cpu_seconds', 'status'}
+RUN_FIELDS = {'id', 'project_id', 'recipe', 'condition', 'status', 'created_at', 'started_at', 'finished_at',
+              'input_sha256', 'recipe_sha256', 'environment', 'parameters', 'metrics', 'error', 'cleanup_verified', 'compute'}
+
+
+def verify_public_export(payload, project, expected_runs, result_hashes):
+    require(type(payload) is bytes and len(payload) <= MAX_ARCHIVE_BYTES, 'Export exceeds bound')
+    verified = verify_bundle(payload)
+    require(verified['valid'] is True and verified['run_count'] == len(expected_runs) and bool(expected_runs), 'Incomplete public export')
+    expected = {run['id']: {key: run[key] for key in RUN_FIELDS} for run in expected_runs}
+    require(len(expected) == len(expected_runs), 'Duplicate expected export run')
+    with zipfile.ZipFile(io.BytesIO(payload)) as archive:
+        require(encoded(strict_json(archive.read('project.json'))) == encoded({key: project[key] for key in PROJECT_FIELDS}), 'Export project differs from captured HTTP project')
+        runs = strict_json(archive.read('runs.json'))
+        require(len(runs) == len(expected) and {run['id'] for run in runs} == set(expected), 'Export omitted or added run history')
+        for run in runs:
+            saved = expected[run['id']]
+            require(encoded(run) == encoded(saved), 'Export status/accounting/lineage/metrics differ from captured HTTP record')
+            prefix = 'runs/' + run['id'] + '/'
+            recipe = 'recipe.py' if run['recipe'] == 'summary-python' else 'recipe.R'
+            require(digest(archive.read(prefix + 'input.csv')) == saved['input_sha256'], 'Export input differs')
+            require(digest(archive.read(prefix + recipe)) == saved['recipe_sha256'], 'Export recipe differs')
+            if saved['status'] == 'succeeded':
+                result = archive.read(prefix + 'result.json')
+                require(digest(result) == result_hashes[run['id']] and oracle_matches(strict_json(result), saved['metrics']), 'Export result differs from captured bytes/oracle')
+            else:
+                require(prefix + 'result.json' not in archive.namelist(), 'Refused run acquired a result')
+    return dict(project_id=project['id'], run_ids=sorted(expected),
+                project_sha256=digest(encoded({key: project[key] for key in PROJECT_FIELDS})),
+                records_sha256=digest(encoded(expected)), archive_sha256=digest(payload))
 
 
 def accepted(report, manifest):
@@ -265,19 +350,28 @@ def accepted(report, manifest):
                     and binding['image_id'] == manifest['prerequisites']['images'][plan['runtime']]['id']
                     and binding['ledger_path'] == str(Path(manifest['output']) / 'state.private/broker'), 'Wrong source, image or ledger binding')
             require(attempt['binding_sha256'] == digest(encoded(binding)), 'Changed binding')
+            require(attempt.get('dispatch_boundary_entered') is True and attempt.get('outcome') == 'succeeded'
+                    and not attempt.get('charge_regression_observed'), 'Incomplete dispatch or observed charge regression')
+            require(type(attempt.get('observed_charged_cpu_seconds')) is int and attempt['observed_charged_cpu_seconds'] == 30
+                    and type(attempt.get('observed_reserved_cpu_seconds')) is int and attempt['observed_reserved_cpu_seconds'] == 30,
+                    'Missing full correlated accounting observation')
             require(settled(attempt['final_receipt']) and attempt['ledger_verified'] is True and attempt['container_absent'] is True, 'Unsettled attempt')
             require(all(attempt['final_receipt'][k] == binding[k] for k in ('request_id', 'project_id', 'image')), 'Generic receipt cannot pass')
             require(oracle_matches(attempt['metrics'], ORACLES[index]), 'Wrong numerical oracle')
             require(binding['manifest_sha256'] == report['manifest_sha256'] and attempt['ledger_identity'] == binding['ledger_identity'], 'Different manifest/ledger')
             identity = attempt['ledger_identity']
             ledger = dict(version=2, owner=identity['owner'], authority=dict(authority_id=identity['authority_id'],
-                          state_path=binding['ledger_path'], admission='active'), runs={binding['request_id']: attempt['ledger_record']})
-            verify_settlement(binding, attempt['request'], attempt['final_receipt'], ledger, attempt['run'])
+                          state_path=binding['ledger_path'], admission='active'),
+                          projects={pid: dict(project_id=pid, budget_cpu_seconds=60) for pid in report['projects'].values()},
+                          runs={binding['request_id']: attempt['ledger_record']})
+            verify_settlement(binding, attempt['request'], attempt['final_receipt'], ledger, attempt['run'],
+                              attempt['diagnostics_utf8'].encode(), report['projects'])
         identities = [a['binding']['ledger_identity'] for a in attempts]
         require(all(x == identities[0] for x in identities), 'Multiple ledger authorities')
         pids = [a['binding']['project_id'] for a in attempts]
         require(pids[0] == pids[1] and pids[2] == pids[3] and pids[0] != pids[2], 'Wrong project matrix')
-        require(type(report['charged_cpu_seconds']) is int and report['charged_cpu_seconds'] == 120, 'Full conservative charges required')
+        require(type(report['charged_cpu_seconds']) is int and report['charged_cpu_seconds'] == 120
+                and report['accounting_complete'] is True, 'Full conservative charges required')
         return True
     except (ValueError, TypeError, KeyError, IndexError, AttributeError):
         return False
@@ -293,8 +387,8 @@ class Audit:
                   output=str(self.root), status='STARTED_NO_RESUME', attempt_limit=4)))
         self.root.mkdir(mode=0o700, exist_ok=False)
         self.report = dict(format=FORMAT, exercise=EXERCISE, status='FAIL', manifest_sha256=manifest_sha,
-                           checks={}, attempts=[], refusal_controls={}, artifacts={}, attempt_limit=4, conservative_cpu_seconds=120,
-                           charged_cpu_seconds=0, quota_enforced=False, available_capacity='UNKNOWN',
+                           checks={}, attempts=[], refusal_controls={}, projects={}, project_records={}, artifacts={}, attempt_limit=4, conservative_cpu_seconds=120,
+                           charged_cpu_seconds=0, accounting_complete=False, potential_intent_cpu_seconds=0, quota_enforced=False, available_capacity='UNKNOWN',
                            fifth_headroom='FAIL_UNCHANGED', failure_boundary='Interrupted/partial exercise requires manual review; no resume or new allowance.')
         exclusive(self.root / 'manifest.json', encoded(manifest))
         self.save()
@@ -318,6 +412,43 @@ class Audit:
     def ledger(self):
         return strict_json((self.state / 'broker/ledger.json').read_bytes())
 
+    def observe_accounting(self, data=None):
+        """Retain monotonic known charges even when a later check cannot finish.
+
+        These are correlated ledger observations, not an accepted outcome or
+        independent cleanup assertion. Missing observations leave exposure open.
+        """
+        data = self.ledger() if data is None else data
+        for attempt in self.report['attempts']:
+            binding = attempt['binding']; record = data.get('runs', {}).get(binding['request_id'])
+            if record is None:
+                attempt['accounting_observation'] = 'NO_RECORD_OBSERVED; exposure not resolved'
+                continue
+            if (ledger_identity(data, Path(binding['ledger_path'])) != binding['ledger_identity']
+                    or record.get('owner') != binding['ledger_identity']['owner']
+                    or any(record.get(key) != binding[key] for key in ('request_id', 'project_id', 'image'))
+                    or digest(canonical(record.get('request')).encode()) != binding['request_sha256']):
+                attempt['accounting_observation'] = 'IDENTITY_MISMATCH; prior known charge retained'
+                continue
+            compute = record.get('compute', {})
+            reserved = compute.get('reserved_cpu_seconds'); charged = compute.get('charged_cpu_seconds')
+            if type(reserved) is not int or type(charged) is not int or not 0 <= charged <= reserved <= 30:
+                attempt['accounting_observation'] = 'INVALID_AMOUNTS; prior known charge retained'
+                continue
+            previous = attempt.get('observed_charged_cpu_seconds', 0)
+            attempt.update(observed_charged_cpu_seconds=max(previous, charged),
+                           observed_reserved_cpu_seconds=max(attempt.get('observed_reserved_cpu_seconds', 0), reserved),
+                           ledger_compute_observation=copy.deepcopy(compute),
+                           ledger_cleanup_verified_observation=record.get('cleanup_verified'),
+                           ledger_unresolved_liability_observation=record.get('unresolved_liability'),
+                           accounting_observation='CORRELATED_LEDGER_OBSERVATION')
+            if charged < previous:
+                attempt['charge_regression_observed'] = True
+            if attempt.get('outcome') != 'succeeded':
+                attempt['outcome'] = 'ACCOUNTING_OBSERVED_CLEANUP_NOT_INDEPENDENTLY_VERIFIED'
+        self.report['charged_cpu_seconds'] = max(self.report['charged_cpu_seconds'], sum(a.get('observed_charged_cpu_seconds', 0) for a in self.report['attempts']))
+        self.save()
+
     def prepare_attempt(self, run):
         index = len(self.report['attempts'])
         require(index < 4, 'Four-attempt ceiling exhausted; no fifth attempt')
@@ -334,6 +465,7 @@ class Audit:
         require(file_hash(directory / 'recipe' / filename) == run['recipe_sha256'], 'Wrong recipe bytes')
         require(Path(executable) == BROKER and file_hash(executable) == BROKER_SHA and Path(state) == self.state / 'broker', 'Wrong binary or state')
         data = self.ledger()
+        project_hash = verify_projects(data, self.report['projects'])
         require(set(data['runs']) == {a['binding']['request_id'] for a in self.report['attempts']}, 'Unexpected prior ledger runs')
         require(all(settled(r) for r in data['runs'].values()), 'Prior attempt is unsettled; stop without retry')
         binding = dict(exercise=EXERCISE, index=index, slot=plan['slot'], request_id=run['id'], project_id=run['project_id'],
@@ -341,14 +473,15 @@ class Audit:
                        manifest_sha256=self.report['manifest_sha256'],
                        source_commit=self.manifest['source_commit'], source_archive_sha256=self.manifest['source_archive_sha256'],
                        broker_sha256=BROKER_SHA, broker_source_commit=BROKER_COMMIT, ledger_path=state,
-                       ledger_identity=ledger_identity(data, Path(state)), request_sha256=digest(request_bytes),
+                       ledger_identity=ledger_identity(data, Path(state)), project_authority_sha256=project_hash, request_sha256=digest(request_bytes),
                        input_sha256=run['input_sha256'], recipe_sha256=run['recipe_sha256'])
         # Persist outside SQLite owners, before Worker enters its final fence.
         # A preparation/spawn failure consumes this slot; there is no resume.
         self.artifact(f'{index + 1}-request.private.json', request_bytes)
         self.artifact(f'{index + 1}-ledger-before.private.json', encoded(data))
         self.artifact(f'{index + 1}-binding.private.json', encoded(binding))
-        self.report['attempts'].append(dict(binding=binding, binding_sha256=digest(encoded(binding)), outcome='UNKNOWN_BEFORE_LAUNCH'))
+        self.report['attempts'].append(dict(binding=binding, binding_sha256=digest(encoded(binding)), outcome='UNKNOWN_BEFORE_LAUNCH', dispatch_boundary_entered=False))
+        self.report['potential_intent_cpu_seconds'] = 30 * len(self.report['attempts'])
         self.save()
         self.pending_launch = dict(executable=executable, state=state, request_path=str(request_path), request_bytes=request_bytes)
 
@@ -363,6 +496,7 @@ class Audit:
         # inside a SQLite owner. Consumption is permanent even if Popen raises.
         self.pending_launch = None
         self.launch_count += 1
+        self.report['attempts'][-1].update(dispatch_boundary_entered=True, outcome='DISPATCH_BOUNDARY_ENTERED')
 
     def settle(self, run):
         attempt = self.report['attempts'][-1]; binding = attempt['binding']; index = binding['index']
@@ -372,10 +506,15 @@ class Audit:
         require(file_hash(BROKER) == binding['broker_sha256'], 'Broker changed during execution')
         receipt_bytes = (self.state / 'runs' / run['id'] / 'receipt.private.json').read_bytes()
         receipt = strict_json(receipt_bytes); data = self.ledger()
+        self.observe_accounting(data)
         self.artifact(f'{index + 1}-receipt.private.json', receipt_bytes)
         self.artifact(f'{index + 1}-ledger-after.private.json', encoded(data))
         self.artifact(f'{index + 1}-run.json', encoded(run))
-        name = verify_settlement(binding, strict_json(request_bytes), receipt, data, run)
+        diagnostics = read_diagnostic(self.state / 'broker', data['runs'][run['id']])
+        self.artifact(f'{index + 1}-diagnostics.private.json', diagnostics)
+        result_bytes = (self.state / 'runs' / run['id'] / 'result.json').read_bytes()
+        self.artifact(f'{index + 1}-result.json', result_bytes)
+        name = verify_settlement(binding, strict_json(request_bytes), receipt, data, run, diagnostics, self.report['projects'])
         # Require an explicit absent result at the same observed local endpoint.
         observed = subprocess.run(['docker', 'container', 'inspect', name], capture_output=True, timeout=10)
         absence = dict(command=['docker', 'container', 'inspect', name], exit_code=observed.returncode,
@@ -385,8 +524,9 @@ class Audit:
                 and observed.stderr.decode().strip() == 'Error response from daemon: No such container: ' + name, 'Container absence was not verified')
         attempt.update(outcome='succeeded', final_receipt=receipt, ledger_verified=True, container_absent=True, metrics=run['metrics'],
                        request=strict_json(request_bytes), run=run, ledger_record=data['runs'][binding['request_id']],
-                       ledger_identity=ledger_identity(data, Path(binding['ledger_path'])))
-        self.report['charged_cpu_seconds'] = sum(r['compute']['charged_cpu_seconds'] for r in data['runs'].values())
+                       ledger_identity=ledger_identity(data, Path(binding['ledger_path'])),
+                       diagnostics_utf8=diagnostics.decode(), result_sha256=digest(result_bytes))
+        self.observe_accounting(data)
         self.save()
 
 
@@ -445,7 +585,8 @@ def exercise(audit):
         app = Application(audit.state)
         app.broker = ObservedBroker(BROKER, audit.state / 'broker', audit)
         app.worker.broker = app.broker  # Same production Worker, no worker loop.
-        audit.check('fresh_v4_cli', app.store.profile_version == 4 and app.config['mode'] == finite.SCOPED_MODE)
+        audit.check('fresh_v4_cli', app.store.profile_version == 4 and app.config['mode'] == finite.SCOPED_MODE
+                    and type(app.config['total_budget_cpu_seconds']) is int and app.config['total_budget_cpu_seconds'] == 120)
         server = Server(('127.0.0.1', 0), Handler); server.app = app
         thread = threading.Thread(target=server.serve_forever, daemon=True); thread.start()
         owner = HTTP(f'http://127.0.0.1:{server.server_port}'); editor = HTTP(owner.base)
@@ -462,7 +603,11 @@ def exercise(audit):
                 question='Do the fixed fixture summaries match independent answers?',
                 success_criterion='Four bounded runs retain full charges and verified cleanup.',
                 ends_at=(dt.datetime.now(dt.timezone.utc) + dt.timedelta(days=1)).isoformat(), budget_cpu_seconds=60), label)
+            require(type(project['budget_cpu_seconds']) is int and project['budget_cpu_seconds'] == 60, 'HTTP project allowance differs')
             projects[label] = project['id']
+            audit.report['project_records'][label] = copy.deepcopy(project)
+        audit.report['projects'] = copy.deepcopy(projects)
+        verify_projects(audit.ledger(), projects)
         audit.artifact('projects.json', encoded(projects))
         audit.check('two_projects', len(set(projects.values())) == 2)
         pid = projects['first']; route = f'/api/projects/{pid}'
@@ -502,22 +647,26 @@ def exercise(audit):
             audit.settle(saved)
             audit.check(plan['slot'], True)
         audit.check('four_exact_settlements', len(audit.report['attempts']) == 4 and audit.report['charged_cpu_seconds'] == 120)
+        audit.report['exports'] = {}
         for label, pid in projects.items():
             payload = owner.expect(200, 'GET', f'/api/projects/{pid}/export')
-            verified = verify_bundle(payload)
-            with zipfile.ZipFile(io.BytesIO(payload)) as archive:
-                runs = strict_json(archive.read('runs.json'))
-            expected_ids = {a['binding']['request_id'] for a in audit.report['attempts'] if a['binding']['project_id'] == pid}
-            if label == 'first': expected_ids |= {cancelled['id'], refused['id']}
-            require({r['id'] for r in runs} == expected_ids, 'Export omitted or added run history')
+            expected_runs = [a['run'] for a in audit.report['attempts'] if a['binding']['project_id'] == pid]
+            if label == 'first': expected_runs += list(audit.report['refusal_controls'].values())
+            result_hashes = {a['binding']['request_id']: a['result_sha256'] for a in audit.report['attempts']}
+            audit.report['exports'][label] = verify_public_export(payload, audit.report['project_records'][label], expected_runs, result_hashes)
             audit.artifact(label + '-project.zip', payload)
-            audit.check(label + '_export', verified['valid'] is True and verified['run_count'] == len(expected_ids))
+            audit.check(label + '_export', True)
         audit.check('removed_member_export_refused', editor.request('GET', route + '/export')[0] == 403)
     except BaseException as error:
         failure = error
         # Persist failure BEFORE server shutdown or any further observation.
         audit.report['failure'] = dict(type=type(error).__name__, message=str(error))
         audit.report['status'] = 'FAIL'; audit.save()
+        try:
+            audit.observe_accounting()
+        except BaseException as observation_error:
+            audit.report['accounting_observation_error'] = type(observation_error).__name__
+            audit.save()
     finally:
         if server is not None:
             try:
@@ -545,7 +694,8 @@ def exercise(audit):
         final = audit.ledger()
         require(set(final['runs']) == {a['binding']['request_id'] for a in audit.report['attempts']}, 'Unexpected final execution')
         for attempt in audit.report['attempts']:
-            verify_settlement(attempt['binding'], attempt['request'], attempt['final_receipt'], final, attempt['run'])
+            verify_settlement(attempt['binding'], attempt['request'], attempt['final_receipt'], final, attempt['run'],
+                              read_diagnostic(audit.state / 'broker', final['runs'][attempt['binding']['request_id']]), audit.report['projects'])
         audit.artifact('final-ledger.private.json', encoded(final))
         audit.check('final_ledger_120', all(settled(r) for r in final['runs'].values())
                     and sum(r['compute']['charged_cpu_seconds'] for r in final['runs'].values()) == 120)
@@ -553,11 +703,13 @@ def exercise(audit):
         require(source_hashes() == audit.manifest['sources'], 'Source bytes changed during exercise')
         for name, reference in audit.report['artifacts'].items():
             require(file_hash(audit.root / name) == reference['sha256'], 'Retained artifact changed: ' + name)
+        audit.report['accounting_complete'] = True
         require(accepted(audit.report, audit.manifest), 'Final oracle refused qualification')
         audit.report['status'] = 'PASS'
     except BaseException as error:
         audit.report['failure'] = dict(type=type(error).__name__, message=str(error))
         audit.report['status'] = 'FAIL'
+        audit.report['accounting_complete'] = False
     audit.save()
     return audit.report
 
@@ -599,7 +751,8 @@ def main():
         print(json.dumps(dict(exercise=EXERCISE, started=marker.exists(), report=str(DESTINATION / 'report.json'),
                               execution='NO RESUME; manual review' if marker.exists() else 'NOT RUN'))); return 0
     report = run(args.manifest, args.reviewed_sha256)
-    print(json.dumps(dict(status=report['status'], attempts=len(report['attempts']), charged_cpu_seconds=report['charged_cpu_seconds'])))
+    print(json.dumps(dict(status=report['status'], attempts=len(report['attempts']), charged_cpu_seconds=report['charged_cpu_seconds'],
+                          accounting_complete=report['accounting_complete'], potential_intent_cpu_seconds=report['potential_intent_cpu_seconds'])))
     return 0 if report['status'] == 'PASS' else 1
 
 

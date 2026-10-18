@@ -42,14 +42,22 @@ system.
 
 ## Existing dependencies and provenance
 
-The candidate uses the already present Python and R images in `images.lock.json`
-and the retained P1 broker binary in the `outfitter-recovery` worktree. Its source
-pin is `5827c84e9952cc67b85e91ceff4282e0ead6923b` and its SHA-256 is
-`598462bd0ac50dbffa3392792b574c5e6837ebc8235f23c98922b39ceaf4a32e`, matching
-[the retained P1 verification](evidence/2026-10-17/p1/http-docker-verification.json).
-The accounting review must confirm this exact pairing for this exercise. This
-qualification does not change the standard CI broker pin (`5446438`), replace
-any operator executable, or qualify v4 against a different binary.
+The revised candidate uses the already present Python and R images in
+`images.lock.json` and the retained `qualified/candidate` broker from the accepted
+PR #44 exercise. Its current Outfitter #16 source pin is
+`5446438985e31cb739f2048a2aa2176918831a7e` and its SHA-256 is
+`1bf1ce898d6d10e574ab7b2f79a830fa94fa740867e208470bfc15790dc41bb1`, matching
+[the retained broker-upgrade verification](evidence/2026-10-18/broker-upgrade/verification.json).
+The prerequisite check correlates that accepted identity, its adjacent build
+manifest, live binary metadata, current source pin and all 22 retained source
+hashes. This exact historical build predates the builder-helper correction; it
+is not the later `qualified-final` binary. No build or download is needed. The
+accounting review must confirm the exact pairing before this exercise. Neither
+the CI pin nor any operator executable is changed.
+
+Candidate 01 remains frozen and unexecuted with its older P1 broker pairing.
+Candidate revisions share the same exercise identity, output and durable marker;
+they do not create a fresh allowance.
 
 Preparation records the local Docker socket and daemon identity, required cap
 support, machine CPU/memory totals, local image identities, binary metadata,
@@ -72,6 +80,10 @@ exact 30/30 reservation/charge with `estimated_upper_bound` provenance. The
 independent numeric oracle checks both the receipt output and saved application
 result. The owned container must be explicitly absent at the reviewed endpoint.
 A generic, partial, zero-charge or unknown receipt cannot establish PASS.
+The ledger must contain exactly the two planned 60-CPU-second projects, with no
+additional authority populations, before dispatch and at final verification.
+Each diagnostic sidecar must be a bounded regular file with the ledger's exact
+size and SHA-256, and its stdout/stderr must equal the final receipt streams.
 
 ## Controls and retained evidence
 
@@ -79,15 +91,24 @@ Before dispatch, queued cancellation and removal of a claimed run's editor
 access must both produce cancelled application records, an unchanged empty
 broker execution ledger and zero broker launch calls. These two refusal records
 remain in the first project's public export. OIDC construction and finite-profile
-restore remain refused. Both exports pass bounded bundle verification and retain
-the exact expected run history; removed members cannot export.
+restore remain refused. The access control is removed before `Worker.execute`;
+this exercise does not qualify a late revocation race. Both exports must pass
+bounded bundle verification and equal the captured HTTP project and public run
+records, including status, accounting, lineage and metrics. Input and recipe
+hashes must agree, and successful results must match the captured result bytes
+and independent numeric oracle. Removed members cannot export.
 
 The report starts as FAIL. Any exception or interruption is recorded before
 server cleanup. PASS is written only after the exact nonempty required-control
 set, four bound settlements, server shutdown, restore refusal, unchanged source
 and dependencies, artifact hashes and the final 120-CPU-second ledger check.
-Cleanup errors cannot turn a completed workload into PASS. An interruption
-retains earlier charges and each counted intent. The harness does not cancel,
+Cleanup errors cannot turn a completed workload into PASS. Correlated ledger
+charges are recorded before diagnostics or independent container-absence checks.
+A later check failure retains the known charge, marks accounting incomplete and
+keeps cleanup acceptance separate from the ledger's cleanup observation. Known
+charges never decrease; a witnessed regression refuses final acceptance. An
+interruption retains earlier charges, each counted intent and any entered
+dispatch boundary, with unknown exposure explicit. The harness does not cancel,
 reconcile or mutate a failed broker liability; uncertain state requires manual
 review and is never refunded or replaced with a zero-cost success.
 
@@ -101,6 +122,15 @@ The first synthetic oracle failure and its exact harness/test sources are
 retained under [pre-review/first](evidence/2026-10-18/scoped-docker/pre-review/first/).
 It exposed integer `1` being accepted in place of boolean `true`; the current
 oracle requires literal true for every required control.
+
+Candidate 01 review also exposed four qualification-checker defects: missing
+receipt/diagnostic correlation, incomplete checks of the project budgets and
+population, exports that could differ from captured results/accounting, and a
+known charge omitted when independent absence verification failed. The unchanged
+review witnesses are retained under `pre-review/independent-5fd7d44`,
+`pre-review/root-export` and `pre-review/accounting-absence`. The revised checks
+and synthetic regressions address these witnesses. These are qualification
+checker findings, not findings of a production export or provider defect.
 
 ## Boundaries that remain
 
