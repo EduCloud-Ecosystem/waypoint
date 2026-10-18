@@ -1,0 +1,8 @@
+{
+  "attachment_commit": "00af40dceb38902bc6e7df4b8d359c300e1c5c17",
+  "harness_commit": "fe4788c47a378e6234648dc4131ec4b870a8e713",
+  "manifest_sha256": "ad701c8d5b164666133a1d06f241a80ab052ccbeb02a48c499a663589e537295",
+  "source_archive_sha256": "6fcfce9bf3db5b57b4f503574f379123a43739c44fc69f9af9b40a8cc17055b5",
+  "source_files": 34,
+  "actual_attempts": 0
+}
