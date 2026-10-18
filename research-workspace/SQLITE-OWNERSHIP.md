@@ -59,6 +59,10 @@ wrong-thread entry/exit and exit before entry are refused before changing scope
 state. Proof, discovery, schema-reference, receipt and barrier roles accept
 explicit complete statements. Joins, unions and subqueries cannot expand those
 roles into business reads or writes.
+Schema scripts accept only the reviewed base schema during initialization or
+the complete reviewed schema in the memory reference. Initialization's separate
+guard-table statements are also matched exactly. Backup destinations accept no
+scripts. In particular, a diagnostic memory owner cannot attach file authority.
 
 The final broker spawn occurs inside the dispatch reservation. Artifact reads,
 ZIP generation, HTTP streaming, broker collection and provider waits occur

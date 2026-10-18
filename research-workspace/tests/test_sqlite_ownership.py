@@ -317,6 +317,27 @@ class OwnershipTests(Fixture):
         with self.raw() as db:self.assertEqual(db.execute("SELECT active FROM users WHERE subject='alice'").fetchone()[0],1)
         self.assertEqual((self.root/g.FILE).read_bytes(),before);self.assertFalse(o.held(self.root))
 
+    def test_schema_scripts_cannot_attach_file_authority(self):
+        token=self.store.guard.begin("mutation");before=(self.root/g.FILE).read_bytes()
+        escaped=str(self.root/"workspace.sqlite3").replace("'","''")
+        attack="ATTACH DATABASE '"+escaped+"' AS authority; UPDATE authority.users SET active=0 WHERE subject='alice'; DETACH DATABASE authority;"
+        o.hold(self.root)
+        try:
+            with self.store.guard.locked(),o.diagnostic(token):
+                with o.Owner(self.root,"memory-reference",guard=self.store.guard,memory=True,initialize=True,validate=False) as db:
+                    for script in (attack,"CREATE TABLE injected(value)"):
+                        with self.assertRaises(ValueError):db.executescript(script)
+                    with self.assertRaises(ValueError):db.execute(attack)
+        finally:token.release()
+        with self.raw() as db:self.assertEqual(db.execute("SELECT active FROM users WHERE subject='alice'").fetchone()[0],1)
+        self.assertEqual((self.root/g.FILE).read_bytes(),before)
+        with fresh() as c:
+            for role in ("backup-destination","initialize"):
+                with o.Owner(c.root,role,guard=c.store.guard,path=c.root.parent/(role+".sqlite3"),initialize=True,validate=False) as db:
+                    with self.assertRaises(ValueError):db.executescript(attack)
+                    with self.assertRaises(ValueError):db.executescript("CREATE TABLE injected(value)")
+                    with self.assertRaises(ValueError):db.execute("CREATE TABLE injected(value)")
+
     def test_primary_spawn_and_offline_errors_survive_rollback_failure(self):
         run=self.submit();run=self.store.claim()
         with fault("dispatch-reservation","rollback"):

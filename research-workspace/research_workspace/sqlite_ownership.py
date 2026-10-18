@@ -165,6 +165,20 @@ _ROLE_WRITES = {
 }
 
 
+def _schema_allowed(role, sql, *, script):
+    from .storage_inventory import SCHEMA_SQL
+    from .operation_guard import SCHEMA
+    if not isinstance(sql,str):
+        return False
+    if script:
+        allowed = ([";".join(SCHEMA_SQL)] if role == "initialize" else
+                   [";".join(SCHEMA_SQL + SCHEMA)] if role == "memory-reference" else [])
+    else:
+        allowed = SCHEMA if role == "initialize" else ()
+    key = lambda text: "".join(text.split()).upper().rstrip(";")
+    return key(sql) in {key(statement) for statement in allowed}
+
+
 def _query_limit(sql):
     match = re.search(r"\bFROM\s+([A-Za-z_]+)", sql, re.I)
     table = match.group(1).lower() if match else None
@@ -367,7 +381,7 @@ class Owner:
         if not self.initialize and not self._validated:
             raise ValueError("Begin and validate the owned write transaction first.")
         if not (re.match(r"(?:INSERT INTO|UPDATE|DELETE FROM) (?:users|sessions|projects|members|runs|operation_authority|operation_receipts)\b", normalized)
-                or self.initialize and normalized.startswith("CREATE ")):
+                or _schema_allowed(self.role,sql,script=False)):
             raise ValueError("Unregistered mutation statement.")
         with self._cursor() as cursor:
             cursor.execute(sql, parameters)
@@ -411,8 +425,8 @@ class Owner:
 
     def executescript(self, sql):
         self._check()
-        if not self.initialize:
-            raise ValueError("Only a fresh schema owner may execute a schema script.")
+        if not _schema_allowed(self.role, sql, script=True):
+            raise ValueError("This owner accepts only its exact reviewed schema script.")
         with self._cursor() as cursor:
             cursor.executescript(sql)
         return Values()

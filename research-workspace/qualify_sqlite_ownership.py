@@ -53,6 +53,7 @@ def main():
         (output/"candidate-source.tar.gz").write_bytes(gzip.compress(buffer.getvalue(),mtime=0))
         baseline=run(captured,["test_sqlite_ownership"],output/"controls.log")
         variants=[
+          ("diagnostic-attach-script","research_workspace/sqlite_ownership.py",[("if not _schema_allowed(self.role, sql, script=True):","if not self.initialize:")],"test_schema_scripts_cannot_attach_file_authority"),
           ("reusable-owner","research_workspace/sqlite_ownership.py",[("if self._thread != threading.get_ident() or self._entered:","if self._thread != threading.get_ident():")],"test_owner_reentry_reuse_and_wrong_thread_refuse_before_any_open"),
           ("diagnostic-business-join","research_workspace/sqlite_ownership.py",[("if self.role in _ROLE_READS:","if self.role in _ROLE_READS and not normalized.startswith('SELECT '):")],"test_diagnostic_role_rejects_join_union_subquery_and_business_pragma"),
           ("proof-role-business-write","research_workspace/sqlite_ownership.py",[("if self.role in _ROLE_READS:","if self.role in _ROLE_READS and not normalized.startswith('UPDATE '):")],"test_proof_writer_roles_cannot_mutate_or_observe_business_rows"),
