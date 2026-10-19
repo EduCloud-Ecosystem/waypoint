@@ -44,6 +44,13 @@ class FakeClient:
 
 
 class FixtureTests(unittest.TestCase):
+    def test_smaller_profile_uses_real_caps_without_relabeling_host_capacity(self):
+        selected = fixture.allocation_for_host(8, 8 * 1024**3, profile_cpus=4)
+        self.assertEqual(selected, fixture.allocation_for_host(4, 8 * 1024**3))
+        for invalid in (True, 3, 4.0, 7, 16):
+            with self.assertRaises(ValueError): fixture.allocation_for_host(8, 8 * 1024**3, profile_cpus=invalid)
+        with self.assertRaises(ValueError): fixture.allocation_for_host(4, 8 * 1024**3, profile_cpus=8)
+
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory(); self.addCleanup(self.temporary.cleanup)
         self.root = Path(self.temporary.name).resolve() / 'private'; self.root.mkdir(mode=0o700)
@@ -518,7 +525,7 @@ class ReportTests(unittest.TestCase):
             'cleanup_verified': True, 'acceptance_eligible': status == 'PASS', 'flags': verifier.observed_flags(phases),
             'source': 'a' * 40, 'code_sha256': {key: 'b' * 64 for key in verifier.CODE_FILES},
             'images': {key: 'sha256:' + 'c' * 64 for key in ('course', 'hub', 'controller')},
-            'host': {'cpu': 8, 'memory_bytes': 8 * 1024**3}, 'allocation': fixture.allocation_for_host(8, 8 * 1024**3)}
+            'host': {'cpu': 8, 'memory_bytes': 8 * 1024**3}, 'allocation': fixture.allocation_for_host(8, 8 * 1024**3), 'profile_cpus': None}
         if status == 'FAIL': value['failure'] = 'RuntimeError'
         return value
 
@@ -537,8 +544,8 @@ class ReportTests(unittest.TestCase):
         early['flags']['actual_python_r'] = True
         with self.assertRaises(ValueError): verifier.validate_report(early)
 
-    def test_v3_resource_reports_cannot_relabel_old_versions_or_lower_profiles(self):
-        self.assertEqual(verifier.VERSION, 'waypoint-remote-notebook-rehearsal-v3')
+    def test_v4_resource_reports_cannot_relabel_old_versions_or_lower_profiles(self):
+        self.assertEqual(verifier.VERSION, 'waypoint-remote-notebook-rehearsal-v4')
         for cpu in (4, 5, 6, 7, 8):
             current = self.report(); current['host']['cpu'] = cpu
             current['allocation'] = fixture.allocation_for_host(cpu, current['host']['memory_bytes'])
@@ -551,6 +558,15 @@ class ReportTests(unittest.TestCase):
                 worker = round((legacy['host_reserve_cpu'] - central - 2 * legacy['guardian_cpu']) / 2, 6)
                 current['allocation'] = dict(legacy, central_cpu=central, worker_service_cpu=worker)
                 with self.assertRaises(ValueError): verifier.validate_report(current)
+
+    def test_selected_profile_records_real_host_and_refuses_inflation(self):
+        current = self.report(); current['profile_cpus'] = 4
+        current['allocation'] = fixture.allocation_for_host(8, current['host']['memory_bytes'], profile_cpus=4)
+        verifier.validate_report(current)
+        self.assertEqual(current['host']['cpu'], 8)
+        self.assertEqual(current['allocation']['name'], 'four-cpu-remote')
+        current['profile_cpus'] = 16
+        with self.assertRaises(ValueError): verifier.validate_report(current)
 
     def test_namespace_collision_checks_are_readonly_and_fail_before_creation(self):
         calls = []
