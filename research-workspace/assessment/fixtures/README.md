@@ -28,3 +28,9 @@ unresolved, and reported execution-resource deletion remains an untrusted claim.
 See [ASSESSMENT.md](../../ASSESSMENT.md) for the trust boundary and verification
 scope. The Waypoint transport tests use a local stub; real cross-component
 validator integration is a separate check.
+
+The `estimation/` subdirectory contains invented series and a closed scenario for
+the [synthetic estimator](../../ESTIMATION.md). Regenerate them with
+`python3 assessment/fixtures/generate_estimation_fixtures.py --output assessment/fixtures/estimation`
+from `research-workspace`. The readable generator documents every value; the
+JSON files use canonical compact bytes. No benchmark or workload is run.

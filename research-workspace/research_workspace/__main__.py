@@ -37,6 +37,10 @@ def main():
     preview.add_argument("manifest")
     preview.add_argument("receipts")
     preview.add_argument("--outfitter", required=True, help="Absolute path to the trusted Outfitter executable")
+    estimate = commands.add_parser("assessment-estimate", help="Estimate and compare explicitly synthetic observations without execution")
+    estimate.add_argument("scenario")
+    estimate.add_argument("--series", action="append", required=True)
+    estimate.add_argument("--outfitter", required=True)
     init = commands.add_parser("init", help="Create fresh private local authority")
     init.add_argument("--state", required=True)
     init.add_argument("--operation-guard", action="store_true", help="Explicit fresh disposable operation-guard profile; no quota enforcement or migration")
@@ -105,6 +109,15 @@ def main():
         from .assessment_preview import preview_receipts
         print(json.dumps(preview_receipts(read_document(args.manifest), read_document(args.receipts),
                                          args.outfitter), sort_keys=True))
+        return
+    elif args.command == "assessment-estimate":
+        from .assessment import canonical_bytes, read_document, reject
+        from .assessment_estimation import SERIES_LIMIT_BYTES, estimate
+        if not 1 <= len(args.series) <= 2:
+            reject()
+        result = estimate(read_document(args.scenario),
+                          [read_document(path, limit=SERIES_LIMIT_BYTES) for path in args.series], args.outfitter)
+        sys.stdout.buffer.write(canonical_bytes(result))
         return
 
     from .runtime import Broker, validate_images

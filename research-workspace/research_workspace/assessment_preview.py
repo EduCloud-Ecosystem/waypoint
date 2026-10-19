@@ -23,11 +23,14 @@ METRIC_UNITS = {
 }
 
 
-def validate_receipts(manifest, receipts, executable):
+def validate_receipts(manifest, receipts, executable, *, timeout=None):
     """Call one fixed, pure command with finite input, output and wall time."""
     validate_manifest(manifest)
     request = canonical_bytes({"operation": "validate", "manifest": manifest, "receipts": receipts})
     if len(request) > 2 * 65536:
+        reject()
+    budget = VALIDATION_TIMEOUT_SECONDS if timeout is None else min(VALIDATION_TIMEOUT_SECONDS, timeout)
+    if budget <= 0:
         reject()
     process = None
     try:
@@ -51,7 +54,7 @@ def validate_receipts(manifest, receipts, executable):
             if offset == len(request):
                 process.stdin.close()
 
-        stdout, _ = collect(process, timeout=VALIDATION_TIMEOUT_SECONDS, tick=feed)
+        stdout, _ = collect(process, timeout=budget, tick=feed)
         if process.returncode != 0 or offset != len(request):
             reject()
         result = strict_document(stdout)

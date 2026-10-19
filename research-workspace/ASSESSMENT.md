@@ -12,6 +12,10 @@ Encryption, independent expiry/cleanup, actual-resource qualification, hosted
 identity, independent-human reproduction and real-data admission remain open.
 Greg Chism remains the service-owner approver for local public/synthetic use.
 
+The separate [synthetic estimator](ESTIMATION.md) consumes these existing
+manifest/receipt shapes through the pure validator. It adds deterministic
+calculation and comparison without adding execution or trust authority.
+
 ## Prepare or inspect a manifest
 
 From `research-workspace`, inspect the committed synthetic example:
