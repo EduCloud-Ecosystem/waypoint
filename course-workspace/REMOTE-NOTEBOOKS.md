@@ -34,6 +34,33 @@ not renew a heartbeat or ownership epoch. Quarantine, corruption, authentication
 failure and an error after acquisition do not become deferred success. No network
 wait holds a shared runtime SQLite writer transaction.
 
+The authority's replay writer admits this service instance's concurrent requests
+in FIFO order before opening SQLite. Each waiter has its own wake event; releasing
+a writer wakes only its successor. Queue and SQLite lock waits share a one-second
+monotonic budget. This is a contention budget, not a hard wall-clock limit on
+filesystem sync or validation. No failed request is retried. Fresh private-file,
+integrity, nonce and clock checks still run after admission, and nonce consumption
+commits before authorization is rechecked or a runtime effect is dispatched.
+Other processes and separately opened stores retain SQLite's bounded refusal;
+the authority server uses one replay-store instance. Guardian deadlines and
+fail-closed stops are unchanged.
+
+Diagnostic reports v2 include bounded authority log counters for replay failure
+stage and category, including SQLite busy/locked, integrity and deadline failures.
+They contain no raw logs, request material, credentials or exception messages.
+Historical v1 reports remain historical evidence. The concurrency reproduction
+uses eight callers and 400 distinct nonces on real temporary SQLite:
+
+```sh
+python course-workspace/rehearsal/verify_replay_contention.py \
+  --output /private/replay-contention.json
+```
+
+Run that command in a disposable container capped at 0.5 CPU to exercise the
+pilot controller allowance. Its report records the exact replay implementation
+hash and durable nonce count. It does not establish HTTP, Guardian or notebook
+acceptance; those still require the full rehearsal below.
+
 Worker response waits for notebook stop and replacement spawn include the existing
 five-second Docker shutdown allowance. Certificate and absolute session deadlines
 still govern every effect. Explicit stop completion requires removal of the owned

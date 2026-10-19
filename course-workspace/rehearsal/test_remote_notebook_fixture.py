@@ -709,6 +709,8 @@ class RuntimeDiagnosticsTests(unittest.TestCase):
         name = request()['name']; authority = 'b' * 32
         images = {key: request()[key + '_image'] for key in ('controller', 'hub', 'course')}
         records = {}; events = []; subject = __import__('hashlib').sha256(b'alice').hexdigest()[:24]
+        records[name + '-authority'] = {'Id': 'f' * 64, 'Name': '/' + name + '-authority', 'Image': images['controller'],
+            'Config': {'Labels': {'educloud.fixture': name}}, 'State': {'Running': True, 'OOMKilled': False, 'ExitCode': 0}}
         for index, (worker, kind) in enumerate(((worker, kind) for worker in fixture.WORKERS for kind in ('service', 'guardian')), 1):
             actual = name + '-' + worker + '-' + kind
             labels = {'educloud.fixture': name} if kind == 'service' else {'educloud.runtime.authority': authority,
@@ -735,7 +737,8 @@ class RuntimeDiagnosticsTests(unittest.TestCase):
             events.append(('logs', identifier))
             return ('private-token-cert-path-canary\nWorker runtime stopping owned learners: stale_or_changed\n'
                 'Guardian observation refused: authority_transport_unavailable\n'
-                'authority_transport_failure stage=response_headers category=timeout\n', False)
+                'authority_transport_failure stage=response_headers category=timeout\n'
+                'authority_replay_failure stage=begin category=sqlite_busy\n', False)
         return name, authority, images, records, events, invoke, logs
 
     def test_runtime_diagnostics_capture_owned_state_first_and_never_raw_material(self):
@@ -746,6 +749,8 @@ class RuntimeDiagnosticsTests(unittest.TestCase):
         self.assertEqual(result['learners']['peer']['running_count'], 1)
         self.assertEqual(result['learners']['receiver']['container_count'], 0)
         self.assertEqual(len(result['enforcers']), 4)
+        self.assertTrue(result['authority']['logs_available'])
+        self.assertEqual(result['authority']['counts']['replay']['begin/sqlite_busy'], 1)
         self.assertTrue(all(value['available'] and value['logs_available'] for value in result['enforcers'].values()))
         first_log = next(index for index, event in enumerate(events) if event[0] == 'logs')
         self.assertEqual(sum(event[0] == 'docker' and event[1][0] == 'ps' for event in events[:first_log]), 3)
@@ -768,12 +773,16 @@ class RuntimeDiagnosticsTests(unittest.TestCase):
             'Worker runtime stopping owned learners: private-path-canary\n'
             'authority_transport_failure stage=private_path category=timeout\n'
             'authority_transport_failure stage=response_headers category=private_key\n'
+            'authority_replay_failure stage=private_stage category=sqlite_busy\n'
+            'authority_replay_failure stage=begin category=private_reason\n'
+            'authority_replay_failure stage=begin category=sqlite_busy\n'
             'authority_transport_failure stage=response_headers category=timeout\n')
         result = verifier.diagnostic_log_counts(raw)
         self.assertEqual(result['supervisor']['runtime_endpoint_enforcement_unavailable'], 1)
         self.assertEqual(result['snapshot_busy'], 1); self.assertEqual(result['stop_busy'], 1)
         self.assertEqual(sum(result['guardian'].values()), 0)
         self.assertEqual(sum(result['transport'].values()), 1)
+        self.assertEqual(sum(result['replay'].values()), 1)
         for secret in ('private-token-canary', 'private-path-canary', 'private_path', 'private_key'):
             self.assertNotIn(secret, json.dumps(result))
 
@@ -813,7 +822,7 @@ class RuntimeDiagnosticsTests(unittest.TestCase):
         from unittest.mock import Mock
         collect = Mock(side_effect=ValueError('private-diagnostic-canary')); publish = Mock()
         verifier.capture_runtime_diagnostics(Path('/unused'), RuntimeError('private-original'), 'unused', {}, None, collect=collect, publish=publish)
-        self.assertEqual(publish.call_args.args[1], {'version': 'waypoint-remote-runtime-diagnostics-v1',
+        self.assertEqual(publish.call_args.args[1], {'version': 'waypoint-remote-runtime-diagnostics-v2',
             'scope': 'post-failure-nonatomic-readonly', 'available': False})
         publish.side_effect = RuntimeError('private-publication-canary')
         verifier.capture_runtime_diagnostics(Path('/unused'), RuntimeError('private-original'), 'unused', {}, None, collect=collect, publish=publish)

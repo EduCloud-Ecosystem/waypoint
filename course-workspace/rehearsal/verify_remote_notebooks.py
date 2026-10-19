@@ -20,6 +20,7 @@ import requests
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT), str(Path(__file__).resolve().parent)]
 import evidence
+from authority_access import REPLAY_STAGES, REPLAY_FAILURES
 from smoke import kernel, change, xsrf
 from hub.authority_client import OPERATIONS, ERRORS
 from worker_runtime import SUPERVISOR_RUNTIME_CODES
@@ -122,7 +123,9 @@ def diagnostic_log_counts(raw):
     result = {'supervisor': {code: 0 for code in sorted(DIAGNOSTIC_SUPERVISOR_CODES)},
         'guardian': {code: 0 for code in sorted(DIAGNOSTIC_GUARDIAN_CODES)}, 'snapshot_busy': 0, 'stop_busy': 0,
         'transport': {stage + '/' + category: 0 for stage in sorted(DIAGNOSTIC_TRANSPORT_STAGES)
-            for category in sorted(DIAGNOSTIC_TRANSPORT_CATEGORIES)}}
+            for category in sorted(DIAGNOSTIC_TRANSPORT_CATEGORIES)},
+        'replay': {stage + '/' + category: 0 for stage in sorted(REPLAY_STAGES)
+            for category in sorted(REPLAY_FAILURES)}}
     for line in raw[:131072].splitlines():
         for field, prefix in (('supervisor', 'Worker runtime supervisor failed: supervision/'),
                 ('supervisor', 'Worker runtime stopping owned learners: '), ('guardian', 'Guardian observation refused: ')):
@@ -135,6 +138,10 @@ def diagnostic_log_counts(raw):
         if match:
             key = match[1] + '/' + match[2]
             if key in result['transport']: result['transport'][key] = min(10000, result['transport'][key] + 1)
+        match = re.search(r'authority_replay_failure stage=([a-z_]+) category=([a-z_]+)$', line)
+        if match:
+            key = match[1] + '/' + match[2]
+            if key in result['replay']: result['replay'][key] = min(10000, result['replay'][key] + 1)
     return result
 
 
@@ -184,8 +191,8 @@ def runtime_diagnostics(error, name, images, authority_id, *, invoke=command, re
                 or (expected_name is not None and value.get('Name') != '/' + expected_name)):
             raise ValueError('fixture_diagnostic_scope_invalid')
         return value
-    result = {'version': 'waypoint-remote-runtime-diagnostics-v1', 'scope': 'post-failure-nonatomic-readonly', 'available': True,
-        'http': diagnostic_http_context(error), 'learners': {}, 'enforcers': {}}
+    result = {'version': 'waypoint-remote-runtime-diagnostics-v2', 'scope': 'post-failure-nonatomic-readonly', 'available': True,
+        'http': diagnostic_http_context(error), 'learners': {}, 'enforcers': {}, 'authority': {}}
     # Capture learner state before any potentially slow log reads.
     for _, _, suffix in ENDPOINTS:
         item = {'available': False, 'container_count': None, 'running_count': None, 'states': []}
@@ -198,6 +205,15 @@ def runtime_diagnostics(error, name, images, authority_id, *, invoke=command, re
             item.update(available=True, container_count=len(states), running_count=sum(value['running'] for value in states), states=states)
         except Exception: pass
         result['learners'][suffix] = item
+    item = {'available': False, 'state': None, 'logs_available': False, 'truncated': False, 'counts': diagnostic_log_counts('')}
+    try:
+        value = owned(name + '-authority', name + '-authority')
+        item.update(available=True, state=state(value))
+        raw, truncated = read_logs(value['Id'])
+        if not isinstance(raw, str) or type(truncated) is not bool: raise ValueError('fixture_diagnostic_log_invalid')
+        item.update(logs_available=True, truncated=truncated, counts=diagnostic_log_counts(raw))
+    except Exception: pass
+    result['authority'] = item
     for worker in WORKERS:
         for kind in ('service', 'guardian'):
             item = {'available': False, 'state': None, 'logs_available': False, 'truncated': False, 'counts': diagnostic_log_counts('')}
@@ -218,7 +234,7 @@ def capture_runtime_diagnostics(path, error, name, images, authority_id, *, coll
         if publish is None:
             from authority_access import publish
         try: value = collect(error, name, images, authority_id)
-        except Exception: value = {'version': 'waypoint-remote-runtime-diagnostics-v1', 'scope': 'post-failure-nonatomic-readonly', 'available': False}
+        except Exception: value = {'version': 'waypoint-remote-runtime-diagnostics-v2', 'scope': 'post-failure-nonatomic-readonly', 'available': False}
         publish(path, value)
     except Exception: pass
 
