@@ -1,6 +1,9 @@
 """Startup transport polling must never mask a logical authorization denial."""
 import unittest
-from verify_worker_enrollment import await_hub_authorization, await_guardian_authorization, verify_contention_batch
+import contextlib
+import io
+import json
+from verify_worker_enrollment import await_hub_authorization, await_guardian_authorization, verify_contention_batch, await_contention_release
 
 
 def authorized():
@@ -9,6 +12,62 @@ def authorized():
 
 
 class EnrollmentReadinessTests(unittest.TestCase):
+    def test_contention_release_requires_exit_and_fresh_heartbeat_and_keeps_bounded_status(self):
+        status = {'held': True, 'holder_exited': False, 'heartbeat_renewed': False,
+            'heartbeat_unchanged': True, 'heartbeat_expired': False}
+        states = [dict(status), dict(status), dict(status, held=False),
+            dict(status, held=False, holder_exited=True),
+            dict(status, held=False, holder_exited=True, heartbeat_renewed=True, heartbeat_unchanged=False)]
+        replies = iter(states); sleeps = []; output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            await_contention_release(lambda: next(replies), sleep=sleeps.append)
+        self.assertEqual(len(sleeps), 4)
+        records = [json.loads(line.removeprefix('CONTENTION_STATUS ')) for line in output.getvalue().splitlines()]
+        self.assertEqual(records, [states[0], *states[2:]])
+
+    def test_contention_probe_error_is_immediate_and_private_message_is_not_logged(self):
+        output = io.StringIO(); calls = []
+        def broken(): calls.append(True); raise OSError('PRIVATE_PROBE_CANARY')
+        with contextlib.redirect_stdout(output), self.assertRaisesRegex(RuntimeError, '^fixture_contention_status_unavailable$'):
+            await_contention_release(broken, sleep=lambda _: self.fail('probe errors never retry'))
+        self.assertEqual(calls, [True]); self.assertNotIn('PRIVATE_PROBE_CANARY', output.getvalue())
+        self.assertEqual(output.getvalue(), 'CONTENTION_STATUS_REFUSAL {"category": "OSError"}\n')
+
+    def test_contention_malformed_or_expired_read_never_becomes_waited_success(self):
+        valid = {'held': False, 'holder_exited': True, 'heartbeat_renewed': True,
+            'heartbeat_unchanged': False, 'heartbeat_expired': False}
+        for value in (None, {}, dict(valid, held=0), dict(valid, heartbeat_unchanged=True), dict(valid, private='PRIVATE_STATUS_CANARY')):
+            output = io.StringIO()
+            with self.subTest(value=value), contextlib.redirect_stdout(output), self.assertRaisesRegex(ValueError, '^fixture_contention_status_invalid$'):
+                await_contention_release(lambda: value, sleep=lambda _: self.fail('malformed response never retries'))
+            self.assertEqual(output.getvalue(), '')
+        with contextlib.redirect_stdout(io.StringIO()), self.assertRaisesRegex(RuntimeError, '^fixture_contention_heartbeat_expired$'):
+            await_contention_release(lambda: dict(valid, heartbeat_expired=True), sleep=lambda _: self.fail('expired heartbeat never retries'))
+
+    def test_contention_release_timeout_retains_false_conjunct_without_extending_budget(self):
+        now = [0.0]; calls = []
+        status = {'held': False, 'holder_exited': True, 'heartbeat_renewed': False,
+            'heartbeat_unchanged': True, 'heartbeat_expired': False}
+        def probe(): calls.append(True); return dict(status)
+        def sleep(seconds): now[0] += seconds
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output), self.assertRaisesRegex(RuntimeError, '^fixture_contention_release_timeout$'):
+            await_contention_release(probe, timeout=.5, monotonic=lambda: now[0], sleep=sleep)
+        self.assertEqual(now[0], .5); self.assertEqual(len(calls), 3)
+        self.assertEqual(json.loads(output.getvalue().removeprefix('CONTENTION_STATUS ')), status)
+        for timeout in (True, 0, -1, 11, float('nan'), float('inf')):
+            with self.subTest(timeout=timeout), self.assertRaisesRegex(ValueError, '^fixture_contention_timeout_invalid$'):
+                await_contention_release(lambda: self.fail('invalid timeout must not probe'), timeout=timeout)
+
+    def test_contention_probe_cannot_report_late_success_after_the_wait_budget(self):
+        now = [0.0]
+        def slow():
+            now[0] = 11
+            return {'held': False, 'holder_exited': True, 'heartbeat_renewed': True,
+                'heartbeat_unchanged': False, 'heartbeat_expired': False}
+        with contextlib.redirect_stdout(io.StringIO()), self.assertRaisesRegex(RuntimeError, '^fixture_contention_release_timeout$'):
+            await_contention_release(slow, monotonic=lambda: now[0], sleep=lambda _: self.fail('no retries'))
+
     def test_batch_requires_exact_two_held_busy_unchanged_heartbeat_proofs(self):
         from copy import deepcopy
         value = {'observations': [{'deferred': True, 'held_before': True, 'held_after': True,

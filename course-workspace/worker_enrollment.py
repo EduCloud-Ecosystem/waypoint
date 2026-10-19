@@ -318,7 +318,9 @@ class EnrollmentStore:
     def _advance_clock(self, conn, meta):
         now = self._now()
         if now < int(meta['clock_floor']): refuse('worker_enrollment_clock_rollback')
-        conn.execute("UPDATE metadata SET value=? WHERE key='clock_floor'", (str(now),)); return now
+        if now > int(meta['clock_floor']):
+            conn.execute("UPDATE metadata SET value=? WHERE key='clock_floor'", (str(now),))
+        return now
 
     @staticmethod
     def _summary(plan, status, revision):
@@ -397,7 +399,18 @@ class EnrollmentStore:
     @guarded
     def entries(self):
         with self._connection() as conn:
-            conn.execute('BEGIN IMMEDIATE'); meta, state = self._validate(conn, full=True); now = self._advance_clock(conn, meta); conn.execute('COMMIT')
+            # Every call reads and fully validates fresh state. Most checks
+            # occur in an already-persisted clock second and need no writer.
+            conn.execute('BEGIN'); meta, state = self._validate(conn, full=True); now = self._now()
+            if now < int(meta['clock_floor']): refuse('worker_enrollment_clock_rollback')
+            if now > int(meta['clock_floor']):
+                observed = now
+                # Never upgrade a SQLite read transaction: release it, take a
+                # writer, then re-read all history/state and check both clocks.
+                conn.execute('ROLLBACK'); conn.execute('BEGIN IMMEDIATE')
+                meta, state = self._validate(conn, full=True); now = self._advance_clock(conn, meta)
+                if now < observed: refuse('worker_enrollment_clock_rollback')
+            conn.execute('COMMIT')
         result = {}
         for fingerprint, cert in state['certificates'].items():
             if not self._live(cert, now): continue

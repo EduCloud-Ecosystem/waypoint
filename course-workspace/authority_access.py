@@ -3,9 +3,11 @@
 No secret-body logging, automatic retries, reusable grants or replay pruning.
 """
 from contextlib import contextmanager
+from collections import deque
 from functools import wraps
 import hashlib
 from http.server import BaseHTTPRequestHandler, HTTPServer
+import logging
 import os
 from pathlib import Path
 import re
@@ -23,6 +25,26 @@ HEX64=re.compile(r'[0-9a-f]{64}\Z')
 ROLES={'operator':frozenset(op for op in OPERATIONS if op.startswith('ownership.')),
        'hub':frozenset(op for op in OPERATIONS if op.startswith('hub.')),'guardian':frozenset({'guardian.observe'})}
 MAX_NONCES=100000
+REPLAY_STAGES=frozenset({'queue','binding','begin','validate','append','commit'})
+REPLAY_FAILURES=frozenset({'sqlite_busy','sqlite_locked','sqlite_io','sqlite_corrupt','sqlite_other',
+                         'binding','filesystem','integrity','deadline','other'})
+
+
+def replay_diagnostic(stage,error):
+    """Fixed enums only: no exception text, paths, nonces or credentials."""
+    if isinstance(error,sqlite3.Error):
+        code=getattr(error,'sqlite_errorcode',0)
+        code=code & 0xff if type(code) is int else 0
+        category={sqlite3.SQLITE_BUSY:'sqlite_busy',sqlite3.SQLITE_LOCKED:'sqlite_locked',
+                  sqlite3.SQLITE_IOERR:'sqlite_io',sqlite3.SQLITE_CORRUPT:'sqlite_corrupt'}.get(code,'sqlite_other')
+    elif isinstance(error,TimeoutError):category='deadline'
+    elif isinstance(error,AuthorityError):category='binding'
+    elif isinstance(error,OSError):category='filesystem'
+    elif isinstance(error,(ValueError,KeyError,TypeError)):category='integrity'
+    else:category='other'
+    try:logging.getLogger(__name__).warning('authority_replay_failure stage=%s category=%s',
+        stage if stage in REPLAY_STAGES else 'binding',category)
+    except Exception:pass
 
 
 def fixed(fn):
@@ -161,6 +183,39 @@ class AccessPolicy:
 class ReplayStore:
     def __init__(self,directory,authority_id):
         self.directory=Path(directory);self.database=self.directory/'replay.sqlite';self.sentinel=self.directory/'replay.json';self.authority_id=authority_id
+        self._writers=threading.Condition();self._waiting=deque()
+
+    @contextmanager
+    def _writer(self):
+        # SQLite busy polling is not fair: one HTTP thread can repeatedly win
+        # while other distinct nonces time out. Queue this service's writers
+        # BEFORE opening a connection. SQLite still arbitrates other processes.
+        # Queue and database lock waits share the existing one-second budget.
+        deadline=time.monotonic()+1;ticket=threading.Event()
+        with self._writers:
+            if len(self._waiting)>=32:raise TimeoutError()
+            self._waiting.append(ticket)
+            if len(self._waiting)==1:ticket.set()
+            self._writers.notify_all()
+        try:
+            remaining=deadline-time.monotonic()
+            if remaining<=0 or not ticket.wait(remaining):raise TimeoutError()
+            yield deadline
+        finally:
+            with self._writers:
+                head=self._waiting[0] is ticket
+                self._waiting.remove(ticket)
+                # Wake only the next writer, not all HTTP threads on a small
+                # controller CPU allowance. Expired tickets never strand it.
+                if head and self._waiting:self._waiting[0].set()
+                self._writers.notify_all()
+
+    @staticmethod
+    def _busy_budget(deadline):
+        if deadline is None:return 1000
+        remaining=int((deadline-time.monotonic())*1000)
+        if remaining<=0:raise TimeoutError()
+        return min(1000,remaining)
 
     @classmethod
     def create(cls,directory,authority_id):
@@ -188,23 +243,24 @@ class ReplayStore:
             return self
         except Exception:raise AuthorityError('authority_replay_state_unavailable') from None
 
-    def _raw(self):
-        conn=sqlite3.connect(self.database.as_uri()+'?mode=rw',uri=True,timeout=1,isolation_level=None);conn.row_factory=sqlite3.Row
+    def _raw(self,deadline=None):
+        budget=self._busy_budget(deadline)
+        conn=sqlite3.connect(self.database.as_uri()+'?mode=rw',uri=True,timeout=budget/1000,isolation_level=None);conn.row_factory=sqlite3.Row
         try:
-            conn.execute('PRAGMA journal_mode=DELETE');conn.execute('PRAGMA synchronous=EXTRA');conn.execute('PRAGMA busy_timeout=1000')
-            if (conn.execute('PRAGMA journal_mode').fetchone()[0]!='delete' or conn.execute('PRAGMA synchronous').fetchone()[0]!=3 or conn.execute('PRAGMA busy_timeout').fetchone()[0]!=1000):raise ValueError()
+            conn.execute('PRAGMA journal_mode=DELETE');conn.execute('PRAGMA synchronous=EXTRA');conn.execute('PRAGMA busy_timeout='+str(budget))
+            if (conn.execute('PRAGMA journal_mode').fetchone()[0]!='delete' or conn.execute('PRAGMA synchronous').fetchone()[0]!=3 or conn.execute('PRAGMA busy_timeout').fetchone()[0]!=budget):raise ValueError()
             return conn
         except Exception:conn.close();raise
 
     @contextmanager
-    def _connection(self):
+    def _connection(self,deadline=None):
         private(self.directory,True);info=private(self.database)
         if info.st_size>64*1024**2:raise ValueError()
         value=read_private(self.sentinel,protected=(info.st_dev,info.st_ino))
         if (not isinstance(value,dict) or set(value)!={'version','authority_id','store_id','device','inode'} or value['version']!=VERSION
                 or value['authority_id']!=self.authority_id or value['device']!=info.st_dev or value['inode']!=info.st_ino
                 or not isinstance(value['store_id'],str) or not HEX32.fullmatch(value['store_id'])):raise ValueError()
-        conn=self._raw()
+        conn=self._raw(deadline) if deadline is not None else self._raw()
         try:yield conn
         finally:conn.close()
 
@@ -227,22 +283,33 @@ class ReplayStore:
         return value
 
     def consume(self,frame,certificate):
+        stage='queue'
         try:
-            with self._connection() as conn:
-                conn.execute('BEGIN IMMEDIATE');state=self._validate(conn)
-                if conn.execute('SELECT 1 FROM requests WHERE nonce=?',(frame['nonce'],)).fetchone():raise AuthorityError('authority_replay_refused')
-                count=int(state['count'])
-                if count>=MAX_NONCES:raise ValueError()
-                now=int(time.time())
-                latest=conn.execute('SELECT consumed_at FROM requests ORDER BY sequence DESC LIMIT 1').fetchone()
-                if latest is not None and now+5<latest['consumed_at']:raise ValueError()
-                value={'sequence':count+1,'nonce':frame['nonce'],'certificate':certificate,'request_sha256':hashlib.sha256(encoded(frame)).hexdigest(),
-                       'operation':frame['operation'],'consumed_at':now,'previous_sha256':state['head']}
-                value['digest']=hashlib.sha256(encoded(value)).hexdigest()
-                conn.execute('INSERT INTO requests VALUES(?,?,?,?,?,?,?,?)',tuple(value[key] for key in ('sequence','nonce','certificate','request_sha256','operation','consumed_at','previous_sha256','digest')))
-                conn.execute("UPDATE metadata SET value=? WHERE key='count'",(str(count+1),));conn.execute("UPDATE metadata SET value=? WHERE key='head'",(value['digest'],));conn.execute('COMMIT')
+            with self._writer() as deadline:
+                stage='binding'
+                with self._connection(deadline) as conn:
+                    stage='begin';conn.execute('PRAGMA busy_timeout='+str(self._busy_budget(deadline)))
+                    conn.execute('BEGIN IMMEDIATE')
+                    stage='validate';state=self._validate(conn)
+                    if conn.execute('SELECT 1 FROM requests WHERE nonce=?',(frame['nonce'],)).fetchone():raise AuthorityError('authority_replay_refused')
+                    count=int(state['count'])
+                    if count>=MAX_NONCES:raise ValueError()
+                    now=int(time.time())
+                    latest=conn.execute('SELECT consumed_at FROM requests ORDER BY sequence DESC LIMIT 1').fetchone()
+                    if latest is not None and now+5<latest['consumed_at']:raise ValueError()
+                    value={'sequence':count+1,'nonce':frame['nonce'],'certificate':certificate,'request_sha256':hashlib.sha256(encoded(frame)).hexdigest(),
+                           'operation':frame['operation'],'consumed_at':now,'previous_sha256':state['head']}
+                    value['digest']=hashlib.sha256(encoded(value)).hexdigest()
+                    stage='append'
+                    conn.execute('INSERT INTO requests VALUES(?,?,?,?,?,?,?,?)',tuple(value[key] for key in ('sequence','nonce','certificate','request_sha256','operation','consumed_at','previous_sha256','digest')))
+                    conn.execute("UPDATE metadata SET value=? WHERE key='count'",(str(count+1),));conn.execute("UPDATE metadata SET value=? WHERE key='head'",(value['digest'],))
+                    stage='commit';conn.execute('PRAGMA busy_timeout='+str(self._busy_budget(deadline)))
+                    conn.execute('COMMIT')
         except AuthorityError:raise
-        except Exception:raise AuthorityError('authority_replay_state_unavailable') from None
+        except Exception as error:
+            try:replay_diagnostic(stage,error)
+            except Exception:pass
+            raise AuthorityError('authority_replay_state_unavailable') from None
 
 
 class AuthorityServer(HTTPServer):

@@ -1,0 +1,69 @@
+{
+  "acceptance_eligible": true,
+  "allocation": {
+    "controller_cpu": 0.4,
+    "guardian_cpu": 0.1,
+    "host_reserve_cpu": 0.7,
+    "hub_cpu": 1.0,
+    "learner_cpu": 0.1,
+    "minimum_cpu": 4,
+    "name": "four-cpu-ci",
+    "reserved_cpu": 4.0
+  },
+  "cleanup_verified": true,
+  "code_sha256": {
+    "authority_access.py": "e18ab042e0b76985a2a01ecd5b144259db644e753a7f5c9938c9f8d953d4d0ff",
+    "authority_operator.py": "5e1e24e48ef1dc16e7a06e62226549626da993dd3b9834be33fcc6e8f5c4bd3d",
+    "controller_service.py": "bc3a8c9270a9466e2b2603e71fd78d086e193ff748d1b20634daa5484ce75dab",
+    "hub/authority_client.py": "3ab5357dce2129eba68046c56ddc66f127132a324bdb98bf56cf4ec56464e183",
+    "hub/authority_spawner.py": "5bc98263aef24339845d4914953164f87e3214a68800ba1a039ef07334cd316a",
+    "hub/home_policy.py": "70fb841e7a9585d24adb69e855ec8ea36b6a7429467bc0d126583598d75f0a9f",
+    "hub/jupyterhub_config.py": "e4934085217bc34576ec9efec463261a672c6b97545e5f2a5944b4a19a8ef4df",
+    "hub/settings.py": "7323278e2f87abd2e83bcdd7c7321136fa10411151d7d3dc38546f9751b74174",
+    "ownership_contract.py": "d0963e3ae89f3b5e59556ecc2b3c265e6d4b4c94b77a8b1d0058d6d93a7dc2a6",
+    "rehearsal/authenticated_evidence.py": "32612487bcad6a1c4a2c7f401c3933d811c8735b951836c0b0a92d98af08f748",
+    "rehearsal/authenticated_fixture.py": "9fac5f423e09c08915279c160be809fe9cdfcd6e72a5ce3d1fd90fd6b2299124",
+    "rehearsal/enrollment_fixture.py": "5c6f9b91f6a498b207fd80d0d87ed4222d8b3effd0ca4443b62a364a5ba63793",
+    "rehearsal/verify_authenticated_runtime.py": "0610e92a047fbd6a6539c33441ed0a13a88bfca7cd5d49557b3a387ff60a5437",
+    "rehearsal/verify_worker_enrollment.py": "2db782a061c609bf68b26bacfbb5ab13f72ef6dcdab5c5af538f5dfa66ce8acf",
+    "rehearsal/worker_enrollment_evidence.py": "ad700b12219826f560de7ed165b347af67737dfb46922007180bfe0a833589ed",
+    "runtime_authority.py": "1922670f2911d3345aa1b007527909fb2f2312fa94b85e7dba027bb55ede7ec3",
+    "runtime_guardian.py": "e971371a3f02160795dddbee03a99913dc5d6cad182f5391756ca8c51ef1a934",
+    "tests/authority_test_pki.py": "b95bff1a965dfa2fc08c7eeb0abe555e456f820b7615e8460574b1b431ea8d76",
+    "worker_credentials.py": "12945d1aed23eddb46e0de9ce87b9c3e0ecd41287e89c09903150f4005bfac74",
+    "worker_enrollment.py": "103cd8116aef9b7915a439ea0eaceb1dc741ae355c42168243480188d6308744"
+  },
+  "host": {
+    "cpu": 8,
+    "memory_bytes": 8392929280
+  },
+  "images": {
+    "controller": "sha256:eed1f0d0195afd13fec37e46bedf38d0a385c6ed230e63959115a9e6ac009bcb",
+    "course": "sha256:4f75a379e8431860cf684e394a36a660516165e2aad6f3c2d60dc88c91127c18",
+    "hub": "sha256:2c0f65388408d66c17e379e43fe86214e5c5e43713ede3ca44ea6fa772d4c216"
+  },
+  "phases": [
+    "unenrolled_legacy_acl_and_unknown_worker_refused",
+    "reviewed_worker_enrollment_digest_and_replay",
+    "enrolled_python_r_saved_home_and_socketless_hubs",
+    "staged_fresh_key_rotation_inert_after_restart",
+    "bounded_overlap_old_new_mutual_tls",
+    "retired_hub_denied_new_hub_coursework_continues",
+    "guardian_overlap_expiry_stops_own_worker_preserves_peer",
+    "rotated_guardian_recovers_saved_coursework",
+    "worker_revocation_stops_own_worker_and_blocks_reenrollment",
+    "service_restart_preserves_enrollment_and_ownership"
+  ],
+  "profile_cpus": 4,
+  "recipe_sha256": {
+    ".dockerignore": "c8716235fc8a1e01af43d66a5f318cc7e8a738a677bd1ac22f6fc0aaf8470d42",
+    "controller.Dockerfile": "42f599e666fd114f4a4aa8cd4259fe04f1eaf634e35323d84da35ed4b7ac7fda",
+    "course/Dockerfile": "0644c3c5e443035f2f27210007a5bd0d53f666163d404da96244dc9d07e531b6",
+    "hub/Dockerfile": "69d784c1ecb14e0cb105e88749eef2e15094f1aa24161a6c4642732dbf851abc"
+  },
+  "scope": "actual-local-docker-one-daemon-two-logical-workers-synthetic-learners",
+  "source": "d713259c2e7381176091dcba0dfdb757b81dbf7b",
+  "source_dirty": false,
+  "status": "PASS",
+  "version": "waypoint-worker-enrollment-rehearsal-v3"
+}

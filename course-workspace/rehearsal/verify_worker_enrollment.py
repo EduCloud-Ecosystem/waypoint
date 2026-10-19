@@ -2,6 +2,7 @@
 """Actual local worker enrollment and certificate rotation, synthetic coursework."""
 import argparse
 import json
+import math
 from pathlib import Path
 import time
 
@@ -57,6 +58,37 @@ def verify_contention_batch(result, *, expiry):
         assert type(observed['elapsed_ms']) in (int, float) and 0 <= observed['elapsed_ms'] < 3000
 
 
+def await_contention_release(probe, *, timeout=10, monotonic=time.monotonic, sleep=time.sleep):
+    """Keep bounded release/exit/renewal evidence; never swallow probe failures."""
+    if type(timeout) not in (int, float) or not math.isfinite(timeout) or not 0 < timeout <= 10:
+        raise ValueError('fixture_contention_timeout_invalid')
+    deadline = monotonic() + timeout
+    previous = None
+    keys = {'held', 'heartbeat_unchanged', 'heartbeat_expired', 'holder_exited', 'heartbeat_renewed'}
+    while True:
+        try: value = probe()
+        except Exception as error:
+            category = type(error).__name__
+            if category not in {'CalledProcessError', 'TimeoutExpired', 'RuntimeError', 'ValueError', 'OSError'}:
+                category = 'OtherFailure'
+            print('CONTENTION_STATUS_REFUSAL ' + json.dumps({'category': category}), flush=True)
+            raise RuntimeError('fixture_contention_status_unavailable') from None
+        if (not isinstance(value, dict) or set(value) != keys or any(type(item) is not bool for item in value.values())
+                or value['heartbeat_renewed'] and value['heartbeat_unchanged']):
+            raise ValueError('fixture_contention_status_invalid')
+        if value != previous:
+            print('CONTENTION_STATUS ' + json.dumps(value, sort_keys=True), flush=True)
+            previous = dict(value)
+        if value['heartbeat_expired']:
+            raise RuntimeError('fixture_contention_heartbeat_expired')
+        remaining = deadline - monotonic()
+        if remaining < 0: raise RuntimeError('fixture_contention_release_timeout')
+        if not value['held'] and value['holder_exited'] and value['heartbeat_renewed']:
+            return
+        if remaining <= 0: raise RuntimeError('fixture_contention_release_timeout')
+        sleep(min(.25, remaining))
+
+
 def exercise(ctx):
     helper, rpc, phase = ctx['helper'], ctx['rpc'], ctx['phase']
     wait, learners, notebook, read = ctx['wait'], ctx['learners'], ctx['notebook'], ctx['read']
@@ -102,11 +134,10 @@ def exercise(ctx):
     # budget. Authenticated busy responses must not renew its heartbeat or stop
     # either live notebook; the next observation recovers after release.
     busy_ids = {suffix: learners(suffix) for suffix in ('source', 'peer')}
+    assert all(len(value) == 1 for value in busy_ids.values())
+    for suffix, session in sessions.items(): read(session, suffix)
     verify_contention_batch(helper('enrollment-contention-batch', {'course': 'course-main', 'seconds': 4}), expiry=False)
-    def released_and_renewed():
-        status = helper('enrollment-contention-status', {'course': 'course-main'})
-        return status['held'] is False and status['holder_exited'] is True and status['heartbeat_renewed'] is True
-    wait(released_and_renewed, 10)
+    await_contention_release(lambda: helper('enrollment-contention-status', {'course': 'course-main'}))
     wait(lambda: helper('guardian-status')['course-main']['ready'], 10)
     for suffix, session in sessions.items():
         assert learners(suffix) == busy_ids[suffix]; read(session, suffix)
@@ -197,6 +228,8 @@ def main():
     parser.add_argument('--hub-image', default='waypoint-authority-hub:local')
     parser.add_argument('--controller-image', default='waypoint-authority-controller:local')
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--profile-cpus', type=int, choices=(4, 5, 6),
+        help='Select existing smaller service caps; actual daemon capacity is recorded separately')
     parser.add_argument('--allow-dirty', action='store_true')
     parser.add_argument('--diagnostic-pause', action='store_true')
     args = parser.parse_args()

@@ -44,6 +44,13 @@ class FakeClient:
 
 
 class FixtureTests(unittest.TestCase):
+    def test_smaller_profile_uses_real_caps_without_relabeling_host_capacity(self):
+        selected = fixture.allocation_for_host(8, 8 * 1024**3, profile_cpus=4)
+        self.assertEqual(selected, fixture.allocation_for_host(4, 8 * 1024**3))
+        for invalid in (True, 3, 4.0, 7, 16):
+            with self.assertRaises(ValueError): fixture.allocation_for_host(8, 8 * 1024**3, profile_cpus=invalid)
+        with self.assertRaises(ValueError): fixture.allocation_for_host(4, 8 * 1024**3, profile_cpus=8)
+
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory(); self.addCleanup(self.temporary.cleanup)
         self.root = Path(self.temporary.name).resolve() / 'private'; self.root.mkdir(mode=0o700)
@@ -518,7 +525,7 @@ class ReportTests(unittest.TestCase):
             'cleanup_verified': True, 'acceptance_eligible': status == 'PASS', 'flags': verifier.observed_flags(phases),
             'source': 'a' * 40, 'code_sha256': {key: 'b' * 64 for key in verifier.CODE_FILES},
             'images': {key: 'sha256:' + 'c' * 64 for key in ('course', 'hub', 'controller')},
-            'host': {'cpu': 8, 'memory_bytes': 8 * 1024**3}, 'allocation': fixture.allocation_for_host(8, 8 * 1024**3)}
+            'host': {'cpu': 8, 'memory_bytes': 8 * 1024**3}, 'allocation': fixture.allocation_for_host(8, 8 * 1024**3), 'profile_cpus': None}
         if status == 'FAIL': value['failure'] = 'RuntimeError'
         return value
 
@@ -537,8 +544,8 @@ class ReportTests(unittest.TestCase):
         early['flags']['actual_python_r'] = True
         with self.assertRaises(ValueError): verifier.validate_report(early)
 
-    def test_v3_resource_reports_cannot_relabel_old_versions_or_lower_profiles(self):
-        self.assertEqual(verifier.VERSION, 'waypoint-remote-notebook-rehearsal-v3')
+    def test_v4_resource_reports_cannot_relabel_old_versions_or_lower_profiles(self):
+        self.assertEqual(verifier.VERSION, 'waypoint-remote-notebook-rehearsal-v4')
         for cpu in (4, 5, 6, 7, 8):
             current = self.report(); current['host']['cpu'] = cpu
             current['allocation'] = fixture.allocation_for_host(cpu, current['host']['memory_bytes'])
@@ -551,6 +558,15 @@ class ReportTests(unittest.TestCase):
                 worker = round((legacy['host_reserve_cpu'] - central - 2 * legacy['guardian_cpu']) / 2, 6)
                 current['allocation'] = dict(legacy, central_cpu=central, worker_service_cpu=worker)
                 with self.assertRaises(ValueError): verifier.validate_report(current)
+
+    def test_selected_profile_records_real_host_and_refuses_inflation(self):
+        current = self.report(); current['profile_cpus'] = 4
+        current['allocation'] = fixture.allocation_for_host(8, current['host']['memory_bytes'], profile_cpus=4)
+        verifier.validate_report(current)
+        self.assertEqual(current['host']['cpu'], 8)
+        self.assertEqual(current['allocation']['name'], 'four-cpu-remote')
+        current['profile_cpus'] = 16
+        with self.assertRaises(ValueError): verifier.validate_report(current)
 
     def test_namespace_collision_checks_are_readonly_and_fail_before_creation(self):
         calls = []
@@ -705,10 +721,23 @@ class ReportTests(unittest.TestCase):
 
 
 class RuntimeDiagnosticsTests(unittest.TestCase):
+    def test_websocket_failure_keeps_only_class_and_status(self):
+        error = verifier.WebSocketBadStatusException('private-message', status_code=403,
+            resp_headers={'private': 'private-token'}, resp_body='private-body')
+        result = verifier.failure_context(error, [])
+        self.assertEqual(result['exception'], 'WebSocketBadStatusException')
+        self.assertEqual(result['websocket_status'], 403)
+        self.assertNotIn('private', json.dumps(result))
+        result = verifier.failure_context(verifier.WebSocketTimeoutException('private-timeout'), [])
+        self.assertEqual(result['exception'], 'WebSocketTimeoutException')
+        self.assertNotIn('private', json.dumps(result))
+
     def model(self):
         name = request()['name']; authority = 'b' * 32
         images = {key: request()[key + '_image'] for key in ('controller', 'hub', 'course')}
         records = {}; events = []; subject = __import__('hashlib').sha256(b'alice').hexdigest()[:24]
+        records[name + '-authority'] = {'Id': 'f' * 64, 'Name': '/' + name + '-authority', 'Image': images['controller'],
+            'Config': {'Labels': {'educloud.fixture': name}}, 'State': {'Running': True, 'OOMKilled': False, 'ExitCode': 0}}
         for index, (worker, kind) in enumerate(((worker, kind) for worker in fixture.WORKERS for kind in ('service', 'guardian')), 1):
             actual = name + '-' + worker + '-' + kind
             labels = {'educloud.fixture': name} if kind == 'service' else {'educloud.runtime.authority': authority,
@@ -735,7 +764,8 @@ class RuntimeDiagnosticsTests(unittest.TestCase):
             events.append(('logs', identifier))
             return ('private-token-cert-path-canary\nWorker runtime stopping owned learners: stale_or_changed\n'
                 'Guardian observation refused: authority_transport_unavailable\n'
-                'authority_transport_failure stage=response_headers category=timeout\n', False)
+                'authority_transport_failure stage=response_headers category=timeout\n'
+                'authority_replay_failure stage=begin category=sqlite_busy\n', False)
         return name, authority, images, records, events, invoke, logs
 
     def test_runtime_diagnostics_capture_owned_state_first_and_never_raw_material(self):
@@ -746,6 +776,8 @@ class RuntimeDiagnosticsTests(unittest.TestCase):
         self.assertEqual(result['learners']['peer']['running_count'], 1)
         self.assertEqual(result['learners']['receiver']['container_count'], 0)
         self.assertEqual(len(result['enforcers']), 4)
+        self.assertTrue(result['authority']['logs_available'])
+        self.assertEqual(result['authority']['counts']['replay']['begin/sqlite_busy'], 1)
         self.assertTrue(all(value['available'] and value['logs_available'] for value in result['enforcers'].values()))
         first_log = next(index for index, event in enumerate(events) if event[0] == 'logs')
         self.assertEqual(sum(event[0] == 'docker' and event[1][0] == 'ps' for event in events[:first_log]), 3)
@@ -768,12 +800,16 @@ class RuntimeDiagnosticsTests(unittest.TestCase):
             'Worker runtime stopping owned learners: private-path-canary\n'
             'authority_transport_failure stage=private_path category=timeout\n'
             'authority_transport_failure stage=response_headers category=private_key\n'
+            'authority_replay_failure stage=private_stage category=sqlite_busy\n'
+            'authority_replay_failure stage=begin category=private_reason\n'
+            'authority_replay_failure stage=begin category=sqlite_busy\n'
             'authority_transport_failure stage=response_headers category=timeout\n')
         result = verifier.diagnostic_log_counts(raw)
         self.assertEqual(result['supervisor']['runtime_endpoint_enforcement_unavailable'], 1)
         self.assertEqual(result['snapshot_busy'], 1); self.assertEqual(result['stop_busy'], 1)
         self.assertEqual(sum(result['guardian'].values()), 0)
         self.assertEqual(sum(result['transport'].values()), 1)
+        self.assertEqual(sum(result['replay'].values()), 1)
         for secret in ('private-token-canary', 'private-path-canary', 'private_path', 'private_key'):
             self.assertNotIn(secret, json.dumps(result))
 
@@ -813,7 +849,7 @@ class RuntimeDiagnosticsTests(unittest.TestCase):
         from unittest.mock import Mock
         collect = Mock(side_effect=ValueError('private-diagnostic-canary')); publish = Mock()
         verifier.capture_runtime_diagnostics(Path('/unused'), RuntimeError('private-original'), 'unused', {}, None, collect=collect, publish=publish)
-        self.assertEqual(publish.call_args.args[1], {'version': 'waypoint-remote-runtime-diagnostics-v1',
+        self.assertEqual(publish.call_args.args[1], {'version': 'waypoint-remote-runtime-diagnostics-v2',
             'scope': 'post-failure-nonatomic-readonly', 'available': False})
         publish.side_effect = RuntimeError('private-publication-canary')
         verifier.capture_runtime_diagnostics(Path('/unused'), RuntimeError('private-original'), 'unused', {}, None, collect=collect, publish=publish)

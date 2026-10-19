@@ -123,8 +123,9 @@ counts. Worker revocation has no automatic undo or re-enrollment shortcut.
 ## Repeat the actual local test
 
 Use the clean reviewed checkout and the disposable environment described in
-[the authenticated runtime guide](AUTHENTICATED-RUNTIME.md). Desktop testing uses
-at least six Docker CPUs and 6,656 MiB. Its controller receives one CPU, and the
+[the authenticated runtime guide](AUTHENTICATED-RUNTIME.md). Automatic selection
+on a daemon with at least six CPUs uses the six-CPU profile and requires at least
+6,656 MiB. Its controller receives one CPU, and the
 fixture reserves 1.5 CPUs for the controller, both Guardians and overhead;
 the complete reservation is 5.25 CPUs. The four/five-CPU Linux profiles retain
 their 0.4-CPU controller. Reports record these selected limits and compare them
@@ -140,6 +141,14 @@ python course-workspace/rehearsal/verify_worker_enrollment.py \
   --output /tmp/ENROLLMENT-RUNTIME.json
 ```
 
+Add `--profile-cpus 4` to reproduce the existing CI service caps on a larger local
+daemon, including its 0.4-CPU controller and 0.1-CPU Guardians. Both authenticated
+runtime drivers accept existing profiles 4, 5 and 6 only when the selected profile
+fits the actual daemon. Authenticated reports v4 and enrollment reports v3 record
+`profile_cpus` separately from actual host capacity (`null` means automatic).
+Historical report versions retain their original rules and cannot be relabelled
+as selected-profile evidence. This does not isolate a physical four-CPU host.
+
 The test creates a fresh registry, proves legacy runtime ACL entries cannot bypass
 unenrolled status, enrolls reviewed worker credentials and executes Python/R with
 saved files. It checks inert staging across authority restart, old/new mutual TLS
@@ -147,6 +156,10 @@ overlap, retirement, actual credential installation, and restored coursework.
 It also holds a real endpoint lock for four seconds: busy responses leave the
 heartbeat unchanged and preserve both notebooks. A thirteen-second exclusion
 proves heartbeat expiry and authority shutdown, followed by saved-work recovery.
+The brief-hold recovery probe records only fixed release, holder-exit and
+heartbeat booleans. Malformed replies, expired heartbeats and probe exceptions
+fail explicitly rather than being swallowed by a generic readiness wait. The
+four-second hold, ten-second recovery wait and production deadlines are unchanged.
 It lets an old Guardian's five-second overlap expire without an operator retirement
 call, confirms its worker's notebook stops while the peer worker continues, then
 installs the replacement and reopens saved work. Worker revocation and service

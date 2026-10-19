@@ -4,8 +4,9 @@ import math
 import re
 
 LEGACY_VERSION='waypoint-authenticated-runtime-rehearsal-v1'
-PREVIOUS_VERSION='waypoint-authenticated-runtime-rehearsal-v2'
-VERSION='waypoint-authenticated-runtime-rehearsal-v3'
+ALLOCATION_VERSION='waypoint-authenticated-runtime-rehearsal-v2'
+PREVIOUS_VERSION='waypoint-authenticated-runtime-rehearsal-v3'
+VERSION='waypoint-authenticated-runtime-rehearsal-v4'
 SCOPE='actual-local-docker-one-daemon-two-logical-workers-synthetic-learners'
 PHASES=(
     'mtls_role_course_and_nonowner_refusal',
@@ -40,7 +41,8 @@ ALLOCATION_PRESETS['six-cpu-local']={'name':'six-cpu-local','learner_cpu':.25,'h
 RECIPE_FILES=frozenset({'.dockerignore','hub/Dockerfile','controller.Dockerfile','course/Dockerfile'})
 BASE={'version','status','scope','phases','cleanup_verified','acceptance_eligible'}
 LEGACY_COMPLETE=BASE|{'images','source','source_dirty','code_sha256','recipe_sha256','host'}
-COMPLETE=LEGACY_COMPLETE|{'allocation'}
+ALLOCATION_COMPLETE=LEGACY_COMPLETE|{'allocation'}
+COMPLETE=ALLOCATION_COMPLETE|{'profile_cpus'}
 ALLOWED=COMPLETE|{'failure'}
 FAILURES=frozenset({'RuntimeError','AssertionError','OSError','FileNotFoundError','PermissionError','CalledProcessError','TimeoutExpired',
                     'KeyboardInterrupt','SystemExit','ValueError','TypeError','KeyError','ConnectionError','TimeoutError'})
@@ -49,9 +51,13 @@ IMAGE=re.compile(r'sha256:[0-9a-f]{64}\Z')
 COMMIT=re.compile(r'[0-9a-f]{40}\Z')
 
 
-def allocation_for_cpu(cpu):
-    """Deterministic disposable-fixture allocation from verified daemon CPUs."""
+def allocation_for_cpu(cpu, profile_cpus=None):
+    """Select existing fixture caps without relabeling actual daemon capacity."""
     if type(cpu) is not int or not 4<=cpu<=4096:raise ValueError('authenticated_runtime_allocation_refused')
+    if profile_cpus is not None:
+        if type(profile_cpus) is not int or profile_cpus not in (4,5,6) or profile_cpus>cpu:
+            raise ValueError('authenticated_runtime_allocation_refused')
+        cpu=profile_cpus
     name='six-cpu-local' if cpu>=6 else ('five-cpu-local' if cpu==5 else 'four-cpu-ci')
     return dict(ALLOCATION_PRESETS[name])
 
@@ -62,10 +68,10 @@ def _hash_map(value,keys,pattern):
 
 def _validate(report,require_clean):
     if type(require_clean) is not bool or not isinstance(report,dict) or not BASE<=set(report)<=ALLOWED:raise ValueError()
-    if (report['version'] not in (VERSION,PREVIOUS_VERSION,LEGACY_VERSION) or report['scope']!=SCOPE or report['status'] not in ('PASS','FAIL')
+    if (report['version'] not in (VERSION,PREVIOUS_VERSION,ALLOCATION_VERSION,LEGACY_VERSION) or report['scope']!=SCOPE or report['status'] not in ('PASS','FAIL')
             or type(report['cleanup_verified']) is not bool or type(report['acceptance_eligible']) is not bool):raise ValueError()
     legacy=report['version']==LEGACY_VERSION
-    complete=LEGACY_COMPLETE if legacy else COMPLETE
+    complete=LEGACY_COMPLETE if legacy else (COMPLETE if report['version']==VERSION else ALLOCATION_COMPLETE)
     if not set(report)<=complete|{'failure'}:raise ValueError()
     phases=report['phases']
     if not isinstance(phases,list) or any(not isinstance(phase,str) for phase in phases) or phases!=list(PHASES[:len(phases)]):raise ValueError()
@@ -78,14 +84,19 @@ def _validate(report,require_clean):
         host=report['host']
         if (not isinstance(host,dict) or set(host)!={'memory_bytes','cpu'} or type(host['memory_bytes']) is not int
                 or not 6656*1024**2<=host['memory_bytes']<=2**50 or type(host['cpu']) is not int or not 4<=host['cpu']<=4096):raise ValueError()
+    if 'profile_cpus' in report:
+        profile=report['profile_cpus']
+        if profile is not None and (type(profile) is not int or profile not in (4,5,6)):raise ValueError()
+        if 'host' in report:allocation_for_cpu(report['host']['cpu'],profile_cpus=profile)
     if 'allocation' in report:
         allocation=report['allocation']
-        modern=report['version']==VERSION
+        modern=report['version'] in (VERSION,PREVIOUS_VERSION)
         numeric={'learner_cpu','hub_cpu','reserved_cpu'}|({'controller_cpu','guardian_cpu','host_reserve_cpu'} if modern else set())
         if (not isinstance(allocation,dict) or set(allocation)!=numeric|{'name','minimum_cpu'}
                 or any(type(allocation[key]) not in (int,float) or not math.isfinite(allocation[key]) for key in numeric)
                 or type(allocation['minimum_cpu']) is not int or 'host' not in report):raise ValueError()
-        expected=(allocation_for_cpu(report['host']['cpu']) if modern else
+        if report['version']==VERSION and 'profile_cpus' not in report:raise ValueError()
+        expected=(allocation_for_cpu(report['host']['cpu'],profile_cpus=report.get('profile_cpus')) if modern else
                   LEGACY_ALLOCATION_PRESETS['five-cpu-local' if report['host']['cpu']>=5 else 'four-cpu-ci'])
         if allocation!=expected:raise ValueError()
         if modern and (allocation['reserved_cpu']!=3*(allocation['hub_cpu']+allocation['learner_cpu'])+allocation['host_reserve_cpu']

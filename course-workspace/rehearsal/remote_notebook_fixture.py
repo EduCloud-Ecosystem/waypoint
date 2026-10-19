@@ -30,12 +30,16 @@ ENDPOINTS = (('worker-one', 'course-main', 'source'), ('worker-one', 'course-pee
              ('worker-two', 'course-main', 'receiver'))
 
 
-def allocation_for_host(cpu, memory):
+def allocation_for_host(cpu, memory, *, profile_cpus=None):
     """Budget all three course endpoints and this topology's five controls."""
     if type(cpu) is not int or not 4 <= cpu <= 4096:
         raise ValueError('remote_fixture_cpu_refused')
     if type(memory) is not int or memory < 6656 * 1024**2:
         raise ValueError('remote_fixture_memory_refused')
+    if profile_cpus is not None:
+        if type(profile_cpus) is not int or profile_cpus not in (4, 5, 6, 8) or profile_cpus > cpu:
+            raise ValueError('remote_fixture_cpu_refused')
+        cpu = profile_cpus
     if cpu >= 8:
         name, minimum, hub, learner, central, worker = 'eight-cpu-remote', 8, 1.0, .25, 1.0, .75
     elif cpu >= 6:
@@ -57,7 +61,8 @@ def allocation_for_host(cpu, memory):
 def validate_request(request):
     required = {'name', 'network', 'edge_network', 'worker_networks', 'ports', 'password',
         'course_image', 'hub_image', 'controller_image'}
-    if (not isinstance(request, dict) or set(request) != required
+    if (not isinstance(request, dict) or not required <= set(request) <= required | {'profile_cpus'}
+            or request.get('profile_cpus') is not None and (type(request['profile_cpus']) is not int or request['profile_cpus'] not in (4, 5, 6, 8))
             or not isinstance(request['name'], str) or not re.fullmatch(r'wa[0-9a-f]{10}', request['name'])
             or request['network'] != request['name'] + '-authority-control'
             or request['edge_network'] != request['name'] + '-edge'
@@ -91,7 +96,7 @@ def initialize(root, request):
     capture_cleanup_owner(root, request['name'])
     (root / 'control').chmod(0o700)
     client = docker.DockerClient(base_url='unix:///var/run/docker.sock', version='auto', timeout=5)
-    info = client.info(); allocation = allocation_for_host(info['NCPU'], info['MemTotal'])
+    info = client.info(); allocation = allocation_for_host(info['NCPU'], info['MemTotal'], profile_cpus=request.get('profile_cpus'))
     class Empty:
         fixture_only = True
         scope = 'course'
@@ -131,7 +136,7 @@ def initialize(root, request):
         # owns its service/Guardian and half the central reserve. Higher hosts
         # retain the existing conservative per-view reserve unchanged.
         local_controls = allocation['host_reserve_cpu']
-        if info['NCPU'] < 8:
+        if allocation['minimum_cpu'] < 8:
             local_controls = allocation['worker_service_cpu'] + allocation['guardian_cpu'] + allocation['central_cpu'] / len(WORKERS)
         config = dict(version='educloud-local-runtime-v1', authority_id=authority_id, daemon_id=info['ID'],
             backend_directory=str(worker_root / 'state'), host_reserve_mb=2048, host_reserve_cpu=local_controls,

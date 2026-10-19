@@ -58,9 +58,9 @@ class AuthorityAccessTests(unittest.TestCase):
     def close_servers(self):
         for server,thread in self.servers:server.shutdown();server.server_close();thread.join(2)
 
-    def client(self,role='hub',worker='one',course='course',authority=None,host='localhost',ca=None,credentials=None):
+    def client(self,role='hub',worker='one',course='course',authority=None,host='localhost',ca=None,credentials=None,timeout=.5):
         cert,key=credentials or self.credentials[role]
-        return AuthorityClient('https://'+host+':'+str(self.server.server_port),authority or self.authority_id,ca or self.pki.ca_cert,cert,key,worker,course,timeout=.5)
+        return AuthorityClient('https://'+host+':'+str(self.server.server_port),authority or self.authority_id,ca or self.pki.ca_cert,cert,key,worker,course,timeout=timeout)
 
     def frame(self,operation='hub.authorize',payload=None):
         return {'version':VERSION,'authority_id':self.authority_id,'nonce':uuid.uuid4().hex,'issued_at':int(time.time()),
@@ -279,6 +279,8 @@ class AuthorityAccessTests(unittest.TestCase):
         self.refused('authority_replay_state_unavailable',lambda:self.client().call('hub.authorize',{}))
         self.assertEqual(len(self.calls),1)
 
+    # Durable plan/history tests use the normal client budget; explicit socket
+    # deadline tests above retain their short adversarial timeouts.
     def operator_fixture(self):
         import ownership_contract as ownership
         from test_ownership_contract import FakeBackend
@@ -294,7 +296,7 @@ class AuthorityAccessTests(unittest.TestCase):
         return authority,backend,plans
 
     def test_operator_real_tls_server_owned_reviewed_plan_digest_and_scoped_inventory(self):
-        authority,backend,plans=self.operator_fixture();client=self.client('operator')
+        authority,backend,plans=self.operator_fixture();client=self.client('operator',timeout=3)
         preview=client.call('ownership.preview',{'receiver_worker_id':'two'})
         self.assertRegex(preview['plan_id'],r'^[0-9a-f]{32}$');self.assertEqual([path.name for path in plans.iterdir()],[preview['plan_id']+'.json'])
         self.refused('authority_operation_refused',lambda:client.call('ownership.apply',{'plan_id':preview['plan_id'],'plan_sha256':'f'*64}))
@@ -304,14 +306,14 @@ class AuthorityAccessTests(unittest.TestCase):
         self.assertEqual(authority.inventory()['pending_transfers'],0)
 
     def test_operator_apply_rechecks_all_plan_endpoint_scopes_and_private_reference(self):
-        authority,backend,plans=self.operator_fixture();client=self.client('operator');preview=client.call('ownership.preview',{'receiver_worker_id':'two'})
+        authority,backend,plans=self.operator_fixture();client=self.client('operator',timeout=3);preview=client.call('ownership.preview',{'receiver_worker_id':'two'})
         fingerprint=self.pki.fingerprint(self.credentials['operator'][0]);self.entries[fingerprint]['workers']=['one'];self.write_acl()
         self.refused('authority_operation_refused',lambda:client.call('ownership.apply',{'plan_id':preview['plan_id'],'plan_sha256':preview['plan_sha256']}))
         self.assertEqual(authority.inventory()['pending_transfers'],0);self.assertFalse(backend.barriers)
         self.refused('authority_frame_invalid',lambda:client.call('ownership.apply',{'plan_id':'../secret','plan_sha256':'a'*64}))
 
     def test_operator_revoked_after_backend_read_cannot_prepare_under_sql_write_lock(self):
-        authority,backend,plans=self.operator_fixture();client=self.client('operator');preview=client.call('ownership.preview',{'receiver_worker_id':'two'});changed=[]
+        authority,backend,plans=self.operator_fixture();client=self.client('operator',timeout=3);preview=client.call('ownership.preview',{'receiver_worker_id':'two'});changed=[]
         def revoke():
             if not changed:
                 changed.append(True);del self.entries[self.pki.fingerprint(self.credentials['operator'][0])];self.write_acl()
@@ -321,7 +323,7 @@ class AuthorityAccessTests(unittest.TestCase):
 
     def test_operator_acl_loss_after_prepare_is_rechecked_under_endpoint_locks_before_effects(self):
         import ownership_contract as ownership
-        authority,backend,plans=self.operator_fixture();client=self.client('operator');preview=client.call('ownership.preview',{'receiver_worker_id':'two'})
+        authority,backend,plans=self.operator_fixture();client=self.client('operator',timeout=3);preview=client.call('ownership.preview',{'receiver_worker_id':'two'})
         def revoke(stage,transaction):
             if stage=='prepared':del self.entries[self.pki.fingerprint(self.credentials['operator'][0])];self.write_acl()
         with patch.object(ownership,'fault_hook',side_effect=revoke):

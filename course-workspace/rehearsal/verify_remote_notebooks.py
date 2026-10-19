@@ -16,10 +16,12 @@ import uuid
 from urllib.parse import urlsplit
 
 import requests
+from websocket import WebSocketBadStatusException, WebSocketTimeoutException
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT), str(Path(__file__).resolve().parent)]
 import evidence
+from authority_access import REPLAY_STAGES, REPLAY_FAILURES
 from smoke import kernel, change, xsrf
 from hub.authority_client import OPERATIONS, ERRORS
 from worker_runtime import SUPERVISOR_RUNTIME_CODES
@@ -28,7 +30,7 @@ from runtime_guardian import OBSERVATION_CODES
 from verify_authenticated_runtime import command, port, wait, configured_cpu_limit, request_notebook_start
 from remote_notebook_fixture import allocation_for_host, mount_plan, WORKERS, ENDPOINTS
 
-VERSION = 'waypoint-remote-notebook-rehearsal-v3'
+VERSION = 'waypoint-remote-notebook-rehearsal-v4'
 SCOPE = 'actual-local-docker-one-daemon-two-worker-services-synthetic-notebooks'
 PHASES = (
     'central_has_no_socket_homes_or_worker_state',
@@ -122,7 +124,9 @@ def diagnostic_log_counts(raw):
     result = {'supervisor': {code: 0 for code in sorted(DIAGNOSTIC_SUPERVISOR_CODES)},
         'guardian': {code: 0 for code in sorted(DIAGNOSTIC_GUARDIAN_CODES)}, 'snapshot_busy': 0, 'stop_busy': 0,
         'transport': {stage + '/' + category: 0 for stage in sorted(DIAGNOSTIC_TRANSPORT_STAGES)
-            for category in sorted(DIAGNOSTIC_TRANSPORT_CATEGORIES)}}
+            for category in sorted(DIAGNOSTIC_TRANSPORT_CATEGORIES)},
+        'replay': {stage + '/' + category: 0 for stage in sorted(REPLAY_STAGES)
+            for category in sorted(REPLAY_FAILURES)}}
     for line in raw[:131072].splitlines():
         for field, prefix in (('supervisor', 'Worker runtime supervisor failed: supervision/'),
                 ('supervisor', 'Worker runtime stopping owned learners: '), ('guardian', 'Guardian observation refused: ')):
@@ -135,6 +139,10 @@ def diagnostic_log_counts(raw):
         if match:
             key = match[1] + '/' + match[2]
             if key in result['transport']: result['transport'][key] = min(10000, result['transport'][key] + 1)
+        match = re.search(r'authority_replay_failure stage=([a-z_]+) category=([a-z_]+)$', line)
+        if match:
+            key = match[1] + '/' + match[2]
+            if key in result['replay']: result['replay'][key] = min(10000, result['replay'][key] + 1)
     return result
 
 
@@ -184,8 +192,8 @@ def runtime_diagnostics(error, name, images, authority_id, *, invoke=command, re
                 or (expected_name is not None and value.get('Name') != '/' + expected_name)):
             raise ValueError('fixture_diagnostic_scope_invalid')
         return value
-    result = {'version': 'waypoint-remote-runtime-diagnostics-v1', 'scope': 'post-failure-nonatomic-readonly', 'available': True,
-        'http': diagnostic_http_context(error), 'learners': {}, 'enforcers': {}}
+    result = {'version': 'waypoint-remote-runtime-diagnostics-v2', 'scope': 'post-failure-nonatomic-readonly', 'available': True,
+        'http': diagnostic_http_context(error), 'learners': {}, 'enforcers': {}, 'authority': {}}
     # Capture learner state before any potentially slow log reads.
     for _, _, suffix in ENDPOINTS:
         item = {'available': False, 'container_count': None, 'running_count': None, 'states': []}
@@ -198,6 +206,15 @@ def runtime_diagnostics(error, name, images, authority_id, *, invoke=command, re
             item.update(available=True, container_count=len(states), running_count=sum(value['running'] for value in states), states=states)
         except Exception: pass
         result['learners'][suffix] = item
+    item = {'available': False, 'state': None, 'logs_available': False, 'truncated': False, 'counts': diagnostic_log_counts('')}
+    try:
+        value = owned(name + '-authority', name + '-authority')
+        item.update(available=True, state=state(value))
+        raw, truncated = read_logs(value['Id'])
+        if not isinstance(raw, str) or type(truncated) is not bool: raise ValueError('fixture_diagnostic_log_invalid')
+        item.update(logs_available=True, truncated=truncated, counts=diagnostic_log_counts(raw))
+    except Exception: pass
+    result['authority'] = item
     for worker in WORKERS:
         for kind in ('service', 'guardian'):
             item = {'available': False, 'state': None, 'logs_available': False, 'truncated': False, 'counts': diagnostic_log_counts('')}
@@ -218,7 +235,7 @@ def capture_runtime_diagnostics(path, error, name, images, authority_id, *, coll
         if publish is None:
             from authority_access import publish
         try: value = collect(error, name, images, authority_id)
-        except Exception: value = {'version': 'waypoint-remote-runtime-diagnostics-v1', 'scope': 'post-failure-nonatomic-readonly', 'available': False}
+        except Exception: value = {'version': 'waypoint-remote-runtime-diagnostics-v2', 'scope': 'post-failure-nonatomic-readonly', 'available': False}
         publish(path, value)
     except Exception: pass
 
@@ -379,7 +396,7 @@ def failure_context(error, phases):
         subprocess.TimeoutExpired, subprocess.CalledProcessError, KeyboardInterrupt,
         requests.exceptions.HTTPError, requests.exceptions.ConnectionError,
         requests.exceptions.ReadTimeout, requests.exceptions.ConnectTimeout,
-        requests.exceptions.TooManyRedirects)
+        requests.exceptions.TooManyRedirects, WebSocketBadStatusException, WebSocketTimeoutException)
     result = {'phase': PHASES[len(phases)] if len(phases) < len(PHASES) else 'finalization',
         'exception': type(error).__name__ if type(error) in known else 'OtherFailure', 'lines': []}
     trace = error.__traceback__
@@ -390,6 +407,9 @@ def failure_context(error, phases):
             result['notebook_line'] = trace.tb_lineno
         trace = trace.tb_next
     result['lines'] = result['lines'][-8:]
+    if isinstance(error, WebSocketBadStatusException):
+        status = getattr(error, 'status_code', None)
+        if type(status) is int and 100 <= status <= 599: result['websocket_status'] = status
     if isinstance(error, requests.exceptions.HTTPError):
         status = getattr(error.response, 'status_code', None)
         if type(status) is int and 100 <= status <= 599: result['http_status'] = status
@@ -413,7 +433,7 @@ def failure_context(error, phases):
 
 def validate_report(value):
     required = {'version', 'status', 'scope', 'phases', 'cleanup_verified', 'acceptance_eligible',
-        'flags', 'source', 'code_sha256', 'images', 'host', 'allocation'}
+            'flags', 'source', 'code_sha256', 'images', 'host', 'allocation', 'profile_cpus'}
     if (not isinstance(value, dict) or not required <= set(value) <= required | {'failure'}
             or value['version'] != VERSION or value['scope'] != SCOPE or value['status'] not in ('PASS', 'FAIL')
             or value['flags'] != observed_flags(value.get('phases', []))
@@ -426,7 +446,7 @@ def validate_report(value):
             or not isinstance(value['images'], dict) or set(value['images']) != {'course', 'hub', 'controller'}
             or any(not isinstance(item, str) or not re.fullmatch(r'sha256:[0-9a-f]{64}', item) for item in value['images'].values())
             or not isinstance(value['host'], dict) or set(value['host']) != {'cpu', 'memory_bytes'}
-            or value['allocation'] != allocation_for_host(value['host']['cpu'], value['host']['memory_bytes'])):
+            or value['allocation'] != allocation_for_host(value['host']['cpu'], value['host']['memory_bytes'], profile_cpus=value['profile_cpus'])):
         raise ValueError('remote_notebook_report_invalid')
     if any(type(value['allocation'][key]) is bool for key in value['allocation']): raise ValueError('remote_notebook_report_invalid')
     if value['status'] == 'PASS':
@@ -470,16 +490,18 @@ def run(args):
     images = {role: command('image', 'inspect', getattr(args, role + '_image'), '--format', '{{.Id}}')
               for role in ('course', 'hub', 'controller')}
     info = json.loads(command('info', '--format', '{{json .}}')); host = {'cpu': info['NCPU'], 'memory_bytes': info['MemTotal']}
-    allocation = allocation_for_host(host['cpu'], host['memory_bytes'])
+    profile_cpus = getattr(args, 'profile_cpus', None)
+    allocation = allocation_for_host(host['cpu'], host['memory_bytes'], profile_cpus=profile_cpus)
     ports = {key: port() for key in ('authority', 'source', 'peer', 'receiver')}
     request = {'name': name, 'network': name + '-authority-control', 'edge_network': name + '-edge',
         'worker_networks': {worker: name + '-' + worker + '-channel' for worker in WORKERS}, 'ports': ports,
-        'password': secrets.token_urlsafe(32), **{key + '_image': image for key, image in images.items()}}
+        'password': secrets.token_urlsafe(32), 'profile_cpus': profile_cpus,
+        **{key + '_image': image for key, image in images.items()}}
     volumes = [name + '-control', *(name + '-' + worker + '-backend' for worker in WORKERS)]
     bases = {key: 'http://127.0.0.1:' + str(ports[key]) for key in ('source', 'peer', 'receiver')}
     proof = {path: evidence.sha256_file(ROOT / path) for path in CODE_FILES}
     report = {'version': VERSION, 'status': 'FAIL', 'scope': SCOPE, 'phases': phases, 'flags': dict(FLAGS),
-        'source': source['revision'], 'code_sha256': proof, 'images': images, 'host': host, 'allocation': allocation,
+        'source': source['revision'], 'code_sha256': proof, 'images': images, 'host': host, 'allocation': allocation, 'profile_cpus': profile_cpus,
         'cleanup_verified': False, 'acceptance_eligible': False}
     def phase(value):
         assert value == PHASES[len(phases)]; phases.append(value); print(value + ': PASS', flush=True)
@@ -706,5 +728,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     for key in ('course', 'hub', 'controller'): parser.add_argument('--' + key + '-image', default='waypoint-authority-' + key + ':local')
     parser.add_argument('--output', required=True)
+    parser.add_argument('--profile-cpus', type=int, choices=(4, 5, 6, 8),
+        help='exercise a smaller supported profile; actual daemon capacity is still recorded')
     try: run(parser.parse_args())
     except BaseException: raise SystemExit('remote_notebook_rehearsal_failed') from None

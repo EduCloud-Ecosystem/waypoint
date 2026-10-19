@@ -1,5 +1,16 @@
 # Observed continuity validation
 
+## October 18 local authorization and Guardian reliability
+
+At `b88f4b5`, the actual local worker-channel notebook rehearsal passed 17/17
+phases with Python/R, retained coursework, failure/recovery enforcement,
+certificate rotation, revocation and verified cleanup. The 696 component tests
+also passed. This used the existing four-CPU service caps on an eight-CPU local
+ARM64 daemon; it does not establish hosted or independent-host acceptance.
+The [diagnosis and preserved failed controls](evidence/2026-10-18-guardian-reliability/README.md)
+record source hashes, bounded reports and remaining limits. No new hosted pilot
+was started.
+
 ## October 11 repeatable component pilot
 
 Accepted Waypoint revision: `f05a504f640ef2f3574b7e2f9b7b032c2f17f84b`

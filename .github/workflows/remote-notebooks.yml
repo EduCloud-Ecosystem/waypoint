@@ -28,12 +28,22 @@ jobs:
           docker build -t waypoint-authority-hub:local course-workspace/hub
           docker build -t waypoint-authority-course:local course-workspace/course
           docker build --build-arg HUB_IMAGE=waypoint-authority-hub:local -t waypoint-authority-controller:local -f course-workspace/controller.Dockerfile course-workspace
+      - name: Verify replay admission at the pilot controller CPU allowance
+        run: |
+          umask 077
+          docker run --rm --network none --cpus .5 --memory 256m \
+            --mount type=bind,src="$PWD/course-workspace",dst=/work,readonly \
+            --entrypoint python waypoint-authority-controller:local -c \
+            'import sys; from pathlib import Path; sys.path.insert(0, "/work/rehearsal"); from verify_replay_contention import run; Path("/tmp/replay-evidence").mkdir(mode=0o700); sys.exit(run(Path("/tmp/replay-evidence/result.json")))' \
+            > /tmp/waypoint-replay-contention.json
       - name: Exercise actual notebooks and independent local enforcement
         run: python course-workspace/rehearsal/verify_remote_notebooks.py --output /tmp/waypoint-remote-notebooks
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: local-worker-channel-notebook-evidence
-          path: /tmp/waypoint-remote-notebooks/*.json
+          path: |
+            /tmp/waypoint-remote-notebooks/*.json
+            /tmp/waypoint-replay-contention.json
           if-no-files-found: error
           retention-days: 7

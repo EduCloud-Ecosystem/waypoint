@@ -238,9 +238,9 @@ def cleanup_permissions(root, client=None):
     finally: os.close(root_fd)
 
 
-def course_allocation(cpu):
+def course_allocation(cpu, *, profile_cpus=None):
     from authenticated_evidence import allocation_for_cpu
-    return allocation_for_cpu(cpu)
+    return allocation_for_cpu(cpu, profile_cpus=profile_cpus)
 
 
 def initialize(root, request):
@@ -248,7 +248,7 @@ def initialize(root, request):
     capture_cleanup_owner(root, request['name'])
     client = docker.DockerClient(base_url='unix:///var/run/docker.sock', version='auto')
     info = client.info()
-    allocation = course_allocation(info['NCPU'])
+    allocation = course_allocation(info['NCPU'], profile_cpus=request.get('profile_cpus'))
     course_cpu = allocation['hub_cpu'] + allocation['learner_cpu']
     reserve_cpu = allocation['host_reserve_cpu']
     assert 3 * course_cpu + reserve_cpu == allocation['reserved_cpu']

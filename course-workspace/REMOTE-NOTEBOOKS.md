@@ -34,6 +34,40 @@ not renew a heartbeat or ownership epoch. Quarantine, corruption, authentication
 failure and an error after acquisition do not become deferred success. No network
 wait holds a shared runtime SQLite writer transaction.
 
+The authority's replay writer admits this service instance's concurrent requests
+in FIFO order before opening SQLite. Each waiter has its own wake event; releasing
+a writer wakes only its successor. Queue and SQLite lock waits share a one-second
+monotonic budget. This is a contention budget, not a hard wall-clock limit on
+filesystem sync or validation. No failed request is retried. Fresh private-file,
+integrity, nonce and clock checks still run after admission, and nonce consumption
+commits before authorization is rechecked or a runtime effect is dispatched.
+Other processes and separately opened stores retain SQLite's bounded refusal;
+the authority server uses one replay-store instance. Guardian deadlines and
+fail-closed stops are unchanged.
+
+Managed enrollment checks fully validate a fresh read snapshot on every call.
+Checks within the already-persisted clock second do not acquire a writer or
+rewrite the clock floor. Advancing time closes the read transaction before taking
+a writer and fully validating again. A clock rollback relative to either the
+persisted floor or the first read is refused. Revocation, certificate expiry and
+history checks remain fresh; no authorization result is cached across requests.
+
+Diagnostic reports v2 include bounded authority log counters for replay failure
+stage and category, including SQLite busy/locked, integrity and deadline failures.
+They contain no raw logs, request material, credentials or exception messages.
+Historical v1 reports remain historical evidence. The concurrency reproduction
+uses eight callers and 400 distinct nonces on real temporary SQLite:
+
+```sh
+python course-workspace/rehearsal/verify_replay_contention.py \
+  --output /private/replay-contention.json
+```
+
+Run that command in a disposable container capped at 0.5 CPU to exercise the
+pilot controller allowance. Its report records the exact replay implementation
+hash and durable nonce count. It does not establish HTTP, Guardian or notebook
+acceptance; those still require the full rehearsal below.
+
 Worker response waits for notebook stop and replacement spawn include the existing
 five-second Docker shutdown allowance. Certificate and absolute session deadlines
 still govern every effect. Explicit stop completion requires removal of the owned
@@ -96,9 +130,13 @@ service itself has neither a Docker socket nor course-home mounts. Synthetic
 coursework is copied once to an empty stopped receiver using the existing archive
 validation helper; this is local staging, not a network backup transport.
 
-The v3 rehearsal selects a fixed fixture profile from the verified daemon CPU
+The v4 rehearsal selects a fixed fixture profile from the verified daemon CPU
 count. The total below counts all three Hub/learner pairs and all five control
 services, including the stopped replacement endpoint's full allowance.
+An optional `--profile-cpus 4` (also 5, 6 or 8) exercises a smaller supported
+profile on a larger daemon. The requested profile must fit the actual daemon;
+the v4 report records `profile_cpus` separately from actual host CPU/memory.
+This tests the service caps, not isolation on a physically smaller machine.
 
 | Daemon CPUs | Profile | Each Hub | Each learner | Central | Each worker | Each Guardian | Total caps |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -123,8 +161,8 @@ control reserve and actual caps remain unchanged.
 This bounded one-daemon experiment changes neither production allocation nor
 heartbeat, RPC, or failure-detection deadlines. It tests a control-service
 resource hypothesis; it does not establish the cause of earlier kernel 403s or
-claim that the prior failures are resolved. Older v2 reports retain their
-historical profiles and are not relabeled as v3 evidence. Other rehearsals keep
+claim that the prior failures are resolved. Older v2/v3 reports retain their
+historical profiles and are not relabeled as v4 evidence. Other rehearsals keep
 their existing presets. A passing run does not establish capacity for another
 profile or for a classroom. Cleanup verifies immutable
 container identities and removes control processes before learners, so active
