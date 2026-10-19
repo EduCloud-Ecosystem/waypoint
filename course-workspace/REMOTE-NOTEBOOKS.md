@@ -45,6 +45,13 @@ Other processes and separately opened stores retain SQLite's bounded refusal;
 the authority server uses one replay-store instance. Guardian deadlines and
 fail-closed stops are unchanged.
 
+Managed enrollment checks fully validate a fresh read snapshot on every call.
+Checks within the already-persisted clock second do not acquire a writer or
+rewrite the clock floor. Advancing time closes the read transaction before taking
+a writer and fully validating again. A clock rollback relative to either the
+persisted floor or the first read is refused. Revocation, certificate expiry and
+history checks remain fresh; no authorization result is cached across requests.
+
 Diagnostic reports v2 include bounded authority log counters for replay failure
 stage and category, including SQLite busy/locked, integrity and deadline failures.
 They contain no raw logs, request material, credentials or exception messages.

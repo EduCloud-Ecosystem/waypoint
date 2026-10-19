@@ -1,5 +1,6 @@
 """Reviewed credential lifecycle on real private SQLite; no runtime providers."""
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
 from copy import deepcopy
 import json
 import os
@@ -52,6 +53,65 @@ class EnrollmentTests(unittest.TestCase):
             self.assertEqual(self.store.entries()[cert['fingerprint']],{'role':'guardian' if slot=='guardian' else 'hub','workers':['one'],
                 'courses':['main','peer'] if slot=='guardian' else [slot[4:]]})
         self.assertEqual(self.state()[1]['workers']['two'],{'enrolled':False,'revoked':False})
+
+    def test_same_second_lookups_fully_validate_fresh_read_snapshots_without_writes(self):
+        self.enroll(); traces=[]; raw=self.store._raw
+        def traced():
+            conn=raw();conn.set_trace_callback(traces.append);return conn
+        with patch.object(self.store,'_raw',side_effect=traced), \
+                patch.object(self.store,'_validate',wraps=self.store._validate) as validate:
+            for _ in range(4):self.assertEqual(len(self.store.entries()),3)
+        self.assertEqual(validate.call_count,4)
+        self.assertTrue(all(call.kwargs=={'full':True} for call in validate.call_args_list))
+        self.assertEqual(traces.count('BEGIN'),4);self.assertEqual(traces.count('COMMIT'),4)
+        self.assertNotIn('BEGIN IMMEDIATE',traces)
+        self.assertFalse(any(sql.startswith('UPDATE ') for sql in traces))
+
+    @contextmanager
+    def between_read_and_write(self, action):
+        original=self.store._connection;called=[]
+        @contextmanager
+        def connection():
+            with original() as conn:
+                class View:
+                    def execute(inner, sql, *args):
+                        result=conn.execute(sql,*args)
+                        if sql=='ROLLBACK' and not called:
+                            called.append(True);action()
+                        return result
+                yield View()
+        with patch.object(self.store,'_connection',side_effect=connection):yield
+        self.assertEqual(called,[True])
+
+    def test_clock_transition_reloads_revocation_before_returning_entries(self):
+        old=self.enroll();plan=self.store.preview('revoke','one',target_fingerprint=old['hub:main']['fingerprint'])
+        self.now=101
+        with self.between_read_and_write(lambda:self.apply(plan)):
+            entries=self.store.entries()
+        self.assertNotIn(old['hub:main']['fingerprint'],entries)
+        self.assertEqual(self.state()[0]['clock_floor'],'101')
+
+    def test_clock_rollback_between_read_and_write_never_revives_expired_certificate(self):
+        credentials=self.credentials();credentials['hub:main']['not_after']=101
+        self.enroll(credentials=credentials);self.now=101
+        with self.between_read_and_write(lambda:setattr(self,'now',100)):
+            self.refuse('worker_enrollment_clock_rollback',self.store.entries)
+        self.assertEqual(self.state()[0]['clock_floor'],'100')
+
+    def test_concurrent_floor_advance_is_rechecked_after_read_transaction(self):
+        self.enroll();self.now=101
+        def advance():
+            self.now=102;self.store.entries();self.now=101
+        with self.between_read_and_write(advance):
+            self.refuse('worker_enrollment_clock_rollback',self.store.entries)
+        self.assertEqual(self.state()[0]['clock_floor'],'102')
+
+    def test_history_corruption_between_read_and_write_refuses(self):
+        self.enroll();self.now=101
+        def corrupt():
+            with self.store._connection() as conn:conn.execute("UPDATE metadata SET value=? WHERE key='head'",('f'*64,))
+        with self.between_read_and_write(corrupt):
+            self.refuse('worker_enrollment_state_unavailable',self.store.entries)
 
     def test_unapproved_worker_slots_and_incomplete_enrollment_publish_nothing(self):
         cases=[]
