@@ -27,8 +27,8 @@ def reject():
     raise AssessmentError("Invalid or unsupported assessment document.")
 
 
-def strict_document(payload):
-    if type(payload) is not bytes or not 0 < len(payload) <= MAX_DOCUMENT_BYTES:
+def strict_document(payload, *, limit=MAX_DOCUMENT_BYTES):
+    if type(payload) is not bytes or not 0 < len(payload) <= limit:
         reject()
 
     def pairs(items):
@@ -85,21 +85,21 @@ def _bounded_tree(value, depth=0):
         reject()
 
 
-def read_document(path):
+def read_document(path, *, limit=MAX_DOCUMENT_BYTES):
     """Read one bounded regular file without following its final symlink."""
     descriptor = None
     try:
         descriptor = os.open(path, os.O_RDONLY | os.O_NONBLOCK | os.O_NOFOLLOW)
         before = os.fstat(descriptor)
-        if not stat.S_ISREG(before.st_mode) or before.st_nlink != 1 or not 0 < before.st_size <= MAX_DOCUMENT_BYTES:
+        if not stat.S_ISREG(before.st_mode) or before.st_nlink != 1 or not 0 < before.st_size <= limit:
             reject()
         with os.fdopen(descriptor, "rb") as source:
             descriptor = None
-            payload = source.read(MAX_DOCUMENT_BYTES + 1)
+            payload = source.read(limit + 1)
             after = os.fstat(source.fileno())
         if (before.st_size, before.st_mtime_ns, before.st_ctime_ns) != (after.st_size, after.st_mtime_ns, after.st_ctime_ns) or len(payload) != before.st_size:
             reject()
-        return strict_document(payload)
+        return strict_document(payload, limit=limit)
     except (OSError, ValueError):
         raise AssessmentError("Assessment input could not be read as a bounded regular document.") from None
     finally:
