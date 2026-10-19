@@ -1,0 +1,65 @@
+{
+  "acceptance_eligible": true,
+  "allocation": {
+    "controller_cpu": 0.4,
+    "guardian_cpu": 0.1,
+    "host_reserve_cpu": 0.7,
+    "hub_cpu": 1.0,
+    "learner_cpu": 0.1,
+    "minimum_cpu": 4,
+    "name": "four-cpu-ci",
+    "reserved_cpu": 4.0
+  },
+  "cleanup_verified": true,
+  "code_sha256": {
+    "authority_access.py": "e18ab042e0b76985a2a01ecd5b144259db644e753a7f5c9938c9f8d953d4d0ff",
+    "authority_operator.py": "5e1e24e48ef1dc16e7a06e62226549626da993dd3b9834be33fcc6e8f5c4bd3d",
+    "controller_service.py": "bc3a8c9270a9466e2b2603e71fd78d086e193ff748d1b20634daa5484ce75dab",
+    "hub/authority_client.py": "3ab5357dce2129eba68046c56ddc66f127132a324bdb98bf56cf4ec56464e183",
+    "hub/authority_spawner.py": "5bc98263aef24339845d4914953164f87e3214a68800ba1a039ef07334cd316a",
+    "hub/home_policy.py": "70fb841e7a9585d24adb69e855ec8ea36b6a7429467bc0d126583598d75f0a9f",
+    "hub/jupyterhub_config.py": "e4934085217bc34576ec9efec463261a672c6b97545e5f2a5944b4a19a8ef4df",
+    "hub/settings.py": "7323278e2f87abd2e83bcdd7c7321136fa10411151d7d3dc38546f9751b74174",
+    "ownership_contract.py": "d0963e3ae89f3b5e59556ecc2b3c265e6d4b4c94b77a8b1d0058d6d93a7dc2a6",
+    "rehearsal/authenticated_evidence.py": "5c4b681885fabe2b5e72a42a2e401bdc5d1b0e88a3e3742197821e138fd34b71",
+    "rehearsal/authenticated_fixture.py": "9c2166c1a9f976fd3b72b32877432f25f772222b9ab19f00d5ad636428b851e9",
+    "rehearsal/verify_authenticated_runtime.py": "c70977c1bb5308a101e24523a2e1739894c3dfce7ca3183d4d016d5ebd7279e4",
+    "runtime_authority.py": "1922670f2911d3345aa1b007527909fb2f2312fa94b85e7dba027bb55ede7ec3",
+    "runtime_guardian.py": "e971371a3f02160795dddbee03a99913dc5d6cad182f5391756ca8c51ef1a934",
+    "tests/authority_test_pki.py": "b95bff1a965dfa2fc08c7eeb0abe555e456f820b7615e8460574b1b431ea8d76"
+  },
+  "host": {
+    "cpu": 4,
+    "memory_bytes": 16766414848
+  },
+  "images": {
+    "controller": "sha256:2d651b587e1e92d0734b0b34a9af26978afa7fc296e780e02a28d480d604586e",
+    "course": "sha256:395ec14adee6e2caa66ca566b49f0fd867613709258f5a18136fed9e1365805c",
+    "hub": "sha256:f21b801bf890204f0f097aa1319080d7dc81cf10d01af71f45c0930916fba364"
+  },
+  "phases": [
+    "mtls_role_course_and_nonowner_refusal",
+    "source_real_python_r_saved_home_and_socketless_hub",
+    "peer_real_python_r_saved_home_and_socketless_hub",
+    "authority_outage_stops_actual_notebooks",
+    "interrupted_transfer_durable_pending_denies_both_endpoints",
+    "authenticated_reconciliation_retains_history_and_peer_runtime",
+    "restarted_source_hub_cannot_revive_fenced_epoch",
+    "receiver_real_python_r_and_coursework_continuity",
+    "guardian_loss_authority_watchdog_stops_receiver_preserves_peer",
+    "guardian_certificate_revocation_stops_only_its_worker",
+    "hub_certificate_revocation_refuses_fresh_access",
+    "service_restart_retains_authority_incarnation_epoch_and_barriers"
+  ],
+  "recipe_sha256": {
+    ".dockerignore": "c8716235fc8a1e01af43d66a5f318cc7e8a738a677bd1ac22f6fc0aaf8470d42",
+    "controller.Dockerfile": "42f599e666fd114f4a4aa8cd4259fe04f1eaf634e35323d84da35ed4b7ac7fda",
+    "course/Dockerfile": "0644c3c5e443035f2f27210007a5bd0d53f666163d404da96244dc9d07e531b6",
+    "hub/Dockerfile": "69d784c1ecb14e0cb105e88749eef2e15094f1aa24161a6c4642732dbf851abc"
+  },
+  "scope": "actual-local-docker-one-daemon-two-logical-workers-synthetic-learners",
+  "source": "76a4c6e9b98fe4eedc10b65c81fa6912a5d0b279",
+  "source_dirty": false,
+  "status": "PASS",
+  "version": "waypoint-authenticated-runtime-rehearsal-v3"
+}

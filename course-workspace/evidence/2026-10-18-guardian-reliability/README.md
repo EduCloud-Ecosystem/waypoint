@@ -55,7 +55,7 @@ recording actual daemon capacity separately.
 - Independent read-only review found no blockers in replay admission,
   diagnostics, profile selection or enrollment freshness/rollback safeguards.
 - Workflow lint, whitespace checks and the implementation commit-range secret
-  scan passed. Scanning these preserved reports additionally flagged 12 generic
+  scan passed. Scanning the original three notebook reports flagged 12 generic
   API-key candidates: the source SHA-256 fields for four authentication/credential
   modules in each of the three runs. Every value was verified against its
   recorded Git revision; these are code hashes, not credentials. No scanner
@@ -74,7 +74,55 @@ diagnostics are retained beside their reports. Raw private logs are not included
 [sha256.json](sha256.json) hashes the original report bytes; reports have not been
 relabelled to the final commit.
 
-## Scope and next gate
+## Enrollment follow-up and retained CI failures
+
+The first PR CI attempt passed its worker-channel Python/R/Guardian rehearsal
+and the separate twelve-phase authenticated runtime, but its following
+enrollment rehearsal failed after a deliberate four-second lock hold
+([failed job](https://github.com/EduCloud-Ecosystem/waypoint/actions/runs/39202337992)).
+The original generic wait did not distinguish release, process exit, heartbeat
+renewal or suppressed probe errors. Its diagnostic default also does not prove
+that a probe raised. The exact failed conjunct and removal cause remain unknown;
+the subsequent passing runs do not retroactively accept this failure.
+
+The brief-hold waiter now logs only five fixed booleans and a fixed exception
+category, fails on malformed/expired/late results, and does not swallow probe
+errors. Before the hold, both learners must exist and retained bytes must still
+be readable. The hold remains four seconds and its recovery wait ten seconds.
+An explicit smaller-profile selector now allows the legacy authenticated and
+enrollment fixtures' existing CI caps to be reproduced locally. Historical
+schemas remain immutable; current reports separate the selector from actual
+daemon capacity. Production runtime and enforcement files did not change in
+this extension.
+
+| Control | Source | Result | Scope |
+| --- | --- | --- | --- |
+| [Original CI runtime](enrollment-ci-001-failed/AUTHENTICATED-RUNTIME.json) | `76a4c6e` | PASS, 12/12 | Linux runner, automatic four-CPU fixture; job subsequently failed enrollment. |
+| [Original CI enrollment](enrollment-ci-001-failed/ENROLLMENT-RUNTIME.json) | `76a4c6e` | FAIL, 2/10 | Brief-hold recovery wait; cleanup verified. |
+| [Local automatic enrollment](enrollment-001-auto/ENROLLMENT-RUNTIME.json) | `307f8b9` | PASS, 10/10 | Actual eight-CPU ARM64 daemon, automatic six-CPU fixture; controller 1 CPU. |
+| [Local selected-four enrollment](enrollment-002-selected-four/ENROLLMENT-RUNTIME.json) | `d713259` | PASS, 10/10 | Same actual eight-CPU daemon; selected controller 0.4 CPU, each Guardian 0.1, each Hub 1 and each learner 0.1. |
+
+Both local enrollment runs were clean and verified cleanup. The selected-four
+run observed held/unchanged, released/exited/unchanged, then renewed/not-expired
+states before continuing through credential rotation, expiry, worker revocation
+and saved-work recovery. This is a different fixture from the worker-channel
+profile above; its full reservation is 4 CPUs. It does not establish physical
+four-CPU capacity. All ten retained report files are covered by the manifest.
+
+The extension passed 306 rehearsal helper tests (299 passed, seven environment
+skips), followed by 13 targeted readiness tests after the final consistency
+guard. Independent review cleared the propagation, privacy and deadline checks.
+A second PR policy run separately exposed a half-second response-header timeout
+in a durable ownership-plan TLS unit test
+([failed job](https://github.com/EduCloud-Ecosystem/waypoint/actions/runs/39204289365)).
+Those four durable-plan tests now use the normal three-second client budget;
+explicit short socket/deadline tests and production settings remain unchanged.
+The full 696-component suite passed again after this test-only adjustment.
+The expanded evidence scan flagged 23 source-hash candidates in total; every
+value was checked against its recorded Git revision with no rule suppression.
+Final CI remains the merge gate.
+
+## Remaining scope
 
 The daemon was local Linux/ARM64 on macOS, with eight CPUs and about 8 GiB RAM.
 The passing run selected the existing four-CPU profile: central 0.5 CPU, each
