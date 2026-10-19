@@ -200,7 +200,8 @@ def run(args, *, exercise=None, evidence=None):
                 if command(kind, 'ls', '-aq' if kind == 'container' else '-q', '--filter',
                     'label=educloud.workspace.instance=' + name + '-' + suffix):
                     raise RuntimeError('fixture_name_collision')
-        allocation = allocation_for_cpu(int(command('info', '--format', '{{.NCPU}}')))
+        allocation = allocation_for_cpu(int(command('info', '--format', '{{.NCPU}}')),
+            profile_cpus=getattr(args, 'profile_cpus', None))
         cleanup_authorized = True
         command('network', 'create', '--internal', '--label', 'educloud.fixture=' + name, network)
         command('network', 'create', '--label', 'educloud.fixture=' + name, name + '-edge')
@@ -213,13 +214,15 @@ def run(args, *, exercise=None, evidence=None):
             '--mount', 'type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock', '--memory', '256m',
             '--cpus', str(allocation['controller_cpu']), controller_image, 'python', '-c', 'import time; time.sleep(86400)')
         observed = helper('bootstrap', dict(name=name, network=network, edge_network=name + '-edge', ports=ports, password=password,
-            course_image=course_image, hub_image=hub_image, controller_image=controller_image))
+            course_image=course_image, hub_image=hub_image, controller_image=controller_image,
+            profile_cpus=getattr(args, 'profile_cpus', None)))
         # Bootstrap binds cleanup to the original private directory before any
         # quota-proof refusal; the service and learner runtimes have not started.
         limits = json.loads(command('inspect', controller))[0]['HostConfig']
         assert configured_cpu_limit(limits) == allocation['controller_cpu'] and limits['Memory'] == 256 * 1024**2
         assert observed['allocation'] == allocation
         report['host'] = {key: observed[key] for key in ('memory_bytes', 'cpu')}
+        report['profile_cpus'] = getattr(args, 'profile_cpus', None)
         report['allocation'] = observed['allocation']
         if exercise is not None:
             exercise(dict(helper=helper, service=service, rpc=rpc, learners=learners,
@@ -422,6 +425,8 @@ def main():
     parser.add_argument('--hub-image', default='waypoint-authority-hub:local')
     parser.add_argument('--controller-image', default='waypoint-authority-controller:local')
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--profile-cpus', type=int, choices=(4, 5, 6),
+        help='Select existing smaller service caps; actual daemon capacity is recorded separately')
     parser.add_argument('--allow-dirty', action='store_true', help='Development diagnostics only; recorded as dirty in evidence')
     parser.add_argument('--diagnostic-pause', action='store_true', help='Hold a failed development fixture for 45 seconds before cleanup')
     args = parser.parse_args()

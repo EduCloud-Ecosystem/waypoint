@@ -10,7 +10,7 @@ def example(cpu=4):
         'images':{'course':'sha256:'+'a'*64,'hub':'sha256:'+'b'*64,'controller':'sha256:'+'c'*64},
         'source':'a'*40,'source_dirty':False,'code_sha256':{path:'a'*64 for path in evidence.CODE_FILES},
         'recipe_sha256':{path:'b'*64 for path in evidence.RECIPE_FILES},'host':{'memory_bytes':6656*1024**2,'cpu':cpu},
-        'allocation':evidence.allocation_for_cpu(cpu),
+        'allocation':evidence.allocation_for_cpu(cpu),'profile_cpus':None,
         'cleanup_verified':True,'acceptance_eligible':True}
 
 
@@ -81,6 +81,7 @@ class AuthenticatedEvidenceTests(unittest.TestCase):
 
     def test_legacy_pass_and_failed_history_keep_distinct_version_and_code_schema(self):
         report=example();report['version']=evidence.LEGACY_VERSION;del report['allocation']
+        del report['profile_cpus']
         report['code_sha256']={path:'a'*64 for path in evidence.LEGACY_CODE_FILES}
         before=deepcopy(report);self.assertIsNone(evidence.validate_report(report));self.assertEqual(report,before)
         self.assertEqual(len(evidence.LEGACY_CODE_FILES),14)
@@ -94,19 +95,72 @@ class AuthenticatedEvidenceTests(unittest.TestCase):
         report=example();report['version']=evidence.LEGACY_VERSION
         self.refused(report)  # Old reports cannot contain new allocation fields.
         del report['allocation'];self.refused(report)  # Nor the new dependency hash.
+        del report['profile_cpus']
         report['code_sha256']={path:'a'*64 for path in evidence.LEGACY_CODE_FILES}
         self.assertIsNone(evidence.validate_report(report))
         report['version']=evidence.VERSION;self.refused(report)
         report['allocation']=deepcopy(evidence.ALLOCATION_PRESETS['four-cpu-ci']);self.refused(report)
 
-    def test_historical_v2_retains_old_allocation_and_cannot_be_promoted_to_v3(self):
+    def test_historical_v2_retains_old_allocation_and_cannot_be_promoted_to_v4(self):
         for cpu in (4,5,6,64):
-            report=example(cpu);report['version']=evidence.PREVIOUS_VERSION
+            report=example(cpu);report['version']=evidence.ALLOCATION_VERSION;del report['profile_cpus']
             report['allocation']=deepcopy(evidence.LEGACY_ALLOCATION_PRESETS['four-cpu-ci' if cpu==4 else 'five-cpu-local'])
             before=deepcopy(report);evidence.validate_report(report);self.assertEqual(report,before)
             report['version']=evidence.VERSION;self.refused(report)
             report=before;report['allocation']=evidence.allocation_for_cpu(cpu);self.refused(report)
-        report=example(6);report['version']=evidence.PREVIOUS_VERSION;self.refused(report)
+        report=example(6);report['version']=evidence.ALLOCATION_VERSION;del report['profile_cpus'];self.refused(report)
+
+    def test_historical_v3_preserves_exact_auto_profiles_and_rejects_selection_fields(self):
+        for cpu in (4,5,6,8,4096):
+            report=example(cpu);report['version']=evidence.PREVIOUS_VERSION;del report['profile_cpus']
+            before=deepcopy(report);evidence.validate_report(report);self.assertEqual(report,before)
+            report['profile_cpus']=None;self.refused(report)
+            report=deepcopy(before);report['version']=evidence.VERSION;self.refused(report)
+            report=deepcopy(before);report['allocation']=evidence.allocation_for_cpu(4)
+            if cpu!=4:self.refused(report)
+
+    def test_historical_partial_failures_do_not_require_or_accept_profile_selection(self):
+        for version in (evidence.LEGACY_VERSION,evidence.ALLOCATION_VERSION,evidence.PREVIOUS_VERSION):
+            report={'version':version,'status':'FAIL','scope':evidence.SCOPE,'phases':[],
+                'cleanup_verified':False,'acceptance_eligible':False,'failure':'RuntimeError'}
+            before=deepcopy(report);evidence.validate_report(report);self.assertEqual(report,before)
+            report['profile_cpus']=None;self.refused(report)
+
+    def test_selected_smaller_profiles_preserve_actual_host_and_exact_caps(self):
+        for selected in (4,5,6):
+            report=example(8);report['profile_cpus']=selected
+            report['allocation']=evidence.allocation_for_cpu(8,profile_cpus=selected)
+            before=deepcopy(report);evidence.validate_report(report);self.assertEqual(report,before)
+            self.assertEqual(report['host']['cpu'],8)
+            self.assertEqual(report['allocation'],evidence.allocation_for_cpu(selected))
+            self.assertLessEqual(report['allocation']['reserved_cpu'],selected)
+            report['allocation']=evidence.allocation_for_cpu(8)
+            if selected!=6:self.refused(report)
+        for selected in (True,False,4.0,3,7,8,4096,'4',[],{}):
+            report=example(8);report['profile_cpus']=selected
+            with self.subTest(selected=selected):self.refused(report)
+            with self.assertRaisesRegex(ValueError,'^authenticated_runtime_allocation_refused$'):
+                evidence.allocation_for_cpu(8,profile_cpus=selected)
+        for actual,selected in ((4,5),(4,6),(5,6)):
+            report=example(actual);report['profile_cpus']=selected
+            with self.subTest(actual=actual,selected=selected):self.refused(report)
+            with self.assertRaises(ValueError):evidence.allocation_for_cpu(actual,profile_cpus=selected)
+
+    def test_selected_profiles_cannot_be_relabelled_as_historical_evidence(self):
+        for version in (evidence.LEGACY_VERSION,evidence.ALLOCATION_VERSION,evidence.PREVIOUS_VERSION):
+            report=example(8);report.update(version=version,profile_cpus=4,allocation=evidence.allocation_for_cpu(4))
+            self.refused(report)
+            del report['profile_cpus'];self.refused(report)
+
+    def test_partial_failure_selection_is_typed_and_never_invents_unknown_capacity(self):
+        report={'version':evidence.VERSION,'status':'FAIL','scope':evidence.SCOPE,'phases':[],
+            'cleanup_verified':False,'acceptance_eligible':False,'failure':'RuntimeError','profile_cpus':4}
+        before=deepcopy(report);evidence.validate_report(report);self.assertEqual(report,before)
+        report['profile_cpus']=True;self.refused(report)
+        report['profile_cpus']=6;report['host']={'cpu':4,'memory_bytes':6656*1024**2};self.refused(report)
+        report=example(8);report.update(status='FAIL',failure='RuntimeError',acceptance_eligible=False)
+        del report['profile_cpus'];self.refused(report)
+        del report['allocation'];evidence.validate_report(report)
 
     def test_canonical_allocation_is_independent_typed_and_covers_control_plane(self):
         for cpu in (4,5,6,8,4096):
@@ -129,7 +183,7 @@ class AuthenticatedEvidenceTests(unittest.TestCase):
             report['allocation']['reserved_cpu']=3*(report['allocation']['hub_cpu']+report['allocation']['learner_cpu'])
             self.refused(report)
 
-    def test_partial_v2_failure_validates_observed_allocation_without_acceptance(self):
+    def test_partial_current_failure_validates_observed_allocation_without_acceptance(self):
         report=example(5);report['status']='FAIL';report['acceptance_eligible']=False
         report['phases']=list(evidence.PHASES[:2]);report['failure']='RuntimeError'
         self.assertIsNone(evidence.validate_report(report))

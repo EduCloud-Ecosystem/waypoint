@@ -76,7 +76,7 @@ class PresetDiagnosticsTests(unittest.TestCase):
         for name in ('control', 'backend'): (self.root / name).mkdir(mode=0o700)
         self.request = {'name': NAME, 'course_image': IMAGE, 'hub_image': HUB_IMAGE, 'controller_image': CONTROLLER_IMAGE,
             'ports': {'source': 10001, 'peer': 10002, 'receiver': 10003}, 'password': CANARY, 'network': 'owned-network', 'edge_network': 'owned-edge'}
-    def initialize(self, cpu):
+    def initialize(self, cpu, profile_cpus=None):
         client = Docker(cpu); captured = []
         def bootstrap(config, directory, actual):
             captured.append(config); config['authority_id'] = 'd' * 32
@@ -85,7 +85,7 @@ class PresetDiagnosticsTests(unittest.TestCase):
             return authority, None, config
         sdk = types.SimpleNamespace(DockerClient=lambda **options: client)
         with patch.dict(sys.modules, {'docker': sdk}), patch.object(fixture, 'bootstrap', side_effect=bootstrap), patch.object(fixture, 'TestPKI', PKI), patch.object(fixture.ReplayStore, 'create'), patch.object(fixture.os, 'chown'):
-            result = fixture.initialize(self.root, self.request)
+            result = fixture.initialize(self.root, dict(self.request, profile_cpus=profile_cpus))
         return client, captured[0], result
 
     def test_deterministic_verified_cpu_presets_and_malformed_capacity_refusal(self):
@@ -122,6 +122,33 @@ class PresetDiagnosticsTests(unittest.TestCase):
                     for item in courses.values():
                         self.assertEqual(item['profile']['learner_cpu'], allocation['learner_cpu'])
                         self.assertEqual(item['profile']['cpu'], 1 + allocation['learner_cpu'])
+
+    def test_selected_four_cpu_caps_on_eight_cpu_daemon_keep_actual_capacity(self):
+        client, config, result = self.initialize(8, profile_cpus=4)
+        selected = fixture.course_allocation(8, profile_cpus=4)
+        self.assertEqual(selected, fixture.course_allocation(4))
+        self.assertEqual(result['cpu'], 8)
+        self.assertEqual(result['allocation'], selected)
+        self.assertEqual(selected['controller_cpu'], .4)
+        self.assertEqual(selected['guardian_cpu'], .1)
+        self.assertEqual(config['host_reserve_cpu'], .7)
+        self.assertEqual(sum(worker['cpu_budget'] for worker in config['workers'].values())
+            + config['host_reserve_cpu'], 4)
+        sdk = types.SimpleNamespace(DockerClient=lambda **options: client)
+        with patch.dict(sys.modules, {'docker': sdk}): fixture.launch(self.root)
+        for options in client.hubs:
+            self.assertEqual(options['cpu_quota'] / options['cpu_period'], 1)
+            self.assertEqual(options['environment']['WORKSPACE_CPU_LIMIT'], '0.1')
+        for options in client.guards:
+            self.assertEqual(options['cpu_quota'] / options['cpu_period'], .1)
+        saved = fixture.read_record(self.root / 'fixture.json')
+        self.assertEqual(saved['request']['profile_cpus'], 4)
+        self.assertEqual(saved['allocation'], selected)
+
+    def test_profile_selection_refuses_malformed_or_larger_than_actual_capacity(self):
+        for cpu, selected in ((8, True), (8, False), (8, 4.0), (8, '4'), (8, 7), (8, 8), (4, 5), (5, 6)):
+            with self.subTest(cpu=cpu, selected=selected), self.assertRaises(ValueError):
+                fixture.course_allocation(cpu, profile_cpus=selected)
 
     def populate(self):
         client, config, _ = self.initialize(8)

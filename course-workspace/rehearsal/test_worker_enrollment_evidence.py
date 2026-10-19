@@ -63,12 +63,13 @@ class WorkerEnrollmentEvidenceTests(unittest.TestCase):
     def test_historical_v1_uses_base_v2_five_field_presets_without_promotion(self):
         for cpu in (4,5,8):
             report=example();report['host']['cpu']=cpu;report['version']=evidence.LEGACY_VERSION
+            del report['profile_cpus']
             report['allocation']=deepcopy(base.LEGACY_ALLOCATION_PRESETS['four-cpu-ci' if cpu==4 else 'five-cpu-local'])
             before=deepcopy(report);evidence.validate_report(report);self.assertEqual(report,before)
             report['version']=evidence.VERSION;self.refused(report)
             report=before;report['allocation']=base.allocation_for_cpu(cpu);self.refused(report)
 
-    def test_current_v2_requires_exact_eight_field_control_allocation_and_twenty_hashes(self):
+    def test_current_v3_requires_exact_eight_field_control_allocation_and_twenty_hashes(self):
         for cpu in (4,5,6,64):
             report=example();report['host']['cpu']=cpu;report['allocation']=base.allocation_for_cpu(cpu)
             evidence.validate_report(report)
@@ -77,6 +78,39 @@ class WorkerEnrollmentEvidenceTests(unittest.TestCase):
                 changed=deepcopy(report);del changed['allocation'][field];self.refused(changed)
             report['allocation']=deepcopy(base.LEGACY_ALLOCATION_PRESETS['four-cpu-ci' if cpu==4 else 'five-cpu-local'])
             self.refused(report)
+
+    def test_historical_v2_maps_to_exact_base_v3_without_mutation_or_new_fields(self):
+        self.assertEqual(evidence.BASE_VERSIONS,{evidence.LEGACY_VERSION:base.ALLOCATION_VERSION,
+            evidence.PREVIOUS_VERSION:base.PREVIOUS_VERSION,evidence.VERSION:base.VERSION})
+        for cpu in (4,5,6,8):
+            report=example();report.update(version=evidence.PREVIOUS_VERSION)
+            report['host']['cpu']=cpu;report['allocation']=base.allocation_for_cpu(cpu);del report['profile_cpus']
+            before=deepcopy(report);evidence.validate_report(report);self.assertEqual(report,before)
+            report['profile_cpus']=None;self.refused(report)
+            report=deepcopy(before);report['version']=evidence.VERSION;self.refused(report)
+
+    def test_selected_profile_has_actual_host_and_cannot_inflate_or_relabel(self):
+        for selected in (4,5,6):
+            report=example();report['profile_cpus']=selected
+            report['allocation']=base.allocation_for_cpu(8,profile_cpus=selected)
+            before=deepcopy(report);evidence.validate_report(report);self.assertEqual(report,before)
+            self.assertEqual(report['host']['cpu'],8)
+            for version in (evidence.LEGACY_VERSION,evidence.PREVIOUS_VERSION):
+                old=deepcopy(report);old['version']=version;self.refused(old)
+            if selected<6:
+                report['allocation']=base.allocation_for_cpu(8);self.refused(report)
+        for selected in (True,4.0,7,8,'4',{},[]):
+            report=example();report['profile_cpus']=selected;self.refused(report)
+        report=example();report['host']['cpu']=4;report['profile_cpus']=6
+        report['allocation']=base.allocation_for_cpu(6);self.refused(report)
+        report=example();del report['profile_cpus'];self.refused(report)
+
+    def test_historical_partial_failures_preserve_version_specific_fieldsets(self):
+        for version in (evidence.LEGACY_VERSION,evidence.PREVIOUS_VERSION):
+            report={'version':version,'status':'FAIL','scope':evidence.SCOPE,'phases':[],
+                'cleanup_verified':True,'acceptance_eligible':False,'failure':'RuntimeError'}
+            before=deepcopy(report);evidence.validate_report(report);self.assertEqual(report,before)
+            report['profile_cpus']=None;self.refused(report)
 
     def test_cli_redacts_private_exception_and_still_writes_failure_evidence(self):
         with tempfile.TemporaryDirectory() as directory:
