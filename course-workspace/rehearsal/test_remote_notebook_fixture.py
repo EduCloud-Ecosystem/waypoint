@@ -705,6 +705,17 @@ class ReportTests(unittest.TestCase):
 
 
 class RuntimeDiagnosticsTests(unittest.TestCase):
+    def test_websocket_failure_keeps_only_class_and_status(self):
+        error = verifier.WebSocketBadStatusException('private-message', status_code=403,
+            resp_headers={'private': 'private-token'}, resp_body='private-body')
+        result = verifier.failure_context(error, [])
+        self.assertEqual(result['exception'], 'WebSocketBadStatusException')
+        self.assertEqual(result['websocket_status'], 403)
+        self.assertNotIn('private', json.dumps(result))
+        result = verifier.failure_context(verifier.WebSocketTimeoutException('private-timeout'), [])
+        self.assertEqual(result['exception'], 'WebSocketTimeoutException')
+        self.assertNotIn('private', json.dumps(result))
+
     def model(self):
         name = request()['name']; authority = 'b' * 32
         images = {key: request()[key + '_image'] for key in ('controller', 'hub', 'course')}

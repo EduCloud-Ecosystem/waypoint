@@ -16,6 +16,7 @@ import uuid
 from urllib.parse import urlsplit
 
 import requests
+from websocket import WebSocketBadStatusException, WebSocketTimeoutException
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT), str(Path(__file__).resolve().parent)]
@@ -395,7 +396,7 @@ def failure_context(error, phases):
         subprocess.TimeoutExpired, subprocess.CalledProcessError, KeyboardInterrupt,
         requests.exceptions.HTTPError, requests.exceptions.ConnectionError,
         requests.exceptions.ReadTimeout, requests.exceptions.ConnectTimeout,
-        requests.exceptions.TooManyRedirects)
+        requests.exceptions.TooManyRedirects, WebSocketBadStatusException, WebSocketTimeoutException)
     result = {'phase': PHASES[len(phases)] if len(phases) < len(PHASES) else 'finalization',
         'exception': type(error).__name__ if type(error) in known else 'OtherFailure', 'lines': []}
     trace = error.__traceback__
@@ -406,6 +407,9 @@ def failure_context(error, phases):
             result['notebook_line'] = trace.tb_lineno
         trace = trace.tb_next
     result['lines'] = result['lines'][-8:]
+    if isinstance(error, WebSocketBadStatusException):
+        status = getattr(error, 'status_code', None)
+        if type(status) is int and 100 <= status <= 599: result['websocket_status'] = status
     if isinstance(error, requests.exceptions.HTTPError):
         status = getattr(error.response, 'status_code', None)
         if type(status) is int and 100 <= status <= 599: result['http_status'] = status
