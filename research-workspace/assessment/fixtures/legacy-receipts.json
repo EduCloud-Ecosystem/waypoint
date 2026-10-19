@@ -1,0 +1,262 @@
+{
+  "cleanup": {
+    "access_revocation": "unknown",
+    "binding": {
+      "assessment_id": "11111111111111111111111111111111",
+      "attempt_id": "33333333333333333333333333333333",
+      "environment_id": "summary-python-v1",
+      "hardware": {
+        "architecture": "arm64",
+        "cpu_count": 1,
+        "gpu_count": 0,
+        "kind": "local_docker",
+        "memory_bytes": 268435456
+      },
+      "image": "python@sha256:229a2c5bfa27522db7815ea81f9bed70af17ccb9de9fc7ad142b1877b5830d36",
+      "manifest_sha256": "506a3587d73e70c1d545631ea2dd455056db92570e394230d5f56d81a7738420",
+      "measurement_method": {
+        "method": "outfitter_normalized",
+        "version": 1
+      },
+      "project_id": "22222222222222222222222222222222",
+      "repetition": 1,
+      "reservation_id": "33333333333333333333333333333333",
+      "sample_role": "fitting",
+      "sample_size": 10,
+      "stage_id": "analysis"
+    },
+    "method": {
+      "name": "legacy_provider_assertion",
+      "version": 1
+    },
+    "observation": {
+      "authenticated": false,
+      "independently_verified": false,
+      "source_kind": "legacy_projection"
+    },
+    "observed_at": null,
+    "observed_scopes": [
+      {
+        "deletion": "reported_complete",
+        "kind": "execution_resource",
+        "scope_id": "33333333333333333333333333333333"
+      },
+      {
+        "deletion": "unknown",
+        "kind": "temporary_data",
+        "scope_id": "11111111111111111111111111111111"
+      },
+      {
+        "deletion": "unknown",
+        "kind": "recovery_copies",
+        "scope_id": "11111111111111111111111111111111"
+      }
+    ],
+    "outcome": "unresolved",
+    "prior_receipt_sha256": null,
+    "quarantine": true,
+    "receipt_id": "cleanup-1",
+    "remaining_liabilities": [
+      "termination_unresolved",
+      "access_revocation_unknown",
+      "data_cleanup_unknown",
+      "recovery_cleanup_unknown"
+    ],
+    "reuse_denied": true,
+    "schema": "educloud.cleanup-receipt/v1",
+    "termination": "unknown",
+    "verifier_id": null
+  },
+  "measurement": {
+    "binding": {
+      "assessment_id": "11111111111111111111111111111111",
+      "attempt_id": "33333333333333333333333333333333",
+      "environment_id": "summary-python-v1",
+      "hardware": {
+        "architecture": "arm64",
+        "cpu_count": 1,
+        "gpu_count": 0,
+        "kind": "local_docker",
+        "memory_bytes": 268435456
+      },
+      "image": "python@sha256:229a2c5bfa27522db7815ea81f9bed70af17ccb9de9fc7ad142b1877b5830d36",
+      "manifest_sha256": "506a3587d73e70c1d545631ea2dd455056db92570e394230d5f56d81a7738420",
+      "measurement_method": {
+        "method": "outfitter_normalized",
+        "version": 1
+      },
+      "project_id": "22222222222222222222222222222222",
+      "repetition": 1,
+      "reservation_id": "33333333333333333333333333333333",
+      "sample_role": "fitting",
+      "sample_size": 10,
+      "stage_id": "analysis"
+    },
+    "cleanup_receipt_id": "cleanup-1",
+    "cleanup_receipt_sha256": "e0e747be8a561293893585aec0dbc48e36d90903cf14c34af7160999959e9cf5",
+    "conservative_accounting": {
+      "charged_cpu_seconds": 30,
+      "provenance": "estimated_upper_bound",
+      "unresolved_liability": false
+    },
+    "execution": {
+      "admitted": true,
+      "cancel_requested": false,
+      "diagnostics_available": true,
+      "execution_started": true,
+      "exit_code": 0,
+      "failure_category": "none",
+      "reused": false,
+      "status": "succeeded"
+    },
+    "measured_consumption": {
+      "cleanup_duration": {
+        "availability": "unsupported",
+        "scope": "whole_attempt",
+        "source": "none",
+        "unit": "nanoseconds",
+        "value": null
+      },
+      "completed_units": {
+        "availability": "unsupported",
+        "scope": "whole_attempt",
+        "source": "none",
+        "unit": "count",
+        "value": null
+      },
+      "cpu_consumed": {
+        "availability": "unsupported",
+        "scope": "whole_attempt",
+        "source": "none",
+        "unit": "nanoseconds",
+        "value": null
+      },
+      "execution_duration": {
+        "availability": "unsupported",
+        "scope": "whole_attempt",
+        "source": "none",
+        "unit": "nanoseconds",
+        "value": null
+      },
+      "gpu_allocated_duration": {
+        "availability": "unsupported",
+        "scope": "whole_attempt",
+        "source": "none",
+        "unit": "nanoseconds",
+        "value": null
+      },
+      "gpu_peak_memory": {
+        "availability": "unsupported",
+        "scope": "whole_attempt",
+        "source": "none",
+        "unit": "bytes",
+        "value": null
+      },
+      "gpu_utilization": {
+        "availability": "unsupported",
+        "scope": "whole_attempt",
+        "source": "none",
+        "unit": "parts_per_million",
+        "value": null
+      },
+      "instrumentation_overhead": {
+        "availability": "unsupported",
+        "scope": "whole_attempt",
+        "source": "none",
+        "unit": "nanoseconds",
+        "value": null
+      },
+      "io_read": {
+        "availability": "unsupported",
+        "scope": "whole_attempt",
+        "source": "none",
+        "unit": "bytes",
+        "value": null
+      },
+      "io_write": {
+        "availability": "unsupported",
+        "scope": "whole_attempt",
+        "source": "none",
+        "unit": "bytes",
+        "value": null
+      },
+      "loading_duration": {
+        "availability": "unsupported",
+        "scope": "whole_attempt",
+        "source": "none",
+        "unit": "nanoseconds",
+        "value": null
+      },
+      "output_peak": {
+        "availability": "unsupported",
+        "scope": "whole_attempt",
+        "source": "none",
+        "unit": "bytes",
+        "value": null
+      },
+      "peak_memory": {
+        "availability": "unsupported",
+        "scope": "whole_attempt",
+        "source": "none",
+        "unit": "bytes",
+        "value": null
+      },
+      "queue_duration": {
+        "availability": "unsupported",
+        "scope": "whole_attempt",
+        "source": "none",
+        "unit": "nanoseconds",
+        "value": null
+      },
+      "sandbox_overhead": {
+        "availability": "unsupported",
+        "scope": "whole_attempt",
+        "source": "none",
+        "unit": "nanoseconds",
+        "value": null
+      },
+      "scratch_peak": {
+        "availability": "unsupported",
+        "scope": "whole_attempt",
+        "source": "none",
+        "unit": "bytes",
+        "value": null
+      },
+      "setup_duration": {
+        "availability": "unsupported",
+        "scope": "whole_attempt",
+        "source": "none",
+        "unit": "nanoseconds",
+        "value": null
+      },
+      "transfer_duration": {
+        "availability": "unsupported",
+        "scope": "whole_attempt",
+        "source": "none",
+        "unit": "nanoseconds",
+        "value": null
+      }
+    },
+    "observation": {
+      "authenticated": false,
+      "independently_verified": false,
+      "source_kind": "legacy_projection"
+    },
+    "provider_reported_charge": {
+      "availability": "unknown",
+      "source": "none",
+      "unit": "unknown",
+      "value": null
+    },
+    "quality": {
+      "source": "none",
+      "status": "unknown"
+    },
+    "reservation_ceiling": {
+      "cpu_seconds": 30,
+      "source": "legacy_broker_receipt"
+    },
+    "schema": "educloud.measurement-receipt/v1"
+  },
+  "schema": "educloud.receipt-set/v1"
+}

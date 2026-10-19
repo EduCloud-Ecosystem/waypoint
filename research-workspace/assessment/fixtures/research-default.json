@@ -1,0 +1,73 @@
+{
+  "assessment_id": "11111111111111111111111111111111",
+  "ceilings": {
+    "cpu_seconds": 360,
+    "max_attempts": 12,
+    "memory_bytes": 268435456,
+    "output_bytes": 65536,
+    "scratch_bytes": 134217728,
+    "timeout_seconds_per_attempt": 30
+  },
+  "data_classification": "synthetic",
+  "design": {
+    "exclusions": "none",
+    "fitting_sizes": [
+      10,
+      20,
+      30
+    ],
+    "held_out_size": 40,
+    "repetitions": 3,
+    "sampling": "synthetic_fixture",
+    "seeds": [
+      1,
+      2,
+      3
+    ],
+    "size_unit": "rows",
+    "skew": "unknown",
+    "smaller_design": null
+  },
+  "expires_at": "2026-10-20T00:00:00Z",
+  "hardware": {
+    "architecture": "arm64",
+    "cpu_count": 1,
+    "gpu_count": 0,
+    "kind": "local_docker",
+    "memory_bytes": 268435456
+  },
+  "instruction": null,
+  "measurement": {
+    "method": "outfitter_normalized",
+    "version": 1
+  },
+  "pathway": "research",
+  "project_id": "22222222222222222222222222222222",
+  "quality": {
+    "absolute_tolerance_nanounits": 1,
+    "check": "reviewed_summary",
+    "maximum_failure_parts_per_million": 0,
+    "relative_tolerance_parts_per_trillion": 1
+  },
+  "reservations": [
+    {
+      "attempt_id": "33333333333333333333333333333333",
+      "repetition": 1,
+      "reservation_id": "33333333333333333333333333333333",
+      "sample_role": "fitting",
+      "sample_size": 10,
+      "stage_id": "analysis"
+    }
+  ],
+  "schema": "educloud.benchmark-manifest/v1",
+  "workload": {
+    "dependencies": [],
+    "environment_id": "summary-python-v1",
+    "image": "python@sha256:229a2c5bfa27522db7815ea81f9bed70af17ccb9de9fc7ad142b1877b5830d36",
+    "recipe_id": "summary-python",
+    "recipe_sha256": "549f064aaaa36ee8259f1f8e2902d0dfb15d071fcb6d9b60e52b266a7bbdb922",
+    "stages": [
+      "analysis"
+    ]
+  }
+}
