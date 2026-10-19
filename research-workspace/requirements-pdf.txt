@@ -1,0 +1,5 @@
+# Optional local draft export only. Existing commands remain standard-library-only.
+reportlab==4.4.9
+pypdf==6.10.0
+pillow==12.3.0
+charset-normalizer==3.5.2

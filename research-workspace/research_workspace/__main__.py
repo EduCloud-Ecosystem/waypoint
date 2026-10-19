@@ -41,6 +41,18 @@ def main():
     estimate.add_argument("scenario")
     estimate.add_argument("--series", action="append", required=True)
     estimate.add_argument("--outfitter", required=True)
+    export_preview = commands.add_parser("assessment-export-preview", help="Preview a local synthetic allocation draft with all gates closed")
+    export_preview.add_argument("estimate")
+    export_preview.add_argument("--manifest", action="append", required=True)
+    export_preview.add_argument("--narrative", required=True)
+    export_preview.add_argument("--profile", required=True)
+    export_preview.add_argument("--font", required=True, help="Operator-approved font file; its digest is bound into the preview")
+    export_preview.add_argument("--refresh-requirements", action="store_true", help="Bounded read of the fixed official public source before preview")
+    export = commands.add_parser("assessment-export", help="Export exactly one digest-approved preview to a fresh local directory")
+    export.add_argument("--preview", required=True)
+    export.add_argument("--approved-preview-sha256", required=True)
+    export.add_argument("--font", required=True)
+    export.add_argument("--output", required=True)
     init = commands.add_parser("init", help="Create fresh private local authority")
     init.add_argument("--state", required=True)
     init.add_argument("--operation-guard", action="store_true", help="Explicit fresh disposable operation-guard profile; no quota enforcement or migration")
@@ -118,6 +130,35 @@ def main():
         result = estimate(read_document(args.scenario),
                           [read_document(path, limit=SERIES_LIMIT_BYTES) for path in args.series], args.outfitter)
         sys.stdout.buffer.write(canonical_bytes(result))
+        return
+
+    elif args.command in ("assessment-export-preview", "assessment-export"):
+        from . import allocation_export as export
+        from .allocation_pdf import FONT_LIMIT, inspect_font
+        from .assessment import AssessmentError, read_document
+        try:
+            if args.command == "assessment-export-preview":
+                export.profile_info(args.profile)
+                if not 1 <= len(args.manifest) <= 2:
+                    export.a.reject()
+                from .allocation_sources import observation
+                estimate = read_document(args.estimate, limit=export.ESTIMATE_LIMIT)
+                manifests = [read_document(path) for path in args.manifest]
+                narrative = export.read_export_document(args.narrative, limit=export.NARRATIVE_LIMIT)
+                font, _ = inspect_font(export.read_bytes(args.font, FONT_LIMIT))
+                # Validate local inputs before the optional public, content-free request.
+                export.validate_estimate(estimate, manifests)
+                export.validate_narrative(narrative, args.profile)
+                result = export.make_preview(args.profile, estimate, manifests, narrative, font,
+                                             observation(args.profile, refresh=args.refresh_requirements))
+            else:
+                result = export.export_package(export.read_export_document(args.preview), args.approved_preview_sha256,
+                                               export.read_bytes(args.font, FONT_LIMIT), args.output)
+            sys.stdout.buffer.write(export.export_bytes(result))
+        except AssessmentError:
+            raise
+        except (ValueError, TypeError, KeyError, IndexError, OverflowError, OSError):
+            raise AssessmentError("Invalid or unsupported allocation export inputs.") from None
         return
 
     from .runtime import Broker, validate_images

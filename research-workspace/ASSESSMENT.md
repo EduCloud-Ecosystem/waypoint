@@ -179,3 +179,7 @@ No assessment workloads, engines, source builds, model acquisition, independent
 operator exercise, source promotion or hosted/private-data admission are part
 of these checks. Existing allowances and disabled source candidates remain as
 recorded.
+
+The [local allocation draft export](ALLOCATION-EXPORT.md) adds digest-approved
+Discover and separate NAIRR draft packages from retained synthetic estimates.
+All readiness and authority gates remain false.
