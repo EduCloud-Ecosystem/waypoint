@@ -11,6 +11,11 @@ finite compute reservations, cancellation and cleanup. This release uses a
 loopback-only identity adapter and Docker on the operator's computer. It is not
 a shared institutional service or an arbitrary-code notebook.
 
+The separate [assessment preparation and receipt preview](ASSESSMENT.md) CLI
+validates a bounded public/synthetic benchmark proposal and previews content-free
+measurement metadata. It grants no execution, upload or cleanup authority and
+does not initialize a study or call an execution provider.
+
 ## Start the local pilot
 
 Requirements: Python 3.12+, Go 1.24+ to build Outfitter, and a running Docker

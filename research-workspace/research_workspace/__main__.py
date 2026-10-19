@@ -8,9 +8,6 @@ import stat
 import subprocess
 import sys
 
-from .runtime import Broker, validate_images
-from .store import Store, canonical, private_write
-
 
 def read_bundle(path):
     from .evidence import MAX_ARCHIVE_BYTES
@@ -33,6 +30,13 @@ def read_bundle(path):
 def main():
     parser = argparse.ArgumentParser(description="EduCloud local research workspace")
     commands = parser.add_subparsers(dest="command", required=True)
+    for name in ("assessment-prepare", "assessment-validate"):
+        assessment = commands.add_parser(name, help="Validate content-free benchmark metadata without state or execution")
+        assessment.add_argument("manifest")
+    preview = commands.add_parser("assessment-preview", help="Preview retained measurements using the pure Outfitter validator")
+    preview.add_argument("manifest")
+    preview.add_argument("receipts")
+    preview.add_argument("--outfitter", required=True, help="Absolute path to the trusted Outfitter executable")
     init = commands.add_parser("init", help="Create fresh private local authority")
     init.add_argument("--state", required=True)
     init.add_argument("--operation-guard", action="store_true", help="Explicit fresh disposable operation-guard profile; no quota enforcement or migration")
@@ -85,6 +89,27 @@ def main():
     activate.add_argument("--checkpoint", required=True)
     activate.add_argument("--trusted-sha256", required=True)
     args = parser.parse_args()
+    if args.command in ("assessment-prepare", "assessment-validate"):
+        from .assessment import AssessmentError, canonical_bytes, manifest_summary, read_document, validate_manifest
+        manifest = validate_manifest(read_document(args.manifest))
+        summary = manifest_summary(manifest)
+        if args.command == "assessment-prepare":
+            if summary["expired"]:
+                raise AssessmentError("An expired assessment cannot be prepared.")
+            sys.stdout.buffer.write(canonical_bytes(manifest))
+        else:
+            print(json.dumps(summary, sort_keys=True))
+        return
+    elif args.command == "assessment-preview":
+        from .assessment import read_document
+        from .assessment_preview import preview_receipts
+        print(json.dumps(preview_receipts(read_document(args.manifest), read_document(args.receipts),
+                                         args.outfitter), sort_keys=True))
+        return
+
+    from .runtime import Broker, validate_images
+    from .store import Store, canonical, private_write
+
     if args.command == "init":
         images = {key: value for key, value in {"python": args.python_image, "r": args.r_image}.items() if value}
         validate_images(images)
