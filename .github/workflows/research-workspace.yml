@@ -30,6 +30,17 @@ jobs:
           node-version: '22'
       - run: python -W error::ResourceWarning -m unittest discover -s tests -v
       - run: node --check static/app.js
+      - name: Install optional PDF verification dependencies
+        run: python -m pip install --disable-pip-version-check -r requirements-pdf.txt
+      - name: Fetch pinned Computer Modern test font
+        run: |
+          curl --fail --silent --show-error --proto '=https' --max-time 30 --max-filesize 65536 \
+            https://raw.githubusercontent.com/matplotlib/matplotlib/4aeb773422464799998d900198b35cb80e94b3e1/lib/matplotlib/mpl-data/fonts/ttf/cmr10.ttf \
+            --output "$RUNNER_TEMP/assessment-cmr10.ttf"
+          echo "4dd9761b058c009db9b2145f55ee6617d093c273dd3d6c5b3e43ff6110fa9bf6  $RUNNER_TEMP/assessment-cmr10.ttf" | sha256sum --check --strict
+      - name: Verify local draft export PDFs and real CLI boundaries
+        run: ASSESSMENT_EXPORT_FONT="$RUNNER_TEMP/assessment-cmr10.ttf" python -W error::ResourceWarning -m unittest discover -s tests_pdf -v
+
   actual-docker:
     runs-on: ubuntu-latest
     timeout-minutes: 20
