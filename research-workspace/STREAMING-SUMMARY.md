@@ -6,10 +6,11 @@ and requires a separately authored checker. It does not admit an upload or a
 compute attempt. The ordinary Python/R recipes, environment catalog, study
 Worker, AS1, old manifest validators, receipts and previews remain unchanged.
 
-Combined workload verification is pending. The independently authored checker
-is integrated and pinned to its actual source bytes. Runtime image, interpreter
-qualification and capability readiness are unavailable; every readiness flag
-is false.
+The independently authored checker is integrated and pinned to its actual
+source bytes. The first corrected integrated local selection passed 28
+controls with no skips, including actual Python and R 4.6.0 commands. Final
+combined verification and hosted CI remain pending. Runtime image qualification
+and capability readiness are unavailable; every readiness flag is false.
 
 ## Identity and interface
 
@@ -200,6 +201,28 @@ R acceptance requires actual R execution against the independent checker.
 An absent or unusable R interpreter is explicitly NOT RUN/SKIP, never replaced
 by Python results or inferred from source. No dependency installation or
 image build is part of this component.
+
+The existing hosted controls job now requires a preinstalled `Rscript` before
+its complete test discovery. It records the resolved interpreter frontend
+hash, version command and bounded result. Missing or unusable R fails the job
+explicitly; it does not install R or turn a skip into acceptance. Existing
+Docker/helper pins, optional PDF checks and source-build gates are unchanged.
+
+The first integrated local run at `e6dcc5a` ran 25 methods: 24 passed and one
+failed because the negative fixture appended LF to a trailing CR, making a
+valid CRLF record ending. Its log is retained unchanged with SHA-256
+`af0632004dfe871e95822f81c03b64f96af8fc56eb423ec4877dc51d94b4be40`.
+This was a test-fixture error, not a workload defect. The test-only correction
+at `db63306` added explicit valid-CRLF/invalid-internal-CR CLI controls and
+both-language independent checks for cancellation, rounding and large forms.
+All 28 methods passed with no skips; log SHA-256
+`384812dd43a2d18b531d6e8091d3b3d9b2dafb193f2a62295c452c41660303df`.
+Both runs preserved complete unchanged source inventories and used small
+synthetic inputs. Their parent unittest process used the recorded minimal
+environment and `PYTHONPATH=tests`, not isolated mode; Python workload/checker
+children used `-I -B` and R children used `--vanilla`. A separately recorded
+final combined run will use an isolated parent with an explicit trusted-root
+bootstrap. The two earlier runs must not be relabeled.
 
 The first candidate performs no sampling. Before multi-size execution,
 an immutable selection/input-view policy must bind the actual sample and
