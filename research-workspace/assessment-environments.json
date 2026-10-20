@@ -76,8 +76,8 @@
     "recipe_id": "summary-fixed6-reference",
     "environment_id": "summary-fixed6-reference-v1",
     "source": "recipes/assessment/check_summary_fixed6.py",
-    "code_sha256": null,
-    "status": "unavailable",
+    "code_sha256": "d8e55a522ce5e0d268d724824c4f918374f613705b09e40bea5690d6f285f073",
+    "status": "candidate",
     "runtime": {
       "language": "python",
       "version": null,

@@ -6,9 +6,10 @@ and requires a separately authored checker. It does not admit an upload or a
 compute attempt. The ordinary Python/R recipes, environment catalog, study
 Worker, AS1, old manifest validators, receipts and previews remain unchanged.
 
-Implementation verification is pending. The independent checker has not yet
-been integrated. Runtime image, interpreter qualification and capability
-readiness are unavailable; every readiness flag is false.
+Combined workload verification is pending. The independently authored checker
+is integrated and pinned to its actual source bytes. Runtime image, interpreter
+qualification and capability readiness are unavailable; every readiness flag
+is false.
 
 ## Identity and interface
 
@@ -21,8 +22,10 @@ Their actual packaged code hashes distinguish them from the old recipes.
 The separate `assessment-environments.json` registry cannot enable ordinary
 dispatch or production assessment. Its reader validates exact field sets,
 types, source paths and hashes without importing or running a recipe. Unknown
-runtime/image identities are null, never fabricated. Checker source remains
-unavailable until its independent commit is reviewed, integrated and pinned.
+runtime/image identities are null, never fabricated. The checker was authored
+separately from this workload source, reviewed by the coordinator and integrated
+from commit `1bc3f41fbae007bfda9498bf1957a984339efd7c`. Its source SHA-256 is
+`d8e55a522ce5e0d268d724824c4f918374f613705b09e40bea5690d6f285f073`.
 
 Both workload CLIs have exactly three positional arguments:
 
