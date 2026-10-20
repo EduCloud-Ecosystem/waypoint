@@ -1,0 +1,33 @@
+{
+  "python": {
+    "path": "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "resolved": "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+    "sha256": "2477b47fa3ae65b9574eb18a15edb364e96948eaa1875ad3f1c80d780efc9c12",
+    "bytes": 52448
+  },
+  "python_version": "3.14.5 (main, May 10 2026, 10:21:34) [Clang 21.0.0 (clang-2100.0.123.102)]",
+  "platform": "macOS-26.5-arm64-arm-64bit-Mach-O",
+  "machine": "arm64",
+  "safe_environment_overrides": {
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "LC_ALL": "C",
+    "LANG": "C"
+  },
+  "trusted_test_bootstrap": {
+    "path": "/Users/gregchism/.codex/operations/educloud-build-20261019/streaming-summary-author-20261020T041920Z/run_isolated_streaming.py",
+    "sha256": "a909bb6b4c7274497322dfbf2efc97b138bc2c5c7dcbf1c9bfccb16fd2a98279",
+    "source_root": "/Users/gregchism/dev/.educloud-worktrees/waypoint-streaming-summary/research-workspace",
+    "selection": "tests/test_streaming*.py"
+  },
+  "Rscript": {
+    "path": "/usr/local/bin/Rscript",
+    "resolved": "/Library/Frameworks/R.framework/Versions/4.6/Resources/bin/Rscript",
+    "sha256": "d918ce5022d859e20c38094bb0b6199186cefd8bb96ffeb58618471c9a65a22d",
+    "bytes": 70848
+  },
+  "R_version_evidence": {
+    "path": "/Users/gregchism/.codex/operations/educloud-build-20261019/streaming-summary-author-20261020T041920Z/first-integrated-20261020T042225Z/r-version.json",
+    "sha256": "d3548a632e93c42026599421626c2fcc61003eb93f43b393629aa47fd21a1baf",
+    "meaning": "Earlier actual probe retained; no repeated version command."
+  }
+}

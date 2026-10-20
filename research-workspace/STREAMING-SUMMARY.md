@@ -7,10 +7,10 @@ compute attempt. The ordinary Python/R recipes, environment catalog, study
 Worker, AS1, old manifest validators, receipts and previews remain unchanged.
 
 The independently authored checker is integrated and pinned to its actual
-source bytes. The first corrected integrated local selection passed 28
-controls with no skips, including actual Python and R 4.6.0 commands. Final
-combined verification and hosted CI remain pending. Runtime image qualification
-and capability readiness are unavailable; every readiness flag is false.
+source bytes. Final isolated local verification passed 55 methods with no
+skips, including actual Python, R 4.6.0 and independent checker commands.
+Hosted CI remains pending. Runtime image qualification and capability
+readiness are unavailable; every readiness flag is false.
 
 ## Identity and interface
 
@@ -220,9 +220,21 @@ All 28 methods passed with no skips; log SHA-256
 Both runs preserved complete unchanged source inventories and used small
 synthetic inputs. Their parent unittest process used the recorded minimal
 environment and `PYTHONPATH=tests`, not isolated mode; Python workload/checker
-children used `-I -B` and R children used `--vanilla`. A separately recorded
-final combined run will use an isolated parent with an explicit trusted-root
-bootstrap. The two earlier runs must not be relabeled.
+children used `-I -B` and R children used `--vanilla`. The two earlier runs
+must not be relabeled.
+
+The final combined selection at `bd4848453e60ee01e6b894d34e907bb5df5149c5`
+passed 55 methods with no skips in 6.948 seconds. Its parent used
+`-I -B -W error::ResourceWarning` and an explicit trusted-root bootstrap;
+complete before/after source inventories were identical and the bounded
+process completed and was reaped. Log SHA-256:
+`8f45d8346940bcb5d59d3923ccfdac3b0b2cbb954062aaa1703de47c26587537`.
+These 55 methods include the independently authored checker controls and
+overlap the earlier selections; counts must not be added across runs.
+The [verification record](evidence/2026-10-19/streaming-summary/verification.json)
+binds sources, raw logs, actual commands, interpreter frontends and the
+protected full inventories. Native frontend identities do not qualify a
+container image, the full transitive runtime or a deployment host.
 
 The first candidate performs no sampling. Before multi-size execution,
 an immutable selection/input-view policy must bind the actual sample and

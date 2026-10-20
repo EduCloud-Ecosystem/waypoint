@@ -1,0 +1,20 @@
+{
+  "argv": [
+    "/usr/local/bin/Rscript",
+    "--version"
+  ],
+  "cwd": "/Users/gregchism/dev/.educloud-worktrees/waypoint-streaming-summary/research-workspace",
+  "safe_environment_overrides": {
+    "PYTHONPATH": "tests",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "LC_ALL": "C",
+    "LANG": "C"
+  },
+  "exit_code": 0,
+  "elapsed_seconds": 0.23705891601275653,
+  "stop": null,
+  "log": "/Users/gregchism/.codex/operations/educloud-build-20261019/streaming-summary-author-20261020T041920Z/first-integrated-20261020T042225Z/r-version.log",
+  "log_sha256": "2c3d637f80e28954fc192854f85556cafd655d15b3a61016ea36f42c2adf066e",
+  "pid": 40933,
+  "process_drained": true
+}

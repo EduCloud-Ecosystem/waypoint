@@ -1,0 +1,39 @@
+{
+  "status": "PASS",
+  "failure": null,
+  "commands": [
+    {
+      "argv": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "-W",
+        "error::ResourceWarning",
+        "-m",
+        "unittest",
+        "-v",
+        "test_streaming_summary"
+      ],
+      "cwd": "/Users/gregchism/dev/.educloud-worktrees/waypoint-streaming-summary/research-workspace",
+      "safe_environment_overrides": {
+        "PYTHONPATH": "tests",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "LC_ALL": "C",
+        "LANG": "C"
+      },
+      "exit_code": 0,
+      "elapsed_seconds": 6.942573042004369,
+      "stop": null,
+      "log": "/Users/gregchism/.codex/operations/educloud-build-20261019/streaming-summary-author-20261020T041920Z/corrected-integrated-20261020T042417Z/focused-workload.log",
+      "log_sha256": "384812dd43a2d18b531d6e8091d3b3d9b2dafb193f2a62295c452c41660303df",
+      "pid": 41822,
+      "process_drained": true
+    }
+  ],
+  "source_before": "/Users/gregchism/.codex/operations/educloud-build-20261019/streaming-summary-author-20261020T041920Z/corrected-integrated-20261020T042417Z/source-before.json",
+  "source_after": "/Users/gregchism/.codex/operations/educloud-build-20261019/streaming-summary-author-20261020T041920Z/corrected-integrated-20261020T042417Z/source-after.json",
+  "source_before_sha256": "42ec3bc56b40a0013d9a57210bbbd93a8d78e18040c19796a20e6505973a1c36",
+  "source_after_sha256": "42ec3bc56b40a0013d9a57210bbbd93a8d78e18040c19796a20e6505973a1c36",
+  "source_unchanged": true,
+  "elapsed_seconds": 7.899611832923256,
+  "finished_at": "2026-10-20T04:24:25.444516+00:00",
+  "all_started_command_processes_drained": true
+}
