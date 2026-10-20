@@ -231,6 +231,16 @@ class Identity:
             if context is not None:
                 self.revoked_sids.add(context.sid)
                 self.sessions = {k: v for k, v in self.sessions.items() if v.sid != context.sid}
+                return context.subject
+
+    @contextmanager
+    def context_publication(self, context):
+        """Current-session fence for AS1; does not create or bind a run."""
+        with self.lock:
+            current = self.sessions.get(context.session_key) if context is not None else None
+            yield bool(current and current.subject == context.subject and current.sid == context.sid
+                       and current.sid not in self.revoked_sids and current.expires > self.clock()
+                       and context.expires > self.clock())
 
     def bind(self, run_id, context):
         with self.lock:

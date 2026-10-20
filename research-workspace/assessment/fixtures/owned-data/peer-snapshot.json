@@ -1,0 +1,18 @@
+{
+  "source_head": "4de6a090664a9a3ccd8ba0417b00af3ff5290a58",
+  "qualification": "Synthetic fixture binding only; final peer CI and review remain separate.",
+  "schema": "waypoint.owned-data-peer-fixture/v1",
+  "sha256": {
+    "prepare-request.json": "acf3ce537ce5319333baa1616850c2ec8112ac3827be96842c7904bff935039e",
+    "status-request.json": "fd7bf69274fc68febbee4fa33b43a942f7c55bddd3cac790b17b3ce6b4976660",
+    "status-reply.json": "25362933912f71088e20c124eb4b47fe582871651a38cbd01bec36eb3bb079b4",
+    "ready-ack.json": "00cef11624fde560c540ccf9aa13f901986097140b4ec40b03bea8a0004b840d",
+    "ingest-header.json": "c7300b9774785d90a573b1c3054bb9dd2f501b69d26a9aebe76f3d8f67c9c254",
+    "seal-request.json": "a7d8d9aa98271cda60670ec2fc84231348955a3b76bdf8e79924ffaa30ba42c8",
+    "cancel-request.json": "c6955b51f16493aec1c1c69e7769f723ce795529b7c34e85d84c9073d978c1ed",
+    "reconcile-request.json": "67c7085a2c3aa94f239ac778e51fbcaeae7efc201f82713bae3b10be44b664b2",
+    "disabled-error.json": "60dbd8883a508fb9af77794b0f08406e4f4678d89ffda0533a062575ca7fe88a",
+    "missing-error.json": "32d3c980f778b34bd7c9bbeb0d58352c6e382b15d6eeed3398f989b4b4bd74f0",
+    "invalid-error.json": "4b1936f0a266da0b13a2d1e6b800b55f66d3f42a0540ff48dac03e869367251e"
+  }
+}

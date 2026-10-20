@@ -72,7 +72,7 @@ class Publication:
             if name not in SLOTS:
                 raise g.GuardPaused("unsupported_guard_family")
             info = os.stat(name, dir_fd=root, follow_symlinks=False)
-            if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1 or info.st_size > g.MAX_BYTES:
+            if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1 or info.st_size > self.guard.max_bytes:
                 raise g.GuardPaused("unsupported_guard_family")
             occupied.add(name)
         return occupied
@@ -80,11 +80,11 @@ class Publication:
     def _read(self, root, name):
         with descriptor(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=root) as fd:
             before = os.fstat(fd)
-            if not stat.S_ISREG(before.st_mode) or before.st_nlink != 1 or before.st_size > g.MAX_BYTES:
+            if not stat.S_ISREG(before.st_mode) or before.st_nlink != 1 or before.st_size > self.guard.max_bytes:
                 raise g.GuardPaused("invalid_authority")
             content = bytearray()
-            while len(content) <= g.MAX_BYTES:
-                chunk = os.read(fd, min(65536, g.MAX_BYTES + 1 - len(content)))
+            while len(content) <= self.guard.max_bytes:
+                chunk = os.read(fd, min(65536, self.guard.max_bytes + 1 - len(content)))
                 if not chunk:
                     break
                 content.extend(chunk)
@@ -190,6 +190,7 @@ class Publication:
         if stage not in {"bootstrap", "prepare", "effect", "uncertainty-note"}:
             raise g.GuardPaused("publication_context_required")
         initial = stage == "bootstrap"
+        operation = None
         if initial:
             if not self.initializing or data["generation"] or identity is not None:
                 raise g.GuardPaused("invalid_bootstrap")
@@ -214,8 +215,12 @@ class Publication:
             "previous_sha256": predecessor[0][3] if predecessor else None,
             "generation": candidate["generation"]}
         validate(candidate)
+        if self.guard.assessment:
+            g.astate.guard_shape(candidate)
+            if operation is not None and operation._publications >= 4:
+                raise g.GuardPaused("intent_limit")
         payload = g.encode(candidate)
-        if len(payload) > g.MAX_BYTES:
+        if len(payload) > self.guard.max_bytes:
             raise g.GuardPaused("intent_limit")
         name = SAFETY if essential else ORDINARY
         try:
@@ -263,6 +268,8 @@ class Publication:
             self.guard.lease.durable_incarnation = current
             data.clear()
             data.update(candidate)
+            if self.guard.assessment and operation is not None:
+                operation._publications += 1
         except BaseException:
             self.guard.lease.publication_failed = True
             self.guard.lease.failure = "publication_unverified"

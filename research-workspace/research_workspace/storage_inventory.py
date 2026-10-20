@@ -303,6 +303,8 @@ def _candidates(authority, entries):
 
 
 def _observe(state, *, retention=False):
+    from .assessment_state import refuse_state
+    refuse_state(state)
     root = safe_root(state)
     with observed_offline(root) as offline:
         report, identities, captured = scan(root)

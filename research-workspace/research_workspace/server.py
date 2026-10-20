@@ -13,6 +13,7 @@ from .evidence import build_bundle
 from .runtime import Broker, Worker, strict_json
 from .store import AccessError, Store
 from .identity import Identity, IdentityUnavailable
+from .assessment_service import DisabledAssessmentService, assessment_route
 from .operation_guard import GuardPaused, GuardBusy, GUARDED_MODES
 
 STATIC = Path(__file__).resolve().parent.parent / "static"
@@ -21,6 +22,7 @@ WARNING = "Descriptive results from a demonstration recipe. A successful run is 
 
 class Application:
     def __init__(self, state):
+        self.assessment = DisabledAssessmentService()
         self.store = Store(state)
         self.config = strict_json((self.store.root / "config.json").read_bytes())
         mode = self.config.get("mode")
@@ -157,6 +159,9 @@ class Handler(BaseHTTPRequestHandler):
             self.respond(403, {"error": "Cross-origin requests are not allowed."})
             return
         path = unquote(urlsplit(self.path).path)
+        if assessment_route(path):
+            self.server.app.assessment.handle_http(self, path)
+            return
         if path == "/api/auth-config" and self.command == "GET":
             config = {"mode": "key"}
             if identity:
@@ -220,7 +225,9 @@ class Handler(BaseHTTPRequestHandler):
         token = self.session_token(identity.config["cookie_name"] if identity else "research_session")
         if identity and path == "/api/session" and self.command == "DELETE":
             # Local invalidation is effective even if the IdP is unavailable.
-            identity.logout(token)
+            subject = identity.logout(token)
+            if subject is not None and getattr(self.server.app.store, "_assessment", None):
+                self.server.app.assessment.logout_subject(subject)
             names = [identity.config["cookie_name"], identity.config["proxy_cookie_name"]]
             names += [identity.config["proxy_cookie_name"] + "_" + str(i) for i in range(8)]
             self.respond(200, {"ok": True, "identity_provider_session_ended": False},

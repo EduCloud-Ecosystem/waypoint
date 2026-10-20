@@ -15,6 +15,7 @@ import uuid
 from .recipes import IDS, digest, parse_csv, recipe_bytes
 from .operation_guard import Guard, GuardPaused, GuardBusy, APPLICATION_ID, GUARDED_MODES, SCHEMA, FILE, LOCK, TEMP, sync_directory
 from . import finite_authority as finite
+from . import assessment_state as astate
 from . import sqlite_ownership as owned
 
 
@@ -83,10 +84,18 @@ class TrackedConnection:
 
 
 class Store:
+    @property
+    def scoped(self):
+        return self.profile_version == 4 or getattr(self, "_assessment", None) is astate.AS1
+
     def __init__(self, root, create=False, *, guarded=False, config=None, subject=None, resume=True):
         self.root = Path(root).resolve()
         owned.available(self.root)
         self.guard = None
+        self._assessment = None
+        self._assessment_service = None
+        if create and isinstance(config, dict) and config.get("mode") == astate.MODE:
+            astate.invalid()
         self.finite = bool(create and isinstance(config, dict) and
                            (config.get("mode") in finite.MODES or "logical_authority" in config))
         self.profile_version = 0
@@ -117,7 +126,7 @@ class Store:
                 if not isinstance(config, dict) or config.get("mode") not in GUARDED_MODES or subject is None:
                     raise ValueError("Guarded initialization requires an explicit fresh profile and subject.")
                 identifier(subject)
-                self.guard = Guard.create(self.root, self.write if self.profile_version == 4 else self._connect, finite_profile=self.finite,
+                self.guard = Guard.create(self.root, self.write if self.scoped else self._connect, finite_profile=self.finite,
                                           profile_version=self.profile_version or 1)
                 bootstrap = self.guard.begin("initialize", subject=subject, request=config, bootstrap=True)
             try:
@@ -212,6 +221,9 @@ class Store:
             return False  # Existing rejection-only legacy discriminator.
         binding = config.get("operation_guard")
         policy = config.get("logical_authority")
+        if (config.get("mode") == astate.MODE or isinstance(binding, dict) and binding.get("format") == astate.GUARD_FORMAT
+                or isinstance(policy, dict) and policy.get("format") == astate.FORMAT):
+            astate.invalid()
         recognizable = (config.get("mode") == finite.SCOPED_MODE
                         or isinstance(binding, dict) and binding.get("format") == finite.SCOPED_GUARD_FORMAT
                         or isinstance(policy, dict) and policy.get("format") == finite.SCOPED_FORMAT)
@@ -235,7 +247,9 @@ class Store:
 
     @contextlib.contextmanager
     def read(self, *, role="online-read"):
-        if self.profile_version == 4:
+        if self.scoped:
+            if self._assessment and role == "online-read":
+                role = "assessment-read"
             with owned.Owner(self.root, role, guard=self.guard, readonly=True) as db:
                 yield db
         else:
@@ -244,7 +258,9 @@ class Store:
 
     @contextlib.contextmanager
     def write(self, *, role="mutation"):
-        if self.profile_version == 4:
+        if self.scoped:
+            if self._assessment and role == "mutation":
+                role = "assessment-write"
             with owned.Owner(self.root, role, guard=self.guard, initialize=self._initializing) as db:
                 yield db
         else:
@@ -252,7 +268,7 @@ class Store:
                 yield db
 
     def _connect(self):
-        if self.profile_version == 4:
+        if self.scoped:
             raise ValueError("Use a scoped SQLite owner for this profile.")
         db = sqlite3.connect(self.root / "workspace.sqlite3", timeout=10)
         try:
@@ -286,7 +302,7 @@ class Store:
         return db
 
     def operation_status(self):
-        if self.profile_version == 4 and owned.held(self.root):
+        if self.scoped and owned.held(self.root):
             return {"guard_enabled": True, "state": "paused", "reason": "sqlite_ownership_unconfirmed",
                     "quota_enforced": False, "can_create_project": False, "can_submit_run": False}
         return self.guard.status() if self.guard else {"guard_enabled": False, "state": "ready", "reason": None, "quota_enforced": False}
@@ -296,7 +312,9 @@ class Store:
 
     @contextlib.contextmanager
     def transaction(self, *, essential=False, operation=None, keep=False, kind="mutation", resource_id="workspace", subject="operator", request=None, request_key=None, preflight=None):
-        if self.profile_version == 4:
+        if self._assessment and (keep or operation is not None or kind not in {"initialize", "mutation"}):
+            raise ValueError("Assessment transactions are short, independent mutations.")
+        if self.scoped:
             with self._scoped_transaction(essential=essential, operation=operation, keep=keep, kind=kind,
                     resource_id=resource_id, subject=subject, request=request, request_key=request_key,
                     preflight=preflight) as db:
@@ -389,7 +407,8 @@ class Store:
                 if operation is not None:
                     item = self.guard.load()["operations"][token.identity]
                     self.guard.check(essential=item["essential"], admitted=token)
-                with self.write() as db:
+                role = "assessment-spawn" if self._assessment and request and request.get("action") == "spawn" else "mutation"
+                with self.write(role=role) as db:
                     try:
                         db.execute("BEGIN IMMEDIATE")
                         if preflight is not None:
@@ -421,6 +440,36 @@ class Store:
                 if failed or not keep or adapter is not None and not adapter.keep:
                     token.release()
 
+    @contextlib.contextmanager
+    def _safety_transaction(self, **kwargs):
+        affected = []
+        try:
+            with self.transaction(**kwargs) as db:
+                yield db, affected
+        except BaseException:
+            if self._assessment_service is not None:
+                self._assessment_service.close_lifelines()
+            raise
+        if self._assessment_service is not None and affected:
+            self._assessment_service.denied(affected)
+
+    def _deny_assessments(self, db, affected, *, subject=None, project_id=None, reason="access_ended"):
+        if not self._assessment:
+            return
+        for row in db.execute(astate.ALL_META).fetchall():
+            value = astate.validate_row(row, metadata=True)
+            if subject is not None and value["subject"] != subject:
+                continue
+            if project_id is not None and value["project_id"] != project_id:
+                continue
+            if value["local_phase"] != "denied":
+                changed = db.execute(astate.UPDATE, ("denied", reason, value["version"] + 1,
+                    value["last_scope_generation"], value["id"], value["version"], value["local_phase"]))
+                if changed.rowcount != 1:
+                    astate.invalid()
+                value.update(local_phase="denied", deny_reason=reason, version=value["version"] + 1)
+            affected.append(value)
+
     def add_user(self, subject):
         identifier(subject)
         key = secrets.token_urlsafe(32)
@@ -432,19 +481,22 @@ class Store:
         return key
 
     def revoke_user(self, subject):
-        with self.transaction(essential=True, subject=subject, request={"action": "revoke-user", "subject": subject}) as db:
+        with self._safety_transaction(essential=True, subject=subject, request={"action": "revoke-user", "subject": subject}) as (db, affected):
             db.execute("UPDATE users SET active=0 WHERE subject=?", (subject,))
             db.execute("DELETE FROM sessions WHERE subject=?", (subject,))
-            db.execute("UPDATE runs SET cancel_requested=1 WHERE subject=? AND status IN ('queued','running')", (subject,))
+            if not self._assessment:
+                db.execute("UPDATE runs SET cancel_requested=1 WHERE subject=? AND status IN ('queued','running')", (subject,))
+            self._deny_assessments(db, affected, subject=subject)
 
     def rotate_user(self, subject):
         identifier(subject)
         key = secrets.token_urlsafe(32)
-        with self.transaction(essential=True, subject=subject, request={"action": "rotate-user", "subject": subject}) as db:
+        with self._safety_transaction(essential=True, subject=subject, request={"action": "rotate-user", "subject": subject}) as (db, affected):
             if not db.execute("SELECT 1 FROM users WHERE subject=? AND active=1", (subject,)).fetchone():
                 raise ValueError("Only an existing active subject can receive a replacement key.")
             db.execute("DELETE FROM sessions WHERE subject=?", (subject,))
             db.execute("UPDATE users SET key_hash=? WHERE subject=?", (digest(key.encode()), subject))
+            self._deny_assessments(db, affected, subject=subject)
         return key
 
     def session(self, key=None, token=None):
@@ -486,7 +538,12 @@ class Store:
             return row["subject"]
 
     def logout(self, token):
-        with self.transaction(essential=True, request={"action": "logout", "token_sha256": digest(token.encode())}) as db:
+        request = {"action": "logout"} if self._assessment else {"action": "logout", "token_sha256": digest(token.encode())}
+        with self._safety_transaction(essential=True, request=request) as (db, affected):
+            if self._assessment:
+                prior = db.execute(astate.LOGOUT_SUBJECT, (digest(token.encode()),)).fetchone()
+                if prior is not None:
+                    self._deny_assessments(db, affected, subject=prior["subject"], reason="access_ended")
             db.execute("DELETE FROM sessions WHERE token_hash=?", (digest(token.encode()),))
 
     @staticmethod
@@ -506,6 +563,8 @@ class Store:
             return [json.loads(row[0]) for row in db.execute("SELECT p.payload FROM projects p JOIN members m ON m.project_id=p.id JOIN users u ON u.subject=m.subject WHERE m.subject=? AND u.active=1 ORDER BY p.rowid DESC", (subject,))]
 
     def create_project(self, subject, data, broker, global_budget, request_key=None):
+        if self._assessment:
+            raise ValueError("Assessment study, execution and recovery operations are unsupported.")
         name = bounded_text(data.get("name"), "Project name", 100)
         question = bounded_text(data.get("question"), "Research question", 2000)
         criterion = bounded_text(data.get("success_criterion"), "Success criterion", 2000)
@@ -599,15 +658,17 @@ class Store:
 
     def _membership(self, project_id, actor, subject, role=None, *, insertion=False):
         identifier(subject)
-        with self.transaction(essential=role in (None, "viewer") and not insertion, resource_id=project_id, subject=actor,
+        with self._safety_transaction(essential=role in (None, "viewer") and not insertion, resource_id=project_id, subject=actor,
                               request={"action": "membership", "subject": subject, "role": role},
-                              preflight=(lambda db: finite.admit(db, members=1)) if insertion else None) as db:
+                              preflight=(lambda db: finite.admit(db, members=1)) if insertion else None) as (db, affected):
             project, _ = self._access(db, project_id, actor, {"owner"})
             if subject == project["owner"]:
                 raise ValueError("The project owner cannot be removed or demoted.")
             if role is None:
                 db.execute("DELETE FROM members WHERE project_id=? AND subject=?", (project_id, subject))
-                db.execute("UPDATE runs SET cancel_requested=1 WHERE project_id=? AND subject=? AND status IN ('queued','running')", (project_id, subject))
+                if not self._assessment:
+                    db.execute("UPDATE runs SET cancel_requested=1 WHERE project_id=? AND subject=? AND status IN ('queued','running')", (project_id, subject))
+                self._deny_assessments(db, affected, subject=subject, project_id=project_id)
             else:
                 if role not in ("editor", "viewer"):
                     raise ValueError("Choose editor or viewer.")
@@ -615,17 +676,23 @@ class Store:
                     raise ValueError("The operator must provision that collaborator first.")
                 db.execute("INSERT INTO members VALUES(?,?,?) ON CONFLICT(project_id,subject) DO UPDATE SET role=excluded.role", (project_id, subject, role))
                 if role == "viewer":
-                    db.execute("UPDATE runs SET cancel_requested=1 WHERE project_id=? AND subject=? AND status IN ('queued','running')", (project_id, subject))
+                    if not self._assessment:
+                        db.execute("UPDATE runs SET cancel_requested=1 WHERE project_id=? AND subject=? AND status IN ('queued','running')", (project_id, subject))
+                    self._deny_assessments(db, affected, subject=subject, project_id=project_id)
 
     def close_project(self, project_id, subject):
-        with self.transaction(essential=True, resource_id=project_id, subject=subject, request={"action": "close-project"}) as db:
+        with self._safety_transaction(essential=True, resource_id=project_id, subject=subject, request={"action": "close-project"}) as (db, affected):
             project, _ = self._access(db, project_id, subject, {"owner"})
             project["status"] = "closed"
             db.execute("UPDATE projects SET payload=? WHERE id=?", (self.serialized(project, "project"), project_id))
-            db.execute("UPDATE runs SET cancel_requested=1 WHERE project_id=? AND status IN ('queued','running')", (project_id,))
+            if not self._assessment:
+                db.execute("UPDATE runs SET cancel_requested=1 WHERE project_id=? AND status IN ('queued','running')", (project_id,))
+            self._deny_assessments(db, affected, project_id=project_id)
         return project
 
     def submit(self, project_id, subject, data, images, request_key=None, authorize=None):
+        if self._assessment:
+            raise ValueError("Assessment study, execution and recovery operations are unsupported.")
         if self.guard:
             with self.guard.locked():
                 return self._submit(project_id, subject, data, images, request_key, authorize)
@@ -711,6 +778,8 @@ class Store:
         return json.loads(row[0])
 
     def recover(self, *, cancel_queued=False):
+        if self._assessment:
+            raise ValueError("Assessment study, execution and recovery operations are unsupported.")
         with self.transaction(essential=True, request={"action": "restart", "cancel_queued": cancel_queued}) as db:
             if cancel_queued:
                 for row in db.execute("SELECT id,payload FROM runs WHERE status='queued'").fetchall():
@@ -724,6 +793,8 @@ class Store:
                 db.execute("UPDATE runs SET status='interrupted',payload=? WHERE id=?", (self.serialized(run, "run"), row["id"]))
 
     def claim(self, on_cancel=None):
+        if self._assessment:
+            raise ValueError("Assessment study, execution and recovery operations are unsupported.")
         if self.guard:
             with self.guard.locked():
                 self.guard.check(kind="claim")
@@ -778,6 +849,8 @@ class Store:
                 return True
 
     def launch_run(self, run, spawn, publication=None):
+        if self._assessment:
+            raise ValueError("Assessment study, execution and recovery operations are unsupported.")
         """Fence only spawn, using the same writer order as local safety controls."""
         def current_launch():
             # BEGIN IMMEDIATE orders controls from other Store instances and
@@ -806,7 +879,7 @@ class Store:
                 finally:
                     # v4 owner cleanup preserves a spawn error if rollback fails.
                     # Failure after spawn remains uncertain, never a refusal.
-                    if self.profile_version != 4:
+                    if not self.scoped:
                         db.rollback()
 
         if self.guard:
@@ -822,6 +895,8 @@ class Store:
         return current_launch()
 
     def finish(self, run, result=None, publication=None, *, claimed=False):
+        if self._assessment:
+            raise ValueError("Assessment study, execution and recovery operations are unsupported.")
         try:
             return self._finish(run, result, publication, claimed=claimed)
         except DispatchSuperseded:
@@ -873,7 +948,7 @@ class Store:
                            and all(type(value) is int for value in accounting[:2])
                            and accounting in {(0, 0, "not_admitted"), (30, 30, "estimated_upper_bound")})
                 if run_token and settled:
-                    if self.profile_version == 4:
+                    if self.scoped:
                         db.complete(run_token, authority=db.operation)
                     else:
                         run_token.complete_sql(db.raw, authority=db.operation if self.guard.publication else None)
@@ -886,6 +961,8 @@ class Store:
                     run_token.release()
 
     def snapshot(self, project_id, subject):
+        if self._assessment:
+            raise ValueError("Assessment study, execution and recovery operations are unsupported.")
         if self.profile_version in (2, 3, 4):
             raise ValueError("This profile requires the complete authorized export operation.")
         with self.read() as db:
@@ -903,6 +980,8 @@ class Store:
             return project, runs, files
 
     def export_bundle(self, project_id, subject, token):
+        if self._assessment:
+            raise ValueError("Assessment study, execution and recovery operations are unsupported.")
         if self.profile_version not in (2, 3, 4):
             raise ValueError("Bounded export requires its explicit fresh profile.")
         from .bounded_export import export_bundle

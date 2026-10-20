@@ -10,9 +10,11 @@ from .operation_guard import GUARDED_MODES, GuardPaused, FILE, LOCK, TEMP, sync_
 from .runtime import Broker, strict_json
 from .store import Store, canonical, now, private_write, unknown_compute
 from . import finite_authority as finite
+from . import assessment_state as astate
 
 
 def checkpoint(state, output, *, broker=None):
+    astate.refuse_state(state)
     with r.offline(state) as root:
         store = Store(root, resume=False)
         if not store.guard:
@@ -76,6 +78,7 @@ def checkpoint(state, output, *, broker=None):
 
 def restore(checkpoint_path, output, *, trusted_sha256, broker):
     archive, manifest = r.verified_checkpoint(checkpoint_path, trusted_sha256)
+    astate.refuse_state(archive)
     finite.refuse_unqualified_recovery(archive)
     destination = r.safe_root(output)
     if destination.is_relative_to(archive) or destination.is_relative_to(r.safe_root(manifest["source_state"])):
@@ -145,7 +148,10 @@ def _finish(token, store):
 
 
 def activate(state, source_state, checkpoint_path, *, trusted_sha256):
+    astate.refuse_state(state)
+    astate.refuse_state(source_state)
     archive, manifest = r.verified_checkpoint(checkpoint_path, trusted_sha256)
+    astate.refuse_state(archive)
     finite.refuse_unqualified_recovery(archive)
     destination, source = r.safe_root(state), r.safe_root(source_state)
     if destination == source or str(source) != manifest["source_state"]:

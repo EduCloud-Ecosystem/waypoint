@@ -1,0 +1,36 @@
+test_observed_absence_requires_denial_drain_and_revocation (test_assessment_completion.ReplyIdentityTests.test_observed_absence_requires_denial_drain_and_revocation) ... 
+  test_observed_absence_requires_denial_drain_and_revocation (test_assessment_completion.ReplyIdentityTests.test_observed_absence_requires_denial_drain_and_revocation) (field='new_admission') ... FAIL
+  test_observed_absence_requires_denial_drain_and_revocation (test_assessment_completion.ReplyIdentityTests.test_observed_absence_requires_denial_drain_and_revocation) (field='writers_drained') ... FAIL
+  test_observed_absence_requires_denial_drain_and_revocation (test_assessment_completion.ReplyIdentityTests.test_observed_absence_requires_denial_drain_and_revocation) (field='scope_access_revocation') ... FAIL
+
+======================================================================
+FAIL: test_observed_absence_requires_denial_drain_and_revocation (test_assessment_completion.ReplyIdentityTests.test_observed_absence_requires_denial_drain_and_revocation) (field='new_admission')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-assessment-owned-data/research-workspace/tests/test_assessment_completion.py", line 125, in test_observed_absence_requires_denial_drain_and_revocation
+    with self.assertRaises(peer.PeerFailure):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+AssertionError: PeerFailure not raised
+
+======================================================================
+FAIL: test_observed_absence_requires_denial_drain_and_revocation (test_assessment_completion.ReplyIdentityTests.test_observed_absence_requires_denial_drain_and_revocation) (field='writers_drained')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-assessment-owned-data/research-workspace/tests/test_assessment_completion.py", line 125, in test_observed_absence_requires_denial_drain_and_revocation
+    with self.assertRaises(peer.PeerFailure):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+AssertionError: PeerFailure not raised
+
+======================================================================
+FAIL: test_observed_absence_requires_denial_drain_and_revocation (test_assessment_completion.ReplyIdentityTests.test_observed_absence_requires_denial_drain_and_revocation) (field='scope_access_revocation')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-assessment-owned-data/research-workspace/tests/test_assessment_completion.py", line 125, in test_observed_absence_requires_denial_drain_and_revocation
+    with self.assertRaises(peer.PeerFailure):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+AssertionError: PeerFailure not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.006s
+
+FAILED (failures=3)

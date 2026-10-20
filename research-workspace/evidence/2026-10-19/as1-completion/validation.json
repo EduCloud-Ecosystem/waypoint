@@ -1,0 +1,2142 @@
+{
+  "base": "45ecd81cb5970d86a30a1f70e61e8e101fc7972a",
+  "boundary": "Synthetic actual local HTTP, SQLite and one-shot Go helper processes only. No engine/provider/build/network service outside loopback, compute grant, trusted cleanup, real input, production enablement or whole-store capacity qualification.",
+  "counting": "Runs and subtests overlap; never add them into a unique total. Both focused53 selections differ. Latest55 is not154 checks at a single final head.",
+  "hosted_helpers": {
+    "binaries": [
+      "broker.test",
+      "ledger.test"
+    ],
+    "build_not_run_locally": true,
+    "does_not_replace_local_4de6a090_evidence": true,
+    "platform": "Linux hosted build pending",
+    "source_head": "8584ca8db9a7e5eaf8d29d9670349b57f3939ab6"
+  },
+  "local_helpers": {
+    "classification": "existing reviewed test-only helper binaries, no rebuild, no provider or compute admission",
+    "files": [
+      {
+        "bytes": 5784434,
+        "path": "broker.test",
+        "sha256": "847f80bf28b35fb7064bd8cab3b30b2b01e8d8422f2d48b7b8afec218a5039f2"
+      },
+      {
+        "bytes": 5217778,
+        "path": "ledger.test",
+        "sha256": "2eed6851b88fcb2bb28fb897a2c19c664d23e859f5e9e4df3f450a3fb041ece8"
+      },
+      {
+        "bytes": 10043234,
+        "path": "outfitter",
+        "sha256": "ce960bc24e47916ec33eda10ebe9826ea9f982fa45dcdbdb19f54feb5341b0a6"
+      },
+      {
+        "bytes": 2898,
+        "path": "author-delta-handoff.json",
+        "sha256": "9f954e9f74f6a42584066879330f5dc9f6654219dd866c071a0b77755e557c35"
+      }
+    ],
+    "source_pin": "4de6a090664a9a3ccd8ba0417b00af3ff5290a58"
+  },
+  "original_99": {
+    "failed_subtests_in_one_method": 9,
+    "log": "../as1-code-readiness/baseline-guard-identity-ownership.log",
+    "meaning": "Failure occurred at the overflow-refusal precondition; it did not execute or demonstrate nine safety-action bypasses. Original after-run 28-path inventory is not a frozen checkout reconstruction.",
+    "methods": 99,
+    "other_methods_passed": 98,
+    "sha256": "6388df659c47dfc1db862c04f875b5c9225a100b263c88a35e69b4e1077a17f4"
+  },
+  "remaining": {
+    "actual_resource_cleanup": "NOT QUALIFIED",
+    "full_suite": "NOT RUN at checkpoint",
+    "hosted_controls": "NOT RUN at checkpoint",
+    "independent_final_review": "PENDING",
+    "production_uploads": "DISABLED"
+  },
+  "runs": [
+    {
+      "argv": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "-W",
+        "error::ResourceWarning",
+        "-m",
+        "unittest",
+        "-v",
+        "test_assessment_completion",
+        "test_assessment_state.StateTests.test_concurrent_short_guarded_transactions_release_every_token",
+        "test_guard_publication.GuardPublicationTests.test_full_ordinary_intent_allowance_retains_fresh_safety_path"
+      ],
+      "duration_seconds": 2.858,
+      "ended_utc": "2026-10-20T03:22:39.127577+00:00",
+      "environment_overrides": {
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONPATH": "research-workspace:research-workspace/tests",
+        "WAYPOINT_OWNED_PEER_ASSETS": "archived-reviewed-Darwin-4de6a090-assets"
+      },
+      "exit_code": 1,
+      "label": "review-red",
+      "log": "review-red.log",
+      "log_sha256": "47bbc326cb0d949e9e6be6b8d34ff76d196f05a0732da3e8ac415b42d5837f9e",
+      "methods_run": 5,
+      "note": "Two product FAIL, one body-reader ERROR; one concurrency test used an invalid closed request key. The ordinary-cap nine-subcase control passed.",
+      "private_record_sha256": "0131523b7ad9b34fc6b5af0fc8f47d6ae7a21c8572f812c320754895cbc7368e",
+      "runner_reported_source_unchanged": true,
+      "selected_source_before": [
+        {
+          "bytes": 257,
+          "path": "research-workspace/assessment/fixtures/owned-data/cancel-request.json",
+          "sha256": "c6955b51f16493aec1c1c69e7769f723ce795529b7c34e85d84c9073d978c1ed"
+        },
+        {
+          "bytes": 78,
+          "path": "research-workspace/assessment/fixtures/owned-data/disabled-error.json",
+          "sha256": "60dbd8883a508fb9af77794b0f08406e4f4678d89ffda0533a062575ca7fe88a"
+        },
+        {
+          "bytes": 388,
+          "path": "research-workspace/assessment/fixtures/owned-data/ingest-header.json",
+          "sha256": "c7300b9774785d90a573b1c3054bb9dd2f501b69d26a9aebe76f3d8f67c9c254"
+        },
+        {
+          "bytes": 70,
+          "path": "research-workspace/assessment/fixtures/owned-data/invalid-error.json",
+          "sha256": "4b1936f0a266da0b13a2d1e6b800b55f66d3f42a0540ff48dac03e869367251e"
+        },
+        {
+          "bytes": 70,
+          "path": "research-workspace/assessment/fixtures/owned-data/missing-error.json",
+          "sha256": "32d3c980f778b34bd7c9bbeb0d58352c6e382b15d6eeed3398f989b4b4bd74f0"
+        },
+        {
+          "bytes": 1266,
+          "path": "research-workspace/assessment/fixtures/owned-data/peer-snapshot.json",
+          "sha256": "32274f34e622ece695e58fa220f6b646573a79e97b29123e6d95a76b95069b4d"
+        },
+        {
+          "bytes": 1844,
+          "path": "research-workspace/assessment/fixtures/owned-data/prepare-request.json",
+          "sha256": "acf3ce537ce5319333baa1616850c2ec8112ac3827be96842c7904bff935039e"
+        },
+        {
+          "bytes": 652,
+          "path": "research-workspace/assessment/fixtures/owned-data/ready-ack.json",
+          "sha256": "00cef11624fde560c540ccf9aa13f901986097140b4ec40b03bea8a0004b840d"
+        },
+        {
+          "bytes": 239,
+          "path": "research-workspace/assessment/fixtures/owned-data/reconcile-request.json",
+          "sha256": "67c7085a2c3aa94f239ac778e51fbcaeae7efc201f82713bae3b10be44b664b2"
+        },
+        {
+          "bytes": 367,
+          "path": "research-workspace/assessment/fixtures/owned-data/seal-request.json",
+          "sha256": "a7d8d9aa98271cda60670ec2fc84231348955a3b76bdf8e79924ffaa30ba42c8"
+        },
+        {
+          "bytes": 811,
+          "path": "research-workspace/assessment/fixtures/owned-data/status-reply.json",
+          "sha256": "25362933912f71088e20c124eb4b47fe582871651a38cbd01bec36eb3bb079b4"
+        },
+        {
+          "bytes": 236,
+          "path": "research-workspace/assessment/fixtures/owned-data/status-request.json",
+          "sha256": "fd7bf69274fc68febbee4fa33b43a942f7c55bddd3cac790b17b3ce6b4976660"
+        },
+        {
+          "bytes": 656,
+          "path": "research-workspace/evidence/2026-10-19/as1-code-readiness/baseline-guard-identity-ownership.json",
+          "sha256": "101f2e93438c8b1b694bf8ff10ff11e776dde133201c2294103b530496058656"
+        },
+        {
+          "bytes": 7055,
+          "path": "research-workspace/evidence/2026-10-19/as1-code-readiness/baseline-guard-identity-ownership.log",
+          "sha256": "6388df659c47dfc1db862c04f875b5c9225a100b263c88a35e69b4e1077a17f4"
+        },
+        {
+          "bytes": 7710,
+          "path": "research-workspace/evidence/2026-10-19/as1-code-readiness/baseline-source-inventory.json",
+          "sha256": "aee906e85126adc9ab0c8c542d814ccf75d3075f9e504f83c7fbb4466b564861"
+        },
+        {
+          "bytes": 18099,
+          "path": "research-workspace/research_workspace/assessment_peer.py",
+          "sha256": "cc396564cc07185fd2f2f0b1e5afcc40608ff3a0698306cbe95cc3192e728cef"
+        },
+        {
+          "bytes": 34185,
+          "path": "research-workspace/research_workspace/assessment_service.py",
+          "sha256": "1e429cdefbc60f3fad027cc8ae7e3689c5ff0c6f69c38cde3fcfc92633ba98fc"
+        },
+        {
+          "bytes": 12948,
+          "path": "research-workspace/research_workspace/assessment_state.py",
+          "sha256": "a42f4c3f9cb44e1543a97fd967f97942af8290f152bf48a1c878be711b77299f"
+        },
+        {
+          "bytes": 8530,
+          "path": "research-workspace/research_workspace/bounded_export.py",
+          "sha256": "4452e4a551b8245fc2bd61d6c7b97ff2c4fb4421df85ba401f9551c121968c05"
+        },
+        {
+          "bytes": 13400,
+          "path": "research-workspace/research_workspace/guard_publication.py",
+          "sha256": "baa0b7904be26242354cfeffaa2c42fbdad67234e85e375099a3eca33ae6305e"
+        },
+        {
+          "bytes": 16191,
+          "path": "research-workspace/research_workspace/guarded_recovery.py",
+          "sha256": "97bb2e052e05e32fa4d991a22c69abe5fd28e78593626007d9cdd75f3ea82fb3"
+        },
+        {
+          "bytes": 14701,
+          "path": "research-workspace/research_workspace/identity.py",
+          "sha256": "b1dad45e4f802fb583d8bfb1ce1b15db70cdf75e4717b21fb441b9752bcbc437"
+        },
+        {
+          "bytes": 37120,
+          "path": "research-workspace/research_workspace/operation_guard.py",
+          "sha256": "9872378e4497b87d51d49fe1acfdc90b9ccf7d9b80068608dc08307fd23694cc"
+        },
+        {
+          "bytes": 20692,
+          "path": "research-workspace/research_workspace/recovery.py",
+          "sha256": "f54872aa5531c63e1ea3efb395f0c60ecb2edb8ccfeb2440fe1120b8b4b6513d"
+        },
+        {
+          "bytes": 16311,
+          "path": "research-workspace/research_workspace/server.py",
+          "sha256": "2bbfded4f7c289ea2ff3841a4535c6ea079541dee082a149c053f0f0fa02717b"
+        },
+        {
+          "bytes": 37686,
+          "path": "research-workspace/research_workspace/sqlite_ownership.py",
+          "sha256": "3e0a5f9b8c8ba4669d41119220ecc34f2f61a9d5fd58d91eaa63fb47940bcff3"
+        },
+        {
+          "bytes": 18640,
+          "path": "research-workspace/research_workspace/storage_inventory.py",
+          "sha256": "4b4d375c2cee36189b27d62ef50218be498015effe4b24dee1499d6eead22389"
+        },
+        {
+          "bytes": 57587,
+          "path": "research-workspace/research_workspace/store.py",
+          "sha256": "f4bdc6ea516252a595d40990a13f0e93302de079a57929454eebb6468e766456"
+        },
+        {
+          "bytes": 4801,
+          "path": "research-workspace/tests/assessment_fixtures.py",
+          "sha256": "d638fe9c87b61a776c10b6ce0a84a76991c4175d49eb23d4c12d46bf49cf9354"
+        },
+        {
+          "bytes": 5094,
+          "path": "research-workspace/tests/test_assessment_completion.py",
+          "sha256": "b90567373e2ee6b5dbd3aee57208ef8f27e22390f12fe348bd6458b13ea55349"
+        },
+        {
+          "bytes": 23058,
+          "path": "research-workspace/tests/test_assessment_connected.py",
+          "sha256": "1f58f1759e273cb35bc313012fdb4a048e2a8ec37305d2f351ce038bcd1a3ecb"
+        },
+        {
+          "bytes": 40110,
+          "path": "research-workspace/tests/test_assessment_state.py",
+          "sha256": "81d1e266531adc24622dc3c52f2fa991f621712cd95bf7edffeba6439b153baa"
+        }
+      ],
+      "started_utc": "2026-10-20T03:22:36.269979+00:00",
+      "status": "FAIL"
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "-W",
+        "error::ResourceWarning",
+        "-m",
+        "unittest",
+        "-v",
+        "test_assessment_completion",
+        "test_assessment_state",
+        "test_assessment_connected",
+        "test_guard_publication.GuardPublicationTests.test_full_ordinary_intent_allowance_retains_fresh_safety_path"
+      ],
+      "duration_seconds": 23.468,
+      "ended_utc": "2026-10-20T03:24:35.042149+00:00",
+      "environment_overrides": {
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONPATH": "research-workspace:research-workspace/tests",
+        "WAYPOINT_OWNED_PEER_ASSETS": "archived-reviewed-Darwin-4de6a090-assets"
+      },
+      "exit_code": 0,
+      "label": "focused-corrected",
+      "log": "focused-corrected.log",
+      "log_sha256": "6f064c8f77429dd4b5efeba8d054e3b81eec8155dd866a4761c326c328644ad9",
+      "methods_run": 53,
+      "note": "53 overlapping methods; includes the inherited nine-subcase boundary method.",
+      "private_record_sha256": "386eccc4a73d36d8351331feaa71d4a901b2976a950c990dd564f25759a45ff6",
+      "runner_reported_source_unchanged": true,
+      "selected_source_before": [
+        {
+          "bytes": 257,
+          "path": "research-workspace/assessment/fixtures/owned-data/cancel-request.json",
+          "sha256": "c6955b51f16493aec1c1c69e7769f723ce795529b7c34e85d84c9073d978c1ed"
+        },
+        {
+          "bytes": 78,
+          "path": "research-workspace/assessment/fixtures/owned-data/disabled-error.json",
+          "sha256": "60dbd8883a508fb9af77794b0f08406e4f4678d89ffda0533a062575ca7fe88a"
+        },
+        {
+          "bytes": 388,
+          "path": "research-workspace/assessment/fixtures/owned-data/ingest-header.json",
+          "sha256": "c7300b9774785d90a573b1c3054bb9dd2f501b69d26a9aebe76f3d8f67c9c254"
+        },
+        {
+          "bytes": 70,
+          "path": "research-workspace/assessment/fixtures/owned-data/invalid-error.json",
+          "sha256": "4b1936f0a266da0b13a2d1e6b800b55f66d3f42a0540ff48dac03e869367251e"
+        },
+        {
+          "bytes": 70,
+          "path": "research-workspace/assessment/fixtures/owned-data/missing-error.json",
+          "sha256": "32d3c980f778b34bd7c9bbeb0d58352c6e382b15d6eeed3398f989b4b4bd74f0"
+        },
+        {
+          "bytes": 1266,
+          "path": "research-workspace/assessment/fixtures/owned-data/peer-snapshot.json",
+          "sha256": "32274f34e622ece695e58fa220f6b646573a79e97b29123e6d95a76b95069b4d"
+        },
+        {
+          "bytes": 1844,
+          "path": "research-workspace/assessment/fixtures/owned-data/prepare-request.json",
+          "sha256": "acf3ce537ce5319333baa1616850c2ec8112ac3827be96842c7904bff935039e"
+        },
+        {
+          "bytes": 652,
+          "path": "research-workspace/assessment/fixtures/owned-data/ready-ack.json",
+          "sha256": "00cef11624fde560c540ccf9aa13f901986097140b4ec40b03bea8a0004b840d"
+        },
+        {
+          "bytes": 239,
+          "path": "research-workspace/assessment/fixtures/owned-data/reconcile-request.json",
+          "sha256": "67c7085a2c3aa94f239ac778e51fbcaeae7efc201f82713bae3b10be44b664b2"
+        },
+        {
+          "bytes": 367,
+          "path": "research-workspace/assessment/fixtures/owned-data/seal-request.json",
+          "sha256": "a7d8d9aa98271cda60670ec2fc84231348955a3b76bdf8e79924ffaa30ba42c8"
+        },
+        {
+          "bytes": 811,
+          "path": "research-workspace/assessment/fixtures/owned-data/status-reply.json",
+          "sha256": "25362933912f71088e20c124eb4b47fe582871651a38cbd01bec36eb3bb079b4"
+        },
+        {
+          "bytes": 236,
+          "path": "research-workspace/assessment/fixtures/owned-data/status-request.json",
+          "sha256": "fd7bf69274fc68febbee4fa33b43a942f7c55bddd3cac790b17b3ce6b4976660"
+        },
+        {
+          "bytes": 656,
+          "path": "research-workspace/evidence/2026-10-19/as1-code-readiness/baseline-guard-identity-ownership.json",
+          "sha256": "101f2e93438c8b1b694bf8ff10ff11e776dde133201c2294103b530496058656"
+        },
+        {
+          "bytes": 7055,
+          "path": "research-workspace/evidence/2026-10-19/as1-code-readiness/baseline-guard-identity-ownership.log",
+          "sha256": "6388df659c47dfc1db862c04f875b5c9225a100b263c88a35e69b4e1077a17f4"
+        },
+        {
+          "bytes": 7710,
+          "path": "research-workspace/evidence/2026-10-19/as1-code-readiness/baseline-source-inventory.json",
+          "sha256": "aee906e85126adc9ab0c8c542d814ccf75d3075f9e504f83c7fbb4466b564861"
+        },
+        {
+          "bytes": 18099,
+          "path": "research-workspace/research_workspace/assessment_peer.py",
+          "sha256": "cc396564cc07185fd2f2f0b1e5afcc40608ff3a0698306cbe95cc3192e728cef"
+        },
+        {
+          "bytes": 34892,
+          "path": "research-workspace/research_workspace/assessment_service.py",
+          "sha256": "42ce85935700e4dd36402c41372b87434e8b9bdcd8164e109a655fcfac787ef9"
+        },
+        {
+          "bytes": 12948,
+          "path": "research-workspace/research_workspace/assessment_state.py",
+          "sha256": "a42f4c3f9cb44e1543a97fd967f97942af8290f152bf48a1c878be711b77299f"
+        },
+        {
+          "bytes": 8530,
+          "path": "research-workspace/research_workspace/bounded_export.py",
+          "sha256": "4452e4a551b8245fc2bd61d6c7b97ff2c4fb4421df85ba401f9551c121968c05"
+        },
+        {
+          "bytes": 13400,
+          "path": "research-workspace/research_workspace/guard_publication.py",
+          "sha256": "baa0b7904be26242354cfeffaa2c42fbdad67234e85e375099a3eca33ae6305e"
+        },
+        {
+          "bytes": 16191,
+          "path": "research-workspace/research_workspace/guarded_recovery.py",
+          "sha256": "97bb2e052e05e32fa4d991a22c69abe5fd28e78593626007d9cdd75f3ea82fb3"
+        },
+        {
+          "bytes": 14701,
+          "path": "research-workspace/research_workspace/identity.py",
+          "sha256": "b1dad45e4f802fb583d8bfb1ce1b15db70cdf75e4717b21fb441b9752bcbc437"
+        },
+        {
+          "bytes": 37120,
+          "path": "research-workspace/research_workspace/operation_guard.py",
+          "sha256": "9872378e4497b87d51d49fe1acfdc90b9ccf7d9b80068608dc08307fd23694cc"
+        },
+        {
+          "bytes": 20692,
+          "path": "research-workspace/research_workspace/recovery.py",
+          "sha256": "f54872aa5531c63e1ea3efb395f0c60ecb2edb8ccfeb2440fe1120b8b4b6513d"
+        },
+        {
+          "bytes": 16311,
+          "path": "research-workspace/research_workspace/server.py",
+          "sha256": "2bbfded4f7c289ea2ff3841a4535c6ea079541dee082a149c053f0f0fa02717b"
+        },
+        {
+          "bytes": 37686,
+          "path": "research-workspace/research_workspace/sqlite_ownership.py",
+          "sha256": "3e0a5f9b8c8ba4669d41119220ecc34f2f61a9d5fd58d91eaa63fb47940bcff3"
+        },
+        {
+          "bytes": 18640,
+          "path": "research-workspace/research_workspace/storage_inventory.py",
+          "sha256": "4b4d375c2cee36189b27d62ef50218be498015effe4b24dee1499d6eead22389"
+        },
+        {
+          "bytes": 57587,
+          "path": "research-workspace/research_workspace/store.py",
+          "sha256": "f4bdc6ea516252a595d40990a13f0e93302de079a57929454eebb6468e766456"
+        },
+        {
+          "bytes": 4801,
+          "path": "research-workspace/tests/assessment_fixtures.py",
+          "sha256": "d638fe9c87b61a776c10b6ce0a84a76991c4175d49eb23d4c12d46bf49cf9354"
+        },
+        {
+          "bytes": 10047,
+          "path": "research-workspace/tests/test_assessment_completion.py",
+          "sha256": "9830b28cb5d2078702b046caf02be9d4836d3a20287219bbe61b7700c3ce1d2f"
+        },
+        {
+          "bytes": 27703,
+          "path": "research-workspace/tests/test_assessment_connected.py",
+          "sha256": "35044ef48c7598faba581b8ca8dd5ea6caa3a9816cf3d8332608cc76d00c329d"
+        },
+        {
+          "bytes": 40127,
+          "path": "research-workspace/tests/test_assessment_state.py",
+          "sha256": "6f224bd100ee1145208a8927b25b48da9a06ed199cf377d3214295984b5c2099"
+        }
+      ],
+      "started_utc": "2026-10-20T03:24:11.574354+00:00",
+      "status": "PASS"
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "-W",
+        "error::ResourceWarning",
+        "-m",
+        "unittest",
+        "-v",
+        "test_identity",
+        "test_guard_publication",
+        "test_sqlite_ownership"
+      ],
+      "duration_seconds": 52.977,
+      "ended_utc": "2026-10-20T03:25:37.168770+00:00",
+      "environment_overrides": {
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONPATH": "research-workspace:research-workspace/tests",
+        "WAYPOINT_OWNED_PEER_ASSETS": "archived-reviewed-Darwin-4de6a090-assets"
+      },
+      "exit_code": 0,
+      "label": "affected-regressions",
+      "log": "affected-regressions.log",
+      "log_sha256": "8f104b60062a26588f134d61a7d6a75f83883ea3c7c85577390592c3b7365672",
+      "methods_run": 99,
+      "note": "99 identity/guard/SQLite methods on this earlier source snapshot; not a final full-suite result.",
+      "private_record_sha256": "e304f6cca0e8b07e79d23ccd75a07dc4d3cc8e104189daba917953468a6035ec",
+      "runner_reported_source_unchanged": true,
+      "selected_source_before": [
+        {
+          "bytes": 257,
+          "path": "research-workspace/assessment/fixtures/owned-data/cancel-request.json",
+          "sha256": "c6955b51f16493aec1c1c69e7769f723ce795529b7c34e85d84c9073d978c1ed"
+        },
+        {
+          "bytes": 78,
+          "path": "research-workspace/assessment/fixtures/owned-data/disabled-error.json",
+          "sha256": "60dbd8883a508fb9af77794b0f08406e4f4678d89ffda0533a062575ca7fe88a"
+        },
+        {
+          "bytes": 388,
+          "path": "research-workspace/assessment/fixtures/owned-data/ingest-header.json",
+          "sha256": "c7300b9774785d90a573b1c3054bb9dd2f501b69d26a9aebe76f3d8f67c9c254"
+        },
+        {
+          "bytes": 70,
+          "path": "research-workspace/assessment/fixtures/owned-data/invalid-error.json",
+          "sha256": "4b1936f0a266da0b13a2d1e6b800b55f66d3f42a0540ff48dac03e869367251e"
+        },
+        {
+          "bytes": 70,
+          "path": "research-workspace/assessment/fixtures/owned-data/missing-error.json",
+          "sha256": "32d3c980f778b34bd7c9bbeb0d58352c6e382b15d6eeed3398f989b4b4bd74f0"
+        },
+        {
+          "bytes": 1266,
+          "path": "research-workspace/assessment/fixtures/owned-data/peer-snapshot.json",
+          "sha256": "32274f34e622ece695e58fa220f6b646573a79e97b29123e6d95a76b95069b4d"
+        },
+        {
+          "bytes": 1844,
+          "path": "research-workspace/assessment/fixtures/owned-data/prepare-request.json",
+          "sha256": "acf3ce537ce5319333baa1616850c2ec8112ac3827be96842c7904bff935039e"
+        },
+        {
+          "bytes": 652,
+          "path": "research-workspace/assessment/fixtures/owned-data/ready-ack.json",
+          "sha256": "00cef11624fde560c540ccf9aa13f901986097140b4ec40b03bea8a0004b840d"
+        },
+        {
+          "bytes": 239,
+          "path": "research-workspace/assessment/fixtures/owned-data/reconcile-request.json",
+          "sha256": "67c7085a2c3aa94f239ac778e51fbcaeae7efc201f82713bae3b10be44b664b2"
+        },
+        {
+          "bytes": 367,
+          "path": "research-workspace/assessment/fixtures/owned-data/seal-request.json",
+          "sha256": "a7d8d9aa98271cda60670ec2fc84231348955a3b76bdf8e79924ffaa30ba42c8"
+        },
+        {
+          "bytes": 811,
+          "path": "research-workspace/assessment/fixtures/owned-data/status-reply.json",
+          "sha256": "25362933912f71088e20c124eb4b47fe582871651a38cbd01bec36eb3bb079b4"
+        },
+        {
+          "bytes": 236,
+          "path": "research-workspace/assessment/fixtures/owned-data/status-request.json",
+          "sha256": "fd7bf69274fc68febbee4fa33b43a942f7c55bddd3cac790b17b3ce6b4976660"
+        },
+        {
+          "bytes": 656,
+          "path": "research-workspace/evidence/2026-10-19/as1-code-readiness/baseline-guard-identity-ownership.json",
+          "sha256": "101f2e93438c8b1b694bf8ff10ff11e776dde133201c2294103b530496058656"
+        },
+        {
+          "bytes": 7055,
+          "path": "research-workspace/evidence/2026-10-19/as1-code-readiness/baseline-guard-identity-ownership.log",
+          "sha256": "6388df659c47dfc1db862c04f875b5c9225a100b263c88a35e69b4e1077a17f4"
+        },
+        {
+          "bytes": 7710,
+          "path": "research-workspace/evidence/2026-10-19/as1-code-readiness/baseline-source-inventory.json",
+          "sha256": "aee906e85126adc9ab0c8c542d814ccf75d3075f9e504f83c7fbb4466b564861"
+        },
+        {
+          "bytes": 18099,
+          "path": "research-workspace/research_workspace/assessment_peer.py",
+          "sha256": "cc396564cc07185fd2f2f0b1e5afcc40608ff3a0698306cbe95cc3192e728cef"
+        },
+        {
+          "bytes": 34892,
+          "path": "research-workspace/research_workspace/assessment_service.py",
+          "sha256": "42ce85935700e4dd36402c41372b87434e8b9bdcd8164e109a655fcfac787ef9"
+        },
+        {
+          "bytes": 12948,
+          "path": "research-workspace/research_workspace/assessment_state.py",
+          "sha256": "a42f4c3f9cb44e1543a97fd967f97942af8290f152bf48a1c878be711b77299f"
+        },
+        {
+          "bytes": 8530,
+          "path": "research-workspace/research_workspace/bounded_export.py",
+          "sha256": "4452e4a551b8245fc2bd61d6c7b97ff2c4fb4421df85ba401f9551c121968c05"
+        },
+        {
+          "bytes": 13400,
+          "path": "research-workspace/research_workspace/guard_publication.py",
+          "sha256": "baa0b7904be26242354cfeffaa2c42fbdad67234e85e375099a3eca33ae6305e"
+        },
+        {
+          "bytes": 16191,
+          "path": "research-workspace/research_workspace/guarded_recovery.py",
+          "sha256": "97bb2e052e05e32fa4d991a22c69abe5fd28e78593626007d9cdd75f3ea82fb3"
+        },
+        {
+          "bytes": 14701,
+          "path": "research-workspace/research_workspace/identity.py",
+          "sha256": "b1dad45e4f802fb583d8bfb1ce1b15db70cdf75e4717b21fb441b9752bcbc437"
+        },
+        {
+          "bytes": 37120,
+          "path": "research-workspace/research_workspace/operation_guard.py",
+          "sha256": "9872378e4497b87d51d49fe1acfdc90b9ccf7d9b80068608dc08307fd23694cc"
+        },
+        {
+          "bytes": 20692,
+          "path": "research-workspace/research_workspace/recovery.py",
+          "sha256": "f54872aa5531c63e1ea3efb395f0c60ecb2edb8ccfeb2440fe1120b8b4b6513d"
+        },
+        {
+          "bytes": 16311,
+          "path": "research-workspace/research_workspace/server.py",
+          "sha256": "2bbfded4f7c289ea2ff3841a4535c6ea079541dee082a149c053f0f0fa02717b"
+        },
+        {
+          "bytes": 37686,
+          "path": "research-workspace/research_workspace/sqlite_ownership.py",
+          "sha256": "3e0a5f9b8c8ba4669d41119220ecc34f2f61a9d5fd58d91eaa63fb47940bcff3"
+        },
+        {
+          "bytes": 18640,
+          "path": "research-workspace/research_workspace/storage_inventory.py",
+          "sha256": "4b4d375c2cee36189b27d62ef50218be498015effe4b24dee1499d6eead22389"
+        },
+        {
+          "bytes": 57587,
+          "path": "research-workspace/research_workspace/store.py",
+          "sha256": "f4bdc6ea516252a595d40990a13f0e93302de079a57929454eebb6468e766456"
+        },
+        {
+          "bytes": 4801,
+          "path": "research-workspace/tests/assessment_fixtures.py",
+          "sha256": "d638fe9c87b61a776c10b6ce0a84a76991c4175d49eb23d4c12d46bf49cf9354"
+        },
+        {
+          "bytes": 10047,
+          "path": "research-workspace/tests/test_assessment_completion.py",
+          "sha256": "9830b28cb5d2078702b046caf02be9d4836d3a20287219bbe61b7700c3ce1d2f"
+        },
+        {
+          "bytes": 27703,
+          "path": "research-workspace/tests/test_assessment_connected.py",
+          "sha256": "35044ef48c7598faba581b8ca8dd5ea6caa3a9816cf3d8332608cc76d00c329d"
+        },
+        {
+          "bytes": 40127,
+          "path": "research-workspace/tests/test_assessment_state.py",
+          "sha256": "6f224bd100ee1145208a8927b25b48da9a06ed199cf377d3214295984b5c2099"
+        }
+      ],
+      "started_utc": "2026-10-20T03:24:44.191597+00:00",
+      "status": "PASS"
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "-W",
+        "error::ResourceWarning",
+        "-m",
+        "unittest",
+        "-v",
+        "test_assessment_completion.LifelineConstructorTests"
+      ],
+      "duration_seconds": 0.296,
+      "ended_utc": "2026-10-20T03:26:06.903766+00:00",
+      "environment_overrides": {
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONPATH": "research-workspace:research-workspace/tests",
+        "WAYPOINT_OWNED_PEER_ASSETS": "archived-reviewed-Darwin-4de6a090-assets"
+      },
+      "exit_code": 1,
+      "label": "constructor-red",
+      "log": "constructor-red.log",
+      "log_sha256": "a2dca544023191ee4136ae562f9ad9ef89f65c7b34317edfc3b92b1cd20b7ead",
+      "methods_run": 1,
+      "note": "One actual constructor close-uncertainty failure; assertion failed before later hold checks.",
+      "private_record_sha256": "292851fb7c35943e7217d5a530f623d350191ad09b035519454a7bdd52927368",
+      "runner_reported_source_unchanged": true,
+      "selected_source_before": [
+        {
+          "bytes": 257,
+          "path": "research-workspace/assessment/fixtures/owned-data/cancel-request.json",
+          "sha256": "c6955b51f16493aec1c1c69e7769f723ce795529b7c34e85d84c9073d978c1ed"
+        },
+        {
+          "bytes": 78,
+          "path": "research-workspace/assessment/fixtures/owned-data/disabled-error.json",
+          "sha256": "60dbd8883a508fb9af77794b0f08406e4f4678d89ffda0533a062575ca7fe88a"
+        },
+        {
+          "bytes": 388,
+          "path": "research-workspace/assessment/fixtures/owned-data/ingest-header.json",
+          "sha256": "c7300b9774785d90a573b1c3054bb9dd2f501b69d26a9aebe76f3d8f67c9c254"
+        },
+        {
+          "bytes": 70,
+          "path": "research-workspace/assessment/fixtures/owned-data/invalid-error.json",
+          "sha256": "4b1936f0a266da0b13a2d1e6b800b55f66d3f42a0540ff48dac03e869367251e"
+        },
+        {
+          "bytes": 70,
+          "path": "research-workspace/assessment/fixtures/owned-data/missing-error.json",
+          "sha256": "32d3c980f778b34bd7c9bbeb0d58352c6e382b15d6eeed3398f989b4b4bd74f0"
+        },
+        {
+          "bytes": 1266,
+          "path": "research-workspace/assessment/fixtures/owned-data/peer-snapshot.json",
+          "sha256": "32274f34e622ece695e58fa220f6b646573a79e97b29123e6d95a76b95069b4d"
+        },
+        {
+          "bytes": 1844,
+          "path": "research-workspace/assessment/fixtures/owned-data/prepare-request.json",
+          "sha256": "acf3ce537ce5319333baa1616850c2ec8112ac3827be96842c7904bff935039e"
+        },
+        {
+          "bytes": 652,
+          "path": "research-workspace/assessment/fixtures/owned-data/ready-ack.json",
+          "sha256": "00cef11624fde560c540ccf9aa13f901986097140b4ec40b03bea8a0004b840d"
+        },
+        {
+          "bytes": 239,
+          "path": "research-workspace/assessment/fixtures/owned-data/reconcile-request.json",
+          "sha256": "67c7085a2c3aa94f239ac778e51fbcaeae7efc201f82713bae3b10be44b664b2"
+        },
+        {
+          "bytes": 367,
+          "path": "research-workspace/assessment/fixtures/owned-data/seal-request.json",
+          "sha256": "a7d8d9aa98271cda60670ec2fc84231348955a3b76bdf8e79924ffaa30ba42c8"
+        },
+        {
+          "bytes": 811,
+          "path": "research-workspace/assessment/fixtures/owned-data/status-reply.json",
+          "sha256": "25362933912f71088e20c124eb4b47fe582871651a38cbd01bec36eb3bb079b4"
+        },
+        {
+          "bytes": 236,
+          "path": "research-workspace/assessment/fixtures/owned-data/status-request.json",
+          "sha256": "fd7bf69274fc68febbee4fa33b43a942f7c55bddd3cac790b17b3ce6b4976660"
+        },
+        {
+          "bytes": 656,
+          "path": "research-workspace/evidence/2026-10-19/as1-code-readiness/baseline-guard-identity-ownership.json",
+          "sha256": "101f2e93438c8b1b694bf8ff10ff11e776dde133201c2294103b530496058656"
+        },
+        {
+          "bytes": 7055,
+          "path": "research-workspace/evidence/2026-10-19/as1-code-readiness/baseline-guard-identity-ownership.log",
+          "sha256": "6388df659c47dfc1db862c04f875b5c9225a100b263c88a35e69b4e1077a17f4"
+        },
+        {
+          "bytes": 7710,
+          "path": "research-workspace/evidence/2026-10-19/as1-code-readiness/baseline-source-inventory.json",
+          "sha256": "aee906e85126adc9ab0c8c542d814ccf75d3075f9e504f83c7fbb4466b564861"
+        },
+        {
+          "bytes": 18099,
+          "path": "research-workspace/research_workspace/assessment_peer.py",
+          "sha256": "cc396564cc07185fd2f2f0b1e5afcc40608ff3a0698306cbe95cc3192e728cef"
+        },
+        {
+          "bytes": 34892,
+          "path": "research-workspace/research_workspace/assessment_service.py",
+          "sha256": "42ce85935700e4dd36402c41372b87434e8b9bdcd8164e109a655fcfac787ef9"
+        },
+        {
+          "bytes": 12948,
+          "path": "research-workspace/research_workspace/assessment_state.py",
+          "sha256": "a42f4c3f9cb44e1543a97fd967f97942af8290f152bf48a1c878be711b77299f"
+        },
+        {
+          "bytes": 8530,
+          "path": "research-workspace/research_workspace/bounded_export.py",
+          "sha256": "4452e4a551b8245fc2bd61d6c7b97ff2c4fb4421df85ba401f9551c121968c05"
+        },
+        {
+          "bytes": 13400,
+          "path": "research-workspace/research_workspace/guard_publication.py",
+          "sha256": "baa0b7904be26242354cfeffaa2c42fbdad67234e85e375099a3eca33ae6305e"
+        },
+        {
+          "bytes": 16191,
+          "path": "research-workspace/research_workspace/guarded_recovery.py",
+          "sha256": "97bb2e052e05e32fa4d991a22c69abe5fd28e78593626007d9cdd75f3ea82fb3"
+        },
+        {
+          "bytes": 14701,
+          "path": "research-workspace/research_workspace/identity.py",
+          "sha256": "b1dad45e4f802fb583d8bfb1ce1b15db70cdf75e4717b21fb441b9752bcbc437"
+        },
+        {
+          "bytes": 37120,
+          "path": "research-workspace/research_workspace/operation_guard.py",
+          "sha256": "9872378e4497b87d51d49fe1acfdc90b9ccf7d9b80068608dc08307fd23694cc"
+        },
+        {
+          "bytes": 20692,
+          "path": "research-workspace/research_workspace/recovery.py",
+          "sha256": "f54872aa5531c63e1ea3efb395f0c60ecb2edb8ccfeb2440fe1120b8b4b6513d"
+        },
+        {
+          "bytes": 16311,
+          "path": "research-workspace/research_workspace/server.py",
+          "sha256": "2bbfded4f7c289ea2ff3841a4535c6ea079541dee082a149c053f0f0fa02717b"
+        },
+        {
+          "bytes": 37686,
+          "path": "research-workspace/research_workspace/sqlite_ownership.py",
+          "sha256": "3e0a5f9b8c8ba4669d41119220ecc34f2f61a9d5fd58d91eaa63fb47940bcff3"
+        },
+        {
+          "bytes": 18640,
+          "path": "research-workspace/research_workspace/storage_inventory.py",
+          "sha256": "4b4d375c2cee36189b27d62ef50218be498015effe4b24dee1499d6eead22389"
+        },
+        {
+          "bytes": 57587,
+          "path": "research-workspace/research_workspace/store.py",
+          "sha256": "f4bdc6ea516252a595d40990a13f0e93302de079a57929454eebb6468e766456"
+        },
+        {
+          "bytes": 4801,
+          "path": "research-workspace/tests/assessment_fixtures.py",
+          "sha256": "d638fe9c87b61a776c10b6ce0a84a76991c4175d49eb23d4c12d46bf49cf9354"
+        },
+        {
+          "bytes": 12205,
+          "path": "research-workspace/tests/test_assessment_completion.py",
+          "sha256": "0dc7e0979e6d428f1c818a181944aaab0ccbf9298defb718eb1882b871857c0c"
+        },
+        {
+          "bytes": 27703,
+          "path": "research-workspace/tests/test_assessment_connected.py",
+          "sha256": "35044ef48c7598faba581b8ca8dd5ea6caa3a9816cf3d8332608cc76d00c329d"
+        },
+        {
+          "bytes": 40127,
+          "path": "research-workspace/tests/test_assessment_state.py",
+          "sha256": "6f224bd100ee1145208a8927b25b48da9a06ed199cf377d3214295984b5c2099"
+        }
+      ],
+      "started_utc": "2026-10-20T03:26:06.608128+00:00",
+      "status": "FAIL"
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "-W",
+        "error::ResourceWarning",
+        "-m",
+        "unittest",
+        "-v",
+        "test_assessment_completion",
+        "test_assessment_state",
+        "test_assessment_connected"
+      ],
+      "duration_seconds": 24.137,
+      "ended_utc": "2026-10-20T03:26:38.906549+00:00",
+      "environment_overrides": {
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONPATH": "research-workspace:research-workspace/tests",
+        "WAYPOINT_OWNED_PEER_ASSETS": "archived-reviewed-Darwin-4de6a090-assets"
+      },
+      "exit_code": 0,
+      "label": "final-focused",
+      "log": "final-focused.log",
+      "log_sha256": "150b7770eb279d3c8eeaf804c896e2e6c5d40d427ed9aa60ee19903f664c7b40",
+      "methods_run": 53,
+      "note": "53 overlapping methods; earlier phase, before observation and metadata-child changes.",
+      "private_record_sha256": "656009342f27e96d20ed356073a33f9a983d4509593e6d105bbd27535bbdbfbb",
+      "runner_reported_source_unchanged": true,
+      "selected_source_before": [
+        {
+          "bytes": 257,
+          "path": "research-workspace/assessment/fixtures/owned-data/cancel-request.json",
+          "sha256": "c6955b51f16493aec1c1c69e7769f723ce795529b7c34e85d84c9073d978c1ed"
+        },
+        {
+          "bytes": 78,
+          "path": "research-workspace/assessment/fixtures/owned-data/disabled-error.json",
+          "sha256": "60dbd8883a508fb9af77794b0f08406e4f4678d89ffda0533a062575ca7fe88a"
+        },
+        {
+          "bytes": 388,
+          "path": "research-workspace/assessment/fixtures/owned-data/ingest-header.json",
+          "sha256": "c7300b9774785d90a573b1c3054bb9dd2f501b69d26a9aebe76f3d8f67c9c254"
+        },
+        {
+          "bytes": 70,
+          "path": "research-workspace/assessment/fixtures/owned-data/invalid-error.json",
+          "sha256": "4b1936f0a266da0b13a2d1e6b800b55f66d3f42a0540ff48dac03e869367251e"
+        },
+        {
+          "bytes": 70,
+          "path": "research-workspace/assessment/fixtures/owned-data/missing-error.json",
+          "sha256": "32d3c980f778b34bd7c9bbeb0d58352c6e382b15d6eeed3398f989b4b4bd74f0"
+        },
+        {
+          "bytes": 1266,
+          "path": "research-workspace/assessment/fixtures/owned-data/peer-snapshot.json",
+          "sha256": "32274f34e622ece695e58fa220f6b646573a79e97b29123e6d95a76b95069b4d"
+        },
+        {
+          "bytes": 1844,
+          "path": "research-workspace/assessment/fixtures/owned-data/prepare-request.json",
+          "sha256": "acf3ce537ce5319333baa1616850c2ec8112ac3827be96842c7904bff935039e"
+        },
+        {
+          "bytes": 652,
+          "path": "research-workspace/assessment/fixtures/owned-data/ready-ack.json",
+          "sha256": "00cef11624fde560c540ccf9aa13f901986097140b4ec40b03bea8a0004b840d"
+        },
+        {
+          "bytes": 239,
+          "path": "research-workspace/assessment/fixtures/owned-data/reconcile-request.json",
+          "sha256": "67c7085a2c3aa94f239ac778e51fbcaeae7efc201f82713bae3b10be44b664b2"
+        },
+        {
+          "bytes": 367,
+          "path": "research-workspace/assessment/fixtures/owned-data/seal-request.json",
+          "sha256": "a7d8d9aa98271cda60670ec2fc84231348955a3b76bdf8e79924ffaa30ba42c8"
+        },
+        {
+          "bytes": 811,
+          "path": "research-workspace/assessment/fixtures/owned-data/status-reply.json",
+          "sha256": "25362933912f71088e20c124eb4b47fe582871651a38cbd01bec36eb3bb079b4"
+        },
+        {
+          "bytes": 236,
+          "path": "research-workspace/assessment/fixtures/owned-data/status-request.json",
+          "sha256": "fd7bf69274fc68febbee4fa33b43a942f7c55bddd3cac790b17b3ce6b4976660"
+        },
+        {
+          "bytes": 656,
+          "path": "research-workspace/evidence/2026-10-19/as1-code-readiness/baseline-guard-identity-ownership.json",
+          "sha256": "101f2e93438c8b1b694bf8ff10ff11e776dde133201c2294103b530496058656"
+        },
+        {
+          "bytes": 7055,
+          "path": "research-workspace/evidence/2026-10-19/as1-code-readiness/baseline-guard-identity-ownership.log",
+          "sha256": "6388df659c47dfc1db862c04f875b5c9225a100b263c88a35e69b4e1077a17f4"
+        },
+        {
+          "bytes": 7710,
+          "path": "research-workspace/evidence/2026-10-19/as1-code-readiness/baseline-source-inventory.json",
+          "sha256": "aee906e85126adc9ab0c8c542d814ccf75d3075f9e504f83c7fbb4466b564861"
+        },
+        {
+          "bytes": 18527,
+          "path": "research-workspace/research_workspace/assessment_peer.py",
+          "sha256": "f4d2ecb5ecd7a24cfbdd7342725e68c493dbe17ffec57ab8e7e4770d29880d6f"
+        },
+        {
+          "bytes": 34892,
+          "path": "research-workspace/research_workspace/assessment_service.py",
+          "sha256": "42ce85935700e4dd36402c41372b87434e8b9bdcd8164e109a655fcfac787ef9"
+        },
+        {
+          "bytes": 12948,
+          "path": "research-workspace/research_workspace/assessment_state.py",
+          "sha256": "a42f4c3f9cb44e1543a97fd967f97942af8290f152bf48a1c878be711b77299f"
+        },
+        {
+          "bytes": 8530,
+          "path": "research-workspace/research_workspace/bounded_export.py",
+          "sha256": "4452e4a551b8245fc2bd61d6c7b97ff2c4fb4421df85ba401f9551c121968c05"
+        },
+        {
+          "bytes": 13400,
+          "path": "research-workspace/research_workspace/guard_publication.py",
+          "sha256": "baa0b7904be26242354cfeffaa2c42fbdad67234e85e375099a3eca33ae6305e"
+        },
+        {
+          "bytes": 16191,
+          "path": "research-workspace/research_workspace/guarded_recovery.py",
+          "sha256": "97bb2e052e05e32fa4d991a22c69abe5fd28e78593626007d9cdd75f3ea82fb3"
+        },
+        {
+          "bytes": 14701,
+          "path": "research-workspace/research_workspace/identity.py",
+          "sha256": "b1dad45e4f802fb583d8bfb1ce1b15db70cdf75e4717b21fb441b9752bcbc437"
+        },
+        {
+          "bytes": 37120,
+          "path": "research-workspace/research_workspace/operation_guard.py",
+          "sha256": "9872378e4497b87d51d49fe1acfdc90b9ccf7d9b80068608dc08307fd23694cc"
+        },
+        {
+          "bytes": 20692,
+          "path": "research-workspace/research_workspace/recovery.py",
+          "sha256": "f54872aa5531c63e1ea3efb395f0c60ecb2edb8ccfeb2440fe1120b8b4b6513d"
+        },
+        {
+          "bytes": 16311,
+          "path": "research-workspace/research_workspace/server.py",
+          "sha256": "2bbfded4f7c289ea2ff3841a4535c6ea079541dee082a149c053f0f0fa02717b"
+        },
+        {
+          "bytes": 37686,
+          "path": "research-workspace/research_workspace/sqlite_ownership.py",
+          "sha256": "3e0a5f9b8c8ba4669d41119220ecc34f2f61a9d5fd58d91eaa63fb47940bcff3"
+        },
+        {
+          "bytes": 18640,
+          "path": "research-workspace/research_workspace/storage_inventory.py",
+          "sha256": "4b4d375c2cee36189b27d62ef50218be498015effe4b24dee1499d6eead22389"
+        },
+        {
+          "bytes": 57587,
+          "path": "research-workspace/research_workspace/store.py",
+          "sha256": "f4bdc6ea516252a595d40990a13f0e93302de079a57929454eebb6468e766456"
+        },
+        {
+          "bytes": 4801,
+          "path": "research-workspace/tests/assessment_fixtures.py",
+          "sha256": "d638fe9c87b61a776c10b6ce0a84a76991c4175d49eb23d4c12d46bf49cf9354"
+        },
+        {
+          "bytes": 12205,
+          "path": "research-workspace/tests/test_assessment_completion.py",
+          "sha256": "0dc7e0979e6d428f1c818a181944aaab0ccbf9298defb718eb1882b871857c0c"
+        },
+        {
+          "bytes": 27703,
+          "path": "research-workspace/tests/test_assessment_connected.py",
+          "sha256": "35044ef48c7598faba581b8ca8dd5ea6caa3a9816cf3d8332608cc76d00c329d"
+        },
+        {
+          "bytes": 40127,
+          "path": "research-workspace/tests/test_assessment_state.py",
+          "sha256": "6f224bd100ee1145208a8927b25b48da9a06ed199cf377d3214295984b5c2099"
+        }
+      ],
+      "started_utc": "2026-10-20T03:26:14.769235+00:00",
+      "status": "PASS"
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "-W",
+        "error::ResourceWarning",
+        "-m",
+        "unittest",
+        "-v",
+        "test_assessment_completion.ReplyIdentityTests.test_observed_absence_requires_denial_drain_and_revocation"
+      ],
+      "duration_seconds": 0.298,
+      "ended_utc": "2026-10-20T03:27:06.673012+00:00",
+      "environment_overrides": {
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONPATH": "research-workspace:research-workspace/tests",
+        "WAYPOINT_OWNED_PEER_ASSETS": "archived-reviewed-Darwin-4de6a090-assets"
+      },
+      "exit_code": 1,
+      "label": "observation-red",
+      "log": "observation-red.log",
+      "log_sha256": "eb1ba032c678a33c235588b6f6f3115aeab89a06db4210ec9fe5ccba4816b592",
+      "methods_run": 1,
+      "note": "One method with three failing subtests: contradictory synthetic observed-absence fields accepted.",
+      "private_record_sha256": "6ee07639c8c14139290f82779971ce610f110627dff43125c61ee91d90d40f72",
+      "runner_reported_source_unchanged": true,
+      "selected_source_before": [
+        {
+          "bytes": 257,
+          "path": "research-workspace/assessment/fixtures/owned-data/cancel-request.json",
+          "sha256": "c6955b51f16493aec1c1c69e7769f723ce795529b7c34e85d84c9073d978c1ed"
+        },
+        {
+          "bytes": 78,
+          "path": "research-workspace/assessment/fixtures/owned-data/disabled-error.json",
+          "sha256": "60dbd8883a508fb9af77794b0f08406e4f4678d89ffda0533a062575ca7fe88a"
+        },
+        {
+          "bytes": 388,
+          "path": "research-workspace/assessment/fixtures/owned-data/ingest-header.json",
+          "sha256": "c7300b9774785d90a573b1c3054bb9dd2f501b69d26a9aebe76f3d8f67c9c254"
+        },
+        {
+          "bytes": 70,
+          "path": "research-workspace/assessment/fixtures/owned-data/invalid-error.json",
+          "sha256": "4b1936f0a266da0b13a2d1e6b800b55f66d3f42a0540ff48dac03e869367251e"
+        },
+        {
+          "bytes": 70,
+          "path": "research-workspace/assessment/fixtures/owned-data/missing-error.json",
+          "sha256": "32d3c980f778b34bd7c9bbeb0d58352c6e382b15d6eeed3398f989b4b4bd74f0"
+        },
+        {
+          "bytes": 1266,
+          "path": "research-workspace/assessment/fixtures/owned-data/peer-snapshot.json",
+          "sha256": "32274f34e622ece695e58fa220f6b646573a79e97b29123e6d95a76b95069b4d"
+        },
+        {
+          "bytes": 1844,
+          "path": "research-workspace/assessment/fixtures/owned-data/prepare-request.json",
+          "sha256": "acf3ce537ce5319333baa1616850c2ec8112ac3827be96842c7904bff935039e"
+        },
+        {
+          "bytes": 652,
+          "path": "research-workspace/assessment/fixtures/owned-data/ready-ack.json",
+          "sha256": "00cef11624fde560c540ccf9aa13f901986097140b4ec40b03bea8a0004b840d"
+        },
+        {
+          "bytes": 239,
+          "path": "research-workspace/assessment/fixtures/owned-data/reconcile-request.json",
+          "sha256": "67c7085a2c3aa94f239ac778e51fbcaeae7efc201f82713bae3b10be44b664b2"
+        },
+        {
+          "bytes": 367,
+          "path": "research-workspace/assessment/fixtures/owned-data/seal-request.json",
+          "sha256": "a7d8d9aa98271cda60670ec2fc84231348955a3b76bdf8e79924ffaa30ba42c8"
+        },
+        {
+          "bytes": 811,
+          "path": "research-workspace/assessment/fixtures/owned-data/status-reply.json",
+          "sha256": "25362933912f71088e20c124eb4b47fe582871651a38cbd01bec36eb3bb079b4"
+        },
+        {
+          "bytes": 236,
+          "path": "research-workspace/assessment/fixtures/owned-data/status-request.json",
+          "sha256": "fd7bf69274fc68febbee4fa33b43a942f7c55bddd3cac790b17b3ce6b4976660"
+        },
+        {
+          "bytes": 656,
+          "path": "research-workspace/evidence/2026-10-19/as1-code-readiness/baseline-guard-identity-ownership.json",
+          "sha256": "101f2e93438c8b1b694bf8ff10ff11e776dde133201c2294103b530496058656"
+        },
+        {
+          "bytes": 7055,
+          "path": "research-workspace/evidence/2026-10-19/as1-code-readiness/baseline-guard-identity-ownership.log",
+          "sha256": "6388df659c47dfc1db862c04f875b5c9225a100b263c88a35e69b4e1077a17f4"
+        },
+        {
+          "bytes": 7710,
+          "path": "research-workspace/evidence/2026-10-19/as1-code-readiness/baseline-source-inventory.json",
+          "sha256": "aee906e85126adc9ab0c8c542d814ccf75d3075f9e504f83c7fbb4466b564861"
+        },
+        {
+          "bytes": 18527,
+          "path": "research-workspace/research_workspace/assessment_peer.py",
+          "sha256": "f4d2ecb5ecd7a24cfbdd7342725e68c493dbe17ffec57ab8e7e4770d29880d6f"
+        },
+        {
+          "bytes": 34892,
+          "path": "research-workspace/research_workspace/assessment_service.py",
+          "sha256": "42ce85935700e4dd36402c41372b87434e8b9bdcd8164e109a655fcfac787ef9"
+        },
+        {
+          "bytes": 12948,
+          "path": "research-workspace/research_workspace/assessment_state.py",
+          "sha256": "a42f4c3f9cb44e1543a97fd967f97942af8290f152bf48a1c878be711b77299f"
+        },
+        {
+          "bytes": 8530,
+          "path": "research-workspace/research_workspace/bounded_export.py",
+          "sha256": "4452e4a551b8245fc2bd61d6c7b97ff2c4fb4421df85ba401f9551c121968c05"
+        },
+        {
+          "bytes": 13400,
+          "path": "research-workspace/research_workspace/guard_publication.py",
+          "sha256": "baa0b7904be26242354cfeffaa2c42fbdad67234e85e375099a3eca33ae6305e"
+        },
+        {
+          "bytes": 16191,
+          "path": "research-workspace/research_workspace/guarded_recovery.py",
+          "sha256": "97bb2e052e05e32fa4d991a22c69abe5fd28e78593626007d9cdd75f3ea82fb3"
+        },
+        {
+          "bytes": 14701,
+          "path": "research-workspace/research_workspace/identity.py",
+          "sha256": "b1dad45e4f802fb583d8bfb1ce1b15db70cdf75e4717b21fb441b9752bcbc437"
+        },
+        {
+          "bytes": 37120,
+          "path": "research-workspace/research_workspace/operation_guard.py",
+          "sha256": "9872378e4497b87d51d49fe1acfdc90b9ccf7d9b80068608dc08307fd23694cc"
+        },
+        {
+          "bytes": 20692,
+          "path": "research-workspace/research_workspace/recovery.py",
+          "sha256": "f54872aa5531c63e1ea3efb395f0c60ecb2edb8ccfeb2440fe1120b8b4b6513d"
+        },
+        {
+          "bytes": 16311,
+          "path": "research-workspace/research_workspace/server.py",
+          "sha256": "2bbfded4f7c289ea2ff3841a4535c6ea079541dee082a149c053f0f0fa02717b"
+        },
+        {
+          "bytes": 37686,
+          "path": "research-workspace/research_workspace/sqlite_ownership.py",
+          "sha256": "3e0a5f9b8c8ba4669d41119220ecc34f2f61a9d5fd58d91eaa63fb47940bcff3"
+        },
+        {
+          "bytes": 18640,
+          "path": "research-workspace/research_workspace/storage_inventory.py",
+          "sha256": "4b4d375c2cee36189b27d62ef50218be498015effe4b24dee1499d6eead22389"
+        },
+        {
+          "bytes": 57587,
+          "path": "research-workspace/research_workspace/store.py",
+          "sha256": "f4bdc6ea516252a595d40990a13f0e93302de079a57929454eebb6468e766456"
+        },
+        {
+          "bytes": 4801,
+          "path": "research-workspace/tests/assessment_fixtures.py",
+          "sha256": "d638fe9c87b61a776c10b6ce0a84a76991c4175d49eb23d4c12d46bf49cf9354"
+        },
+        {
+          "bytes": 13551,
+          "path": "research-workspace/tests/test_assessment_completion.py",
+          "sha256": "64e30f1d285f05906e369abbbed4c75ae9dfcb6910968df6db7a4d25f9ded7db"
+        },
+        {
+          "bytes": 27703,
+          "path": "research-workspace/tests/test_assessment_connected.py",
+          "sha256": "35044ef48c7598faba581b8ca8dd5ea6caa3a9816cf3d8332608cc76d00c329d"
+        },
+        {
+          "bytes": 40127,
+          "path": "research-workspace/tests/test_assessment_state.py",
+          "sha256": "6f224bd100ee1145208a8927b25b48da9a06ed199cf377d3214295984b5c2099"
+        }
+      ],
+      "started_utc": "2026-10-20T03:27:06.374826+00:00",
+      "status": "FAIL"
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "-W",
+        "error::ResourceWarning",
+        "-m",
+        "unittest",
+        "-v",
+        "test_assessment_completion",
+        "test_assessment_state",
+        "test_assessment_connected",
+        "test_identity",
+        "test_guard_publication",
+        "test_sqlite_ownership"
+      ],
+      "duration_seconds": 74.143,
+      "ended_utc": "2026-10-20T03:28:28.709360+00:00",
+      "environment_overrides": {
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONPATH": "research-workspace:research-workspace/tests",
+        "WAYPOINT_OWNED_PEER_ASSETS": "archived-reviewed-Darwin-4de6a090-assets"
+      },
+      "exit_code": 1,
+      "label": "final-reviewed-targeted",
+      "log": "final-reviewed-targeted.log",
+      "log_sha256": "6042a24db931efe9cd90b39add759b64253ab8b18705ac8abb994611dd06d842",
+      "methods_run": 153,
+      "note": "153 overlapping methods; one ERROR from a negative-client recv reset assumption. Checker corrected to accept bounded transport refusal without claiming JSON delivery; no product deadline was relaxed.",
+      "private_record_sha256": "64c783572a15289ac056b6922a56863ed2e82f4492dcdf984d12384d154d42e2",
+      "runner_reported_source_unchanged": true,
+      "selected_source_before": [
+        {
+          "bytes": 257,
+          "path": "research-workspace/assessment/fixtures/owned-data/cancel-request.json",
+          "sha256": "c6955b51f16493aec1c1c69e7769f723ce795529b7c34e85d84c9073d978c1ed"
+        },
+        {
+          "bytes": 78,
+          "path": "research-workspace/assessment/fixtures/owned-data/disabled-error.json",
+          "sha256": "60dbd8883a508fb9af77794b0f08406e4f4678d89ffda0533a062575ca7fe88a"
+        },
+        {
+          "bytes": 388,
+          "path": "research-workspace/assessment/fixtures/owned-data/ingest-header.json",
+          "sha256": "c7300b9774785d90a573b1c3054bb9dd2f501b69d26a9aebe76f3d8f67c9c254"
+        },
+        {
+          "bytes": 70,
+          "path": "research-workspace/assessment/fixtures/owned-data/invalid-error.json",
+          "sha256": "4b1936f0a266da0b13a2d1e6b800b55f66d3f42a0540ff48dac03e869367251e"
+        },
+        {
+          "bytes": 70,
+          "path": "research-workspace/assessment/fixtures/owned-data/missing-error.json",
+          "sha256": "32d3c980f778b34bd7c9bbeb0d58352c6e382b15d6eeed3398f989b4b4bd74f0"
+        },
+        {
+          "bytes": 1266,
+          "path": "research-workspace/assessment/fixtures/owned-data/peer-snapshot.json",
+          "sha256": "32274f34e622ece695e58fa220f6b646573a79e97b29123e6d95a76b95069b4d"
+        },
+        {
+          "bytes": 1844,
+          "path": "research-workspace/assessment/fixtures/owned-data/prepare-request.json",
+          "sha256": "acf3ce537ce5319333baa1616850c2ec8112ac3827be96842c7904bff935039e"
+        },
+        {
+          "bytes": 652,
+          "path": "research-workspace/assessment/fixtures/owned-data/ready-ack.json",
+          "sha256": "00cef11624fde560c540ccf9aa13f901986097140b4ec40b03bea8a0004b840d"
+        },
+        {
+          "bytes": 239,
+          "path": "research-workspace/assessment/fixtures/owned-data/reconcile-request.json",
+          "sha256": "67c7085a2c3aa94f239ac778e51fbcaeae7efc201f82713bae3b10be44b664b2"
+        },
+        {
+          "bytes": 367,
+          "path": "research-workspace/assessment/fixtures/owned-data/seal-request.json",
+          "sha256": "a7d8d9aa98271cda60670ec2fc84231348955a3b76bdf8e79924ffaa30ba42c8"
+        },
+        {
+          "bytes": 811,
+          "path": "research-workspace/assessment/fixtures/owned-data/status-reply.json",
+          "sha256": "25362933912f71088e20c124eb4b47fe582871651a38cbd01bec36eb3bb079b4"
+        },
+        {
+          "bytes": 236,
+          "path": "research-workspace/assessment/fixtures/owned-data/status-request.json",
+          "sha256": "fd7bf69274fc68febbee4fa33b43a942f7c55bddd3cac790b17b3ce6b4976660"
+        },
+        {
+          "bytes": 656,
+          "path": "research-workspace/evidence/2026-10-19/as1-code-readiness/baseline-guard-identity-ownership.json",
+          "sha256": "101f2e93438c8b1b694bf8ff10ff11e776dde133201c2294103b530496058656"
+        },
+        {
+          "bytes": 7055,
+          "path": "research-workspace/evidence/2026-10-19/as1-code-readiness/baseline-guard-identity-ownership.log",
+          "sha256": "6388df659c47dfc1db862c04f875b5c9225a100b263c88a35e69b4e1077a17f4"
+        },
+        {
+          "bytes": 7710,
+          "path": "research-workspace/evidence/2026-10-19/as1-code-readiness/baseline-source-inventory.json",
+          "sha256": "aee906e85126adc9ab0c8c542d814ccf75d3075f9e504f83c7fbb4466b564861"
+        },
+        {
+          "bytes": 18796,
+          "path": "research-workspace/research_workspace/assessment_peer.py",
+          "sha256": "16450f6352221d91593d83ebed23c8c7f31ae9b25cd53421bb76540140c152c7"
+        },
+        {
+          "bytes": 34892,
+          "path": "research-workspace/research_workspace/assessment_service.py",
+          "sha256": "42ce85935700e4dd36402c41372b87434e8b9bdcd8164e109a655fcfac787ef9"
+        },
+        {
+          "bytes": 12948,
+          "path": "research-workspace/research_workspace/assessment_state.py",
+          "sha256": "a42f4c3f9cb44e1543a97fd967f97942af8290f152bf48a1c878be711b77299f"
+        },
+        {
+          "bytes": 8530,
+          "path": "research-workspace/research_workspace/bounded_export.py",
+          "sha256": "4452e4a551b8245fc2bd61d6c7b97ff2c4fb4421df85ba401f9551c121968c05"
+        },
+        {
+          "bytes": 13400,
+          "path": "research-workspace/research_workspace/guard_publication.py",
+          "sha256": "baa0b7904be26242354cfeffaa2c42fbdad67234e85e375099a3eca33ae6305e"
+        },
+        {
+          "bytes": 16191,
+          "path": "research-workspace/research_workspace/guarded_recovery.py",
+          "sha256": "97bb2e052e05e32fa4d991a22c69abe5fd28e78593626007d9cdd75f3ea82fb3"
+        },
+        {
+          "bytes": 14701,
+          "path": "research-workspace/research_workspace/identity.py",
+          "sha256": "b1dad45e4f802fb583d8bfb1ce1b15db70cdf75e4717b21fb441b9752bcbc437"
+        },
+        {
+          "bytes": 37120,
+          "path": "research-workspace/research_workspace/operation_guard.py",
+          "sha256": "9872378e4497b87d51d49fe1acfdc90b9ccf7d9b80068608dc08307fd23694cc"
+        },
+        {
+          "bytes": 20692,
+          "path": "research-workspace/research_workspace/recovery.py",
+          "sha256": "f54872aa5531c63e1ea3efb395f0c60ecb2edb8ccfeb2440fe1120b8b4b6513d"
+        },
+        {
+          "bytes": 16311,
+          "path": "research-workspace/research_workspace/server.py",
+          "sha256": "2bbfded4f7c289ea2ff3841a4535c6ea079541dee082a149c053f0f0fa02717b"
+        },
+        {
+          "bytes": 37686,
+          "path": "research-workspace/research_workspace/sqlite_ownership.py",
+          "sha256": "3e0a5f9b8c8ba4669d41119220ecc34f2f61a9d5fd58d91eaa63fb47940bcff3"
+        },
+        {
+          "bytes": 18640,
+          "path": "research-workspace/research_workspace/storage_inventory.py",
+          "sha256": "4b4d375c2cee36189b27d62ef50218be498015effe4b24dee1499d6eead22389"
+        },
+        {
+          "bytes": 57587,
+          "path": "research-workspace/research_workspace/store.py",
+          "sha256": "f4bdc6ea516252a595d40990a13f0e93302de079a57929454eebb6468e766456"
+        },
+        {
+          "bytes": 4801,
+          "path": "research-workspace/tests/assessment_fixtures.py",
+          "sha256": "d638fe9c87b61a776c10b6ce0a84a76991c4175d49eb23d4c12d46bf49cf9354"
+        },
+        {
+          "bytes": 13550,
+          "path": "research-workspace/tests/test_assessment_completion.py",
+          "sha256": "1d6358c26189d66560141b926dee8cb97178aabfc543510321878beb2e86c0a5"
+        },
+        {
+          "bytes": 27703,
+          "path": "research-workspace/tests/test_assessment_connected.py",
+          "sha256": "35044ef48c7598faba581b8ca8dd5ea6caa3a9816cf3d8332608cc76d00c329d"
+        },
+        {
+          "bytes": 40127,
+          "path": "research-workspace/tests/test_assessment_state.py",
+          "sha256": "6f224bd100ee1145208a8927b25b48da9a06ed199cf377d3214295984b5c2099"
+        }
+      ],
+      "started_utc": "2026-10-20T03:27:14.566433+00:00",
+      "status": "FAIL"
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "-W",
+        "error::ResourceWarning",
+        "-m",
+        "unittest",
+        "-v",
+        "test_assessment_completion.LifelineConstructorTests.test_metadata_child_abort_uncertainty_holds_before_another_launch"
+      ],
+      "duration_seconds": 0.462,
+      "ended_utc": "2026-10-20T03:29:04.715411+00:00",
+      "environment_overrides": {
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONPATH": "research-workspace:research-workspace/tests",
+        "WAYPOINT_OWNED_PEER_ASSETS": "archived-reviewed-Darwin-4de6a090-assets"
+      },
+      "exit_code": 1,
+      "label": "metadata-close-red",
+      "log": "metadata-close-red.log",
+      "log_sha256": "e431e00fff8d5c33c950765ff662a0592c44901770cf1a9b907a1365e7bef9f6",
+      "methods_run": 1,
+      "note": "One actual failure: metadata-child abort uncertainty was not propagated to sticky service/store hold.",
+      "private_record_sha256": "1cd631bac38f02731f628c6496804c319ce2227ba93c6f3fee6d5a451ec4ae58",
+      "runner_reported_source_unchanged": true,
+      "selected_source_before": [
+        {
+          "bytes": 257,
+          "path": "research-workspace/assessment/fixtures/owned-data/cancel-request.json",
+          "sha256": "c6955b51f16493aec1c1c69e7769f723ce795529b7c34e85d84c9073d978c1ed"
+        },
+        {
+          "bytes": 78,
+          "path": "research-workspace/assessment/fixtures/owned-data/disabled-error.json",
+          "sha256": "60dbd8883a508fb9af77794b0f08406e4f4678d89ffda0533a062575ca7fe88a"
+        },
+        {
+          "bytes": 388,
+          "path": "research-workspace/assessment/fixtures/owned-data/ingest-header.json",
+          "sha256": "c7300b9774785d90a573b1c3054bb9dd2f501b69d26a9aebe76f3d8f67c9c254"
+        },
+        {
+          "bytes": 70,
+          "path": "research-workspace/assessment/fixtures/owned-data/invalid-error.json",
+          "sha256": "4b1936f0a266da0b13a2d1e6b800b55f66d3f42a0540ff48dac03e869367251e"
+        },
+        {
+          "bytes": 70,
+          "path": "research-workspace/assessment/fixtures/owned-data/missing-error.json",
+          "sha256": "32d3c980f778b34bd7c9bbeb0d58352c6e382b15d6eeed3398f989b4b4bd74f0"
+        },
+        {
+          "bytes": 1266,
+          "path": "research-workspace/assessment/fixtures/owned-data/peer-snapshot.json",
+          "sha256": "32274f34e622ece695e58fa220f6b646573a79e97b29123e6d95a76b95069b4d"
+        },
+        {
+          "bytes": 1844,
+          "path": "research-workspace/assessment/fixtures/owned-data/prepare-request.json",
+          "sha256": "acf3ce537ce5319333baa1616850c2ec8112ac3827be96842c7904bff935039e"
+        },
+        {
+          "bytes": 652,
+          "path": "research-workspace/assessment/fixtures/owned-data/ready-ack.json",
+          "sha256": "00cef11624fde560c540ccf9aa13f901986097140b4ec40b03bea8a0004b840d"
+        },
+        {
+          "bytes": 239,
+          "path": "research-workspace/assessment/fixtures/owned-data/reconcile-request.json",
+          "sha256": "67c7085a2c3aa94f239ac778e51fbcaeae7efc201f82713bae3b10be44b664b2"
+        },
+        {
+          "bytes": 367,
+          "path": "research-workspace/assessment/fixtures/owned-data/seal-request.json",
+          "sha256": "a7d8d9aa98271cda60670ec2fc84231348955a3b76bdf8e79924ffaa30ba42c8"
+        },
+        {
+          "bytes": 811,
+          "path": "research-workspace/assessment/fixtures/owned-data/status-reply.json",
+          "sha256": "25362933912f71088e20c124eb4b47fe582871651a38cbd01bec36eb3bb079b4"
+        },
+        {
+          "bytes": 236,
+          "path": "research-workspace/assessment/fixtures/owned-data/status-request.json",
+          "sha256": "fd7bf69274fc68febbee4fa33b43a942f7c55bddd3cac790b17b3ce6b4976660"
+        },
+        {
+          "bytes": 656,
+          "path": "research-workspace/evidence/2026-10-19/as1-code-readiness/baseline-guard-identity-ownership.json",
+          "sha256": "101f2e93438c8b1b694bf8ff10ff11e776dde133201c2294103b530496058656"
+        },
+        {
+          "bytes": 7055,
+          "path": "research-workspace/evidence/2026-10-19/as1-code-readiness/baseline-guard-identity-ownership.log",
+          "sha256": "6388df659c47dfc1db862c04f875b5c9225a100b263c88a35e69b4e1077a17f4"
+        },
+        {
+          "bytes": 7710,
+          "path": "research-workspace/evidence/2026-10-19/as1-code-readiness/baseline-source-inventory.json",
+          "sha256": "aee906e85126adc9ab0c8c542d814ccf75d3075f9e504f83c7fbb4466b564861"
+        },
+        {
+          "bytes": 18796,
+          "path": "research-workspace/research_workspace/assessment_peer.py",
+          "sha256": "16450f6352221d91593d83ebed23c8c7f31ae9b25cd53421bb76540140c152c7"
+        },
+        {
+          "bytes": 34892,
+          "path": "research-workspace/research_workspace/assessment_service.py",
+          "sha256": "42ce85935700e4dd36402c41372b87434e8b9bdcd8164e109a655fcfac787ef9"
+        },
+        {
+          "bytes": 12948,
+          "path": "research-workspace/research_workspace/assessment_state.py",
+          "sha256": "a42f4c3f9cb44e1543a97fd967f97942af8290f152bf48a1c878be711b77299f"
+        },
+        {
+          "bytes": 8530,
+          "path": "research-workspace/research_workspace/bounded_export.py",
+          "sha256": "4452e4a551b8245fc2bd61d6c7b97ff2c4fb4421df85ba401f9551c121968c05"
+        },
+        {
+          "bytes": 13400,
+          "path": "research-workspace/research_workspace/guard_publication.py",
+          "sha256": "baa0b7904be26242354cfeffaa2c42fbdad67234e85e375099a3eca33ae6305e"
+        },
+        {
+          "bytes": 16191,
+          "path": "research-workspace/research_workspace/guarded_recovery.py",
+          "sha256": "97bb2e052e05e32fa4d991a22c69abe5fd28e78593626007d9cdd75f3ea82fb3"
+        },
+        {
+          "bytes": 14701,
+          "path": "research-workspace/research_workspace/identity.py",
+          "sha256": "b1dad45e4f802fb583d8bfb1ce1b15db70cdf75e4717b21fb441b9752bcbc437"
+        },
+        {
+          "bytes": 37120,
+          "path": "research-workspace/research_workspace/operation_guard.py",
+          "sha256": "9872378e4497b87d51d49fe1acfdc90b9ccf7d9b80068608dc08307fd23694cc"
+        },
+        {
+          "bytes": 20692,
+          "path": "research-workspace/research_workspace/recovery.py",
+          "sha256": "f54872aa5531c63e1ea3efb395f0c60ecb2edb8ccfeb2440fe1120b8b4b6513d"
+        },
+        {
+          "bytes": 16311,
+          "path": "research-workspace/research_workspace/server.py",
+          "sha256": "2bbfded4f7c289ea2ff3841a4535c6ea079541dee082a149c053f0f0fa02717b"
+        },
+        {
+          "bytes": 37686,
+          "path": "research-workspace/research_workspace/sqlite_ownership.py",
+          "sha256": "3e0a5f9b8c8ba4669d41119220ecc34f2f61a9d5fd58d91eaa63fb47940bcff3"
+        },
+        {
+          "bytes": 18640,
+          "path": "research-workspace/research_workspace/storage_inventory.py",
+          "sha256": "4b4d375c2cee36189b27d62ef50218be498015effe4b24dee1499d6eead22389"
+        },
+        {
+          "bytes": 57587,
+          "path": "research-workspace/research_workspace/store.py",
+          "sha256": "f4bdc6ea516252a595d40990a13f0e93302de079a57929454eebb6468e766456"
+        },
+        {
+          "bytes": 4801,
+          "path": "research-workspace/tests/assessment_fixtures.py",
+          "sha256": "d638fe9c87b61a776c10b6ce0a84a76991c4175d49eb23d4c12d46bf49cf9354"
+        },
+        {
+          "bytes": 15775,
+          "path": "research-workspace/tests/test_assessment_completion.py",
+          "sha256": "ec7690e27db3a7ad76cf51e2fddd6c2a4873f6871953ff8e4659da79f17c7016"
+        },
+        {
+          "bytes": 27703,
+          "path": "research-workspace/tests/test_assessment_connected.py",
+          "sha256": "35044ef48c7598faba581b8ca8dd5ea6caa3a9816cf3d8332608cc76d00c329d"
+        },
+        {
+          "bytes": 40127,
+          "path": "research-workspace/tests/test_assessment_state.py",
+          "sha256": "6f224bd100ee1145208a8927b25b48da9a06ed199cf377d3214295984b5c2099"
+        }
+      ],
+      "started_utc": "2026-10-20T03:29:04.252936+00:00",
+      "status": "FAIL"
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "-W",
+        "error::ResourceWarning",
+        "-m",
+        "unittest",
+        "-v",
+        "test_assessment_completion",
+        "test_assessment_state",
+        "test_assessment_connected"
+      ],
+      "duration_seconds": 18.645,
+      "ended_utc": "2026-10-20T03:29:44.345589+00:00",
+      "environment_overrides": {
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONPATH": "research-workspace:research-workspace/tests",
+        "WAYPOINT_OWNED_PEER_ASSETS": "archived-reviewed-Darwin-4de6a090-assets"
+      },
+      "exit_code": 1,
+      "label": "final-close-corrected",
+      "log": "final-close-corrected.log",
+      "log_sha256": "51104c44eb2d31c32ba0e6c1c809651683c1b1d4655637e76477f7261b094a8c",
+      "methods_run": 55,
+      "note": "55 methods; one ERROR because the second-call checker expected PeerFailure/ValueError although the correctly held Store raised OwnershipFailure. Corrected to require that precise refusal and no second launch.",
+      "private_record_sha256": "609602823032f211dd15e35f8f61a381b6d96cdf611ff29f75957f619353c1e9",
+      "runner_reported_source_unchanged": true,
+      "selected_source_before": [
+        {
+          "bytes": 257,
+          "path": "research-workspace/assessment/fixtures/owned-data/cancel-request.json",
+          "sha256": "c6955b51f16493aec1c1c69e7769f723ce795529b7c34e85d84c9073d978c1ed"
+        },
+        {
+          "bytes": 78,
+          "path": "research-workspace/assessment/fixtures/owned-data/disabled-error.json",
+          "sha256": "60dbd8883a508fb9af77794b0f08406e4f4678d89ffda0533a062575ca7fe88a"
+        },
+        {
+          "bytes": 388,
+          "path": "research-workspace/assessment/fixtures/owned-data/ingest-header.json",
+          "sha256": "c7300b9774785d90a573b1c3054bb9dd2f501b69d26a9aebe76f3d8f67c9c254"
+        },
+        {
+          "bytes": 70,
+          "path": "research-workspace/assessment/fixtures/owned-data/invalid-error.json",
+          "sha256": "4b1936f0a266da0b13a2d1e6b800b55f66d3f42a0540ff48dac03e869367251e"
+        },
+        {
+          "bytes": 70,
+          "path": "research-workspace/assessment/fixtures/owned-data/missing-error.json",
+          "sha256": "32d3c980f778b34bd7c9bbeb0d58352c6e382b15d6eeed3398f989b4b4bd74f0"
+        },
+        {
+          "bytes": 1266,
+          "path": "research-workspace/assessment/fixtures/owned-data/peer-snapshot.json",
+          "sha256": "32274f34e622ece695e58fa220f6b646573a79e97b29123e6d95a76b95069b4d"
+        },
+        {
+          "bytes": 1844,
+          "path": "research-workspace/assessment/fixtures/owned-data/prepare-request.json",
+          "sha256": "acf3ce537ce5319333baa1616850c2ec8112ac3827be96842c7904bff935039e"
+        },
+        {
+          "bytes": 652,
+          "path": "research-workspace/assessment/fixtures/owned-data/ready-ack.json",
+          "sha256": "00cef11624fde560c540ccf9aa13f901986097140b4ec40b03bea8a0004b840d"
+        },
+        {
+          "bytes": 239,
+          "path": "research-workspace/assessment/fixtures/owned-data/reconcile-request.json",
+          "sha256": "67c7085a2c3aa94f239ac778e51fbcaeae7efc201f82713bae3b10be44b664b2"
+        },
+        {
+          "bytes": 367,
+          "path": "research-workspace/assessment/fixtures/owned-data/seal-request.json",
+          "sha256": "a7d8d9aa98271cda60670ec2fc84231348955a3b76bdf8e79924ffaa30ba42c8"
+        },
+        {
+          "bytes": 811,
+          "path": "research-workspace/assessment/fixtures/owned-data/status-reply.json",
+          "sha256": "25362933912f71088e20c124eb4b47fe582871651a38cbd01bec36eb3bb079b4"
+        },
+        {
+          "bytes": 236,
+          "path": "research-workspace/assessment/fixtures/owned-data/status-request.json",
+          "sha256": "fd7bf69274fc68febbee4fa33b43a942f7c55bddd3cac790b17b3ce6b4976660"
+        },
+        {
+          "bytes": 656,
+          "path": "research-workspace/evidence/2026-10-19/as1-code-readiness/baseline-guard-identity-ownership.json",
+          "sha256": "101f2e93438c8b1b694bf8ff10ff11e776dde133201c2294103b530496058656"
+        },
+        {
+          "bytes": 7055,
+          "path": "research-workspace/evidence/2026-10-19/as1-code-readiness/baseline-guard-identity-ownership.log",
+          "sha256": "6388df659c47dfc1db862c04f875b5c9225a100b263c88a35e69b4e1077a17f4"
+        },
+        {
+          "bytes": 7710,
+          "path": "research-workspace/evidence/2026-10-19/as1-code-readiness/baseline-source-inventory.json",
+          "sha256": "aee906e85126adc9ab0c8c542d814ccf75d3075f9e504f83c7fbb4466b564861"
+        },
+        {
+          "bytes": 18881,
+          "path": "research-workspace/research_workspace/assessment_peer.py",
+          "sha256": "c2d72d891cc52bbe965f3bc920a836affaeca824ffe46de55ef3f40bb6292989"
+        },
+        {
+          "bytes": 35639,
+          "path": "research-workspace/research_workspace/assessment_service.py",
+          "sha256": "f6c4d560862f3dcc1fe71b42869d6cf34cdcaa6e9a566666b41c3dce96b9a42f"
+        },
+        {
+          "bytes": 12948,
+          "path": "research-workspace/research_workspace/assessment_state.py",
+          "sha256": "a42f4c3f9cb44e1543a97fd967f97942af8290f152bf48a1c878be711b77299f"
+        },
+        {
+          "bytes": 8530,
+          "path": "research-workspace/research_workspace/bounded_export.py",
+          "sha256": "4452e4a551b8245fc2bd61d6c7b97ff2c4fb4421df85ba401f9551c121968c05"
+        },
+        {
+          "bytes": 13400,
+          "path": "research-workspace/research_workspace/guard_publication.py",
+          "sha256": "baa0b7904be26242354cfeffaa2c42fbdad67234e85e375099a3eca33ae6305e"
+        },
+        {
+          "bytes": 16191,
+          "path": "research-workspace/research_workspace/guarded_recovery.py",
+          "sha256": "97bb2e052e05e32fa4d991a22c69abe5fd28e78593626007d9cdd75f3ea82fb3"
+        },
+        {
+          "bytes": 14701,
+          "path": "research-workspace/research_workspace/identity.py",
+          "sha256": "b1dad45e4f802fb583d8bfb1ce1b15db70cdf75e4717b21fb441b9752bcbc437"
+        },
+        {
+          "bytes": 37120,
+          "path": "research-workspace/research_workspace/operation_guard.py",
+          "sha256": "9872378e4497b87d51d49fe1acfdc90b9ccf7d9b80068608dc08307fd23694cc"
+        },
+        {
+          "bytes": 20692,
+          "path": "research-workspace/research_workspace/recovery.py",
+          "sha256": "f54872aa5531c63e1ea3efb395f0c60ecb2edb8ccfeb2440fe1120b8b4b6513d"
+        },
+        {
+          "bytes": 16311,
+          "path": "research-workspace/research_workspace/server.py",
+          "sha256": "2bbfded4f7c289ea2ff3841a4535c6ea079541dee082a149c053f0f0fa02717b"
+        },
+        {
+          "bytes": 37686,
+          "path": "research-workspace/research_workspace/sqlite_ownership.py",
+          "sha256": "3e0a5f9b8c8ba4669d41119220ecc34f2f61a9d5fd58d91eaa63fb47940bcff3"
+        },
+        {
+          "bytes": 18640,
+          "path": "research-workspace/research_workspace/storage_inventory.py",
+          "sha256": "4b4d375c2cee36189b27d62ef50218be498015effe4b24dee1499d6eead22389"
+        },
+        {
+          "bytes": 57587,
+          "path": "research-workspace/research_workspace/store.py",
+          "sha256": "f4bdc6ea516252a595d40990a13f0e93302de079a57929454eebb6468e766456"
+        },
+        {
+          "bytes": 4801,
+          "path": "research-workspace/tests/assessment_fixtures.py",
+          "sha256": "d638fe9c87b61a776c10b6ce0a84a76991c4175d49eb23d4c12d46bf49cf9354"
+        },
+        {
+          "bytes": 15775,
+          "path": "research-workspace/tests/test_assessment_completion.py",
+          "sha256": "ec7690e27db3a7ad76cf51e2fddd6c2a4873f6871953ff8e4659da79f17c7016"
+        },
+        {
+          "bytes": 28219,
+          "path": "research-workspace/tests/test_assessment_connected.py",
+          "sha256": "da81fc8cc22d50e46f36834e939c9e65e75d0c9af17fa7a196095cabc4c7b6e7"
+        },
+        {
+          "bytes": 40127,
+          "path": "research-workspace/tests/test_assessment_state.py",
+          "sha256": "6f224bd100ee1145208a8927b25b48da9a06ed199cf377d3214295984b5c2099"
+        }
+      ],
+      "started_utc": "2026-10-20T03:29:25.701006+00:00",
+      "status": "FAIL"
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "-W",
+        "error::ResourceWarning",
+        "-m",
+        "unittest",
+        "-v",
+        "test_assessment_completion",
+        "test_assessment_state",
+        "test_assessment_connected"
+      ],
+      "duration_seconds": 18.865,
+      "ended_utc": "2026-10-20T03:31:54.088248+00:00",
+      "environment_overrides": {
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONPATH": "research-workspace:research-workspace/tests",
+        "WAYPOINT_OWNED_PEER_ASSETS": "archived-reviewed-Darwin-4de6a090-assets"
+      },
+      "exit_code": 0,
+      "label": "final-targeted",
+      "log": "final-targeted.log",
+      "log_sha256": "3efa011aeec858ef6d2bfcc525d5dc1c7a907da82b6600daffb35f316bfcdb18",
+      "methods_run": 55,
+      "note": "55 methods PASS, zero skips, final tested runtime source. Two additional deterministic tests were added afterward for the reserved full suite.",
+      "private_record_sha256": "a6d77ec41fb556bfca2878c2862f6e61d7582c2b10263ba5f69a6eaec9e63d28",
+      "runner_reported_source_unchanged": true,
+      "selected_source_before": [
+        {
+          "bytes": 257,
+          "path": "research-workspace/assessment/fixtures/owned-data/cancel-request.json",
+          "sha256": "c6955b51f16493aec1c1c69e7769f723ce795529b7c34e85d84c9073d978c1ed"
+        },
+        {
+          "bytes": 78,
+          "path": "research-workspace/assessment/fixtures/owned-data/disabled-error.json",
+          "sha256": "60dbd8883a508fb9af77794b0f08406e4f4678d89ffda0533a062575ca7fe88a"
+        },
+        {
+          "bytes": 388,
+          "path": "research-workspace/assessment/fixtures/owned-data/ingest-header.json",
+          "sha256": "c7300b9774785d90a573b1c3054bb9dd2f501b69d26a9aebe76f3d8f67c9c254"
+        },
+        {
+          "bytes": 70,
+          "path": "research-workspace/assessment/fixtures/owned-data/invalid-error.json",
+          "sha256": "4b1936f0a266da0b13a2d1e6b800b55f66d3f42a0540ff48dac03e869367251e"
+        },
+        {
+          "bytes": 70,
+          "path": "research-workspace/assessment/fixtures/owned-data/missing-error.json",
+          "sha256": "32d3c980f778b34bd7c9bbeb0d58352c6e382b15d6eeed3398f989b4b4bd74f0"
+        },
+        {
+          "bytes": 1266,
+          "path": "research-workspace/assessment/fixtures/owned-data/peer-snapshot.json",
+          "sha256": "32274f34e622ece695e58fa220f6b646573a79e97b29123e6d95a76b95069b4d"
+        },
+        {
+          "bytes": 1844,
+          "path": "research-workspace/assessment/fixtures/owned-data/prepare-request.json",
+          "sha256": "acf3ce537ce5319333baa1616850c2ec8112ac3827be96842c7904bff935039e"
+        },
+        {
+          "bytes": 652,
+          "path": "research-workspace/assessment/fixtures/owned-data/ready-ack.json",
+          "sha256": "00cef11624fde560c540ccf9aa13f901986097140b4ec40b03bea8a0004b840d"
+        },
+        {
+          "bytes": 239,
+          "path": "research-workspace/assessment/fixtures/owned-data/reconcile-request.json",
+          "sha256": "67c7085a2c3aa94f239ac778e51fbcaeae7efc201f82713bae3b10be44b664b2"
+        },
+        {
+          "bytes": 367,
+          "path": "research-workspace/assessment/fixtures/owned-data/seal-request.json",
+          "sha256": "a7d8d9aa98271cda60670ec2fc84231348955a3b76bdf8e79924ffaa30ba42c8"
+        },
+        {
+          "bytes": 811,
+          "path": "research-workspace/assessment/fixtures/owned-data/status-reply.json",
+          "sha256": "25362933912f71088e20c124eb4b47fe582871651a38cbd01bec36eb3bb079b4"
+        },
+        {
+          "bytes": 236,
+          "path": "research-workspace/assessment/fixtures/owned-data/status-request.json",
+          "sha256": "fd7bf69274fc68febbee4fa33b43a942f7c55bddd3cac790b17b3ce6b4976660"
+        },
+        {
+          "bytes": 656,
+          "path": "research-workspace/evidence/2026-10-19/as1-code-readiness/baseline-guard-identity-ownership.json",
+          "sha256": "101f2e93438c8b1b694bf8ff10ff11e776dde133201c2294103b530496058656"
+        },
+        {
+          "bytes": 7055,
+          "path": "research-workspace/evidence/2026-10-19/as1-code-readiness/baseline-guard-identity-ownership.log",
+          "sha256": "6388df659c47dfc1db862c04f875b5c9225a100b263c88a35e69b4e1077a17f4"
+        },
+        {
+          "bytes": 7710,
+          "path": "research-workspace/evidence/2026-10-19/as1-code-readiness/baseline-source-inventory.json",
+          "sha256": "aee906e85126adc9ab0c8c542d814ccf75d3075f9e504f83c7fbb4466b564861"
+        },
+        {
+          "bytes": 18881,
+          "path": "research-workspace/research_workspace/assessment_peer.py",
+          "sha256": "c2d72d891cc52bbe965f3bc920a836affaeca824ffe46de55ef3f40bb6292989"
+        },
+        {
+          "bytes": 35639,
+          "path": "research-workspace/research_workspace/assessment_service.py",
+          "sha256": "f6c4d560862f3dcc1fe71b42869d6cf34cdcaa6e9a566666b41c3dce96b9a42f"
+        },
+        {
+          "bytes": 12948,
+          "path": "research-workspace/research_workspace/assessment_state.py",
+          "sha256": "a42f4c3f9cb44e1543a97fd967f97942af8290f152bf48a1c878be711b77299f"
+        },
+        {
+          "bytes": 8530,
+          "path": "research-workspace/research_workspace/bounded_export.py",
+          "sha256": "4452e4a551b8245fc2bd61d6c7b97ff2c4fb4421df85ba401f9551c121968c05"
+        },
+        {
+          "bytes": 13400,
+          "path": "research-workspace/research_workspace/guard_publication.py",
+          "sha256": "baa0b7904be26242354cfeffaa2c42fbdad67234e85e375099a3eca33ae6305e"
+        },
+        {
+          "bytes": 16191,
+          "path": "research-workspace/research_workspace/guarded_recovery.py",
+          "sha256": "97bb2e052e05e32fa4d991a22c69abe5fd28e78593626007d9cdd75f3ea82fb3"
+        },
+        {
+          "bytes": 14701,
+          "path": "research-workspace/research_workspace/identity.py",
+          "sha256": "b1dad45e4f802fb583d8bfb1ce1b15db70cdf75e4717b21fb441b9752bcbc437"
+        },
+        {
+          "bytes": 37120,
+          "path": "research-workspace/research_workspace/operation_guard.py",
+          "sha256": "9872378e4497b87d51d49fe1acfdc90b9ccf7d9b80068608dc08307fd23694cc"
+        },
+        {
+          "bytes": 20692,
+          "path": "research-workspace/research_workspace/recovery.py",
+          "sha256": "f54872aa5531c63e1ea3efb395f0c60ecb2edb8ccfeb2440fe1120b8b4b6513d"
+        },
+        {
+          "bytes": 16311,
+          "path": "research-workspace/research_workspace/server.py",
+          "sha256": "2bbfded4f7c289ea2ff3841a4535c6ea079541dee082a149c053f0f0fa02717b"
+        },
+        {
+          "bytes": 37686,
+          "path": "research-workspace/research_workspace/sqlite_ownership.py",
+          "sha256": "3e0a5f9b8c8ba4669d41119220ecc34f2f61a9d5fd58d91eaa63fb47940bcff3"
+        },
+        {
+          "bytes": 18640,
+          "path": "research-workspace/research_workspace/storage_inventory.py",
+          "sha256": "4b4d375c2cee36189b27d62ef50218be498015effe4b24dee1499d6eead22389"
+        },
+        {
+          "bytes": 57587,
+          "path": "research-workspace/research_workspace/store.py",
+          "sha256": "f4bdc6ea516252a595d40990a13f0e93302de079a57929454eebb6468e766456"
+        },
+        {
+          "bytes": 4801,
+          "path": "research-workspace/tests/assessment_fixtures.py",
+          "sha256": "d638fe9c87b61a776c10b6ce0a84a76991c4175d49eb23d4c12d46bf49cf9354"
+        },
+        {
+          "bytes": 15772,
+          "path": "research-workspace/tests/test_assessment_completion.py",
+          "sha256": "26d80e839be15f6593f8e019b3c88f746315964bde4066ee574ab235b3f31978"
+        },
+        {
+          "bytes": 28219,
+          "path": "research-workspace/tests/test_assessment_connected.py",
+          "sha256": "da81fc8cc22d50e46f36834e939c9e65e75d0c9af17fa7a196095cabc4c7b6e7"
+        },
+        {
+          "bytes": 40127,
+          "path": "research-workspace/tests/test_assessment_state.py",
+          "sha256": "6f224bd100ee1145208a8927b25b48da9a06ed199cf377d3214295984b5c2099"
+        }
+      ],
+      "started_utc": "2026-10-20T03:31:35.223481+00:00",
+      "status": "PASS"
+    }
+  ],
+  "schema": "waypoint.as1-targeted-validation/v1",
+  "source_checkpoint_bindings": [
+    {
+      "bytes": 11065,
+      "path": ".github/workflows/research-workspace.yml",
+      "sha256": "4e5b7f705eb9b7a59d94bff88a1e72b735c443ef8f31f15faf0dbe08d5af6a64"
+    },
+    {
+      "bytes": 6028,
+      "path": "research-workspace/ASSESSMENT-OWNED-DATA.md",
+      "sha256": "de45f909a3fc2d9c6c7802f1e7b00f6af82a941193df0c10b7a722379602f740"
+    },
+    {
+      "bytes": 10366,
+      "path": "research-workspace/README.md",
+      "sha256": "6bdb3c5913c5153ceca4b1872806708c961e1087afd48f17c59d4b1175678fa4"
+    },
+    {
+      "bytes": 257,
+      "path": "research-workspace/assessment/fixtures/owned-data/cancel-request.json",
+      "sha256": "c6955b51f16493aec1c1c69e7769f723ce795529b7c34e85d84c9073d978c1ed"
+    },
+    {
+      "bytes": 78,
+      "path": "research-workspace/assessment/fixtures/owned-data/disabled-error.json",
+      "sha256": "60dbd8883a508fb9af77794b0f08406e4f4678d89ffda0533a062575ca7fe88a"
+    },
+    {
+      "bytes": 388,
+      "path": "research-workspace/assessment/fixtures/owned-data/ingest-header.json",
+      "sha256": "c7300b9774785d90a573b1c3054bb9dd2f501b69d26a9aebe76f3d8f67c9c254"
+    },
+    {
+      "bytes": 70,
+      "path": "research-workspace/assessment/fixtures/owned-data/invalid-error.json",
+      "sha256": "4b1936f0a266da0b13a2d1e6b800b55f66d3f42a0540ff48dac03e869367251e"
+    },
+    {
+      "bytes": 70,
+      "path": "research-workspace/assessment/fixtures/owned-data/missing-error.json",
+      "sha256": "32d3c980f778b34bd7c9bbeb0d58352c6e382b15d6eeed3398f989b4b4bd74f0"
+    },
+    {
+      "bytes": 1266,
+      "path": "research-workspace/assessment/fixtures/owned-data/peer-snapshot.json",
+      "sha256": "32274f34e622ece695e58fa220f6b646573a79e97b29123e6d95a76b95069b4d"
+    },
+    {
+      "bytes": 1844,
+      "path": "research-workspace/assessment/fixtures/owned-data/prepare-request.json",
+      "sha256": "acf3ce537ce5319333baa1616850c2ec8112ac3827be96842c7904bff935039e"
+    },
+    {
+      "bytes": 652,
+      "path": "research-workspace/assessment/fixtures/owned-data/ready-ack.json",
+      "sha256": "00cef11624fde560c540ccf9aa13f901986097140b4ec40b03bea8a0004b840d"
+    },
+    {
+      "bytes": 239,
+      "path": "research-workspace/assessment/fixtures/owned-data/reconcile-request.json",
+      "sha256": "67c7085a2c3aa94f239ac778e51fbcaeae7efc201f82713bae3b10be44b664b2"
+    },
+    {
+      "bytes": 367,
+      "path": "research-workspace/assessment/fixtures/owned-data/seal-request.json",
+      "sha256": "a7d8d9aa98271cda60670ec2fc84231348955a3b76bdf8e79924ffaa30ba42c8"
+    },
+    {
+      "bytes": 811,
+      "path": "research-workspace/assessment/fixtures/owned-data/status-reply.json",
+      "sha256": "25362933912f71088e20c124eb4b47fe582871651a38cbd01bec36eb3bb079b4"
+    },
+    {
+      "bytes": 236,
+      "path": "research-workspace/assessment/fixtures/owned-data/status-request.json",
+      "sha256": "fd7bf69274fc68febbee4fa33b43a942f7c55bddd3cac790b17b3ce6b4976660"
+    },
+    {
+      "bytes": 18881,
+      "path": "research-workspace/research_workspace/assessment_peer.py",
+      "sha256": "c2d72d891cc52bbe965f3bc920a836affaeca824ffe46de55ef3f40bb6292989"
+    },
+    {
+      "bytes": 35639,
+      "path": "research-workspace/research_workspace/assessment_service.py",
+      "sha256": "f6c4d560862f3dcc1fe71b42869d6cf34cdcaa6e9a566666b41c3dce96b9a42f"
+    },
+    {
+      "bytes": 12948,
+      "path": "research-workspace/research_workspace/assessment_state.py",
+      "sha256": "a42f4c3f9cb44e1543a97fd967f97942af8290f152bf48a1c878be711b77299f"
+    },
+    {
+      "bytes": 8530,
+      "path": "research-workspace/research_workspace/bounded_export.py",
+      "sha256": "4452e4a551b8245fc2bd61d6c7b97ff2c4fb4421df85ba401f9551c121968c05"
+    },
+    {
+      "bytes": 13400,
+      "path": "research-workspace/research_workspace/guard_publication.py",
+      "sha256": "baa0b7904be26242354cfeffaa2c42fbdad67234e85e375099a3eca33ae6305e"
+    },
+    {
+      "bytes": 16191,
+      "path": "research-workspace/research_workspace/guarded_recovery.py",
+      "sha256": "97bb2e052e05e32fa4d991a22c69abe5fd28e78593626007d9cdd75f3ea82fb3"
+    },
+    {
+      "bytes": 14701,
+      "path": "research-workspace/research_workspace/identity.py",
+      "sha256": "b1dad45e4f802fb583d8bfb1ce1b15db70cdf75e4717b21fb441b9752bcbc437"
+    },
+    {
+      "bytes": 37120,
+      "path": "research-workspace/research_workspace/operation_guard.py",
+      "sha256": "9872378e4497b87d51d49fe1acfdc90b9ccf7d9b80068608dc08307fd23694cc"
+    },
+    {
+      "bytes": 20692,
+      "path": "research-workspace/research_workspace/recovery.py",
+      "sha256": "f54872aa5531c63e1ea3efb395f0c60ecb2edb8ccfeb2440fe1120b8b4b6513d"
+    },
+    {
+      "bytes": 16311,
+      "path": "research-workspace/research_workspace/server.py",
+      "sha256": "2bbfded4f7c289ea2ff3841a4535c6ea079541dee082a149c053f0f0fa02717b"
+    },
+    {
+      "bytes": 37686,
+      "path": "research-workspace/research_workspace/sqlite_ownership.py",
+      "sha256": "3e0a5f9b8c8ba4669d41119220ecc34f2f61a9d5fd58d91eaa63fb47940bcff3"
+    },
+    {
+      "bytes": 18640,
+      "path": "research-workspace/research_workspace/storage_inventory.py",
+      "sha256": "4b4d375c2cee36189b27d62ef50218be498015effe4b24dee1499d6eead22389"
+    },
+    {
+      "bytes": 57587,
+      "path": "research-workspace/research_workspace/store.py",
+      "sha256": "f4bdc6ea516252a595d40990a13f0e93302de079a57929454eebb6468e766456"
+    },
+    {
+      "bytes": 4801,
+      "path": "research-workspace/tests/assessment_fixtures.py",
+      "sha256": "d638fe9c87b61a776c10b6ce0a84a76991c4175d49eb23d4c12d46bf49cf9354"
+    },
+    {
+      "bytes": 18288,
+      "path": "research-workspace/tests/test_assessment_completion.py",
+      "sha256": "557feb36cd1a8027ff0ea8aff3e5aac9e4c9b101dc6020a393de79d7bcfba862"
+    },
+    {
+      "bytes": 28219,
+      "path": "research-workspace/tests/test_assessment_connected.py",
+      "sha256": "da81fc8cc22d50e46f36834e939c9e65e75d0c9af17fa7a196095cabc4c7b6e7"
+    },
+    {
+      "bytes": 40127,
+      "path": "research-workspace/tests/test_assessment_state.py",
+      "sha256": "6f224bd100ee1145208a8927b25b48da9a06ed199cf377d3214295984b5c2099"
+    }
+  ],
+  "source_provenance_limit": "Historical selected snapshots cover the initial dirty/untracked paths (31 at takeover, 32 after adding a test) with source_before and an unchanged boolean, not every tracked import or a separate after inventory. Six original99 after-run hashes differ from takeover. Final full suite must bind a clean Git head/tree plus complete relevant inventory separately before and after.",
+  "status": "TARGETED PASS; final full-suite and independent immutable review pending",
+  "takeover_before_sha256": "d633a753fd73535891c80813dc97932de07fbafa81b82bc301bd72e1a38817a6"
+}

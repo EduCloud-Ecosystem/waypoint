@@ -12,6 +12,7 @@ import stat
 import sys
 import threading
 from . import finite_authority as finite
+from . import assessment_state as astate
 from . import sqlite_ownership as owned
 
 
@@ -101,24 +102,37 @@ class Lease:
 
 
 class Guard:
-    def __init__(self, root, binding, connect=None):
+    def __init__(self, root, binding, connect=None, *, assessment=None):
         self.root = Path(root).resolve()
-        self.finite = isinstance(binding, dict) and binding.get("format") in finite.GUARD_FORMATS
-        self.profile_version = finite.binding_version(binding) if self.finite else 0
+        if assessment is not None and assessment is not astate.AS1:
+            raise GuardPaused("invalid_binding")
+        self.assessment = assessment
+        self.max_bytes = astate.LIMITS["guard_document"] if assessment else MAX_BYTES
+        self.finite = bool(assessment) or isinstance(binding, dict) and binding.get("format") in finite.GUARD_FORMATS
+        self.profile_version = "AS1" if assessment else finite.binding_version(binding) if self.finite else 0
+        self.scoped = self.profile_version in (4, "AS1")
         keys = {"format", "authority_id"} | ({"logical_authority_sha256"} if self.finite else set())
-        if (not isinstance(binding, dict) or set(binding) != keys
+        if ((assessment and not astate.binding_valid(binding)) or (not assessment and (
+                not isinstance(binding, dict) or set(binding) != keys
                 or binding["format"] not in (finite.GUARD_FORMATS if self.finite else {FORMAT})
                 or not re.fullmatch(r"[a-f0-9]{32}", str(binding["authority_id"]))
-                or (self.finite and binding["logical_authority_sha256"] != finite.profile_digest(self.profile_version))):
+                or (self.finite and binding["logical_authority_sha256"] != finite.profile_digest(self.profile_version))))):
             raise GuardPaused("invalid_binding")
         self.binding = dict(binding)
         self.connect = connect
         with _registry_lock:
             self.lease = _registry.setdefault(str(self.root), Lease())
         self.publication = None
-        if self.profile_version in (3, 4):
+        if self.profile_version in (3, 4, "AS1"):
             from .guard_publication import Publication
             self.publication = Publication(self)
+
+    @property
+    def intent_limit(self):
+        # Keep the ordinary profile's historical dynamic limit semantics.
+        # Tests and bounded operators may lower MAX_OPERATIONS after opening
+        # a Guard to exercise a specific cap boundary.
+        return astate.LIMITS["ordinary"] if self.assessment else MAX_OPERATIONS
 
     @classmethod
     def create(cls, root, connect=None, *, finite_profile=False, profile_version=1):
@@ -160,7 +174,7 @@ class Guard:
                     self.lease.fd = fd
                 except BaseException as original:
                     self.lease.failure = "lock_failure"
-                    if self.profile_version == 4:
+                    if self.scoped:
                         owned.hold(self.root)
                     if self.publication:
                         self.lease.publication_failed = True
@@ -186,7 +200,7 @@ class Guard:
                             raise GuardPaused("lock_replaced")
                     except BaseException:
                         self.lease.failure = "lock_failure"
-                        if self.profile_version == 4:
+                        if self.scoped:
                             owned.hold(self.root)
                         self.lease.active.clear()
                         if self.publication:
@@ -201,7 +215,7 @@ class Guard:
                             os.close(fd)
                         except BaseException:
                             self.lease.failure = "lock_failure"
-                            if self.profile_version == 4:
+                            if self.scoped:
                                 owned.hold(self.root)
                             self.lease.active.clear()
                             if self.publication:
@@ -233,7 +247,7 @@ class Guard:
                     or any(data[k] != v for k, v in self.binding.items())
                     or type(data["generation"]) is not int or not 0 <= data["generation"] < 2**63
                     or type(data["sequence"]) is not int or not 0 <= data["sequence"] < 2**63
-                    or not isinstance(data["operations"], dict) or len(data["operations"]) > MAX_OPERATIONS + 1):
+                    or not isinstance(data["operations"], dict) or len(data["operations"]) > self.intent_limit + 1):
                 raise ValueError("shape")
             for identity, item in data["operations"].items():
                 if (not re.fullmatch(r"[a-f0-9]{32}", identity) or not isinstance(item, dict)
@@ -253,6 +267,8 @@ class Guard:
             if self.publication:
                 from .guard_publication import validate
                 validate(data)
+            if self.assessment:
+                astate.guard_shape(data)
             return data
         except (OSError, ValueError, TypeError, KeyError) as exc:
             raise GuardPaused("invalid_authority") from exc
@@ -310,11 +326,11 @@ class Guard:
         return self._receipts()
 
     def _receipts(self):
-        if self.profile_version == 4:
+        if self.scoped:
             with owned.Owner(self.root, "guard-proof", guard=self, readonly=True) as db:
                 authority = db.execute("SELECT authority_id,sequence FROM operation_authority").fetchmany(2)
-                rows = db.execute("SELECT id,sequence,digest,outcome,essential FROM operation_receipts").fetchmany(MAX_OPERATIONS + 2)
-                if len(rows) > MAX_OPERATIONS + 1 or len({row[0] for row in rows}) != len(rows):
+                rows = db.execute("SELECT id,sequence,digest,outcome,essential FROM operation_receipts").fetchmany(self.intent_limit + 2)
+                if len(rows) > self.intent_limit + 1 or len({row[0] for row in rows}) != len(rows):
                     raise GuardPaused("invalid_receipts")
                 for oid, sequence, digest, outcome, essential in rows:
                     if (not isinstance(oid, str) or not re.fullmatch(r"[a-f0-9]{32}", oid)
@@ -335,8 +351,8 @@ class Guard:
             elif version != 0:
                 raise GuardPaused("unsupported_schema")
             authority = db.execute("SELECT authority_id,sequence FROM operation_authority").fetchmany(2)
-            rows = db.execute("SELECT id,sequence,digest,outcome,essential FROM operation_receipts").fetchmany(MAX_OPERATIONS + 2)
-            if len(rows) > MAX_OPERATIONS + 1 or len({row[0] for row in rows}) != len(rows):
+            rows = db.execute("SELECT id,sequence,digest,outcome,essential FROM operation_receipts").fetchmany(self.intent_limit + 2)
+            if len(rows) > self.intent_limit + 1 or len({row[0] for row in rows}) != len(rows):
                 raise GuardPaused("invalid_receipts")
             for oid, sequence, digest, outcome, essential in rows:
                 if (not isinstance(oid, str) or not re.fullmatch(r"[a-f0-9]{32}", oid)
@@ -389,7 +405,7 @@ class Guard:
 
     def barrier(self):
         """New-profile takeover barrier; never inside a business transaction."""
-        if self.profile_version == 4:
+        if self.scoped:
             try:
                 with self.connect(role="barrier") as db:
                     db.execute("BEGIN IMMEDIATE")
@@ -416,7 +432,9 @@ class Guard:
             db.close()
 
     def queued_ids(self):
-        if self.profile_version == 4:
+        if self.assessment:
+            return set()  # AS1 has no study/compute admission or queue.
+        if self.scoped:
             with owned.Owner(self.root,"guard-proof",guard=self,readonly=True) as db:
                 rows = db.execute("SELECT id FROM runs WHERE status='queued' LIMIT 21").fetchall()
                 return {row[0] for row in rows}
@@ -453,9 +471,12 @@ class Guard:
                 reason = reason or "unfinished_operation"
         ordinary = sum(not item["essential"] for item in data["operations"].values())
         reserved = len(self.queued_ids())
-        can_project = ordinary + reserved + 1 <= MAX_OPERATIONS
-        can_submit = ordinary + reserved + 2 <= MAX_OPERATIONS
-        if not can_project:
+        can_project = ordinary + reserved + 1 <= self.intent_limit
+        can_submit = ordinary + reserved + 2 <= self.intent_limit
+        if self.assessment:
+            # AS1 deliberately has no project initialization or study queue.
+            can_project = can_submit = False
+        if not can_project and not self.assessment:
             reason = reason or "intent_limit"
         if self.finite and (data["generation"] >= finite.COUNTER_LIMIT or data["sequence"] >= finite.COUNTER_LIMIT):
             reason = reason or "intent_limit"
@@ -465,7 +486,7 @@ class Guard:
                 "can_submit_run": can_submit and not reason}
 
     def status(self):
-        if self.profile_version == 4 and owned.held(self.root):
+        if self.scoped and owned.held(self.root):
             return {"guard_enabled": True, "state": "paused", "reason": "sqlite_ownership_unconfirmed",
                     "quota_enforced": False, "can_create_project": False, "can_submit_run": False}
         try:
@@ -475,7 +496,7 @@ class Guard:
             return {"guard_enabled": True, "state": "paused", "reason": "invalid_authority", "quota_enforced": False}
 
     def check(self, *, essential=False, kind=None, admitted=None):
-        if self.profile_version == 4:
+        if self.scoped:
             owned.available(self.root)
         data = self.publication.gate(essential=essential, operation=admitted) if self.publication else self.load()
         if essential:
@@ -485,7 +506,7 @@ class Guard:
         state = self.status_locked(data)
         owns_slot = (admitted is not None and self.lease.active.get(admitted.identity) is admitted
                      and admitted.identity in data["operations"] and data["operations"][admitted.identity]["owner"] == BOOT)
-        reserved_claim = kind in {"claim", "run"} and bool(self.queued_ids()) and sum(not item["essential"] for item in data["operations"].values()) < MAX_OPERATIONS
+        reserved_claim = kind in {"claim", "run"} and bool(self.queued_ids()) and sum(not item["essential"] for item in data["operations"].values()) < self.intent_limit
         capacity_only = state["reason"] == "intent_limit" and (owns_slot or reserved_claim)
         if not essential and state["state"] == "paused" and not capacity_only:
             raise GuardPaused(state["reason"])
@@ -506,7 +527,7 @@ class Guard:
 
     def begin(self, kind, *, resource_id="workspace", subject="operator", request=None,
               request_key=None, essential=False, bootstrap=False):
-        if self.profile_version == 4:
+        if self.scoped:
             owned.available(self.root)
         if kind not in KINDS:
             raise ValueError("Unsupported operation kind.")
@@ -515,17 +536,23 @@ class Guard:
                 raise ValueError("Use a bounded operation identity.")
         if request_key is not None and (not isinstance(request_key, str) or not re.fullmatch(r"[A-Za-z0-9_-]{1,80}", request_key)):
             raise ValueError("Use a bounded request identity.")
+        if self.assessment:
+            astate.guard_request(request)
         digest = request_hash(request)
         with self.locked():
             if self.publication and bootstrap and not self.publication.initializing:
                 raise GuardPaused("invalid_bootstrap")
             data = self.load() if bootstrap else self.check(essential=essential, kind=kind)
+            if self.assessment:
+                astate.admission(data, essential)
+                if self.lease.active:
+                    raise GuardPaused("unfinished_operation")
             if not essential and not bootstrap:
                 queued = self.queued_ids()
                 ordinary = sum(not x["essential"] for x in data["operations"].values())
                 reserved = len(queued) - int(kind == "run" and resource_id in queued)
                 required = 2 if kind == "submit" else 1
-                if ordinary + reserved + required > MAX_OPERATIONS:
+                if ordinary + reserved + required > self.intent_limit:
                     raise GuardPaused("intent_limit")
             if request_key and self.lookup(kind, subject, request_key):
                 raise GuardPaused("existing_intent")
@@ -553,7 +580,7 @@ class Guard:
             self.publish(data, identity=identity, stage="prepare")  # before business effects
             token = Operation(self, identity, kind)
             self.lease.active[identity] = token
-            if not bootstrap and self.profile_version == 4:
+            if not bootstrap and self.scoped:
                 try:
                     with self.connect(role="started-receipt") as db:
                         db.execute("BEGIN IMMEDIATE")
@@ -596,7 +623,7 @@ class Guard:
         return None
 
     def fail(self, reason="worker_failed", *, origin=None, operation=None, error=None):
-        if self.profile_version == 4 and operation is None:
+        if self.scoped and operation is None:
             # Untokened failure cannot manufacture an intent for diagnostics.
             self.lease.failure = reason
             owned.hold(self.root)
@@ -639,6 +666,7 @@ class Operation:
         self.guard, self.identity, self.kind = guard, identity, kind
         self.effects = False
         self.borrowed = borrowed
+        self._publications = 1  # The prepare publication already succeeded.
 
     def register(self, db, data=None):
         if self.guard.publication:
@@ -653,7 +681,7 @@ class Operation:
                    (data["sequence"], self.guard.binding["authority_id"]))
 
     def effect(self):
-        if self.guard.profile_version == 4:
+        if self.guard.scoped:
             owned.available(self.guard.root)
         with self.guard.locked():
             data = self.guard.load()
@@ -666,7 +694,7 @@ class Operation:
             self.effects = True
 
     def check_publication(self):
-        if self.guard.profile_version == 4:
+        if self.guard.scoped:
             owned.available(self.guard.root)
         with self.guard.locked():
             item = self.guard.load()["operations"][self.identity]
@@ -689,7 +717,7 @@ class Operation:
 
     def fail(self, reason="operation_failed", *, error=None):
         original = error or sys.exception()
-        if self.guard.profile_version == 4:
+        if self.guard.scoped:
             with self.guard.lease.lock:
                 self.guard.lease.failure = reason
                 try:
