@@ -184,7 +184,7 @@ class StreamingMathTests(unittest.TestCase):
         invalid = [
             b"NaN", b"Inf", b"-Infinity", b"1e3", b".5", b"1.", b" 1", b"1 ",
             b"01", b"0x10", b"1_0", b"0.0000001", b"1000000000000.000001",
-            b"1\x00", b"\xff", b'"1"', b"1\r", b"",
+            b"1\x00", b"\xff", b'"1"', b"1\r2", b"",
         ]
         for value in invalid:
             with self.subTest(value=value):
@@ -373,6 +373,13 @@ class PythonCLITests(unittest.TestCase):
         self.assertEqual(len(json.loads(output)["groups"]), 128)
         self.assertLessEqual(len(output), 40496)
 
+    def test_actual_crlf_is_valid_internal_carriage_return_is_invalid(self):
+        code, output, error = self.invoke(b"group,value\r\ng,1\r\n", "baseline", 1)
+        self.assertEqual((code, error), (0, b""))
+        self.assertEqual(json.loads(output)["mean"], "1.000000000000")
+        code, output, error = self.invoke(b"group,value\ng,1\r2\n", "baseline", 1)
+        self.assertEqual((code, output, error), (1, b"", b"SUMMARY_INPUT_INVALID\n"))
+
 
 @unittest.skipUnless(shutil.which("Rscript"), "Rscript unavailable: actual R candidate NOT RUN")
 class RCLITests(PythonCLITests):
@@ -403,6 +410,31 @@ class CrossCheckerTests(unittest.TestCase):
                 checked, report, _ = self.check(path, json.dumps(changed).encode(), condition, 8)
                 self.assertEqual(checked, 1)
                 self.assertEqual(json.loads(report)["status"], "failed")
+
+    def test_actual_checker_covers_cancellation_rounding_and_large_forms(self):
+        commands = [[sys.executable, "-I", "-B", str(RECIPE)]]
+        if shutil.which("Rscript"):
+            commands.append([shutil.which("Rscript"), "--vanilla", str(R_RECIPE)])
+        cases = [
+            (b"group,value\ng,1000000000000\ng,0.000001\ng,-1000000000000\ng,0\ng,0\n",
+             "alternative", 5),
+            (b"group,value\ng,-0.000003\n" + b"g,0\n" * 127, "baseline", 128),
+            (b"group,value\n" + b"".join(
+                (f"g{i:03d}" + "x" * 60 + ",-1000000000000.000000\r\n").encode()
+                for i in range(128)), "alternative", 128),
+            (b"group,value\n" + (b"g" * 64 + b",1\n") * 2200, "baseline", 2200),
+        ]
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "synthetic.csv"
+            for case, (data, condition, rows) in enumerate(cases):
+                path.write_bytes(data)
+                for language, command in enumerate(commands):
+                    with self.subTest(case=case, language=language):
+                        code, output, error = bounded_process(command + [str(path), condition, str(rows)])
+                        self.assertEqual((code, error), (0, b""))
+                        checked, report, diagnostic = self.check(path, output, condition, rows)
+                        self.assertEqual((checked, diagnostic), (0, b""))
+                        self.assertEqual(json.loads(report)["status"], "passed")
 
 
 if __name__ == "__main__":
