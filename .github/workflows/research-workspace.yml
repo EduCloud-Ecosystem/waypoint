@@ -28,7 +28,40 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Require preinstalled R and record candidate interpreter provenance
+      - name: Install distro binary R for mandatory candidate controls
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/owned-peer-evidence"
+          mkdir -p "$evidence"
+          cp /etc/os-release "$evidence/streaming-r-distro.txt"
+          finish() {
+            code=$?
+            trap - EXIT
+            if ! timeout --signal=TERM --kill-after=5s 10s \
+              dpkg-query --show --showformat='${Package}\t${Version}\t${Architecture}\n' \
+              r-base-core > "$evidence/streaming-r-installed-package.txt" 2>&1; then
+              if [ "$code" -eq 0 ]; then code=1; fi
+            fi
+            printf '{"exit_code":%s,"package":"r-base-core","source":"runner distro binary package","runtime_attestation":false}\n' \
+              "$code" > "$evidence/streaming-r-package-install.json"
+            exit "$code"
+          }
+          trap finish EXIT
+          timeout --signal=TERM --kill-after=10s 90s \
+            sudo env DEBIAN_FRONTEND=noninteractive apt-get \
+              -o Acquire::Retries=1 -o Acquire::http::Timeout=20 \
+              -o Acquire::https::Timeout=20 update \
+              2>&1 | tee "$evidence/streaming-r-apt-update.log"
+          timeout --signal=TERM --kill-after=5s 10s \
+            apt-cache policy r-base-core \
+              2>&1 | tee "$evidence/streaming-r-package-candidate.txt"
+          timeout --signal=TERM --kill-after=10s 150s \
+            sudo env DEBIAN_FRONTEND=noninteractive apt-get \
+              -o Acquire::Retries=1 -o Acquire::http::Timeout=20 \
+              -o Acquire::https::Timeout=20 --yes --no-install-recommends \
+              install r-base-core \
+              2>&1 | tee "$evidence/streaming-r-apt-install.log"
+      - name: Verify CI-installed distro R and record candidate interpreter provenance
         run: |
           python - <<'PY'
           import hashlib, json, os, platform, selectors, shutil, subprocess, time
@@ -39,7 +72,7 @@ jobs:
               'platform':platform.platform(),'path':shutil.which('Rscript'),
               'resolved_path':None,'frontend_sha256':None,'version':None,
               'failure':'RSCRIPT_UNAVAILABLE',
-              'boundary':'Preinstalled hosted interpreter preflight only; no image, source-build, capacity or cleanup qualification.'}
+              'boundary':'CI-installed distro interpreter preflight and package-version provenance only; no immutable runtime, image, source-build, capacity or cleanup qualification.'}
           if value['path']:
               try:
                   path = Path(value['path']).resolve(strict=True)

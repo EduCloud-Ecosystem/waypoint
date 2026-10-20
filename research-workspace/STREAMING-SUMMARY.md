@@ -198,15 +198,20 @@ large scalar limits must be labeled logical boundary checks, not million-row
 runtime evidence.
 
 R acceptance requires actual R execution against the independent checker.
-An absent or unusable R interpreter is explicitly NOT RUN/SKIP, never replaced
-by Python results or inferred from source. No dependency installation or
-image build is part of this component.
+An absent or unusable local R interpreter is explicitly NOT RUN/SKIP, never
+replaced by Python results or inferred from source. No local dependency
+installation or image build is part of this component.
 
-The existing hosted controls job now requires a preinstalled `Rscript` before
-its complete test discovery. It records the resolved interpreter frontend
-hash, version command and bounded result. Missing or unusable R fails the job
-explicitly; it does not install R or turn a skip into acceptance. Existing
-Docker/helper pins, optional PDF checks and source-build gates are unchanged.
+The existing hosted controls job installs only the distro binary
+`r-base-core` package with `--no-install-recommends`, then requires a usable
+`Rscript` before complete test discovery. Noninteractive package operations
+have finite timeouts and one acquisition retry, within the unchanged
+ten-minute job limit. The artifact records the distro, apt candidate and
+installed dpkg version, followed by the interpreter frontend hash, version
+command and bounded result. This is package-version provenance, not immutable
+runtime attestation. Installation or interpreter failure fails the job;
+skipped R is never accepted. Docker/helper pins, optional PDF checks and
+source-build gates are unchanged.
 
 The first integrated local run at `e6dcc5a` ran 25 methods: 24 passed and one
 failed because the negative fixture appended LF to a trailing CR, making a
@@ -235,6 +240,14 @@ The [verification record](evidence/2026-10-19/streaming-summary/verification.jso
 binds sources, raw logs, actual commands, interpreter frontends and the
 protected full inventories. Native frontend identities do not qualify a
 container image, the full transitive runtime or a deployment host.
+
+The first hosted controls attempt, run `39370145454` at `f03cc67`, failed
+with `RSCRIPT_UNAVAILABLE`; no candidate tests or helper build ran in that
+job. Its original failed job log and source binding are retained in the
+[CI dependency correction record](evidence/2026-10-19/streaming-summary/ci-dependency-repair.json).
+The subsequent change supplies the distro dependency inside the existing
+hosted job. Workload, checker, catalog and test bytes remain those of the
+final local 55-method pass; hosted success remains pending.
 
 The first candidate performs no sampling. Before multi-size execution,
 an immutable selection/input-view policy must bind the actual sample and
