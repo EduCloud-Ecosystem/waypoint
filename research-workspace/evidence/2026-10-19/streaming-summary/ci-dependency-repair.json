@@ -1,0 +1,231 @@
+{
+  "schema": "educloud.streaming-summary-ci-dependency-correction/v1",
+  "prior_evidence_commit": "f03cc67b69543c0987753484d8aaf124e78fd726",
+  "local_tested_runtime_head": "bd4848453e60ee01e6b894d34e907bb5df5149c5",
+  "preserved_local_verification": {
+    "path": "verification.json",
+    "bytes": 18888,
+    "sha256": "595b690826d3d0caf2a03f5d85bf7b2e62bbb076447084b18c2b67188ea915f4"
+  },
+  "historical_binding_note": "The original verification and its public raw artifacts remain byte-identical. Its source bindings describe bd48484/f03cc67; current workflow and narrative document changes are indexed separately here.",
+  "original_ci": {
+    "run_id": 39370145454,
+    "head": "f03cc67b69543c0987753484d8aaf124e78fd726",
+    "controls_job_id": 118455939437,
+    "status": "FAIL",
+    "reason": "RSCRIPT_UNAVAILABLE",
+    "candidate_tests": "NOT RUN",
+    "helper_checkout_and_build": "NOT RUN",
+    "source_binding": {
+      "path": "/Users/gregchism/.codex/operations/educloud-build-20261019/streaming-summary-author-20261020T041920Z/ci39370145454-run.json",
+      "bytes": 13569,
+      "sha256": "e5c5db82d2daba84b8c04bc2bf88a8bc84debc443d587e9c4d3ed2d729746da9"
+    },
+    "job": {
+      "path": "ci39370145454-controls-job.json",
+      "bytes": 4162,
+      "sha256": "d74ea37f818065abfcd3be7dab1e197a6c1f72f2354b7f5ae95f695e66a0c135"
+    },
+    "raw_log": {
+      "path": "ci39370145454-controls-failure.log",
+      "bytes": 22442,
+      "sha256": "bd15ca17b61ded138f18367b2485eb9a4fe9ecfd6fc681b78dcb87a78e65dc5c"
+    },
+    "separate_jobs": [
+      {
+        "name": "actual-docker",
+        "id": 118455939204,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "clean-source-builds",
+        "id": 118455940369,
+        "status": "completed",
+        "conclusion": "skipped"
+      }
+    ],
+    "separate_job_snapshot": {
+      "path": "ci39370145454-jobs-final-snapshot.json",
+      "bytes": 9050,
+      "sha256": "6d3fc5361d5551c2f520e957703d2451592e6569d7326d3247aa16eee7a53703"
+    }
+  },
+  "correction": {
+    "scope": "Only workflow/docs/evidence; candidate workloads, checker, catalog, fixtures and tests unchanged.",
+    "package": "r-base-core",
+    "source": "Runner distro binary package; no source build or new service.",
+    "install_flags": [
+      "--yes",
+      "--no-install-recommends"
+    ],
+    "DEBIAN_FRONTEND": "noninteractive",
+    "update_timeout_seconds": 90,
+    "install_timeout_seconds": 150,
+    "acquire_retries": 1,
+    "http_timeout_seconds": 20,
+    "candidate_policy_timeout_seconds": 10,
+    "installed_query_timeout_seconds": 10,
+    "job_timeout_minutes": 10,
+    "timeout_cleanup": "TERM then KILL after 10 seconds for apt, 5 seconds for package queries.",
+    "provenance": [
+      "/etc/os-release",
+      "apt-cache policy r-base-core",
+      "dpkg-query package/version/architecture",
+      "resolved Rscript frontend SHA256 and bounded --version"
+    ],
+    "attestation": false,
+    "failure_behavior": "Installation, package provenance or interpreter failure blocks the job. No accepted R skip.",
+    "unchanged": [
+      "Docker broker pin",
+      "synthetic helper pin",
+      "optional PDF controls",
+      "source-build gates",
+      "all execution defaults"
+    ]
+  },
+  "new_ci_status": "PENDING",
+  "new_local_tests": "NOT RUN; no runtime code changes, no local dependency install.",
+  "current_source_bindings": [
+    {
+      "path": ".github/workflows/research-workspace.yml",
+      "bytes": 16373,
+      "sha256": "e34055da17619c1615bb9f331c2644f70ca89268eb330317e6e81897f1c16d26",
+      "tested_runtime_sha256": "35f41171b3fd6ef27d0511e504059f06332c24060fb1d86aa93bb45c7623d5cf",
+      "same_as_tested_runtime": false
+    },
+    {
+      "path": "research-workspace/STREAMING-SUMMARY.md",
+      "bytes": 14327,
+      "sha256": "38994d78f0cd7238e614534b34a66ec74fffc1232c09a3564eb489798c6daa8e",
+      "tested_runtime_sha256": "409da62c4a798d2681e7a2575cba6643ce4f319ee39b8a65f9d095dbae529020",
+      "same_as_tested_runtime": false
+    },
+    {
+      "path": "research-workspace/assessment-environments.json",
+      "bytes": 2853,
+      "sha256": "ae903a03f0d0146218f88be6f4733b447a88f446968f327de0be3dd2a116d4e2",
+      "tested_runtime_sha256": "ae903a03f0d0146218f88be6f4733b447a88f446968f327de0be3dd2a116d4e2",
+      "same_as_tested_runtime": true
+    },
+    {
+      "path": "research-workspace/recipes/assessment/check_summary_fixed6.py",
+      "bytes": 18774,
+      "sha256": "d8e55a522ce5e0d268d724824c4f918374f613705b09e40bea5690d6f285f073",
+      "tested_runtime_sha256": "d8e55a522ce5e0d268d724824c4f918374f613705b09e40bea5690d6f285f073",
+      "same_as_tested_runtime": true
+    },
+    {
+      "path": "research-workspace/recipes/assessment/summary_fixed6.R",
+      "bytes": 11373,
+      "sha256": "c79aa2d538935af0a9f6116dc8396a2400dfe41587d71938cf933d292b815a4c",
+      "tested_runtime_sha256": "c79aa2d538935af0a9f6116dc8396a2400dfe41587d71938cf933d292b815a4c",
+      "same_as_tested_runtime": true
+    },
+    {
+      "path": "research-workspace/recipes/assessment/summary_fixed6.py",
+      "bytes": 6622,
+      "sha256": "fb8d583b0ade54e055f72575b61791b7f67f8303f110d72a4e4f6fc033917a91",
+      "tested_runtime_sha256": "fb8d583b0ade54e055f72575b61791b7f67f8303f110d72a4e4f6fc033917a91",
+      "same_as_tested_runtime": true
+    },
+    {
+      "path": "research-workspace/research_workspace/assessment_catalog.py",
+      "bytes": 7545,
+      "sha256": "bb45a1a669230e024556fe8191d268422cf20bd4909cb74e0d6225f2e7b499fc",
+      "tested_runtime_sha256": "bb45a1a669230e024556fe8191d268422cf20bd4909cb74e0d6225f2e7b499fc",
+      "same_as_tested_runtime": true
+    },
+    {
+      "path": "research-workspace/tests/streaming_checker_fixtures/ORACLES.md",
+      "bytes": 1384,
+      "sha256": "53a14113d4ac860b7124979ca8d525a20f3f0d0074cf80bb80d808b34afcd14c",
+      "tested_runtime_sha256": "53a14113d4ac860b7124979ca8d525a20f3f0d0074cf80bb80d808b34afcd14c",
+      "same_as_tested_runtime": true
+    },
+    {
+      "path": "research-workspace/tests/streaming_checker_fixtures/alternative.json",
+      "bytes": 910,
+      "sha256": "e219fb0920064e0884f85fa6267f3eb52766c49ff6d3b2187b5d816af9757045",
+      "tested_runtime_sha256": "e219fb0920064e0884f85fa6267f3eb52766c49ff6d3b2187b5d816af9757045",
+      "same_as_tested_runtime": true
+    },
+    {
+      "path": "research-workspace/tests/streaming_checker_fixtures/baseline.json",
+      "bytes": 908,
+      "sha256": "60711ce1d63425d4b592c7a78fff119df4782b6ffa1ae712e1dea02980274366",
+      "tested_runtime_sha256": "60711ce1d63425d4b592c7a78fff119df4782b6ffa1ae712e1dea02980274366",
+      "same_as_tested_runtime": true
+    },
+    {
+      "path": "research-workspace/tests/streaming_checker_fixtures/literal.csv",
+      "bytes": 122,
+      "sha256": "070c8129a19351e6ead06af730c51f6ec1410df79eef9562eec87f9bef5d0335",
+      "tested_runtime_sha256": "070c8129a19351e6ead06af730c51f6ec1410df79eef9562eec87f9bef5d0335",
+      "same_as_tested_runtime": true
+    },
+    {
+      "path": "research-workspace/tests/streaming_summary_fixtures/README.md",
+      "bytes": 479,
+      "sha256": "0a292b28a53dd18068fbce5c077aee266395e830f262c9050180d12305cc98d5",
+      "tested_runtime_sha256": "0a292b28a53dd18068fbce5c077aee266395e830f262c9050180d12305cc98d5",
+      "same_as_tested_runtime": true
+    },
+    {
+      "path": "research-workspace/tests/streaming_summary_fixtures/basic-alternative.json",
+      "bytes": 563,
+      "sha256": "d85eb3695a7dbf2f203083889c1b36dccd6f5aca018de0a7cea23de78fc5e163",
+      "tested_runtime_sha256": "d85eb3695a7dbf2f203083889c1b36dccd6f5aca018de0a7cea23de78fc5e163",
+      "same_as_tested_runtime": true
+    },
+    {
+      "path": "research-workspace/tests/streaming_summary_fixtures/basic-baseline.json",
+      "bytes": 566,
+      "sha256": "64c9d3694c1cd0a5c9245b10a73c941d91f27e29b8b662800d66ccb18d3a9b88",
+      "tested_runtime_sha256": "64c9d3694c1cd0a5c9245b10a73c941d91f27e29b8b662800d66ccb18d3a9b88",
+      "same_as_tested_runtime": true
+    },
+    {
+      "path": "research-workspace/tests/streaming_summary_fixtures/basic.csv",
+      "bytes": 61,
+      "sha256": "272e926fec1916f2f4e86a5078d87901be1ac381c6fec9e0f816ff216b9e8b3c",
+      "tested_runtime_sha256": "272e926fec1916f2f4e86a5078d87901be1ac381c6fec9e0f816ff216b9e8b3c",
+      "same_as_tested_runtime": true
+    },
+    {
+      "path": "research-workspace/tests/test_streaming_checker.py",
+      "bytes": 24838,
+      "sha256": "82e141444e14c398372acff4115780cdc75b293b9c93199d6ac4319e43be7225",
+      "tested_runtime_sha256": "82e141444e14c398372acff4115780cdc75b293b9c93199d6ac4319e43be7225",
+      "same_as_tested_runtime": true
+    },
+    {
+      "path": "research-workspace/tests/test_streaming_summary.py",
+      "bytes": 21819,
+      "sha256": "c88ad360c5e4140652191cd94a3da66c947fe63f34adfa898f363f70d65bd2af",
+      "tested_runtime_sha256": "c88ad360c5e4140652191cd94a3da66c947fe63f34adfa898f363f70d65bd2af",
+      "same_as_tested_runtime": true
+    }
+  ],
+  "readiness": {
+    "production_enabled": false,
+    "runtime_qualified": false,
+    "cleanup_trusted": false,
+    "live_run_authorized": false
+  },
+  "raw_log_preservation": {
+    "original_failed_local_log_trailing_whitespace_lines": [
+      18
+    ],
+    "original_failed_CI_log_trailing_whitespace_lines": [
+      106,
+      110,
+      113,
+      115,
+      117,
+      119,
+      121
+    ],
+    "meaning": "Original logs are byte-preserved, including timestamps, ANSI sequences, and trailing spaces. Source/document whitespace checks exclude only initial-failed.log and ci39370145454-controls-failure.log; unqualified whole-diff PASS is not claimed."
+  }
+}

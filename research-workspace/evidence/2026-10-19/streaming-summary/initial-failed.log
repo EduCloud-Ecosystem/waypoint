@@ -1,0 +1,40 @@
+test_all_readiness_false_sources_match_and_no_fake_runtime (test_streaming_summary.CandidateCatalogTests.test_all_readiness_false_sources_match_and_no_fake_runtime) ... ok
+test_closed_profile_and_no_truthy_gate (test_streaming_summary.CandidateCatalogTests.test_closed_profile_and_no_truthy_gate) ... ok
+test_duplicate_catalog_key_refused (test_streaming_summary.CandidateCatalogTests.test_duplicate_catalog_key_refused) ... ok
+test_source_mutation_symlink_and_special_file_refused (test_streaming_summary.CandidateCatalogTests.test_source_mutation_symlink_and_special_file_refused) ... ok
+test_unknown_checker_pin_is_unavailable_not_fake_identity (test_streaming_summary.CandidateCatalogTests.test_unknown_checker_pin_is_unavailable_not_fake_identity) ... ok
+test_python_and_available_r_against_actual_independent_checker (test_streaming_summary.CrossCheckerTests.test_python_and_available_r_against_actual_independent_checker) ... ok
+test_actual_rejection_has_no_payload_or_filename_diagnostic (test_streaming_summary.PythonCLITests.test_actual_rejection_has_no_payload_or_filename_diagnostic) ... ok
+test_actual_two_block_stream_and_valid_large_form (test_streaming_summary.PythonCLITests.test_actual_two_block_stream_and_valid_large_form) ... ok
+test_real_streamed_cancellation_precision_and_rounding (test_streaming_summary.PythonCLITests.test_real_streamed_cancellation_precision_and_rounding) ... ok
+test_real_streamed_literal_conditions (test_streaming_summary.PythonCLITests.test_real_streamed_literal_conditions) ... ok
+test_actual_rejection_has_no_payload_or_filename_diagnostic (test_streaming_summary.RCLITests.test_actual_rejection_has_no_payload_or_filename_diagnostic) ... ok
+test_actual_two_block_stream_and_valid_large_form (test_streaming_summary.RCLITests.test_actual_two_block_stream_and_valid_large_form) ... ok
+test_real_streamed_cancellation_precision_and_rounding (test_streaming_summary.RCLITests.test_real_streamed_cancellation_precision_and_rounding) ... ok
+test_real_streamed_literal_conditions (test_streaming_summary.RCLITests.test_real_streamed_literal_conditions) ... ok
+test_ascii_label_identity_and_order (test_streaming_summary.StreamingMathTests.test_ascii_label_identity_and_order) ... ok
+test_counter_boundaries_are_logical_not_large_runtime_claims (test_streaming_summary.StreamingMathTests.test_counter_boundaries_are_logical_not_large_runtime_claims) ... ok
+test_extreme_cancellation_and_alternative (test_streaming_summary.StreamingMathTests.test_extreme_cancellation_and_alternative) ... ok
+test_grammar_rejects_before_conversion (test_streaming_summary.StreamingMathTests.test_grammar_rejects_before_conversion) ... 
+  test_grammar_rejects_before_conversion (test_streaming_summary.StreamingMathTests.test_grammar_rejects_before_conversion) (value=b'1\r') ... FAIL
+test_half_even_rounding_and_negative_zero (test_streaming_summary.StreamingMathTests.test_half_even_rounding_and_negative_zero) ... ok
+test_literal_results_and_every_fragment_width (test_streaming_summary.StreamingMathTests.test_literal_results_and_every_fragment_width) ... ok
+test_maximum_field_record_and_group_boundaries (test_streaming_summary.StreamingMathTests.test_maximum_field_record_and_group_boundaries) ... ok
+test_no_ignored_tail_missing_rows_or_coercive_count (test_streaming_summary.StreamingMathTests.test_no_ignored_tail_missing_rows_or_coercive_count) ... ok
+test_stream_exceeds_two_blocks_without_row_retention (test_streaming_summary.StreamingMathTests.test_stream_exceeds_two_blocks_without_row_retention) ... ok
+test_trim_threshold_ties_and_weighting (test_streaming_summary.StreamingMathTests.test_trim_threshold_ties_and_weighting) ... ok
+test_valid_large_result_and_independent_width_bound (test_streaming_summary.StreamingMathTests.test_valid_large_result_and_independent_width_bound) ... ok
+
+======================================================================
+FAIL: test_grammar_rejects_before_conversion (test_streaming_summary.StreamingMathTests.test_grammar_rejects_before_conversion) (value=b'1\r')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-streaming-summary/research-workspace/tests/test_streaming_summary.py", line 191, in test_grammar_rejects_before_conversion
+    with self.assertRaises(recipe.InvalidInput):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+AssertionError: InvalidInput not raised
+
+----------------------------------------------------------------------
+Ran 25 tests in 5.740s
+
+FAILED (failures=1)

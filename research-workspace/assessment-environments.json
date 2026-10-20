@@ -1,0 +1,90 @@
+{
+  "schema": "waypoint.assessment-candidates/v1",
+  "input_profile": {
+    "id": "summary-fixed6-csv",
+    "version": 1,
+    "max_input_bytes": 88000013,
+    "max_rows": 1000000,
+    "max_groups": 128,
+    "max_group_bytes": 64,
+    "max_numeric_field_bytes": 21,
+    "max_record_bytes": 88,
+    "chunk_bytes": 65536,
+    "scale": 1000000
+  },
+  "output_profile": {
+    "schema": "educloud.summary-stream-result/v1",
+    "workload_stdout_bytes": 61440,
+    "workload_stderr_bytes": 256,
+    "checker_stdout_bytes": 1024,
+    "checker_stderr_bytes": 256,
+    "manifest_output_bytes": 65536,
+    "mean_fraction_digits": 12,
+    "rounding": "half_even"
+  },
+  "readiness": {
+    "execution_authorized": false,
+    "ordinary_dispatch_available": false,
+    "production_available": false,
+    "actual_resource_accepted": false,
+    "cleanup_trusted": false,
+    "large_input_qualified": false
+  },
+  "candidates": [
+    {
+      "recipe_id": "summary-python",
+      "environment_id": "summary-python-fixed6-stream-v1",
+      "status": "candidate",
+      "source": "recipes/assessment/summary_fixed6.py",
+      "code_sha256": "fb8d583b0ade54e055f72575b61791b7f67f8303f110d72a4e4f6fc033917a91",
+      "capability_mapping_ids": {
+        "baseline": "cpu-summary-fixed6-python-baseline-v1",
+        "alternative": "cpu-summary-fixed6-python-alternative-v1"
+      },
+      "runtime": {
+        "language": "python",
+        "version": null,
+        "image": null,
+        "interpreter_identity_sha256": null,
+        "qualification": "NOT RUN"
+      },
+      "additional_packages": [],
+      "checker_environment_id": "summary-fixed6-reference-v1"
+    },
+    {
+      "recipe_id": "summary-r",
+      "environment_id": "summary-r-fixed6-stream-v1",
+      "status": "candidate",
+      "source": "recipes/assessment/summary_fixed6.R",
+      "code_sha256": "c79aa2d538935af0a9f6116dc8396a2400dfe41587d71938cf933d292b815a4c",
+      "capability_mapping_ids": {
+        "baseline": "cpu-summary-fixed6-r-baseline-v1",
+        "alternative": "cpu-summary-fixed6-r-alternative-v1"
+      },
+      "runtime": {
+        "language": "r",
+        "version": null,
+        "image": null,
+        "interpreter_identity_sha256": null,
+        "qualification": "NOT RUN"
+      },
+      "additional_packages": [],
+      "checker_environment_id": "summary-fixed6-reference-v1"
+    }
+  ],
+  "checker": {
+    "recipe_id": "summary-fixed6-reference",
+    "environment_id": "summary-fixed6-reference-v1",
+    "source": "recipes/assessment/check_summary_fixed6.py",
+    "code_sha256": "d8e55a522ce5e0d268d724824c4f918374f613705b09e40bea5690d6f285f073",
+    "status": "candidate",
+    "runtime": {
+      "language": "python",
+      "version": null,
+      "image": null,
+      "interpreter_identity_sha256": null,
+      "qualification": "NOT RUN"
+    },
+    "additional_packages": []
+  }
+}

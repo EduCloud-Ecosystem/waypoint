@@ -28,6 +28,99 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Install distro binary R for mandatory candidate controls
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/owned-peer-evidence"
+          mkdir -p "$evidence"
+          cp /etc/os-release "$evidence/streaming-r-distro.txt"
+          finish() {
+            code=$?
+            trap - EXIT
+            if ! timeout --signal=TERM --kill-after=5s 10s \
+              dpkg-query --show --showformat='${Package}\t${Version}\t${Architecture}\n' \
+              r-base-core > "$evidence/streaming-r-installed-package.txt" 2>&1; then
+              if [ "$code" -eq 0 ]; then code=1; fi
+            fi
+            printf '{"exit_code":%s,"package":"r-base-core","source":"runner distro binary package","runtime_attestation":false}\n' \
+              "$code" > "$evidence/streaming-r-package-install.json"
+            exit "$code"
+          }
+          trap finish EXIT
+          timeout --signal=TERM --kill-after=10s 90s \
+            sudo env DEBIAN_FRONTEND=noninteractive apt-get \
+              -o Acquire::Retries=1 -o Acquire::http::Timeout=20 \
+              -o Acquire::https::Timeout=20 update \
+              2>&1 | tee "$evidence/streaming-r-apt-update.log"
+          timeout --signal=TERM --kill-after=5s 10s \
+            apt-cache policy r-base-core \
+              2>&1 | tee "$evidence/streaming-r-package-candidate.txt"
+          timeout --signal=TERM --kill-after=10s 150s \
+            sudo env DEBIAN_FRONTEND=noninteractive apt-get \
+              -o Acquire::Retries=1 -o Acquire::http::Timeout=20 \
+              -o Acquire::https::Timeout=20 --yes --no-install-recommends \
+              install r-base-core \
+              2>&1 | tee "$evidence/streaming-r-apt-install.log"
+      - name: Verify CI-installed distro R and record candidate interpreter provenance
+        run: |
+          python - <<'PY'
+          import hashlib, json, os, platform, selectors, shutil, subprocess, time
+          from pathlib import Path
+          evidence = Path(os.environ['RUNNER_TEMP'])/'owned-peer-evidence'
+          evidence.mkdir(parents=True, exist_ok=True)
+          value = {'status':'FAIL','R_candidate_runtime':'NOT RUN',
+              'platform':platform.platform(),'path':shutil.which('Rscript'),
+              'resolved_path':None,'frontend_sha256':None,'version':None,
+              'failure':'RSCRIPT_UNAVAILABLE',
+              'boundary':'CI-installed distro interpreter preflight and package-version provenance only; no immutable runtime, image, source-build, capacity or cleanup qualification.'}
+          if value['path']:
+              try:
+                  path = Path(value['path']).resolve(strict=True)
+                  digest = hashlib.sha256()
+                  with path.open('rb') as source:
+                      while block := source.read(65536):
+                          digest.update(block)
+                  value.update(resolved_path=str(path),frontend_sha256=digest.hexdigest())
+                  process = subprocess.Popen([value['path'],'--version'],
+                      stdin=subprocess.DEVNULL,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+                  selector = selectors.DefaultSelector()
+                  output = bytearray()
+                  deadline = time.monotonic()+10
+                  try:
+                      os.set_blocking(process.stdout.fileno(),False)
+                      selector.register(process.stdout,selectors.EVENT_READ)
+                      while selector.get_map():
+                          if time.monotonic()>=deadline:
+                              raise RuntimeError('RSCRIPT_VERSION_TIMEOUT')
+                          for key,_ in selector.select(0.1):
+                              try:
+                                  block=os.read(key.fd,4096)
+                              except BlockingIOError:
+                                  continue
+                              if not block:
+                                  selector.unregister(key.fileobj)
+                              else:
+                                  if len(output)+len(block)>4096:
+                                      raise RuntimeError('RSCRIPT_VERSION_OUTPUT_BOUND')
+                                  output.extend(block)
+                      code=process.wait(timeout=max(0.01,deadline-time.monotonic()))
+                      value.update(version=bytes(output).decode('utf-8','replace').strip(),exit_code=code)
+                      if code!=0:
+                          raise RuntimeError('RSCRIPT_VERSION_FAILED')
+                      value.update(status='PASS',failure=None)
+                  finally:
+                      selector.close()
+                      if process.poll() is None:
+                          process.kill()
+                      process.wait(timeout=5)
+                      process.stdout.close()
+              except Exception as error:
+                  allowed={'RSCRIPT_VERSION_TIMEOUT','RSCRIPT_VERSION_OUTPUT_BOUND','RSCRIPT_VERSION_FAILED'}
+                  value['failure']=str(error) if str(error) in allowed else 'RSCRIPT_PREFLIGHT_UNAVAILABLE'
+          (evidence/'streaming-r-preflight.json').write_text(json.dumps(value,sort_keys=True,indent=2)+'\n')
+          if value['status']!='PASS':
+              raise SystemExit(value['failure'])
+          PY
       - name: Checkout accepted synthetic owned-data helper source
         uses: actions/checkout@v4
         with:

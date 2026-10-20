@@ -1,0 +1,23 @@
+{
+  "python": {
+    "path": "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "resolved": "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+    "sha256": "2477b47fa3ae65b9574eb18a15edb364e96948eaa1875ad3f1c80d780efc9c12",
+    "bytes": 52448
+  },
+  "python_version": "3.14.5 (main, May 10 2026, 10:21:34) [Clang 21.0.0 (clang-2100.0.123.102)]",
+  "platform": "macOS-26.5-arm64-arm-64bit-Mach-O",
+  "machine": "arm64",
+  "safe_environment_overrides": {
+    "PYTHONPATH": "tests",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "LC_ALL": "C",
+    "LANG": "C"
+  },
+  "Rscript": {
+    "path": "/usr/local/bin/Rscript",
+    "resolved": "/Library/Frameworks/R.framework/Versions/4.6/Resources/bin/Rscript",
+    "sha256": "d918ce5022d859e20c38094bb0b6199186cefd8bb96ffeb58618471c9a65a22d",
+    "bytes": 70848
+  }
+}

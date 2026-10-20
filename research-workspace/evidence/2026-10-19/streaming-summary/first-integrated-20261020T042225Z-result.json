@@ -1,0 +1,59 @@
+{
+  "status": "FAIL",
+  "failure": null,
+  "commands": [
+    {
+      "argv": [
+        "/usr/local/bin/Rscript",
+        "--version"
+      ],
+      "cwd": "/Users/gregchism/dev/.educloud-worktrees/waypoint-streaming-summary/research-workspace",
+      "safe_environment_overrides": {
+        "PYTHONPATH": "tests",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "LC_ALL": "C",
+        "LANG": "C"
+      },
+      "exit_code": 0,
+      "elapsed_seconds": 0.23705891601275653,
+      "stop": null,
+      "log": "/Users/gregchism/.codex/operations/educloud-build-20261019/streaming-summary-author-20261020T041920Z/first-integrated-20261020T042225Z/r-version.log",
+      "log_sha256": "2c3d637f80e28954fc192854f85556cafd655d15b3a61016ea36f42c2adf066e",
+      "pid": 40933,
+      "process_drained": true
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "-W",
+        "error::ResourceWarning",
+        "-m",
+        "unittest",
+        "-v",
+        "test_streaming_summary"
+      ],
+      "cwd": "/Users/gregchism/dev/.educloud-worktrees/waypoint-streaming-summary/research-workspace",
+      "safe_environment_overrides": {
+        "PYTHONPATH": "tests",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "LC_ALL": "C",
+        "LANG": "C"
+      },
+      "exit_code": 1,
+      "elapsed_seconds": 5.8616191250039265,
+      "stop": null,
+      "log": "/Users/gregchism/.codex/operations/educloud-build-20261019/streaming-summary-author-20261020T041920Z/first-integrated-20261020T042225Z/focused-workload.log",
+      "log_sha256": "af0632004dfe871e95822f81c03b64f96af8fc56eb423ec4877dc51d94b4be40",
+      "pid": 40935,
+      "process_drained": true
+    }
+  ],
+  "source_before": "/Users/gregchism/.codex/operations/educloud-build-20261019/streaming-summary-author-20261020T041920Z/first-integrated-20261020T042225Z/source-before.json",
+  "source_after": "/Users/gregchism/.codex/operations/educloud-build-20261019/streaming-summary-author-20261020T041920Z/first-integrated-20261020T042225Z/source-after.json",
+  "source_before_sha256": "f71f343bf4ffa01a526d788f413a1590125f8c6c31f36874ea062ceac7784690",
+  "source_after_sha256": "f71f343bf4ffa01a526d788f413a1590125f8c6c31f36874ea062ceac7784690",
+  "source_unchanged": true,
+  "elapsed_seconds": 6.505851915921085,
+  "finished_at": "2026-10-20T04:22:31.815704+00:00",
+  "all_started_command_processes_drained": true
+}
