@@ -1,0 +1,50 @@
+{
+  "after_inventory_sha256": "d92d7867c0fb9be8614db55917de3386d4132ad9ca78b606524ba48ce53ba3ef",
+  "argv": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-W",
+    "error::ResourceWarning",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "tests",
+    "-v"
+  ],
+  "before_inventory_sha256": "d92d7867c0fb9be8614db55917de3386d4132ad9ca78b606524ba48ce53ba3ef",
+  "cwd": "/Users/gregchism/dev/.educloud-worktrees/waypoint-assessment-owned-data/research-workspace",
+  "duration_seconds": 154.255,
+  "ended_utc": "2026-10-20T03:45:14.753273+00:00",
+  "errors": 5,
+  "exit_code": 1,
+  "helper_sha256": {
+    "broker.test": "847f80bf28b35fb7064bd8cab3b30b2b01e8d8422f2d48b7b8afec218a5039f2",
+    "ledger.test": "2eed6851b88fcb2bb28fb897a2c19c664d23e859f5e9e4df3f450a3fb041ece8"
+  },
+  "helper_source_head": "4de6a090664a9a3ccd8ba0417b00af3ff5290a58",
+  "interpreter": {
+    "invoked_executable": "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "platform": "macOS-26.5-arm64-arm-64bit-Mach-O",
+    "resolved_executable": "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+    "sha256": "2477b47fa3ae65b9574eb18a15edb364e96948eaa1875ad3f1c80d780efc9c12",
+    "version": "3.14.5 (main, May 10 2026, 10:21:34) [Clang 21.0.0 (clang-2100.0.123.102)]"
+  },
+  "log": "full-header-correction-failure.log",
+  "log_sha256": "7f5f229b63944c7ff687683a3ebe2be32706ed47ff7d38cced31548b902fa5dd",
+  "methods_run": 605,
+  "notes": "Five ERROR records from the same missing-future-destination FileNotFoundError across legacy finite/bounded-export/nested guard controls. The bounded header check fixed the prior storage failures but incorrectly treated an absent root as an exception instead of no AS1 signal. Original run remains FAIL; follow-up catches only missing-root FileNotFoundError and leaves all later recovery authority validation intact.",
+  "process_waited": true,
+  "pure_validator": null,
+  "remaining_reserved_seconds": 549.5966811180115,
+  "safe_environment_overrides": {
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONPATH": ".:tests",
+    "WAYPOINT_OWNED_PEER_ASSETS": "/Users/gregchism/Documents/Codex/2026-10-19/outfitter-owned-data-pipe-v3"
+  },
+  "skipped": 2,
+  "source_head": "e8a0c00c1e5becc1eb5b55970ecc3f9739de4f24",
+  "source_unchanged": true,
+  "started_utc": "2026-10-20T03:42:40.493342+00:00",
+  "status": "FAIL",
+  "timed_out": false
+}

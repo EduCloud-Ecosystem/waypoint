@@ -1,0 +1,15 @@
+test_constructor_cleanup_uncertainty_holds_service_before_spawn (test_assessment_completion.LifelineConstructorTests.test_constructor_cleanup_uncertainty_holds_service_before_spawn) ... FAIL
+
+======================================================================
+FAIL: test_constructor_cleanup_uncertainty_holds_service_before_spawn (test_assessment_completion.LifelineConstructorTests.test_constructor_cleanup_uncertainty_holds_service_before_spawn)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-assessment-owned-data/research-workspace/tests/test_assessment_completion.py", line 137, in test_constructor_cleanup_uncertainty_holds_service_before_spawn
+    self.assertTrue(getattr(raised.exception,"ownership_uncertain",False))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 1 test in 0.110s
+
+FAILED (failures=1)

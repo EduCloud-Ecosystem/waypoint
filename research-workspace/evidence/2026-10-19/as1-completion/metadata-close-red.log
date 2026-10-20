@@ -1,0 +1,15 @@
+test_metadata_child_abort_uncertainty_holds_before_another_launch (test_assessment_completion.LifelineConstructorTests.test_metadata_child_abort_uncertainty_holds_before_another_launch) ... FAIL
+
+======================================================================
+FAIL: test_metadata_child_abort_uncertainty_holds_before_another_launch (test_assessment_completion.LifelineConstructorTests.test_metadata_child_abort_uncertainty_holds_before_another_launch)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-assessment-owned-data/research-workspace/tests/test_assessment_completion.py", line 198, in test_metadata_child_abort_uncertainty_holds_before_another_launch
+    self.assertTrue(subject.held)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 1 test in 0.208s
+
+FAILED (failures=1)

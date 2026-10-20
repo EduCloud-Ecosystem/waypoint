@@ -1,0 +1,51 @@
+test_quiet_poll_then_body_is_not_poisoned_or_false_eof (test_assessment_completion.BodyReaderTests.test_quiet_poll_then_body_is_not_poisoned_or_false_eof) ... ERROR
+test_real_identity_logout_is_ordered_after_bounded_response_copy (test_assessment_completion.PublicationIdentityTests.test_real_identity_logout_is_ordered_after_bounded_response_copy) ... FAIL
+test_control_identity_is_hex32_not_pure_manifest_opaque80 (test_assessment_completion.ReplyIdentityTests.test_control_identity_is_hex32_not_pure_manifest_opaque80) ... ok
+test_concurrent_short_guarded_transactions_release_every_token (test_assessment_state.StateTests.test_concurrent_short_guarded_transactions_release_every_token) ... FAIL
+test_full_ordinary_intent_allowance_retains_fresh_safety_path (test_guard_publication.GuardPublicationTests.test_full_ordinary_intent_allowance_retains_fresh_safety_path) ... ok
+
+======================================================================
+ERROR: test_quiet_poll_then_body_is_not_poisoned_or_false_eof (test_assessment_completion.BodyReaderTests.test_quiet_poll_then_body_is_not_poisoned_or_false_eof)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-assessment-owned-data/research-workspace/tests/test_assessment_completion.py", line 38, in test_quiet_poll_then_body_is_not_poisoned_or_false_eof
+    self.assertEqual(body.read(4), b"abcd")
+                     ~~~~~~~~~^^^
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-assessment-owned-data/research-workspace/research_workspace/assessment_service.py", line 79, in read
+    raise PeerFailure() from None
+research_workspace.assessment_peer.PeerFailure: ASSESSMENT_UNRESOLVED
+
+======================================================================
+FAIL: test_real_identity_logout_is_ordered_after_bounded_response_copy (test_assessment_completion.PublicationIdentityTests.test_real_identity_logout_is_ordered_after_bounded_response_copy)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-assessment-owned-data/research-workspace/tests/test_assessment_completion.py", line 80, in test_real_identity_logout_is_ordered_after_bounded_response_copy
+    result = subject._publication_response("2" * 32, auth, {"sessions": []},
+        active=False, limit=a.LIMITS["summary"])
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-assessment-owned-data/research-workspace/research_workspace/assessment_service.py", line 320, in _publication_response
+    body = strict_document(a.encode(value), limit=limit)
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-assessment-owned-data/research-workspace/tests/test_assessment_completion.py", line 74, in copy_response
+    self.assertFalse(completed.wait(.15), "logout passed the final response fence")
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True is not false : logout passed the final response fence
+
+======================================================================
+FAIL: test_concurrent_short_guarded_transactions_release_every_token (test_assessment_state.StateTests.test_concurrent_short_guarded_transactions_release_every_token)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-assessment-owned-data/research-workspace/tests/test_assessment_state.py", line 286, in test_concurrent_short_guarded_transactions_release_every_token
+    self.assertEqual(sorted(x for x in outcomes if type(x) is int), [0, 1, 2])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [] != [0, 1, 2]
+
+Second list contains 3 additional elements.
+First extra element 0:
+0
+
+- []
++ [0, 1, 2]
+
+----------------------------------------------------------------------
+Ran 5 tests in 2.498s
+
+FAILED (failures=2, errors=1)

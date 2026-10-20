@@ -1,0 +1,328 @@
+{
+  "as1_method_count": 59,
+  "as1_methods": {
+    "test_assessment_completion.py": [
+      "BodyReaderTests.test_buffered_read_ahead_and_would_block_are_not_eof",
+      "BodyReaderTests.test_quiet_poll_then_body_is_not_poisoned_or_false_eof",
+      "PublicationIdentityTests.test_real_identity_logout_is_ordered_after_bounded_response_copy",
+      "ReplyIdentityTests.test_control_identity_is_hex32_not_pure_manifest_opaque80",
+      "ReplyIdentityTests.test_observed_absence_requires_denial_drain_and_revocation",
+      "LifelineConstructorTests.test_denial_closes_all_lifelines_before_uncertain_metadata_stops_launches",
+      "LifelineConstructorTests.test_constructor_cleanup_uncertainty_holds_service_before_spawn",
+      "LifelineConstructorTests.test_metadata_child_abort_uncertainty_holds_before_another_launch",
+      "CompleteEnvelopeTests.test_independent_complete_maximum_forms",
+      "CompleteEnvelopeTests.test_failure_after_effect_has_one_uncertainty_note_and_releases_token"
+    ],
+    "test_assessment_connected.py": [
+      "ConnectedTests.test_actual_http_prepare_upload_seal_cancel_and_no_metadata_body",
+      "ConnectedTests.test_duplicate_prepare_is_lookup_only_and_original_manifest_unchanged",
+      "ConnectedTests.test_bad_http_framing_and_cross_project_refuse_without_body",
+      "ConnectedTests.test_late_logout_fence_prevents_real_ingest_spawn",
+      "ConnectedTests.test_stale_status_response_not_published_after_membership_revocation",
+      "ConnectedTests.test_scope_denial_before_final_fence_blocks_status_success",
+      "ConnectedTests.test_final_response_owner_failure_never_publishes_success",
+      "ConnectedTests.test_final_response_copy_digest_precedes_unlocked_send",
+      "ConnectedTests.test_final_publication_orders_all_current_authority_invalidations",
+      "ConnectedTests.test_real_http_delayed_first_body_and_quiet_intervals_succeed",
+      "ConnectedTests.test_real_http_short_body_eof_refuses_before_prepare_effect",
+      "ConnectedTests.test_slow_trickle_body_hits_absolute_prepare_deadline",
+      "ConnectedTests.test_stalled_upload_is_cancelled_by_current_membership_check",
+      "ConnectedTests.test_concurrent_writer_refused_before_second_source_read",
+      "ConnectedTests.test_short_source_and_owner_loss_never_reopen"
+    ],
+    "test_assessment_state.py": [
+      "StateTests.test_exact_profile_refusal_and_no_raw_factory",
+      "StateTests.test_explicit_roles_and_same_snapshot_materialization",
+      "StateTests.test_oversized_field_refuses_before_materialization",
+      "StateTests.test_persisted_upload_ceiling_is_bound_to_manifest_before_full_materialization",
+      "StateTests.test_per_subject_and_global_overflow_probe",
+      "StateTests.test_seventeenth_global_row_refuses_before_materialization",
+      "StateTests.test_wrong_type_and_nul_corruption_refuse_before_materialization",
+      "StateTests.test_all_sixteen_denied_atomically_and_final_version_is_absorbing",
+      "StateTests.test_auth_controls_deny_only_matching_rows",
+      "StateTests.test_auth_invalidation_and_matching_denials_rollback_as_one_unit",
+      "StateTests.test_all_sixteen_project_denials_rollback_on_publication_fault",
+      "StateTests.test_rotate_removes_sessions_and_latches_assessment",
+      "StateTests.test_ordinary_cap_retains_essential_slot_and_tombstones",
+      "StateTests.test_keep_true_and_outstanding_token_refuse",
+      "StateTests.test_concurrent_short_guarded_transactions_release_every_token",
+      "StateTests.test_constructor_rejects_nonfinite_policy_and_clock_before_state_access",
+      "StateTests.test_clock_rollback_holds_without_authority_or_row_effects",
+      "StateTests.test_occupied_safety_slot_never_bypassed",
+      "StateTests.test_unsupported_recovery_export_and_inventory_before_effects",
+      "StateTests.test_header_only_refusal_without_live_sql_or_content_scan",
+      "StateTests.test_header_refusal_rejects_file_replacement",
+      "IndependentEnvelopeTests.test_complete_database_and_control_forms_fit_declared_limits",
+      "IndependentEnvelopeTests.test_maximum_json_forms_include_escaping_decimal_keys_and_failure",
+      "IndependentEnvelopeTests.test_counter_reserve_edges_and_overflow",
+      "PeerReplyTests.test_exact_protocol_cross_fields_and_eight_observation_edge",
+      "DisabledHTTPTests.test_actual_production_application_refuses_before_body",
+      "OIDCLogoutTests.test_http_logout_denies_subject_assessments_after_identity_invalidation",
+      "PeerCloseTests.test_failed_child_stdin_close_is_sticky_uncertainty",
+      "PeerCloseTests.test_child_parent_endpoint_close_fault_is_sticky_and_transfers_child",
+      "PeerCloseTests.test_parent_close_uncertainty_holds_service_and_local_admission",
+      "LifelineOwnershipTests.test_closed_lifeline_refuses_without_child_spawn",
+      "LifelineOwnershipTests.test_ambiguous_lifeline_close_is_sticky_and_not_retried",
+      "LifelineOwnershipTests.test_duplicate_set_survives_concurrent_close",
+      "LifelineOwnershipTests.test_concurrent_close_cannot_close_reused_descriptor"
+    ]
+  },
+  "boundaries": {
+    "cleanup_trusted": false,
+    "engines_providers_live_workloads": "NOT RUN",
+    "hosted_ci": "PENDING",
+    "independent_final_review": "PENDING",
+    "merge": "PENDING",
+    "new_compute_grants": false,
+    "optional_PDF_suite": "NOT RUN for this change",
+    "production_uploads": "DISABLED",
+    "real_data_readiness": false,
+    "whole_store_capacity_qualified": false
+  },
+  "complete_relevant_inventory": {
+    "after": "full-final-after.json",
+    "before": "full-final-before.json",
+    "both_sha256": "50806e65d407ef67665265fae90bffba437584e6089db176a99c3c694ad35a9d",
+    "files": 1046,
+    "scope": "All tracked research-workspace source, tests, fixtures and historical evidence, research workflow and CLAUDE.md. Distinct files were saved before/after, with clean exact Git head/tree. This is provenance evidence, not build attestation."
+  },
+  "compute_window": {
+    "all_test_processes_waited": true,
+    "elapsed_seconds": 787.559237,
+    "ended_utc": "2026-10-20T03:49:57.396325+00:00",
+    "helper_hashes_after": [
+      {
+        "file": "broker.test",
+        "matches": true,
+        "sha256": "847f80bf28b35fb7064bd8cab3b30b2b01e8d8422f2d48b7b8afec218a5039f2"
+      },
+      {
+        "file": "ledger.test",
+        "matches": true,
+        "sha256": "2eed6851b88fcb2bb28fb897a2c19c664d23e859f5e9e4df3f450a3fb041ece8"
+      },
+      {
+        "file": "outfitter",
+        "matches": true,
+        "sha256": "ce960bc24e47916ec33eda10ebe9826ea9f982fa45dcdbdb19f54feb5341b0a6"
+      },
+      {
+        "file": "author-delta-handoff.json",
+        "matches": true,
+        "sha256": "9f954e9f74f6a42584066879330f5dc9f6654219dd866c071a0b77755e557c35"
+      },
+      {
+        "file": "9cf-pure-outfitter",
+        "matches": true,
+        "sha256": "c1746f67cafb8db4bcc2dcb4e7b3851ce193c206e48c4ca244703e143ded5b3d"
+      }
+    ],
+    "limit_seconds": 900,
+    "no_build_engine_provider": true,
+    "remaining_helper_processes": [],
+    "started_utc": "2026-10-20T03:36:49.837088+00:00",
+    "state": "DRAINED"
+  },
+  "helper_origins": {
+    "hosted_synthetic_peer": "Fresh Linux builds at8584ca8db9a7e5eaf8d29d9670349b57f3939ab6 configured; not yet run",
+    "local_owned_peer": "Archived Darwin binaries at4de6a090664a9a3ccd8ba0417b00af3ff5290a58",
+    "separate_pure_validator": "Archived binary at9cf556b024960422b960281f4afacc923afcc12f"
+  },
+  "overlapping_results": "Do not sum focused, full, nested or subtest counts. Full605 retains two skips; the separate two-method success does not rewrite it.",
+  "retained_failures": [
+    "validation.json",
+    "full-initial-failure.json",
+    "full-header-correction-failure.json"
+  ],
+  "runs": [
+    {
+      "log_sha256": "521d2353b6200cdf075cde73fc609d18da3a1383b17b0e29149fadc53a7eba7c",
+      "methods": 605,
+      "passed": 603,
+      "record": "full-final.json",
+      "sha256": "94f4c74ddf29a68ce19b9082ecc4c1d8b2a8ae814fc89b25b940d1737d79f2cb",
+      "skipped": 2
+    },
+    {
+      "log_sha256": "05393bb08f63941d1fb20e3a4a0d4c54b5ca6e55c36b4f31e1e5a525a3ef0c6f",
+      "methods": 2,
+      "passed": 2,
+      "record": "pure-validator.json",
+      "sha256": "1033eb20e0f6648f05c17c522fd55ddd35b71e13ee34c2477b54373b33b80381",
+      "skipped": 0
+    }
+  ],
+  "runtime_head": "a5dd74b4a5a68d2aabbecf5ee32e8e1d3892e591",
+  "runtime_tree": "e03ee81d54bb04f11fec492c3ff4e51a272bfee0",
+  "schema": "waypoint.as1-final-verification/v1",
+  "source_bindings": [
+    {
+      "bytes": 11065,
+      "path": ".github/workflows/research-workspace.yml",
+      "sha256": "4e5b7f705eb9b7a59d94bff88a1e72b735c443ef8f31f15faf0dbe08d5af6a64"
+    },
+    {
+      "bytes": 257,
+      "path": "research-workspace/assessment/fixtures/owned-data/cancel-request.json",
+      "sha256": "c6955b51f16493aec1c1c69e7769f723ce795529b7c34e85d84c9073d978c1ed"
+    },
+    {
+      "bytes": 78,
+      "path": "research-workspace/assessment/fixtures/owned-data/disabled-error.json",
+      "sha256": "60dbd8883a508fb9af77794b0f08406e4f4678d89ffda0533a062575ca7fe88a"
+    },
+    {
+      "bytes": 388,
+      "path": "research-workspace/assessment/fixtures/owned-data/ingest-header.json",
+      "sha256": "c7300b9774785d90a573b1c3054bb9dd2f501b69d26a9aebe76f3d8f67c9c254"
+    },
+    {
+      "bytes": 70,
+      "path": "research-workspace/assessment/fixtures/owned-data/invalid-error.json",
+      "sha256": "4b1936f0a266da0b13a2d1e6b800b55f66d3f42a0540ff48dac03e869367251e"
+    },
+    {
+      "bytes": 70,
+      "path": "research-workspace/assessment/fixtures/owned-data/missing-error.json",
+      "sha256": "32d3c980f778b34bd7c9bbeb0d58352c6e382b15d6eeed3398f989b4b4bd74f0"
+    },
+    {
+      "bytes": 1266,
+      "path": "research-workspace/assessment/fixtures/owned-data/peer-snapshot.json",
+      "sha256": "32274f34e622ece695e58fa220f6b646573a79e97b29123e6d95a76b95069b4d"
+    },
+    {
+      "bytes": 1844,
+      "path": "research-workspace/assessment/fixtures/owned-data/prepare-request.json",
+      "sha256": "acf3ce537ce5319333baa1616850c2ec8112ac3827be96842c7904bff935039e"
+    },
+    {
+      "bytes": 652,
+      "path": "research-workspace/assessment/fixtures/owned-data/ready-ack.json",
+      "sha256": "00cef11624fde560c540ccf9aa13f901986097140b4ec40b03bea8a0004b840d"
+    },
+    {
+      "bytes": 239,
+      "path": "research-workspace/assessment/fixtures/owned-data/reconcile-request.json",
+      "sha256": "67c7085a2c3aa94f239ac778e51fbcaeae7efc201f82713bae3b10be44b664b2"
+    },
+    {
+      "bytes": 367,
+      "path": "research-workspace/assessment/fixtures/owned-data/seal-request.json",
+      "sha256": "a7d8d9aa98271cda60670ec2fc84231348955a3b76bdf8e79924ffaa30ba42c8"
+    },
+    {
+      "bytes": 811,
+      "path": "research-workspace/assessment/fixtures/owned-data/status-reply.json",
+      "sha256": "25362933912f71088e20c124eb4b47fe582871651a38cbd01bec36eb3bb079b4"
+    },
+    {
+      "bytes": 236,
+      "path": "research-workspace/assessment/fixtures/owned-data/status-request.json",
+      "sha256": "fd7bf69274fc68febbee4fa33b43a942f7c55bddd3cac790b17b3ce6b4976660"
+    },
+    {
+      "bytes": 18881,
+      "path": "research-workspace/research_workspace/assessment_peer.py",
+      "sha256": "c2d72d891cc52bbe965f3bc920a836affaeca824ffe46de55ef3f40bb6292989"
+    },
+    {
+      "bytes": 35639,
+      "path": "research-workspace/research_workspace/assessment_service.py",
+      "sha256": "f6c4d560862f3dcc1fe71b42869d6cf34cdcaa6e9a566666b41c3dce96b9a42f"
+    },
+    {
+      "bytes": 14496,
+      "path": "research-workspace/research_workspace/assessment_state.py",
+      "sha256": "348609328e845b0fa9911f9b4e77fad3935733aa4f89c2919fad813e18f97db4"
+    },
+    {
+      "bytes": 8530,
+      "path": "research-workspace/research_workspace/bounded_export.py",
+      "sha256": "4452e4a551b8245fc2bd61d6c7b97ff2c4fb4421df85ba401f9551c121968c05"
+    },
+    {
+      "bytes": 13400,
+      "path": "research-workspace/research_workspace/guard_publication.py",
+      "sha256": "baa0b7904be26242354cfeffaa2c42fbdad67234e85e375099a3eca33ae6305e"
+    },
+    {
+      "bytes": 16191,
+      "path": "research-workspace/research_workspace/guarded_recovery.py",
+      "sha256": "97bb2e052e05e32fa4d991a22c69abe5fd28e78593626007d9cdd75f3ea82fb3"
+    },
+    {
+      "bytes": 14701,
+      "path": "research-workspace/research_workspace/identity.py",
+      "sha256": "b1dad45e4f802fb583d8bfb1ce1b15db70cdf75e4717b21fb441b9752bcbc437"
+    },
+    {
+      "bytes": 37120,
+      "path": "research-workspace/research_workspace/operation_guard.py",
+      "sha256": "9872378e4497b87d51d49fe1acfdc90b9ccf7d9b80068608dc08307fd23694cc"
+    },
+    {
+      "bytes": 20692,
+      "path": "research-workspace/research_workspace/recovery.py",
+      "sha256": "f54872aa5531c63e1ea3efb395f0c60ecb2edb8ccfeb2440fe1120b8b4b6513d"
+    },
+    {
+      "bytes": 16311,
+      "path": "research-workspace/research_workspace/server.py",
+      "sha256": "2bbfded4f7c289ea2ff3841a4535c6ea079541dee082a149c053f0f0fa02717b"
+    },
+    {
+      "bytes": 37686,
+      "path": "research-workspace/research_workspace/sqlite_ownership.py",
+      "sha256": "3e0a5f9b8c8ba4669d41119220ecc34f2f61a9d5fd58d91eaa63fb47940bcff3"
+    },
+    {
+      "bytes": 18639,
+      "path": "research-workspace/research_workspace/storage_inventory.py",
+      "sha256": "bfb7eeebf518879f6e3866ab0c916243fdfcdf5cc3f93d4f8102298d79168c15"
+    },
+    {
+      "bytes": 57587,
+      "path": "research-workspace/research_workspace/store.py",
+      "sha256": "f4bdc6ea516252a595d40990a13f0e93302de079a57929454eebb6468e766456"
+    },
+    {
+      "bytes": 4801,
+      "path": "research-workspace/tests/assessment_fixtures.py",
+      "sha256": "d638fe9c87b61a776c10b6ce0a84a76991c4175d49eb23d4c12d46bf49cf9354"
+    },
+    {
+      "bytes": 18288,
+      "path": "research-workspace/tests/test_assessment_completion.py",
+      "sha256": "557feb36cd1a8027ff0ea8aff3e5aac9e4c9b101dc6020a393de79d7bcfba862"
+    },
+    {
+      "bytes": 28219,
+      "path": "research-workspace/tests/test_assessment_connected.py",
+      "sha256": "da81fc8cc22d50e46f36834e939c9e65e75d0c9af17fa7a196095cabc4c7b6e7"
+    },
+    {
+      "bytes": 41978,
+      "path": "research-workspace/tests/test_assessment_state.py",
+      "sha256": "40df02c7382659c53a5f81ebfe4596165e314a8274f35b68b4cdbafec77f9089"
+    }
+  ],
+  "status": "LOCAL OFFLINE CHECKS PASS; independent final review and hosted CI pending",
+  "whitespace": {
+    "exceptions": {
+      "full-header-correction-failure.log": [
+        159,
+        301,
+        328
+      ],
+      "full-initial-failure.log": [
+        579
+      ],
+      "observation-red.log": [
+        1
+      ]
+    },
+    "raw_logs_rewritten": false,
+    "status": "PASS excluding exactly three immutable failed-log artifacts"
+  }
+}

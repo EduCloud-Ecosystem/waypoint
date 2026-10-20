@@ -158,6 +158,8 @@ def _build(store, manifest):
 
 
 def export_bundle(store, project_id, subject, token):
+    if getattr(store, "_assessment", None) is not None:
+        raise ValueError("Assessment content export is unsupported.")
     identifier(project_id)
     identifier(subject)
     try:

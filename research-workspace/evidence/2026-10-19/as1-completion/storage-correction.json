@@ -1,0 +1,68 @@
+{
+  "after_inventory_sha256": "7d667b652b5bb2f698129461bd25d21adb047a8a4ff5028c60268a7d98a576c8",
+  "argv": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-W",
+    "error::ResourceWarning",
+    "-m",
+    "unittest",
+    "-v",
+    "test_storage_inventory",
+    "test_assessment_state.StateTests.test_header_only_refusal_without_live_sql_or_content_scan",
+    "test_assessment_state.StateTests.test_header_refusal_rejects_file_replacement",
+    "test_assessment_state.StateTests.test_unsupported_recovery_export_and_inventory_before_effects"
+  ],
+  "before_inventory_sha256": "7d667b652b5bb2f698129461bd25d21adb047a8a4ff5028c60268a7d98a576c8",
+  "changed_source": [
+    {
+      "bytes": 14282,
+      "path": "research-workspace/research_workspace/assessment_state.py",
+      "sha256": "d00fcaf3f055d6bc5c933643137d7d43ad7679f46a20e7be74fe336ce2ecb610"
+    },
+    {
+      "bytes": 18639,
+      "path": "research-workspace/research_workspace/storage_inventory.py",
+      "sha256": "bfb7eeebf518879f6e3866ab0c916243fdfcdf5cc3f93d4f8102298d79168c15"
+    },
+    {
+      "bytes": 41802,
+      "path": "research-workspace/tests/test_assessment_state.py",
+      "sha256": "783d571773696456231e4bb710e82d85bdad2ede24afeef8609232cdc6d5fe25"
+    }
+  ],
+  "cwd": "/Users/gregchism/dev/.educloud-worktrees/waypoint-assessment-owned-data/research-workspace",
+  "duration_seconds": 1.352,
+  "ended_utc": "2026-10-20T03:41:59.160609+00:00",
+  "errors": 0,
+  "exit_code": 0,
+  "helper_sha256": {
+    "broker.test": "847f80bf28b35fb7064bd8cab3b30b2b01e8d8422f2d48b7b8afec218a5039f2",
+    "ledger.test": "2eed6851b88fcb2bb28fb897a2c19c664d23e859f5e9e4df3f450a3fb041ece8"
+  },
+  "helper_source_head": "4de6a090664a9a3ccd8ba0417b00af3ff5290a58",
+  "interpreter": {
+    "invoked_executable": "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "platform": "macOS-26.5-arm64-arm-64bit-Mach-O",
+    "resolved_executable": "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+    "sha256": "2477b47fa3ae65b9574eb18a15edb364e96948eaa1875ad3f1c80d780efc9c12",
+    "version": "3.14.5 (main, May 10 2026, 10:21:34) [Clang 21.0.0 (clang-2100.0.123.102)]"
+  },
+  "log": "storage-correction.log",
+  "log_sha256": "2014a6d32f004adc1b4ba30b212e2d706912b036675e53987cad1311149fca68",
+  "methods_run": 21,
+  "notes": "All18 existing storage-inventory methods plus three AS1 refusal/header controls passed; no live SQLite open for discriminator, no content scan for identifiable AS1, replacement refused. Rejection does not establish non-AS1 authority.",
+  "process_waited": true,
+  "pure_validator": null,
+  "remaining_reserved_seconds": 592.3122582435608,
+  "safe_environment_overrides": {
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONPATH": ".:tests",
+    "WAYPOINT_OWNED_PEER_ASSETS": "/Users/gregchism/Documents/Codex/2026-10-19/outfitter-owned-data-pipe-v3"
+  },
+  "skipped": 0,
+  "source_head": "4682a81599eb783d3074cc1c775dc06ee32b59ad",
+  "source_unchanged": true,
+  "started_utc": "2026-10-20T03:41:57.808189+00:00",
+  "status": "PASS",
+  "timed_out": false
+}

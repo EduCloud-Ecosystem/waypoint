@@ -21,6 +21,7 @@ from .runtime import Broker, strict_json
 from .store import Store, canonical, now, private_write, unknown_compute
 from .operation_guard import APPLICATION_ID, SCHEMA, FILE, LOCK, TEMP, GUARDED_MODES, sync_directory
 from . import finite_authority as finite
+from . import assessment_state as astate
 
 FORMAT = "educloud-private-checkpoint-v1"
 GUARD_FORMAT = "educloud-private-checkpoint-v2"
@@ -200,6 +201,7 @@ def copy_files(source, destination, files):
 
 
 def checkpoint(state, output, *, broker=None):
+    astate.refuse_state(state)
     if Store(state, resume=False).guard:
         from .guarded_recovery import checkpoint as guarded_checkpoint
         return guarded_checkpoint(state, output, broker=broker)
@@ -252,6 +254,7 @@ def verified_checkpoint(checkpoint_path, expected):
 
 def restore(checkpoint_path, output, *, trusted_sha256, broker):
     source, manifest = verified_checkpoint(checkpoint_path, trusted_sha256)
+    astate.refuse_state(source)
     finite.refuse_unqualified_recovery(source)
     if manifest["format"] == GUARD_FORMAT:
         from .guarded_recovery import restore as guarded_restore
@@ -308,7 +311,10 @@ def recovery_status(state):
 
 
 def activate(state, source_state, checkpoint_path, *, trusted_sha256):
+    astate.refuse_state(state)
+    astate.refuse_state(source_state)
     archive, manifest = verified_checkpoint(checkpoint_path, trusted_sha256)
+    astate.refuse_state(archive)
     finite.refuse_unqualified_recovery(archive)
     if manifest["format"] == GUARD_FORMAT:
         from .guarded_recovery import activate as guarded_activate

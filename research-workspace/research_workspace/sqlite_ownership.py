@@ -12,6 +12,7 @@ import sys
 import threading
 
 from . import finite_authority as finite
+from . import assessment_state as astate
 
 _registry_lock = threading.Lock()
 _registry = {}
@@ -246,11 +247,15 @@ def _statement(sql):
     return sql
 
 
-def _schema_allowed(role, sql, *, script):
+def _schema_allowed(role, sql, *, script, assessment=False):
     from .storage_inventory import SCHEMA_SQL
     from .operation_guard import SCHEMA
     if type(sql) is not str:
         return False
+    if assessment:
+        allowed = [";".join(astate.schema())] if script and role in {"initialize", "memory-reference"} else ()
+        key = lambda text: "".join(text.split()).upper().rstrip(";")
+        return key(sql) in {key(statement) for statement in allowed}
     if script:
         allowed = ([";".join(SCHEMA_SQL)] if role == "initialize" else
                    [";".join(SCHEMA_SQL + SCHEMA)] if role == "memory-reference" else [])
@@ -260,9 +265,17 @@ def _schema_allowed(role, sql, *, script):
     return key(sql) in {key(statement) for statement in allowed}
 
 
-def _query_limit(sql):
+def _query_limit(sql, assessment=False):
     match = re.search(r"\bFROM\s+([A-Za-z_]+)", sql, re.I)
     table = match.group(1).lower() if match else None
+    if assessment:
+        special = {astate.BY_ID: (1, "assessment_sessions"), astate.BY_KEY: (1, "assessment_sessions"),
+                   astate.ALL_META: (16, "assessment_sessions"), astate.SUBJECT_META: (4, "assessment_sessions"),
+                   astate.COUNT: (1, "assessment_sessions"), astate.SUBJECT_COUNT: (1, "assessment_sessions"),
+                   astate.AUTH_SESSION: (1, "sessions"), astate.LOGOUT_SUBJECT: (1, "sessions"),
+                   _RECEIPTS_SELECT: (129, "operation_receipts")}
+        if sql in special:
+            return special[sql]
     if table not in _TABLES:
         raise ValueError("Unregistered observation table.")
     if re.match(r"SELECT\s+count\(\*\)", sql, re.I):
@@ -278,6 +291,11 @@ def _query_limit(sql):
 
 
 def _field(name, table):
+    if table == "assessment_sessions":
+        if name in astate.TEXT:
+            return ("text",), astate.TEXT[name], False
+        if name in astate.INTS:
+            return ("integer",), None, name == "last_scope_generation"
     if name == "payload":
         return ("text",), finite.ENCODED_LIMITS["run" if table == "runs" else "project"], False
     if name in _TEXT:
@@ -303,6 +321,7 @@ class Owner:
         self.guard, self.path = guard, Path(path) if path is not None else self.root / "workspace.sqlite3"
         self.readonly, self.initialize, self.memory, self.archive = readonly, initialize, memory, archive
         self.validate = validate
+        self.assessment = astate.active(guard)
         self.__connection = None
         self.__cursors = []
         self._guard_scope = None
@@ -322,6 +341,13 @@ class Owner:
         self._stacked = False
         readers = {"discovery", "online-read", "guard-proof", "backup-source", "archive-rejection"}
         writers = {"initialize", "mutation", "started-receipt", "barrier", "dispatch-reservation", "offline-freeze", "backup-destination"}
+        if self.assessment:
+            allowed = {"discovery", "guard-proof", "memory-reference", "barrier", "started-receipt",
+                       "initialize", "assessment-read", "assessment-write", "assessment-spawn"}
+            if role not in allowed:
+                raise ValueError("Unsupported assessment SQLite role.")
+            readers |= {"assessment-read"}
+            writers |= {"assessment-write", "assessment-spawn"}
         if role not in readers | writers | {"memory-reference"}:
             raise ValueError("Unknown SQLite ownership role.")
         if readonly != (role in readers) or memory != (role == "memory-reference"):
@@ -458,7 +484,7 @@ class Owner:
 
     def _validate(self):
         if self.validate and not self.initialize and not self.memory:
-            finite.validate_binding(self.root, self.guard.binding, self)
+            (astate.validate_binding if self.assessment else finite.validate_binding)(self.root, self.guard.binding, self)
             self.guard.load()
             validate_schema(self)
         self._validated = True
@@ -509,7 +535,16 @@ class Owner:
             raise ValueError("This scope accepts reviewed observations only.")
         if not self.initialize and not self._validated:
             raise ValueError("Begin and validate the owned write transaction first.")
-        if not (re.match(r"(?:INSERT INTO|UPDATE|DELETE FROM) (?:users|sessions|projects|members|runs|operation_authority|operation_receipts)\b", normalized)
+        if self.assessment:
+            allowed = astate.GUARD_WRITES | astate.AUTH_WRITES | {astate.INSERT, astate.UPDATE}
+            if self.role == "assessment-spawn":
+                allowed = astate.GUARD_WRITES
+            if self.initialize:
+                allowed |= {"INSERT INTO projects VALUES(?,?)", "INSERT INTO members VALUES(?,?,?)",
+                            "INSERT INTO operation_authority VALUES(?,0,?)"}
+            if normalized not in allowed and not _schema_allowed(self.role, sql, script=False, assessment=True):
+                raise ValueError("Unregistered assessment mutation.")
+        elif not (re.match(r"(?:INSERT INTO|UPDATE|DELETE FROM) (?:users|sessions|projects|members|runs|operation_authority|operation_receipts)\b", normalized)
                 or _schema_allowed(self.role,sql,script=False)):
             raise ValueError("Unregistered mutation statement.")
         with self._cursor() as cursor:
@@ -522,7 +557,12 @@ class Owner:
         return result
 
     def _select(self, sql, parameters):
-        if " ".join(sql.split()) not in _SELECTS | _export_selects():
+        allowed = _SELECTS | _export_selects()
+        if self.assessment:
+            allowed = {q for q in _SELECTS if not re.search(r"\bruns\b", q) and not q.startswith("SELECT rowid,*")}
+            allowed |= {astate.BY_ID, astate.BY_KEY, astate.ALL_META, astate.SUBJECT_META,
+                        astate.COUNT, astate.SUBJECT_COUNT, astate.AUTH_SESSION, astate.LOGOUT_SUBJECT}
+        if " ".join(sql.split()) not in allowed:
             raise ReadBounds("Unregistered observation projection or predicate.")
         if type(parameters) not in (tuple, list):
             raise ReadBounds("Observation parameters must be copied scalar bindings.")
@@ -530,7 +570,9 @@ class Owner:
         if any(type(value) not in (str, bytes, int, float, type(None))
                or type(value) is float and not math.isfinite(value) for value in parameters):
             raise ReadBounds("Observation parameters must be copied scalar bindings.")
-        limit, table = _query_limit(sql)
+        limit, table = _query_limit(sql, self.assessment)
+        if self.assessment and table == "assessment_sessions":
+            self._assessment_preflight()
         if self.archive:
             raise ValueError("Archive rejection only observes format markers.")
         with self._cursor() as cursor:
@@ -562,14 +604,44 @@ class Owner:
                         raise ReadBounds("Invalid SQLite flag.")
                     if name == "sequence" and not 0 <= value <= finite.COUNTER_LIMIT:
                         raise ReadBounds("Invalid SQLite sequence.")
+            if self.assessment and table == "assessment_sessions" and names != ["count(*)"]:
+                for values in rows:
+                    astate.validate_row(dict(zip(names, values)), metadata="manifest_json" not in names)
             result = Values([Row(names,values) for values in rows])
         _event(self.root, self.role, "materialized")
         return result
 
+    def _assessment_preflight(self):
+        # Same owned snapshot, scalar metadata only; no manifest transfer.
+        with self._cursor() as cursor:
+            cursor.execute("SELECT count(*) FROM assessment_sessions")
+            count = cursor.fetchone()[0]
+            if not 0 <= count <= astate.LIMITS["rows"]:
+                raise ReadBounds("Assessment row limit.")
+            cursor.execute("SELECT count(*) FROM (SELECT subject FROM assessment_sessions GROUP BY subject HAVING count(*)>4)")
+            if cursor.fetchone()[0]:
+                raise ReadBounds("Assessment subject row limit.")
+            checks, lengths = [], []
+            for name in astate.FIELDS:
+                kinds, maximum, nullable = _field(name, "assessment_sessions")
+                check = "typeof("+name+")='"+kinds[0]+"'"
+                if maximum is not None:
+                    check += f" AND length(CAST({name} AS BLOB))<={maximum} AND length(CAST({name} AS BLOB))=length({name})"
+                if name in astate.INTS:
+                    check += f" AND {name}>=0 AND {name}<={astate.M}"
+                checks.append("("+check+(f" OR {name} IS NULL)" if nullable else ")"))
+                lengths.append(f"coalesce(length(CAST({name} AS BLOB)),0)")
+            size = "+".join(lengths)
+            cursor.execute("SELECT coalesce(max(CASE WHEN "+" AND ".join(checks)+" THEN 0 ELSE 1 END),0),"
+                           +f"coalesce(max({size}),0),coalesce(sum({size}),0) FROM assessment_sessions")
+            invalid, largest, total = cursor.fetchone()
+            if invalid or largest > astate.LIMITS["row_fields"] or total > astate.LIMITS["aggregate_fields"]:
+                raise ReadBounds("Assessment field or aggregate limit.")
+
     def executescript(self, sql):
         sql = _statement(sql)
         self._check()
-        if not _schema_allowed(self.role, sql, script=True):
+        if not _schema_allowed(self.role, sql, script=True, assessment=self.assessment):
             raise ValueError("This owner accepts only its exact reviewed schema script.")
         with self._cursor() as cursor:
             try:
@@ -615,6 +687,8 @@ class Owner:
 
     def backup_to(self, destination):
         self._check(); destination._check()
+        if self.assessment or destination.assessment:
+            raise ValueError("Assessment backup is unsupported.")
         if (self.role != "backup-source" or destination.role != "backup-destination"
                 or self.root != destination.root or self.guard is not destination.guard):
             raise ValueError("Backup requires distinct owned offline source and destination.")
@@ -687,7 +761,7 @@ def validate_schema(db):
     from .operation_guard import APPLICATION_ID, SCHEMA, GuardPaused
     from .storage_inventory import SCHEMA_SQL, _schema
     with Owner(db.root,"memory-reference",guard=db.guard,memory=True,initialize=True,validate=False) as expected:
-        expected.executescript(";".join(SCHEMA_SQL+SCHEMA))
+        expected.executescript(";".join(astate.schema() if db.assessment else SCHEMA_SQL+SCHEMA))
         if db.execute("PRAGMA application_id").fetchone()[0] != APPLICATION_ID or _schema(db) != _schema(expected):
             raise GuardPaused("unsupported_schema")
 

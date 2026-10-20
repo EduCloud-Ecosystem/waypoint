@@ -28,7 +28,65 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: python -W error::ResourceWarning -m unittest discover -s tests -v
+      - name: Checkout accepted synthetic owned-data helper source
+        uses: actions/checkout@v4
+        with:
+          repository: EduCloud-Ecosystem/outfitter
+          ref: 8584ca8db9a7e5eaf8d29d9670349b57f3939ab6
+          path: .ci-outfitter-owned
+          persist-credentials: false
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.x'
+          cache: false
+      - name: Build only synthetic peer helpers and record Linux provenance
+        working-directory: .ci-outfitter-owned
+        env:
+          GOMAXPROCS: '2'
+          GOFLAGS: '-p=1'
+        run: |
+          set -o pipefail
+          test "$(git rev-parse HEAD)" = 8584ca8db9a7e5eaf8d29d9670349b57f3939ab6
+          mkdir -p "$RUNNER_TEMP/owned-peer-assets" "$RUNNER_TEMP/owned-peer-evidence"
+          go test -c -o "$RUNNER_TEMP/owned-peer-assets/broker.test" ./internal/broker 2>&1 | tee "$RUNNER_TEMP/owned-peer-evidence/build-broker.log"
+          go test -c -o "$RUNNER_TEMP/owned-peer-assets/ledger.test" ./internal/ledger 2>&1 | tee "$RUNNER_TEMP/owned-peer-evidence/build-ledger.log"
+          python - <<'PY'
+          import hashlib, json, os, platform, subprocess
+          from pathlib import Path
+          def git(*args):
+              return subprocess.check_output(['git', *args]).decode().strip()
+          def digest(path):
+              return hashlib.sha256(path.read_bytes()).hexdigest()
+          files = subprocess.check_output(['git','ls-files','-z']).decode().split('\0')
+          source = {name:digest(Path(name)) for name in files if name and (name.endswith('.go') or name in {'go.mod','go.sum'})}
+          assets = Path(os.environ['RUNNER_TEMP'])/'owned-peer-assets'
+          evidence = Path(os.environ['RUNNER_TEMP'])/'owned-peer-evidence'
+          if git('status','--porcelain'):
+              raise SystemExit('helper source changed during build')
+          value = {'source_head':git('rev-parse','HEAD'),'source_tree':git('rev-parse','HEAD^{tree}'),
+              'source_sha256':source,'platform':platform.platform(),
+              'go_version':subprocess.check_output(['go','version']).decode().strip(),
+              'commands':['go test -c -o broker.test ./internal/broker','go test -c -o ledger.test ./internal/ledger'],
+              'environment':{'GOMAXPROCS':'2','GOFLAGS':'-p=1'},
+              'helper_sha256':{p.name:digest(p) for p in assets.iterdir()},
+              'boundary':'New hosted Linux synthetic helper builds; not the archived Darwin 4de6a090 binaries. No engine, provider, compute grant or trusted cleanup.'}
+          (evidence/'helper-build.json').write_text(json.dumps(value,sort_keys=True,indent=2)+'\n')
+          PY
+      - name: Run controls including the actual connected synthetic peer
+        env:
+          WAYPOINT_OWNED_PEER_ASSETS: ${{ runner.temp }}/owned-peer-assets
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          set -o pipefail
+          python -W error::ResourceWarning -m unittest discover -s tests -v 2>&1 | tee "$RUNNER_TEMP/owned-peer-evidence/controls.log"
+      - name: Retain helper source binding and control output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: research-synthetic-peer-controls
+          if-no-files-found: warn
+          retention-days: 14
+          path: ${{ runner.temp }}/owned-peer-evidence/
       - run: node --check static/app.js
       - name: Install optional PDF verification dependencies
         run: python -m pip install --disable-pip-version-check -r requirements-pdf.txt

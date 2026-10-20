@@ -1,0 +1,17 @@
+{
+  "argv": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-m",
+    "unittest",
+    "test_identity",
+    "test_guard_publication",
+    "test_sqlite_ownership"
+  ],
+  "cwd": "/Users/gregchism/dev/.educloud-worktrees/waypoint-assessment-owned-data",
+  "pythonpath": "research-workspace:research-workspace/tests",
+  "started_utc": "2026-10-20T02:47:50.117558+00:00",
+  "ended_utc": "2026-10-20T02:48:57.158712+00:00",
+  "duration_seconds": 67.039,
+  "exit_code": 1,
+  "log": "/Users/gregchism/dev/.educloud-worktrees/waypoint-assessment-owned-data/research-workspace/evidence/2026-10-19/as1-code-readiness/baseline-guard-identity-ownership.log"
+}

@@ -16,6 +16,10 @@ validates a bounded public/synthetic benchmark proposal and previews content-fre
 measurement metadata. It grants no execution, upload or cleanup authority and
 does not initialize a study or call an execution provider.
 
+The [disabled assessment input lifecycle](ASSESSMENT-OWNED-DATA.md) adds a bounded
+Store/authorization/peer path for synthetic qualification. Production assessment
+uploads remain disabled; this path does not enable research-data admission.
+
 ## Start the local pilot
 
 Requirements: Python 3.12+, Go 1.24+ to build Outfitter, and a running Docker

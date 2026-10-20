@@ -1,0 +1,89 @@
+COMMAND: PYTHONPATH=research-workspace:research-workspace/tests /opt/homebrew/opt/python@3.14/bin/python3.14 -m unittest test_identity test_guard_publication test_sqlite_ownership
+START_UTC: 2026-10-20T02:47:50.117558+00:00
+
+..........................FFFFFFFFF........................................................................
+======================================================================
+FAIL: test_full_ordinary_intent_allowance_retains_fresh_safety_path (test_guard_publication.GuardPublicationTests.test_full_ordinary_intent_allowance_retains_fresh_safety_path) (action='logout')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-assessment-owned-data/research-workspace/tests/test_guard_publication.py", line 470, in test_full_ordinary_intent_allowance_retains_fresh_safety_path
+    with self.assertRaises(g.GuardPaused): c.store.add_user("overflow")
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+AssertionError: GuardPaused not raised
+
+======================================================================
+FAIL: test_full_ordinary_intent_allowance_retains_fresh_safety_path (test_guard_publication.GuardPublicationTests.test_full_ordinary_intent_allowance_retains_fresh_safety_path) (action='revoke')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-assessment-owned-data/research-workspace/tests/test_guard_publication.py", line 470, in test_full_ordinary_intent_allowance_retains_fresh_safety_path
+    with self.assertRaises(g.GuardPaused): c.store.add_user("overflow")
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+AssertionError: GuardPaused not raised
+
+======================================================================
+FAIL: test_full_ordinary_intent_allowance_retains_fresh_safety_path (test_guard_publication.GuardPublicationTests.test_full_ordinary_intent_allowance_retains_fresh_safety_path) (action='rotate')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-assessment-owned-data/research-workspace/tests/test_guard_publication.py", line 470, in test_full_ordinary_intent_allowance_retains_fresh_safety_path
+    with self.assertRaises(g.GuardPaused): c.store.add_user("overflow")
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+AssertionError: GuardPaused not raised
+
+======================================================================
+FAIL: test_full_ordinary_intent_allowance_retains_fresh_safety_path (test_guard_publication.GuardPublicationTests.test_full_ordinary_intent_allowance_retains_fresh_safety_path) (action='demote')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-assessment-owned-data/research-workspace/tests/test_guard_publication.py", line 470, in test_full_ordinary_intent_allowance_retains_fresh_safety_path
+    with self.assertRaises(g.GuardPaused): c.store.add_user("overflow")
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+AssertionError: GuardPaused not raised
+
+======================================================================
+FAIL: test_full_ordinary_intent_allowance_retains_fresh_safety_path (test_guard_publication.GuardPublicationTests.test_full_ordinary_intent_allowance_retains_fresh_safety_path) (action='remove')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-assessment-owned-data/research-workspace/tests/test_guard_publication.py", line 470, in test_full_ordinary_intent_allowance_retains_fresh_safety_path
+    with self.assertRaises(g.GuardPaused): c.store.add_user("overflow")
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+AssertionError: GuardPaused not raised
+
+======================================================================
+FAIL: test_full_ordinary_intent_allowance_retains_fresh_safety_path (test_guard_publication.GuardPublicationTests.test_full_ordinary_intent_allowance_retains_fresh_safety_path) (action='cancel')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-assessment-owned-data/research-workspace/tests/test_guard_publication.py", line 470, in test_full_ordinary_intent_allowance_retains_fresh_safety_path
+    with self.assertRaises(g.GuardPaused): c.store.add_user("overflow")
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+AssertionError: GuardPaused not raised
+
+======================================================================
+FAIL: test_full_ordinary_intent_allowance_retains_fresh_safety_path (test_guard_publication.GuardPublicationTests.test_full_ordinary_intent_allowance_retains_fresh_safety_path) (action='close')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-assessment-owned-data/research-workspace/tests/test_guard_publication.py", line 470, in test_full_ordinary_intent_allowance_retains_fresh_safety_path
+    with self.assertRaises(g.GuardPaused): c.store.add_user("overflow")
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+AssertionError: GuardPaused not raised
+
+======================================================================
+FAIL: test_full_ordinary_intent_allowance_retains_fresh_safety_path (test_guard_publication.GuardPublicationTests.test_full_ordinary_intent_allowance_retains_fresh_safety_path) (action='settle')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-assessment-owned-data/research-workspace/tests/test_guard_publication.py", line 470, in test_full_ordinary_intent_allowance_retains_fresh_safety_path
+    with self.assertRaises(g.GuardPaused): c.store.add_user("overflow")
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+AssertionError: GuardPaused not raised
+
+======================================================================
+FAIL: test_full_ordinary_intent_allowance_retains_fresh_safety_path (test_guard_publication.GuardPublicationTests.test_full_ordinary_intent_allowance_retains_fresh_safety_path) (action='recover')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/gregchism/dev/.educloud-worktrees/waypoint-assessment-owned-data/research-workspace/tests/test_guard_publication.py", line 470, in test_full_ordinary_intent_allowance_retains_fresh_safety_path
+    with self.assertRaises(g.GuardPaused): c.store.add_user("overflow")
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+AssertionError: GuardPaused not raised
+
+----------------------------------------------------------------------
+Ran 99 tests in 66.663s
+
+FAILED (failures=9)
