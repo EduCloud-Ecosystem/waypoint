@@ -46,12 +46,13 @@ def main():
     export_preview.add_argument("--manifest", action="append", required=True)
     export_preview.add_argument("--narrative", required=True)
     export_preview.add_argument("--profile", required=True)
-    export_preview.add_argument("--font", required=True, help="Operator-approved font file; its digest is bound into the preview")
+    export_preview.add_argument("--font", help="Operator-approved font; required for PDFs, refused for Explore worksheet-only")
+    export_preview.add_argument("--include-planning-pdf", action="store_true", help="Explore only: include an optional internal planning PDF in the approved record")
     export_preview.add_argument("--refresh-requirements", action="store_true", help="Bounded read of the fixed official public source before preview")
     export = commands.add_parser("assessment-export", help="Export exactly one digest-approved preview to a fresh local directory")
     export.add_argument("--preview", required=True)
     export.add_argument("--approved-preview-sha256", required=True)
-    export.add_argument("--font", required=True)
+    export.add_argument("--font", help="Required exactly when the approved preview includes a PDF")
     export.add_argument("--output", required=True)
     init = commands.add_parser("init", help="Create fresh private local authority")
     init.add_argument("--state", required=True)
@@ -134,7 +135,6 @@ def main():
 
     elif args.command in ("assessment-export-preview", "assessment-export"):
         from . import allocation_export as export
-        from .allocation_pdf import FONT_LIMIT, inspect_font
         from .assessment import AssessmentError, read_document
         try:
             if args.command == "assessment-export-preview":
@@ -145,15 +145,35 @@ def main():
                 estimate = read_document(args.estimate, limit=export.ESTIMATE_LIMIT)
                 manifests = [read_document(path) for path in args.manifest]
                 narrative = export.read_export_document(args.narrative, limit=export.NARRATIVE_LIMIT)
-                font, _ = inspect_font(export.read_bytes(args.font, FONT_LIMIT))
+                if args.include_planning_pdf and args.profile != "access_explore":
+                    raise AssessmentError("Optional planning-PDF mode is supported only for Explore.")
+                wants_pdf = args.profile != "access_explore" or args.include_planning_pdf
+                font = None
+                if wants_pdf:
+                    if args.font is None:
+                        raise AssessmentError("This preview requires an operator-approved font.")
+                    from .allocation_pdf import FONT_LIMIT, inspect_font
+                    font, _ = inspect_font(export.read_bytes(args.font, FONT_LIMIT))
+                elif args.font is not None:
+                    raise AssessmentError("Explore worksheet-only preview does not accept a font.")
                 # Validate local inputs before the optional public, content-free request.
                 export.validate_estimate(estimate, manifests)
                 export.validate_narrative(narrative, args.profile)
                 result = export.make_preview(args.profile, estimate, manifests, narrative, font,
-                                             observation(args.profile, refresh=args.refresh_requirements))
+                                             observation(args.profile, refresh=args.refresh_requirements),
+                                             include_planning_pdf=args.include_planning_pdf)
             else:
-                result = export.export_package(export.read_export_document(args.preview), args.approved_preview_sha256,
-                                               export.read_bytes(args.font, FONT_LIMIT), args.output)
+                preview = export.read_export_document(args.preview)
+                record = export.validate_preview(preview)
+                font_payload = None
+                if export.needs_pdf(record):
+                    if args.font is None:
+                        raise AssessmentError("The approved preview requires its exact font.")
+                    from .allocation_pdf import FONT_LIMIT
+                    font_payload = export.read_bytes(args.font, FONT_LIMIT)
+                elif args.font is not None:
+                    raise AssessmentError("Explore worksheet-only export does not accept a font.")
+                result = export.export_package(preview, args.approved_preview_sha256, font_payload, args.output)
             sys.stdout.buffer.write(export.export_bytes(result))
         except AssessmentError:
             raise

@@ -27,6 +27,17 @@ def generate(output, outfitter):
         (output / (name + "-estimate.json")).write_bytes(a.canonical_bytes(estimate(invented.scenario(), [series], outfitter)))
         (output / (name + "-manifest.json")).write_bytes(a.canonical_bytes(series["manifest"]))
     narratives = {
+      "access_explore": dict(title="Synthetic Explore planning example", planned_work_summary="Explore summary calculations on invented data. No real project or performance claim is made.",
+        keywords="Synthetic data, reproducibility", field_of_science="Unselected; operator review required.", supporting_grant_details="No supporting grant asserted by this synthetic fixture.",
+        preferred_resource="Unselected; availability and units require review.", alternative_resource="Unselected; no hardware recommendation."),
+      "access_accelerate": dict(title="Synthetic Accelerate planning example", planned_work_summary="Plan a later measured summary-method pilot using invented arithmetic only.",
+        keywords="Synthetic data, reproducibility", field_of_science="Unselected; operator review required.", supporting_grant_details="No supporting grant asserted by this synthetic fixture.",
+        research_objectives="This fixture demonstrates document structure only; scientific objectives must be supplied by the researcher.",
+        resource_estimates="Retain the provisional counters below. Actual core, node or GPU hours, storage capacity and resource conversions are unverified.",
+        computational_plan="The invented design uses three fitting sizes and one held-out size. Distribution across systems and actual performance remain untested.",
+        software_special_needs="The fixture uses the reviewed Python summary recipe. Real software, scheduling and memory needs require review.",
+        team_preparedness="No staffing, qualifications, account readiness or support commitment is asserted by this fixture.",
+        preferred_resource="Unselected; availability and units require review.", alternative_resource="Unselected; no hardware recommendation."),
       "access_discover": dict(title="Synthetic summary-method planning", objectives="Compare summary calculations on invented tabular data.",
         resource_needs="Use the provisional arithmetic below to plan a later measured pilot.", preferred_resource="Unselected; availability and units need review.", alternative_resource="Unselected; equivalent hardware has not been tested."),
       "nairr_research_draft": dict(title="Synthetic research planning draft", research_objectives="Test repeatable summary-method calculations on invented data.",
