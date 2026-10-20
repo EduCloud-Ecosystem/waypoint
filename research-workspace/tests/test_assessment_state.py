@@ -338,6 +338,36 @@ class StateTests(unittest.TestCase):
         with patch.object(storage_inventory, "scan", side_effect=AssertionError("content scan")):
             self.assertFalse(storage_inventory.observe(self.root, retention=True)["complete"])
 
+    def test_header_only_refusal_without_live_sql_or_content_scan(self):
+        # Remove the easy config signal: the fixed database marker must still
+        # refuse before a scan. This read cannot require SQLite deserialize.
+        (self.root / "config.json").write_text('{"mode":"local-public-data"}')
+        with patch("sqlite3.connect", side_effect=AssertionError("live SQLite open")), \
+                patch.object(storage_inventory,"scan",side_effect=AssertionError("content scan")):
+            self.assertFalse(storage_inventory.observe(self.root,retention=True)["complete"])
+        # Unknown/malformed legacy bytes are not positive authority. The
+        # discriminator leaves them to unchanged conservative inventory logic.
+        (self.root / "workspace.sqlite3").write_bytes(b"broken")
+        with patch("sqlite3.connect", side_effect=AssertionError("live SQLite open")):
+            self.assertIsNone(a.refuse_state(self.root))
+
+    def test_header_refusal_rejects_file_replacement(self):
+        (self.root / "config.json").write_text('{"mode":"local-public-data"}')
+        path = self.root / "workspace.sqlite3"
+        original_read = os.read
+        replaced = []
+        def read(fd, count):
+            result = original_read(fd,count)
+            if not replaced:
+                replaced.append(True)
+                path.rename(self.root / "retained-original.sqlite3")
+                path.write_bytes(b"unrelated file")
+            return result
+        with patch.object(os,"read",read):
+            with self.assertRaises(ValueError):
+                a.refuse_state(self.root)
+        self.assertEqual(path.read_bytes(),b"unrelated file")
+
 
 class IndependentEnvelopeTests(unittest.TestCase):
     def test_complete_database_and_control_forms_fit_declared_limits(self):

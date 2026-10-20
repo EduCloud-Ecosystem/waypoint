@@ -238,8 +238,9 @@ def validate_row(row, *, metadata=False):
 
 def refuse_state(root):
     """Rejection only, before recovery/export destinations or content scans."""
+    import os
+    import stat
     from pathlib import Path
-    from .sqlite_ownership import Owner
     root = Path(root)
     config = root / "config.json"
     if config.is_file():
@@ -248,7 +249,36 @@ def refuse_state(root):
         if (value.get("mode") == MODE or isinstance(logical, dict) and logical.get("format") == FORMAT
                 or isinstance(binding, dict) and binding.get("format") == GUARD_FORMAT):
             invalid()
-    if (root / "workspace.sqlite3").is_file():
-        with Owner(root, "archive-rejection", readonly=True, archive=True, validate=False) as db:
-            if db.execute("PRAGMA user_version").fetchone()[0] == MARKER:
+    # A rejection discriminator is not a live SQLite reader or an authority
+    # validator. In particular, malformed legacy files must reach their
+    # existing conservative inventory path, including no deserialize fallback.
+    # SQLite stores user_version at header bytes 60..63 (big endian).
+    parent = os.open(root, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+    try:
+        try:
+            fd = os.open("workspace.sqlite3", os.O_RDONLY | os.O_NONBLOCK | os.O_NOFOLLOW,
+                         dir_fd=parent)
+        except FileNotFoundError:
+            return
+        try:
+            before = os.fstat(fd)
+            identity = lambda info: (info.st_dev, info.st_ino, info.st_mode, info.st_nlink,
+                                     info.st_size, info.st_mtime_ns, info.st_ctime_ns)
+            if not stat.S_ISREG(before.st_mode) or before.st_nlink != 1:
                 invalid()
+            header = bytearray()
+            while len(header) < 100:
+                chunk = os.read(fd, 100 - len(header))
+                if not chunk:
+                    break
+                header.extend(chunk)
+            current = os.stat("workspace.sqlite3", dir_fd=parent, follow_symlinks=False)
+            if identity(before) != identity(os.fstat(fd)) or identity(before) != identity(current):
+                invalid()
+            if (len(header) >= 64 and header[:16] == b"SQLite format 3\x00"
+                    and int.from_bytes(header[60:64], "big") == MARKER):
+                invalid()
+        finally:
+            os.close(fd)
+    finally:
+        os.close(parent)
