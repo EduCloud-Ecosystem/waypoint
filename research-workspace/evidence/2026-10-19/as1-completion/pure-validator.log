@@ -1,0 +1,7 @@
+test_actual_cli_with_real_pinned_pure_outfitter_validator (test_assessment_estimation.EstimationCLITests.test_actual_cli_with_real_pinned_pure_outfitter_validator) ... ok
+test_real_validator_matrix_preserves_unknowns_and_refuses_binding_attacks (test_assessment_estimation.EstimationCLITests.test_real_validator_matrix_preserves_unknowns_and_refuses_binding_attacks) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 3.275s
+
+OK
