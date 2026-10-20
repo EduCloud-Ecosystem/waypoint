@@ -253,7 +253,12 @@ def refuse_state(root):
     # validator. In particular, malformed legacy files must reach their
     # existing conservative inventory path, including no deserialize fallback.
     # SQLite stores user_version at header bytes 60..63 (big endian).
-    parent = os.open(root, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+    try:
+        parent = os.open(root, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+    except FileNotFoundError:
+        # A missing future destination is no AS1 signal. The calling recovery
+        # path must still validate its source and destination before effects.
+        return
     try:
         try:
             fd = os.open("workspace.sqlite3", os.O_RDONLY | os.O_NONBLOCK | os.O_NOFOLLOW,

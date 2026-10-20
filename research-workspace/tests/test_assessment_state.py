@@ -350,6 +350,9 @@ class StateTests(unittest.TestCase):
         (self.root / "workspace.sqlite3").write_bytes(b"broken")
         with patch("sqlite3.connect", side_effect=AssertionError("live SQLite open")):
             self.assertIsNone(a.refuse_state(self.root))
+            destination = Path(self.tmp.name) / "not-yet-created"
+            self.assertIsNone(a.refuse_state(destination))
+            self.assertFalse(destination.exists())
 
     def test_header_refusal_rejects_file_replacement(self):
         (self.root / "config.json").write_text('{"mode":"local-public-data"}')
