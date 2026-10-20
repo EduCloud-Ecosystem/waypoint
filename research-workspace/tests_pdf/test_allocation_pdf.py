@@ -31,17 +31,18 @@ class PDFIntegration(unittest.TestCase):
     def preview(self,profile='access_discover',narrative=None):
         kind='classroom' if profile=='nairr_classroom_draft' else 'research'
         return x.make_preview(profile,fixture(kind+'-estimate.json'),[fixture(kind+'-manifest.json')],
-            narrative or fixture(profile+'-narrative.json'),self.font,sources.observation(profile))
+            narrative or fixture(profile+'-narrative.json'),self.font,sources.observation(profile),include_planning_pdf=profile=='access_explore')
 
     def cli(self,*args):
         return subprocess.run([sys.executable,'-m','research_workspace',*map(str,args)],cwd=ROOT,capture_output=True,timeout=20)
 
-    def test_three_actual_cli_profiles_pdf_metadata_field_parity_and_package_hashes(self):
+    def test_supported_pdf_cli_profiles_metadata_parity_and_package_hashes(self):
         for profile in x.PROFILES:
             with self.subTest(profile=profile),tempfile.TemporaryDirectory() as tmp:
                 root=Path(tmp).resolve();kind='classroom' if profile=='nairr_classroom_draft' else 'research'
                 r=self.cli('assessment-export-preview',FIXTURES/(kind+'-estimate.json'),'--manifest',FIXTURES/(kind+'-manifest.json'),
-                    '--profile',profile,'--narrative',FIXTURES/(profile+'-narrative.json'),'--font',self.font_path)
+                    '--profile',profile,'--narrative',FIXTURES/(profile+'-narrative.json'),'--font',self.font_path,
+                    *(['--include-planning-pdf'] if profile=='access_explore' else []))
                 self.assertEqual(r.returncode,0,r.stderr.decode());p=json.loads(r.stdout);saved=root/'preview.json';saved.write_bytes(r.stdout)
                 out=root/'package'
                 with patch.object(sources,'observation',side_effect=AssertionError('hidden refresh')):
@@ -140,6 +141,16 @@ class PDFIntegration(unittest.TestCase):
         reader=PdfReader(io.BytesIO(files['draft.pdf']));self.assertGreater(len(reader.pages),1)
         text=''.join(page.extract_text() for page in reader.pages)
         for f in p['record']['fields']:self.assertIn(''.join(f['text'].split()),''.join(text.split()))
+
+    def test_explore_internal_and_accelerate_document_caps_refuse_overflow(self):
+        for profile in ('access_explore','access_accelerate'):
+            with self.subTest(profile=profile):
+                n=fixture(profile+'-narrative.json')
+                for name in n['fields']:
+                    if name!='title':n['fields'][name]='Synthetic planning text for review. '*50
+                p=self.preview(profile,n)
+                with self.assertRaisesRegex(a.AssessmentError,'page limit|page area'):
+                    x.package_files(p,p['preview_sha256'],self.font_bytes)
 
     def test_unimplemented_tiers_refuse_at_cli_before_inputs(self):
         r=self.cli('assessment-export-preview','missing','--manifest','missing','--profile','access_maximize','--narrative','missing','--font','missing')

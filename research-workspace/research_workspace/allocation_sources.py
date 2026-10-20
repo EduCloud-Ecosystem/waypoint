@@ -10,7 +10,10 @@ import urllib.request
 from . import assessment as a
 from .bounded_process import collect
 
+ACCESS_PROFILES = ("access_explore", "access_discover", "access_accelerate")
 URLS = {
+    "access_explore": "https://allocations.access-ci.org/prepare-requests",
+    "access_accelerate": "https://allocations.access-ci.org/prepare-requests",
     "access_discover": "https://allocations.access-ci.org/prepare-requests",
     "nairr_research_draft": "https://nairrpilot.org/nairr-pilot-proposal-instructions",
     "nairr_classroom_draft": "https://nairrpilot.org/opportunities/education-call",
@@ -21,10 +24,10 @@ LIMIT = 524288
 def observation(profile, *, refresh=False):
     if profile not in URLS:
         a.reject()
-    result = {"url": URLS[profile], "format_review_date": "2026-10-19" if profile == "access_discover" else None,
-              "status": "snapshot_only" if profile == "access_discover" else "robots_blocked_not_verified",
+    result = {"url": URLS[profile], "format_review_date": "2026-10-19" if profile in ACCESS_PROFILES else None,
+              "status": "snapshot_only" if profile in ACCESS_PROFILES else "robots_blocked_not_verified",
               "retrieved_at": None, "content_sha256": None, "current_requirements_ready": False}
-    if not refresh or profile != "access_discover":
+    if not refresh or profile not in ACCESS_PROFILES:
         return result
     # Only the fixed public page is requested; no assessment data crosses this boundary.
     try:

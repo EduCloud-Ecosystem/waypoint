@@ -20,10 +20,11 @@ def fixture(name):
     return json.loads((FIXTURES / name).read_text())
 
 
-def preview(profile='access_discover'):
+def preview(profile='access_discover', *, include_planning_pdf=False):
     name = 'classroom' if profile == 'nairr_classroom_draft' else 'research'
     return x.make_preview(profile, fixture(name+'-estimate.json'), [fixture(name+'-manifest.json')],
-                          fixture(profile+'-narrative.json'), FONT, sources.observation(profile))
+                          fixture(profile+'-narrative.json'), None if profile=='access_explore' and not include_planning_pdf else FONT, sources.observation(profile),
+                          include_planning_pdf=include_planning_pdf)
 
 
 class ExportBoundaries(unittest.TestCase):
@@ -37,7 +38,7 @@ class ExportBoundaries(unittest.TestCase):
                 self.assertEqual(shown['narrative.'+key], text)
 
     def test_unknown_profiles_never_fall_back(self):
-        for profile in ('access_explore','access_accelerate','access_maximize','discover','nairr'):
+        for profile in ('access_maximize','discover','nairr','access_unknown'):
             with self.assertRaises(a.AssessmentError): x.profile_info(profile)
 
     def test_unknown_metadata_sentinels_refused_at_nested_boundaries(self):

@@ -15,6 +15,11 @@ PREVIEW_LIMIT = 1048576
 GATES = ("current_requirements_ready", "readiness_pass", "actual_resource_accepted",
          "execution_authorized", "upload_admission", "cleanup_trusted", "retention_finalized")
 PROFILES = {
+    "access_explore": {"title": "ACCESS Explore - optional planning copy", "pages": 2, "pathway": None,
+        "narrative": ("title", "planned_work_summary", "keywords", "field_of_science", "supporting_grant_details", "preferred_resource", "alternative_resource")},
+    "access_accelerate": {"title": "ACCESS Accelerate", "pages": 3, "pathway": None,
+        "narrative": ("title", "planned_work_summary", "keywords", "field_of_science", "supporting_grant_details", "research_objectives",
+                      "resource_estimates", "computational_plan", "software_special_needs", "team_preparedness", "preferred_resource", "alternative_resource")},
     "access_discover": {"title": "ACCESS Discover", "pages": 1, "pathway": None,
         "narrative": ("title", "objectives", "resource_needs", "preferred_resource", "alternative_resource")},
     "nairr_research_draft": {"title": "NAIRR research - internal draft", "pages": 8, "pathway": "research",
@@ -22,7 +27,10 @@ PROFILES = {
     "nairr_classroom_draft": {"title": "NAIRR Classroom - internal draft", "pages": 8, "pathway": "instructional",
         "narrative": ("title", "learning_objectives", "course_schedule", "assignment_plan", "access_and_support", "preferred_resource", "alternative_resource")},
 }
-LABELS = {"title": "Project title", "objectives": "Research or education objectives", "resource_needs": "Resource needs",
+LABELS = {"planned_work_summary": "Planned work summary", "keywords": "Project keywords", "field_of_science": "Field of science",
+          "supporting_grant_details": "Supporting grant details (operator-declared)", "resource_estimates": "Compute, storage and other resource estimates",
+          "computational_plan": "Computational plan", "software_special_needs": "Software and specialized needs", "team_preparedness": "Team and preparedness",
+          "title": "Project title", "objectives": "Research or education objectives", "resource_needs": "Resource needs",
           "preferred_resource": "Preferred resource (unverified)", "alternative_resource": "Alternative resource (unverified)",
           "research_objectives": "Research objectives", "workload_plan": "Workload and computational plan",
           "resource_justification": "Resource justification", "learning_objectives": "Learning objectives",
@@ -371,12 +379,15 @@ def validate_model_math(model, manifest, scenario):
             a.reject()
 
 
-def requirements(profile, source):
-    from .allocation_sources import URLS
+def requirements(profile, source, *, include_planning_pdf=False):
+    from .allocation_sources import ACCESS_PROFILES, URLS
+    profile_info(profile)
+    if type(include_planning_pdf) is not bool or include_planning_pdf and profile != "access_explore":
+        a.reject()
     a.fields(source, ("url", "format_review_date", "status", "retrieved_at", "content_sha256", "current_requirements_ready"))
     if source["url"] != URLS[profile] or source["current_requirements_ready"] is not False:
         a.reject()
-    if profile == "access_discover":
+    if profile in ACCESS_PROFILES:
         if source["format_review_date"] != "2026-10-19":
             a.reject()
         a.choice(source["status"], ("snapshot_only", "retrieved_unreviewed", "unavailable"))
@@ -388,19 +399,39 @@ def requirements(profile, source):
                 a.reject()
         elif source["content_sha256"] is not None:
             a.reject()
-        missing = ["Current application and eligibility review", "PI and co-PI CV PDFs", "Project and personnel form fields",
-                   "Conditional graduate advisor or GRFP letter", "Selected resource availability and unit conversion review",
-                   "Scientific and resource expert review", "Institutional authorization and submission"]
-    else:
+        missing = {
+            "access_discover": ["Current application and eligibility review", "PI and co-PI CV PDFs", "Project and personnel form fields",
+                "Conditional graduate advisor or GRFP letter", "Selected resource availability and unit conversion review",
+                "Scientific and resource expert review", "Institutional authorization and submission"],
+            "access_explore": ["Current Explore summary/form correspondence and eligibility review", "PI and co-PI CV PDFs (uncollected)",
+                "Project/personnel form verification", "Conditional graduate advisor or NSF GRFP letter (uncollected)",
+                "Selected resource availability and units", "Scientific and resource expert review", "Institutional authorization and submission"],
+            "access_accelerate": ["Current Accelerate application/form correspondence and eligibility review", "PI and co-PI CV PDFs (uncollected)",
+                "Project/personnel form verification", "Confirm applicant-specific supporting-letter requirements (uncollected)",
+                "Independent supporting performance data and resource-use review", "Selected resource availability and unit conversion review",
+                "Scientific and resource expert review", "Institutional authorization and submission"],
+        }[profile]
+    elif profile in ("nairr_research_draft", "nairr_classroom_draft"):
         if source != {"url": URLS[profile], "format_review_date": None, "status": "robots_blocked_not_verified",
                       "retrieved_at": None, "content_sha256": None, "current_requirements_ready": False}:
             a.reject()
         missing = ["Current official " + ("Classroom" if profile == "nairr_classroom_draft" else "research") + " instructions and form correspondence",
                    "Eligibility and program-specific attachments", "Selected resource availability and units", "Scientific and resource expert review",
                    "Institutional authorization and submission"]
-    return {"source": source, "profile_version": 1, "minimum_font_points": 11, "margin_inches": 1,
-            "maximum_pages": PROFILES[profile]["pages"], "page_limit_basis": "reviewed_discover_description" if profile == "access_discover" else "internal_draft_bound_not_official",
-            "missing_documents_and_reviews": missing, "submission_ready": False}
+    else:
+        a.reject()
+    bases = {"access_discover": "reviewed_discover_description", "access_accelerate": "reviewed_accelerate_description",
+             "access_explore": "internal_optional_planning_bound_not_official" if include_planning_pdf else "not_applicable_worksheet_only",
+             "nairr_research_draft": "internal_draft_bound_not_official", "nairr_classroom_draft": "internal_draft_bound_not_official"}
+    result = {"source": source, "profile_version": 1, "minimum_font_points": 11, "margin_inches": 1,
+              "maximum_pages": None if profile == "access_explore" and not include_planning_pdf else PROFILES[profile]["pages"],
+              "page_limit_basis": bases[profile], "missing_documents_and_reviews": missing, "submission_ready": False}
+    if profile == "access_explore":
+        if not include_planning_pdf:
+            result.update(minimum_font_points=None, margin_inches=None)
+        result.update(required_narrative_pdf_established=False, official_summary_length_limit_established=False,
+                      optional_planning_pdf_included=include_planning_pdf)
+    return result
 
 
 def human_number(value):
@@ -452,24 +483,35 @@ def visible_fields(profile, narrative, estimate, requirement):
         fields.append({"id": "comparison", "label": "Comparison", "text": "Two synthetic series are retained with their separate assumptions and warnings. No winner or hardware recommendation; differences are in the worksheet."})
     fields.append({"id": "requirements", "label": "Requirements status", "text":
         "DRAFT. Current requirements are not ready. " +
-        ("Discover description format reviewed 2026-10-19; other application documents and current eligibility/resource/form review remain outstanding." if profile == "access_discover" else
-         "Official instructions could not be verified because access was blocked. This is an internal draft, not a confirmed application form.")})
+        {"access_discover": "Discover description format reviewed 2026-10-19; other application documents and current eligibility/resource/form review remain outstanding.",
+         "access_explore": "Explore summary/project fields reviewed 2026-10-19. This is a planning worksheet; any PDF is an optional internal copy with a two-page internal cap. No separate required narrative PDF or official summary length limit was established. External documents and current eligibility/resource/form review remain outstanding.",
+         "access_accelerate": "Accelerate three-page description format reviewed 2026-10-19. Supporting data, external documents and scientific, team, resource and current-form review remain outstanding.",
+         "nairr_research_draft": "Official instructions could not be verified because access was blocked. This is an internal draft, not a confirmed application form.",
+         "nairr_classroom_draft": "Official instructions could not be verified because access was blocked. This is an internal draft, not a confirmed application form."}[profile]})
     return fields
 
 
-def make_preview(profile, estimate, manifests, narrative, font_proof, source):
+def make_preview(profile, estimate, manifests, narrative, font_proof, source, *, include_planning_pdf=False):
     info = profile_info(profile)
     validate_estimate(estimate, manifests)
     validate_narrative(narrative, profile)
     if info["pathway"] is not None and any(s["pathway"] != info["pathway"] for s in estimate["series"]):
         a.reject()
-    from .allocation_pdf import validate_font_proof
-    validate_font_proof(font_proof)
-    requirement = requirements(profile, source)
+    if type(include_planning_pdf) is not bool or include_planning_pdf and profile != "access_explore":
+        a.reject()
+    if profile == "access_explore" and not include_planning_pdf:
+        if font_proof is not None:
+            raise a.AssessmentError("Explore worksheet-only preview does not accept a font.")
+    else:
+        from .allocation_pdf import validate_font_proof
+        validate_font_proof(font_proof)
+    requirement = requirements(profile, source, include_planning_pdf=include_planning_pdf)
     record = {"schema": "waypoint.allocation-record/v1", "profile": profile, "narrative": narrative,
               "estimate": estimate, "manifests": manifests, "font": font_proof, "requirements": requirement,
               "fields": visible_fields(profile, narrative, estimate, requirement), "gates": {k: False for k in GATES},
               "approval_meaning": "local_operator_export_consent_not_institutional_authority"}
+    if profile == "access_explore":
+        record["include_planning_pdf"] = include_planning_pdf
     result = {"schema": "waypoint.allocation-preview/v1", "record": record, "preview_sha256": export_digest(record)}
     if len(export_bytes(result)) > PREVIEW_LIMIT:
         a.reject()
@@ -481,13 +523,23 @@ def validate_preview(preview):
     if preview["schema"] != "waypoint.allocation-preview/v1":
         a.reject()
     record = preview["record"]
-    a.fields(record, ("schema", "profile", "narrative", "estimate", "manifests", "font", "requirements", "fields", "gates", "approval_meaning"))
+    if type(record) is not dict:
+        a.reject()
+    keys = ("schema", "profile", "narrative", "estimate", "manifests", "font", "requirements", "fields", "gates", "approval_meaning")
+    if record.get("profile") == "access_explore":
+        keys += ("include_planning_pdf",)
+    a.fields(record, keys)
     if type(record["requirements"]) is not dict or "source" not in record["requirements"]:
         a.reject()
-    expected = make_preview(record["profile"], record["estimate"], record["manifests"], record["narrative"], record["font"], record["requirements"]["source"])
+    expected = make_preview(record["profile"], record["estimate"], record["manifests"], record["narrative"], record["font"], record["requirements"]["source"],
+                            include_planning_pdf=record.get("include_planning_pdf", False))
     if export_bytes(expected) != export_bytes(preview):
         a.reject()
     return record
+
+
+def needs_pdf(record):
+    return record["profile"] != "access_explore" or record["include_planning_pdf"]
 
 
 def worksheet_rows(value, pointer=""):
@@ -505,12 +557,16 @@ def worksheet_rows(value, pointer=""):
 def package_files(preview, approved_digest, font_payload):
     import csv
     import io
-    from .allocation_pdf import render_pdf
     record = validate_preview(preview)
     digest(approved_digest)
     if approved_digest != preview["preview_sha256"]:
         raise a.AssessmentError("Export requires the exact approved preview digest.")
-    pdf = render_pdf(record, font_payload)
+    pdf = None
+    if needs_pdf(record):
+        from .allocation_pdf import render_pdf
+        pdf = render_pdf(record, font_payload)
+    elif font_payload is not None:
+        raise a.AssessmentError("Explore worksheet-only export does not accept a font or a new render mode.")
     lines = ["# " + PROFILES[record["profile"]]["title"] + " - DRAFT", "",
              "Approved preview SHA-256: " + approved_digest, "",
              "Operator consent for this local export is not institutional approval or submission.", ""]
@@ -529,7 +585,6 @@ def package_files(preview, approved_digest, font_payload):
     files = {"narrative.md": ("\n".join(lines) + "\n").encode("utf-8"), "source.json": export_bytes(record),
              "worksheet.json": export_bytes(record), "worksheet.csv": worksheet.getvalue().encode("utf-8"),
              "retained-preview.json": export_bytes(preview), "requirements.json": export_bytes(record["requirements"]),
-             "draft.pdf": pdf,
              "README.txt": ("Local synthetic DRAFT package. All authority/readiness gates are false.\n"
                  "package.json is PREPARED_DRAFT only. Completion requires the successful CLI receipt binding its hash, plus no INCOMPLETE marker.\n"
                  "A missing marker alone is not success; marker recreation can fail after uncertain publication. Crash durability is untested.\n"
@@ -538,6 +593,10 @@ def package_files(preview, approved_digest, font_payload):
                  "worksheet.csv losslessly flattens that record: remove exactly one leading apostrophe from both cells, then JSON-decode json_value.\n"
                  "Manual narrative is operator-authored and unverified. Metadata/receipt hashes establish integrity, not authenticity.\n"
                  "requirements.json lists missing documents/reviews. No font file or host input path is included.\n").encode("ascii")}
+    if pdf is not None:
+        files["draft.pdf"] = pdf
+    else:
+        files["README.txt"] = files["README.txt"].replace(b"narrative.md and draft.pdf show its fields.", b"narrative.md shows its fields. No PDF was requested in the approved Explore preview.")
     if sum(map(len, files.values())) > 8388608:
         a.reject()
     manifest = {"schema": "waypoint.allocation-package/v1", "status": "PREPARED_DRAFT", "approved_preview_sha256": approved_digest,

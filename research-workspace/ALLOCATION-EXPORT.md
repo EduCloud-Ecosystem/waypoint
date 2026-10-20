@@ -1,6 +1,6 @@
 # Local allocation drafts
 
-This initial, partial A5 slice produces a digest-approved **DRAFT** from retained
+This partial A5 implementation produces a digest-approved **DRAFT** from retained
 synthetic estimation metadata and explicit operator narrative. It does not submit
 an application, request resources, upload data, execute a workload, or establish
 institutional authority. Every current-requirements, readiness, actual-resource,
@@ -10,13 +10,15 @@ The supported profiles are:
 
 | Profile | Output and limits |
 | --- | --- |
+| `access_explore` | Summary/project-field planning worksheet by default, without PDF or font. An explicit preview option adds a planning PDF with a two-page internal cap; this is not an official narrative or form limit. |
+| `access_accelerate` | Separate three-page description draft with objectives, resource estimates, computational plan, software/specialized needs and team preparedness. |
 | `access_discover` | Discover project-description draft, one US Letter page, one-inch margins, 11-point minimum text. Other application documents remain on the checklist. |
 | `nairr_research_draft` | Separate research planning layout. Current official instructions are unverified; eight pages is an internal bound, not an official requirement. |
 | `nairr_classroom_draft` | Separate instructional layout; requires an instructional manifest. Current official Classroom instructions are unverified; eight pages is an internal bound. |
 
-Explore, Accelerate and Maximize are refused until their own complete profiles
-are implemented. There is no generic fallback. The Discover format snapshot was
-reviewed on 2026-10-19 against the [official preparation instructions](https://allocations.access-ci.org/prepare-requests).
+Maximize remains refused until its separate main, performance/cost, renewal and
+external-document requirements have a proper multi-document profile. There is no
+generic tier fallback. The ACCESS requirements snapshot was reviewed on 2026-10-19 against the [official preparation instructions](https://allocations.access-ci.org/prepare-requests).
 A retrieved page does not establish eligibility, current resource availability,
 exchange rules, deadlines or correspondence to the current application form.
 NAIRR sources were robots-blocked during the requirements preflight. They remain
@@ -26,7 +28,10 @@ unverified; this tool does not retry them through another client.
 
 Use the existing [assessment preparation](ASSESSMENT.md) and
 [synthetic estimator](ESTIMATION.md) first. No manifest or receipt interface has
-changed. Supply the exact bound manifest for every retained series (maximum two).
+changed. The three accepted initial A5 preview records still validate unchanged;
+new optional-render and null-font semantics apply only to Explore. Accelerate
+does not infer eligibility from research or instructional manifest classification.
+Supply the exact bound manifest for every retained series (maximum two).
 Only defined metadata is accepted; unknown nested fields, raw upload hashes,
 paths and logs are rejected. Software, manifest, receipt, font and official-source
 digests have explicit allowed roles. These digests establish integrity, not
@@ -37,17 +42,18 @@ measured performance.
 The narrative is a UTF-8 JSON document with `schema` set to
 `waypoint.allocation-narrative/v1` and a closed `fields` object. Use the appropriate
 [fixture](assessment/fixtures/export/) as a starting point. Every narrative field
-is shown in the preview and in the PDF and Markdown. Values must be NFC text,
+is shown in the preview, Markdown and worksheet, and in the PDF when included. Values must be NFC text,
 without control characters other than newline. Title limit: 160 characters;
 other fields: 2,048 characters each; whole narrative: 32 KiB. Enter only material
 that you intend to export; manual narrative is operator-authored and unverified.
 
-PDF support is optional. Run these commands with a Python 3.12+ interpreter that
-has the versions in [requirements-pdf.txt](requirements-pdf.txt). Existing commands
+PDF support is optional. Explore worksheet-only commands need Python 3.12+
+and its standard library; they do not load PDF code or read a font. PDF-producing
+commands need a Python 3.12+ interpreter that has the versions in [requirements-pdf.txt](requirements-pdf.txt). Existing commands
 retain their standard-library path; importing these modules does not load PDF
 libraries or create the application store. The tool does not install dependencies.
 
-Select an operator-vetted regular TrueType font file whose provenance and license
+For a PDF-producing preview, select an operator-vetted regular TrueType font file whose provenance and license
 you have reviewed. Supported families are Arial, Courier New, Palatino, Palatino
 Linotype, Times New Roman and Computer Modern (including CM Roman and `cmr10`).
 Family metadata is a claim, not authentication; approval binds the exact font
@@ -76,6 +82,49 @@ retrieval time, status and content digest are retained. Failure remains a draft;
 success is `retrieved_unreviewed`, never current-requirements readiness. Export
 itself performs no refresh or network request. Changed source observations or
 inputs require a new preview and approval digest.
+
+## Explore and Accelerate inputs
+
+Explore requires explicit `title`, `planned_work_summary`, `keywords`,
+`field_of_science`, `supporting_grant_details`, `preferred_resource` and
+`alternative_resource`. These are operator-entered planning fields. The current
+public instructions establish a summary and project fields; they do not establish
+a separate required narrative PDF or a summary page/character limit. Our text
+bounds are internal safety limits, not portal constraints. Do not invent grant
+support, eligibility, resource availability or scientific claims to fill a field.
+An explicit statement of unknown or not applicable remains visible as written.
+
+```sh
+python -m research_workspace assessment-export-preview retained-estimate.json \
+  --manifest retained-manifest.json --profile access_explore \
+  --narrative explore-narrative.json > explore-preview.json
+python -m research_workspace assessment-export \
+  --preview explore-preview.json --approved-preview-sha256 THE_REVIEWED_DIGEST \
+  --output /absolute/physical/new-explore-package
+```
+
+For an optional **internal planning copy**, add `--include-planning-pdf` and
+`--font /absolute/approved-font.ttf` to the Explore **preview** command. Its two-page
+cap is internal, not an official limit. The preview records `include_planning_pdf`
+and its font proof. A worksheet-only preview records false and null respectively;
+it refuses a supplied font without reading that file. Export has no render-mode
+option and requires a font exactly when the approved preview includes a PDF.
+Changing that choice requires a new preview and approval digest. No other profile
+accepts the planning-PDF flag or a null font.
+
+Accelerate requires the same project fields plus `research_objectives`,
+`resource_estimates`, `computational_plan`, `software_special_needs` and
+`team_preparedness`. Select `--profile access_accelerate` and provide an approved
+font. All entered prose appears in the preview, Markdown, PDF and matching
+worksheet; the PDF refuses above three pages. The five description sections are
+distinct, and the tool does not fabricate performance evidence, team capability,
+scientific prose or resource-unit conversions from the retained synthetic model.
+
+Each tier has its own missing-document/review checklist. PI/co-PI CVs remain
+uncollected. Explore retains the conditional graduate-student advisor/NSF GRFP
+letter gate; Accelerate retains an applicant-specific supporting-letter review
+without asserting that a letter is universally required. No personal documents
+are ingested or generated. All current-requirements and authority gates stay false.
 
 ## Export the exact approved record
 
@@ -124,7 +173,7 @@ Each package contains:
   Every cell is prefixed with one apostrophe to force spreadsheet text. Remove
   exactly that first character before JSON-decoding `json_value`; original
   leading apostrophes, equals signs, signs, whitespace and Unicode are preserved.
-- `draft.pdf`: profile-specific PDF with all visible fields. Page overflow or a
+- `draft.pdf` when included: profile-specific PDF with all visible fields. Page overflow or a
   section too large for one page refuses; nothing is shrunk or truncated.
 - `retained-preview.json`, `requirements.json`, `README.txt` and `package.json`:
   approved preview, missing documents/reviews, interpretation and file hashes.
@@ -149,9 +198,12 @@ fails if the font or dependencies are missing. Existing CI adds this suite after
 its unchanged standard-library controls, using pinned dependencies and a
 hash-verified [Computer Modern font from Matplotlib](https://github.com/matplotlib/matplotlib/blob/4aeb773422464799998d900198b35cb80e94b3e1/lib/matplotlib/mpl-data/fonts/ttf/cmr10.ttf).
 Font SHA-256: `4dd9761b058c009db9b2145f55ee6617d093c273dd3d6c5b3e43ff6110fa9bf6`.
-No font binary is committed. Tests exercise all three actual CLI profiles,
+No font binary is committed. Tests exercise all supported PDF profiles and isolated standard-library Explore
+preview/export without optional dependencies,
 worksheet/PDF parity, metadata, leakage refusal, formula handling, page overflow,
-font failure, digest approval, no overwrite and interrupted writes. Render and
+font failure, digest approval, no overwrite and interrupted writes. Exact accepted
+PR #51 preview digests are regression controls; a new mode cannot alter those v1
+records. Maximize still refuses before reading inputs. Render and
 inspect all pages as an additional local acceptance step.
 
 Independent human/second-machine reproduction, real target measurements,
