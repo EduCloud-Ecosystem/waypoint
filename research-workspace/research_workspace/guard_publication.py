@@ -216,7 +216,7 @@ class Publication:
             "generation": candidate["generation"]}
         validate(candidate)
         if self.guard.assessment:
-            g.astate.guard_shape(candidate)
+            (g.ex2.guard_shape if self.guard.assessment is g.ex2.EX2 else g.astate.guard_shape)(candidate)
             if operation is not None and operation._publications >= 4:
                 raise g.GuardPaused("intent_limit")
         payload = g.encode(candidate)

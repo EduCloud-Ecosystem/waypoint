@@ -13,6 +13,7 @@ import sys
 import threading
 from . import finite_authority as finite
 from . import assessment_state as astate
+from . import assessment_execution_state as ex2
 from . import sqlite_ownership as owned
 
 
@@ -104,15 +105,18 @@ class Lease:
 class Guard:
     def __init__(self, root, binding, connect=None, *, assessment=None):
         self.root = Path(root).resolve()
-        if assessment is not None and assessment is not astate.AS1:
+        if assessment is not None and assessment not in (astate.AS1, ex2.EX2):
             raise GuardPaused("invalid_binding")
         self.assessment = assessment
-        self.max_bytes = astate.LIMITS["guard_document"] if assessment else MAX_BYTES
+        self.max_bytes = (ex2.LIMITS["guard_document_bytes"] if assessment is ex2.EX2 else
+                          astate.LIMITS["guard_document"] if assessment else MAX_BYTES)
         self.finite = bool(assessment) or isinstance(binding, dict) and binding.get("format") in finite.GUARD_FORMATS
-        self.profile_version = "AS1" if assessment else finite.binding_version(binding) if self.finite else 0
-        self.scoped = self.profile_version in (4, "AS1")
+        self.profile_version = ("EX2" if assessment is ex2.EX2 else "AS1" if assessment else
+                                finite.binding_version(binding) if self.finite else 0)
+        self.scoped = self.profile_version in (4, "AS1", "EX2")
         keys = {"format", "authority_id"} | ({"logical_authority_sha256"} if self.finite else set())
-        if ((assessment and not astate.binding_valid(binding)) or (not assessment and (
+        if ((assessment and not (ex2.binding_valid(binding) if assessment is ex2.EX2
+                                 else astate.binding_valid(binding))) or (not assessment and (
                 not isinstance(binding, dict) or set(binding) != keys
                 or binding["format"] not in (finite.GUARD_FORMATS if self.finite else {FORMAT})
                 or not re.fullmatch(r"[a-f0-9]{32}", str(binding["authority_id"]))
@@ -123,7 +127,7 @@ class Guard:
         with _registry_lock:
             self.lease = _registry.setdefault(str(self.root), Lease())
         self.publication = None
-        if self.profile_version in (3, 4, "AS1"):
+        if self.profile_version in (3, 4, "AS1", "EX2"):
             from .guard_publication import Publication
             self.publication = Publication(self)
 
@@ -132,7 +136,8 @@ class Guard:
         # Keep the ordinary profile's historical dynamic limit semantics.
         # Tests and bounded operators may lower MAX_OPERATIONS after opening
         # a Guard to exercise a specific cap boundary.
-        return astate.LIMITS["ordinary"] if self.assessment else MAX_OPERATIONS
+        return (ex2.CAPACITY["guard_ordinary_receipts"] if self.assessment is ex2.EX2 else
+                astate.LIMITS["ordinary"] if self.assessment else MAX_OPERATIONS)
 
     @classmethod
     def create(cls, root, connect=None, *, finite_profile=False, profile_version=1):
@@ -268,7 +273,7 @@ class Guard:
                 from .guard_publication import validate
                 validate(data)
             if self.assessment:
-                astate.guard_shape(data)
+                (ex2.guard_shape if self.assessment is ex2.EX2 else astate.guard_shape)(data)
             return data
         except (OSError, ValueError, TypeError, KeyError) as exc:
             raise GuardPaused("invalid_authority") from exc
@@ -537,14 +542,27 @@ class Guard:
         if request_key is not None and (not isinstance(request_key, str) or not re.fullmatch(r"[A-Za-z0-9_-]{1,80}", request_key)):
             raise ValueError("Use a bounded request identity.")
         if self.assessment:
-            astate.guard_request(request)
+            (ex2.guard_request if self.assessment is ex2.EX2 else astate.guard_request)(request)
+        if self.assessment is ex2.EX2:
+            expected_essential = (request["action"] in {"deny-auth", "deny-scope"}
+                or request["action"].startswith("command-") and request.get("lane") == "S")
+            if (request_key != ex2.request_phase_key(request, self.binding)
+                    or type(essential) is not bool or essential != expected_essential
+                    or kind not in {"initialize", "mutation"}
+                    or "subject" in request and subject != request["subject"]
+                    or request["action"] == "fixture-seed-spawn" and resource_id != request["project_id"]
+                    or request["action"] in {"scope-admit", "spawn", "command-pending", "command-trigger", "command-observe", "deny-scope"}
+                        and resource_id != request["scope_id"]
+                    or bootstrap != (kind == "initialize")
+                    or (kind == "initialize") != (request["action"] == "initialize")):
+                raise GuardPaused("invalid_binding")
         digest = request_hash(request)
         with self.locked():
             if self.publication and bootstrap and not self.publication.initializing:
                 raise GuardPaused("invalid_bootstrap")
             data = self.load() if bootstrap else self.check(essential=essential, kind=kind)
             if self.assessment:
-                astate.admission(data, essential)
+                (ex2.admission if self.assessment is ex2.EX2 else astate.admission)(data, essential)
                 if self.lease.active:
                     raise GuardPaused("unfinished_operation")
             if not essential and not bootstrap:

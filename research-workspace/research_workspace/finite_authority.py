@@ -184,6 +184,12 @@ def refuse_unqualified_recovery(archive):
     """Inspect both config and immutable checkpoint DB before destination effects."""
     config = read_config(archive)
     binding = config.get("operation_guard")
+    from . import assessment_execution_state as ex2
+    logical = config.get("logical_authority")
+    if (config.get("mode") == ex2.MODE
+            or isinstance(logical, dict) and logical.get("format") == ex2.FORMAT
+            or isinstance(binding, dict) and binding.get("format") == ex2.GUARD_FORMAT):
+        raise ValueError("EX2 recovery is unsupported. Preserve the original authority; do not reopen or adopt it.")
     if (config.get("mode") == SCOPED_MODE
             or isinstance(config.get("logical_authority"), dict) and config["logical_authority"].get("format") == SCOPED_FORMAT
             or isinstance(binding, dict) and binding.get("format") == SCOPED_GUARD_FORMAT):
