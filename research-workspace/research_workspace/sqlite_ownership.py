@@ -13,6 +13,7 @@ import threading
 
 from . import finite_authority as finite
 from . import assessment_state as astate
+from . import assessment_execution_state as ex2
 
 _registry_lock = threading.Lock()
 _registry = {}
@@ -179,6 +180,20 @@ _ROLE_WRITES = {
     },
 }
 
+
+def _ex2_writes(role):
+    """One effective allowlist used at both EX2 statement gates."""
+    writes = set(_ROLE_WRITES.get(role, ()))
+    writes |= {sql for sql in (*ex2.SQL_MUTATIONS.values(),
+               *ex2.COMPILED["auth_mutations"], *ex2.COMPILED["fixture_seed_sql"])
+               if ex2.compiled_write(role, sql)}
+    completion = "UPDATE operation_receipts SET outcome=? WHERE id=? AND digest=? AND outcome='started'"
+    if role.startswith("ex2-") and not ex2.ROLE_BINDINGS[role].get("readonly"):
+        writes.add(completion)
+    if role == "ex2-test-initialize":
+        writes |= _ROLE_WRITES["started-receipt"]
+    return writes
+
 # These complete, deterministic statements share a validated transaction with
 # their metadata preflight. Caller-supplied expressions are never evaluated.
 _SELECTS = frozenset({
@@ -247,13 +262,17 @@ def _statement(sql):
     return sql
 
 
-def _schema_allowed(role, sql, *, script, assessment=False):
+def _schema_allowed(role, sql, *, script, assessment=False, execution=False):
     from .storage_inventory import SCHEMA_SQL
     from .operation_guard import SCHEMA
     if type(sql) is not str:
         return False
     if assessment:
         allowed = [";".join(astate.schema())] if script and role in {"initialize", "memory-reference"} else ()
+        key = lambda text: "".join(text.split()).upper().rstrip(";")
+        return key(sql) in {key(statement) for statement in allowed}
+    if execution:
+        allowed = [";".join(ex2.schema())] if script and role in {"ex2-test-initialize", "memory-reference"} else ()
         key = lambda text: "".join(text.split()).upper().rstrip(";")
         return key(sql) in {key(statement) for statement in allowed}
     if script:
@@ -265,9 +284,17 @@ def _schema_allowed(role, sql, *, script, assessment=False):
     return key(sql) in {key(statement) for statement in allowed}
 
 
-def _query_limit(sql, assessment=False):
-    match = re.search(r"\bFROM\s+([A-Za-z_]+)", sql, re.I)
+def _query_limit(sql, assessment=False, execution=False):
+    match = re.search(r"\bFROM\s+([A-Za-z_][A-Za-z0-9_]*)", sql, re.I)
     table = match.group(1).lower() if match else None
+    if execution:
+        if sql in ex2.READ_LIMITS:
+            return ex2.READ_LIMITS[sql], table
+        if sql == _RECEIPTS_SELECT:
+            return 97, "operation_receipts"
+        if sql in _PROOF_READS:
+            return (1 if sql == _AUTHORITY_SELECT else 100), table
+        raise ReadBounds("Unregistered EX2 observation.")
     if assessment:
         special = {astate.BY_ID: (1, "assessment_sessions"), astate.BY_KEY: (1, "assessment_sessions"),
                    astate.ALL_META: (16, "assessment_sessions"), astate.SUBJECT_META: (4, "assessment_sessions"),
@@ -291,6 +318,9 @@ def _query_limit(sql, assessment=False):
 
 
 def _field(name, table):
+    if table in ex2.FIELDSETS and name in ex2.FIELDSETS[table]:
+        spec = ex2.FIELDSETS[table][name]
+        return (spec["sql"].lower(),), spec.get("max_ascii_bytes"), spec["nullable"]
     if table == "assessment_sessions":
         if name in astate.TEXT:
             return ("text",), astate.TEXT[name], False
@@ -322,6 +352,8 @@ class Owner:
         self.readonly, self.initialize, self.memory, self.archive = readonly, initialize, memory, archive
         self.validate = validate
         self.assessment = astate.active(guard)
+        self.execution = ex2.active(guard)
+        self._ex2_full_read = False
         self.__connection = None
         self.__cursors = []
         self._guard_scope = None
@@ -348,11 +380,19 @@ class Owner:
                 raise ValueError("Unsupported assessment SQLite role.")
             readers |= {"assessment-read"}
             writers |= {"assessment-write", "assessment-spawn"}
+        if self.execution:
+            allowed = {"discovery", "guard-proof", "memory-reference", "barrier", "started-receipt"} | {
+                name for name in ex2.ROLE_BINDINGS if name.startswith("ex2-")}
+            if role not in allowed:
+                raise ValueError("Unsupported EX2 SQLite role.")
+            readers |= {name for name in allowed if name.startswith("ex2-") and ex2.ROLE_BINDINGS[name].get("readonly")}
+            writers |= {name for name in allowed if name.startswith("ex2-") and not ex2.ROLE_BINDINGS[name].get("readonly")}
         if role not in readers | writers | {"memory-reference"}:
             raise ValueError("Unknown SQLite ownership role.")
         if readonly != (role in readers) or memory != (role == "memory-reference"):
             raise ValueError("SQLite role and opening mode differ.")
-        if initialize != (role in {"initialize", "memory-reference", "backup-destination"}):
+        if initialize != (role in {"initialize", "memory-reference", "backup-destination",
+                                   "ex2-test-initialize"}):
             raise ValueError("Only fresh owners may create a database.")
         if archive != (role == "archive-rejection") or (guard is None and not archive):
             raise ValueError("SQLite owner requires its bound guard or offline archive role.")
@@ -362,7 +402,8 @@ class Owner:
             raise ValueError("A backup destination requires its fresh explicit path.")
         if guard is not None and Path(guard.root).resolve() != self.root:
             raise ValueError("The SQLite owner and guard must have the same resolved root.")
-        if type(validate) is not bool or (not validate and role not in {"initialize","memory-reference","backup-destination","archive-rejection"}):
+        if type(validate) is not bool or (not validate and role not in {"initialize","memory-reference",
+                "backup-destination","archive-rejection","ex2-test-initialize"}):
             raise ValueError("Existing authority owners require binding and schema validation.")
 
     def _check(self):
@@ -484,7 +525,8 @@ class Owner:
 
     def _validate(self):
         if self.validate and not self.initialize and not self.memory:
-            (astate.validate_binding if self.assessment else finite.validate_binding)(self.root, self.guard.binding, self)
+            (ex2.validate_binding if self.execution else astate.validate_binding if self.assessment
+             else finite.validate_binding)(self.root, self.guard.binding, self)
             self.guard.load()
             validate_schema(self)
         self._validated = True
@@ -495,12 +537,20 @@ class Owner:
         normalized = " ".join(sql.split())
         if self.role in {"offline-freeze","dispatch-reservation"} and normalized == "BEGIN":
             raise ValueError("This reservation requires BEGIN IMMEDIATE.")
-        if self.role in _ROLE_READS:
-            reads = _ROLE_READS[self.role]
+        if self.role in _ROLE_READS or self.execution and self.role.startswith("ex2-"):
+            reads = _ROLE_READS.get(self.role, set())
+            if self.execution:
+                reads = reads | {sql for sql in ex2.SQL_READS.values() if ex2.compiled_read(self.role, sql)}
+                # These existing internal probes validate this very Owner.
+                reads = reads | _PROOF_READS
             queued = (self.role == "guard-proof" and getattr(_local,"diagnostic",None) is None
                       and normalized == _QUEUED_SELECT)
             controls = {"PRAGMA application_id", "PRAGMA user_version", "BEGIN", "BEGIN IMMEDIATE"}
-            if normalized not in reads | _ROLE_WRITES.get(self.role,set()) | controls and not queued:
+            if self.execution and self.initialize and self.role == "ex2-test-initialize":
+                from .operation_guard import APPLICATION_ID
+                controls |= {f"PRAGMA application_id={APPLICATION_ID}", f"PRAGMA user_version={ex2.MARKER}"}
+            writes = _ex2_writes(self.role) if self.execution else _ROLE_WRITES.get(self.role, set())
+            if normalized not in reads | writes | controls and not queued:
                 raise ValueError("This owner accepts only its registered role statements.")
         if normalized in {"BEGIN", "BEGIN IMMEDIATE"}:
             if self.readonly:
@@ -535,7 +585,10 @@ class Owner:
             raise ValueError("This scope accepts reviewed observations only.")
         if not self.initialize and not self._validated:
             raise ValueError("Begin and validate the owned write transaction first.")
-        if self.assessment:
+        if self.execution:
+            if normalized not in _ex2_writes(self.role):
+                raise ValueError("Unregistered EX2 mutation.")
+        elif self.assessment:
             allowed = astate.GUARD_WRITES | astate.AUTH_WRITES | {astate.INSERT, astate.UPDATE}
             if self.role == "assessment-spawn":
                 allowed = astate.GUARD_WRITES
@@ -558,7 +611,9 @@ class Owner:
 
     def _select(self, sql, parameters):
         allowed = _SELECTS | _export_selects()
-        if self.assessment:
+        if self.execution:
+            allowed = set(ex2.SQL_READS.values()) | _PROOF_READS | {_RECEIPTS_SELECT}
+        elif self.assessment:
             allowed = {q for q in _SELECTS if not re.search(r"\bruns\b", q) and not q.startswith("SELECT rowid,*")}
             allowed |= {astate.BY_ID, astate.BY_KEY, astate.ALL_META, astate.SUBJECT_META,
                         astate.COUNT, astate.SUBJECT_COUNT, astate.AUTH_SESSION, astate.LOGOUT_SUBJECT}
@@ -570,7 +625,32 @@ class Owner:
         if any(type(value) not in (str, bytes, int, float, type(None))
                or type(value) is float and not math.isfinite(value) for value in parameters):
             raise ReadBounds("Observation parameters must be copied scalar bindings.")
-        limit, table = _query_limit(sql, self.assessment)
+        if self.execution and sql in ex2.READ_LIMITS and ("_PREFLIGHT" in next(
+                name for name, text in ex2.SQL_READS.items() if text == sql)
+                or sql in {ex2.SQL_READS[name] for name in ("PLAN_INVARIANTS", "SUBJECT_CAP",
+                           "CROSS_ID_COLLISION", "AUTH_SHAPE")}
+                or re.match(r"SELECT count\(\*\)", sql, re.I)):
+            self._ex2_preflight()
+            limit = ex2.READ_LIMITS[sql]
+            with self._cursor() as cursor:
+                cursor.execute(sql, parameters)
+                rows = cursor.fetchmany(limit + 1)
+                if len(rows) > limit or any(any(type(value) not in (int, str) or
+                        type(value) is str and (not value.isascii() or len(value) > 80) or
+                        type(value) is int and not 0 <= value <= ex2.M for value in row) for row in rows):
+                    raise ReadBounds("EX2 scalar observation exceeds its bound.")
+                names = [column[0] for column in cursor.description]
+            _event(self.root, self.role, "materialized")
+            return Values([Row(names, row) for row in rows])
+        limit, table = _query_limit(sql, self.assessment, self.execution)
+        if self.execution and sql == _RECEIPTS_SELECT:
+            self._ex2_receipts_preflight()
+        if self.execution and sql in ex2.READ_LIMITS:
+            self._ex2_preflight()
+            if sql in {ex2.SQL_READS["SCOPE_FULL_BY_ID"], ex2.SQL_READS["SLOT_FULL_BY_ID"]}:
+                if self._ex2_full_read:
+                    raise ReadBounds("Only one EX2 full row per snapshot.")
+                self._ex2_full_read = True
         if self.assessment and table == "assessment_sessions":
             self._assessment_preflight()
         if self.archive:
@@ -607,6 +687,10 @@ class Owner:
             if self.assessment and table == "assessment_sessions" and names != ["count(*)"]:
                 for values in rows:
                     astate.validate_row(dict(zip(names, values)), metadata="manifest_json" not in names)
+            if self.execution and table in ex2.FIELDSETS and names and set(names) <= set(ex2.FIELDSETS[table]):
+                for values in rows:
+                    ex2.validate_row(table, dict(zip(names, values)), metadata=(
+                        "manifest_json" not in names and "metrics_json" not in names))
             result = Values([Row(names,values) for values in rows])
         _event(self.root, self.role, "materialized")
         return result
@@ -638,10 +722,88 @@ class Owner:
             if invalid or largest > astate.LIMITS["row_fields"] or total > astate.LIMITS["aggregate_fields"]:
                 raise ReadBounds("Assessment field or aggregate limit.")
 
+    def _ex2_preflight(self):
+        """Fixed aggregate probes remain in this Owner's current snapshot."""
+        total_rows = total_fields = 0
+        counts = {}
+        for table in ex2.FIELDSETS:
+            sql = ex2.SQL_READS[table + "_PREFLIGHT"]
+            with self._cursor() as cursor:
+                cursor.execute(sql)
+                values = cursor.fetchmany(2)
+            if (len(values) != 1 or len(values[0]) != 4
+                    or any(type(item) is not int or item < 0 for item in values[0])):
+                raise ReadBounds("EX2 aggregate preflight malformed.")
+            count, invalid, largest, aggregate = values[0]
+            if (invalid or count > ex2.CAPACITY[{"ex2_scopes": "scopes", "ex2_slots": "slots_total",
+                    "ex2_commands": "commands_total", "ex2_security_facts": "security_facts"}[table]]
+                    or largest > ex2.COMPACT["row_bounds"][table]["raw_fields_upper"]):
+                raise ReadBounds("EX2 row or field bound.")
+            total_rows += count
+            total_fields += aggregate
+            counts[table] = count
+        if total_rows > 148 or total_fields > ex2.COMPACT["raw_profile_aggregate_upper"]:
+            raise ReadBounds("EX2 profile aggregate bound.")
+        if counts["ex2_security_facts"] != 12:
+            raise ReadBounds("EX2 fixture security facts are incomplete.")
+        with self._cursor() as cursor:
+            cursor.execute(ex2.SQL_READS["PLAN_INVARIANTS"])
+            plans = cursor.fetchmany(3)
+            cursor.execute(ex2.SQL_READS["CROSS_ID_COLLISION"])
+            collisions = cursor.fetchmany(2)
+        if (len(plans) != counts["ex2_scopes"] or len(plans) > 2
+                or any(len(row) != 7 or type(row[0]) is not str or
+                       not re.fullmatch(r"[a-f0-9]{32}", row[0]) or
+                       any(type(item) is not int for item in row[1:]) or
+                       not 1 <= row[1] <= 12 or row[2] != 0 or row[3] != row[1] - 1 or
+                       any(item != row[1] for item in row[4:]) for row in plans)
+                or len(collisions) != 1 or collisions[0] != (0,)):
+            raise ReadBounds("EX2 immutable plan invariant.")
+        planned = {row[0]: row[1] for row in plans}
+        with self._cursor() as cursor:
+            cursor.execute("SELECT scope_id,sum(CASE WHEN lane='P' THEN 1 ELSE 0 END),"
+                           "sum(CASE WHEN lane='S' THEN 1 ELSE 0 END) FROM ex2_commands "
+                           "GROUP BY scope_id ORDER BY scope_id")
+            commands = cursor.fetchmany(3)
+            cursor.execute("SELECT count(*) FROM (SELECT scope_id,lane FROM ex2_commands "
+                           "WHERE state IN ('pending','triggered') GROUP BY scope_id,lane HAVING count(*)>1)")
+            pending = cursor.fetchmany(2)
+        if (len(commands) != len(planned) or len(commands) > 2
+                or any(row[0] not in planned or row[1] != 3 + planned[row[0]]
+                       or row[2] != 4 + 3 * planned[row[0]] for row in commands)
+                or pending != [(0,)]):
+            raise ReadBounds("EX2 fixed command opportunity invariant.")
+        with self._cursor() as cursor:
+            cursor.execute(ex2.SQL_READS["AUTH_SHAPE"])
+            shape = cursor.fetchmany(2)
+        if (len(shape) != 1 or len(shape[0]) != 5
+                or any(type(value) is not int or value < 0 for value in shape[0])
+                or any(actual > maximum for actual, maximum in zip(shape[0], (2, 2, 4, 2, 0)))):
+            raise ReadBounds("EX2 base authority row bound.")
+        receipts = self._ex2_receipts_preflight()
+        if total_rows + sum(shape[0]) + receipts + 1 > 256:
+            raise ReadBounds("EX2 total data row bound.")
+
+    def _ex2_receipts_preflight(self):
+        with self._cursor() as cursor:
+            cursor.execute("SELECT count(*),coalesce(max(length(CAST(id AS BLOB))+"
+                           "length(CAST(sequence AS TEXT))+length(CAST(digest AS BLOB))+"
+                           "length(CAST(outcome AS BLOB))+length(CAST(essential AS TEXT))),0),"
+                           "coalesce(sum(length(CAST(id AS BLOB))+length(CAST(sequence AS TEXT))+"
+                           "length(CAST(digest AS BLOB))+length(CAST(outcome AS BLOB))+"
+                           "length(CAST(essential AS TEXT))),0) FROM operation_receipts")
+            values = cursor.fetchmany(2)
+        if (len(values) != 1 or len(values[0]) != 3
+                or any(type(item) is not int or item < 0 for item in values[0])
+                or values[0][0] > 97 or values[0][1] > 125 or values[0][2] > 12125):
+            raise ReadBounds("EX2 retained receipt bound.")
+        return values[0][0]
+
     def executescript(self, sql):
         sql = _statement(sql)
         self._check()
-        if not _schema_allowed(self.role, sql, script=True, assessment=self.assessment):
+        if not _schema_allowed(self.role, sql, script=True, assessment=self.assessment,
+                               execution=self.execution):
             raise ValueError("This owner accepts only its exact reviewed schema script.")
         with self._cursor() as cursor:
             try:
@@ -761,7 +923,8 @@ def validate_schema(db):
     from .operation_guard import APPLICATION_ID, SCHEMA, GuardPaused
     from .storage_inventory import SCHEMA_SQL, _schema
     with Owner(db.root,"memory-reference",guard=db.guard,memory=True,initialize=True,validate=False) as expected:
-        expected.executescript(";".join(astate.schema() if db.assessment else SCHEMA_SQL+SCHEMA))
+        expected.executescript(";".join(ex2.schema() if db.execution else astate.schema()
+                                       if db.assessment else SCHEMA_SQL+SCHEMA))
         if db.execute("PRAGMA application_id").fetchone()[0] != APPLICATION_ID or _schema(db) != _schema(expected):
             raise GuardPaused("unsupported_schema")
 

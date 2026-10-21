@@ -16,6 +16,7 @@ from .recipes import IDS, digest, parse_csv, recipe_bytes
 from .operation_guard import Guard, GuardPaused, GuardBusy, APPLICATION_ID, GUARDED_MODES, SCHEMA, FILE, LOCK, TEMP, sync_directory
 from . import finite_authority as finite
 from . import assessment_state as astate
+from . import assessment_execution_state as ex2
 from . import sqlite_ownership as owned
 
 
@@ -86,7 +87,7 @@ class TrackedConnection:
 class Store:
     @property
     def scoped(self):
-        return self.profile_version == 4 or getattr(self, "_assessment", None) is astate.AS1
+        return self.profile_version == 4 or getattr(self, "_assessment", None) in (astate.AS1, ex2.EX2)
 
     def __init__(self, root, create=False, *, guarded=False, config=None, subject=None, resume=True):
         self.root = Path(root).resolve()
@@ -94,7 +95,7 @@ class Store:
         self.guard = None
         self._assessment = None
         self._assessment_service = None
-        if create and isinstance(config, dict) and config.get("mode") == astate.MODE:
+        if create and isinstance(config, dict) and config.get("mode") in (astate.MODE, ex2.MODE):
             astate.invalid()
         self.finite = bool(create and isinstance(config, dict) and
                            (config.get("mode") in finite.MODES or "logical_authority" in config))
@@ -189,6 +190,11 @@ class Store:
             config = finite.read_config(self.root) if version else json.loads((self.root / "config.json").read_bytes())
             evidence = guarded_db or guarded_tables or any((self.root / name).exists() for name in (FILE, LOCK)) or any(self.root.glob(TEMP + "*"))
             binding = config.get("operation_guard")
+            logical = config.get("logical_authority")
+            if (config.get("mode") == ex2.MODE
+                    or isinstance(binding, dict) and binding.get("format") == ex2.GUARD_FORMAT
+                    or isinstance(logical, dict) and logical.get("format") == ex2.FORMAT):
+                ex2.invalid()
             finite_evidence = (version or "logical_authority" in config or config.get("mode") in finite.MODES
                                or isinstance(binding, dict) and binding.get("format") in finite.GUARD_FORMATS)
             if finite_evidence:
@@ -221,8 +227,9 @@ class Store:
             return False  # Existing rejection-only legacy discriminator.
         binding = config.get("operation_guard")
         policy = config.get("logical_authority")
-        if (config.get("mode") == astate.MODE or isinstance(binding, dict) and binding.get("format") == astate.GUARD_FORMAT
-                or isinstance(policy, dict) and policy.get("format") == astate.FORMAT):
+        if (config.get("mode") in (astate.MODE, ex2.MODE)
+                or isinstance(binding, dict) and binding.get("format") in (astate.GUARD_FORMAT, ex2.GUARD_FORMAT)
+                or isinstance(policy, dict) and policy.get("format") in (astate.FORMAT, ex2.FORMAT)):
             astate.invalid()
         recognizable = (config.get("mode") == finite.SCOPED_MODE
                         or isinstance(binding, dict) and binding.get("format") == finite.SCOPED_GUARD_FORMAT
@@ -249,7 +256,7 @@ class Store:
     def read(self, *, role="online-read"):
         if self.scoped:
             if self._assessment and role == "online-read":
-                role = "assessment-read"
+                role = "ex2-read-meta" if self._assessment is ex2.EX2 else "assessment-read"
             with owned.Owner(self.root, role, guard=self.guard, readonly=True) as db:
                 yield db
         else:
@@ -260,6 +267,8 @@ class Store:
     def write(self, *, role="mutation"):
         if self.scoped:
             if self._assessment and role == "mutation":
+                if self._assessment is ex2.EX2:
+                    ex2.invalid()
                 role = "assessment-write"
             with owned.Owner(self.root, role, guard=self.guard, initialize=self._initializing) as db:
                 yield db
@@ -284,8 +293,8 @@ class Store:
                     config_path = self.root / "config.json"
                     config = json.loads(config_path.read_bytes()) if config_path.exists() else {}
                     binding = config.get("operation_guard")
-                    if ("logical_authority" in config or config.get("mode") in finite.MODES
-                            or isinstance(binding, dict) and binding.get("format") in finite.GUARD_FORMATS):
+                    if ("logical_authority" in config or config.get("mode") in finite.MODES | {ex2.MODE}
+                            or isinstance(binding, dict) and binding.get("format") in finite.GUARD_FORMATS | {ex2.GUARD_FORMAT}):
                         raise finite.InvalidProfile("A finite profile cannot use an unrestricted open store.")
             db.execute("PRAGMA foreign_keys=ON")
             db.execute("PRAGMA journal_mode=WAL")
@@ -312,6 +321,8 @@ class Store:
 
     @contextlib.contextmanager
     def transaction(self, *, essential=False, operation=None, keep=False, kind="mutation", resource_id="workspace", subject="operator", request=None, request_key=None, preflight=None):
+        if self._assessment is ex2.EX2 and (keep or operation is not None or kind not in {"initialize", "mutation"}):
+            raise ValueError("EX2 transactions use independent short intents only.")
         if self._assessment and (keep or operation is not None or kind not in {"initialize", "mutation"}):
             raise ValueError("Assessment transactions are short, independent mutations.")
         if self.scoped:
@@ -393,6 +404,10 @@ class Store:
     @contextlib.contextmanager
     def _scoped_transaction(self, *, essential, operation, keep, kind, resource_id,
                             subject, request, request_key, preflight):
+        if self._assessment is ex2.EX2:
+            # EX2 authority is the closed Store state machine, never a caller's
+            # preflight callback or an exposed generic mutation adapter.
+            ex2.invalid()
         with self.guard.locked():
             owned.available(self.root)
             if preflight is not None:
@@ -439,6 +454,552 @@ class Store:
             finally:
                 if failed or not keep or adapter is not None and not adapter.keep:
                     token.release()
+
+    def _ex2_local(self):
+        fixture = getattr(self, "_ex2_fixture", None)
+        if (self._assessment is not ex2.EX2 or type(fixture) is not ex2._LocalFixture
+                or fixture.store is not self or self._assessment_service is not None):
+            ex2.invalid()
+        return fixture
+
+    def _ex2_authorized(self, db, token, project_id=None, *, owner=False, active=True):
+        fixture = self._ex2_local()
+        wall, tick = fixture.now()
+        if type(token) is not str or not token or len(token) > 256:
+            raise AccessError("Current authorization is required.")
+        identity = ex2.row(db, "CURRENT_AUTH", (digest(token.encode()), wall), required=False)
+        if identity is None:
+            raise AccessError("Current authorization is required.")
+        project = None
+        if project_id is not None:
+            found = ex2.row(db, "CURRENT_PROJECT", (project_id, identity["subject"]), required=False)
+            if found is None or found["role"] not in ({"owner"} if owner else {"owner", "editor"}):
+                raise AccessError("Current project authorization is required.")
+            project = json.loads(found["payload"])
+            if (project.get("id") != project_id or owner and project.get("owner") != identity["subject"]
+                    or active and (project.get("status") != "active" or ex2.epoch(project["ends_at"]) <= wall)):
+                raise AccessError("Current project authorization is required.")
+        return identity, project, wall, tick
+
+    def _ex2_facts(self, db, *, subject, project_id):
+        fixture = self._ex2_local()
+        for expected in fixture.facts:
+            value = ex2.row(db, "SECURITY_BY_ID", (expected["fact_id"],))
+            if any(value[key] != expected[key] for key in ("fact_id", "action", "subject", "project_id", "request_key")):
+                ex2.invalid()
+            if (value["consumed"] and (value["subject"] is None or value["subject"] == subject)
+                    and (value["project_id"] is None or value["project_id"] == project_id)):
+                raise AccessError("This fixture's authorization has ended.")
+
+    def _ex2_launch_seed(self, metadata):
+        """Deferred J2b boundary. No generic callback or process selection."""
+        ex2.invalid()
+
+    def _ex2_validate_seed_result(self, child):
+        """Deferred J2b original-child/assets validation; no receipt import."""
+        ex2.invalid()
+
+    def _ex2_trigger_external(self, command, control):
+        """Deferred J2b native trigger; local metadata cannot authorize a process."""
+        ex2.invalid()
+
+    def _ex2_seed(self, token, project_id, manifest_json):
+        return self._ex2_run("fixture-seed-spawn", token,
+            {"project_id": project_id, "manifest_json": manifest_json})
+
+    def _ex2_accept_seed(self, child):
+        fixture = self._ex2_local()
+        try:
+            if fixture.state != "dispatched" or child is not fixture.child or child is None or fixture.published:
+                ex2.invalid()
+            # This potentially blocking external boundary is outside Guard/Owner.
+            binding = self._ex2_validate_seed_result(child)
+            wall, tick = fixture.now()
+            if (type(binding) is not str or binding != fixture.binding or tick >= fixture.deadline
+                    or wall >= ex2.epoch(fixture.scope_expiry)):
+                ex2.invalid()
+            fixture.state = "accepted"
+        except BaseException:
+            ex2.post_wait_hold(self)
+            raise
+
+    def _ex2_admit(self, token, manifest_json):
+        return self._ex2_run("scope-admit", token, {"manifest_json": manifest_json})
+
+    def _ex2_pending(self, token, command_id, version):
+        return self._ex2_run("command-pending", token, {"command_id": command_id, "version": version})
+
+    def _ex2_trigger(self, token, command_id, version):
+        return self._ex2_run("command-trigger", token, {"command_id": command_id, "version": version})
+
+    def _ex2_observe(self, token, command_id, version, observation):
+        return self._ex2_run("command-observe", token,
+            {"command_id": command_id, "version": version, "observation": observation})
+
+    def _ex2_snapshot(self, token, *, full=False, slot_index=None):
+        """Current-auth, one bounded materialization, with no Guard intent."""
+        fixture = self._ex2_local()
+        if not fixture.published or type(full) is not bool or full and slot_index is not None:
+            ex2.invalid()
+        if slot_index is not None and (type(slot_index) is not int or slot_index not in (0, 1)):
+            ex2.invalid()
+        with self.guard.locked(), self.write(role="ex2-command") as db:
+            db.execute("BEGIN IMMEDIATE")
+            identity, project, wall, tick = self._ex2_authorized(db, token, fixture.project_id)
+            if identity["subject"] != fixture.subject or digest(token.encode()) != fixture.token_hash:
+                raise AccessError("The original current session is required.")
+            scope = ex2.row(db, "SCOPE_FULL_BY_ID" if full else "SCOPE_META_BY_ID", (fixture.scope_id,))
+            if full and (scope["manifest_json"] != fixture.manifest or scope["binding_json"] != fixture.binding):
+                ex2.invalid()
+            if slot_index is not None:
+                result = dict(scope=scope, slot=ex2.row(db, "SLOT_FULL_BY_ID", (fixture.scope_id, slot_index)))
+                maximum = ex2.LIMITS["one_slot_status_bytes"]
+            else:
+                result = dict(scope=scope, slots=ex2.rows(db, "SLOT_META_FOR_SCOPE", (fixture.scope_id,)),
+                    commands=ex2.rows(db, "COMMANDS_FOR_SCOPE", (fixture.scope_id,)))
+                maximum = (ex2.LIMITS["single_full_scope_manifest_document_bytes"] if full
+                           else ex2.LIMITS["scope_and_slot_summary_bytes"])
+            result.update(execution_authorized=False, upload_authorized=False, cleanup_trusted=False,
+                          actual_resource_accepted=False)
+            if len(ex2.encode(result)) > maximum:
+                ex2.invalid()
+            db.rollback()
+            return result
+
+    def _ex2_security(self, token, fact_id, version, *, role=None, replacement_key=None):
+        return self._ex2_run("deny-auth", token, {"fact_id": fact_id, "version": version,
+            "role": role, "replacement_key": replacement_key})
+
+    def _ex2_deny(self, scope_id, version, reason):
+        return self._ex2_run("deny-scope", None, {"scope_id": scope_id, "version": version, "reason": reason})
+
+    def _ex2_control(self, scope, command, slot):
+        fixture = self._ex2_local()
+        value = dict(schema="outfitter.assessment-execution-control/v1", operation=command["operation"],
+            binding=json.loads(fixture.binding), expected_generation=None, admitting_owner_epoch=None,
+            writer_epoch=None, manifest=None, declared_upload_ceiling_bytes=None, expires_at=None,
+            content_length=None, slot=None, handoff_nonce=None, reason=None)
+        operation = command["operation"]
+        if operation == "prepare":
+            value.update(admitting_owner_epoch=fixture.owner_epoch, manifest=json.loads(fixture.manifest),
+                declared_upload_ceiling_bytes=1024, expires_at=scope["expires_at"])
+        elif command["lane"] == "P":
+            value.update(expected_generation=scope["scope_generation"], admitting_owner_epoch=fixture.owner_epoch)
+            if operation == "execute":
+                value.update(slot={key: slot[key] for key in ex2.FIRST_MANIFEST["reservations"][0]},
+                             handoff_nonce=slot["handoff_nonce"])
+            else:
+                value["writer_epoch"] = scope["writer_epoch"]
+                if operation == "ingest":
+                    value["content_length"] = 21
+        else:
+            if slot is not None:
+                value["slot"] = {key: slot[key] for key in ex2.FIRST_MANIFEST["reservations"][0]}
+            if operation == "cancel":
+                value["reason"] = "cancelled"
+        return ex2.encode(value) + b"\n"
+
+    def _ex2_preflight(self, db, action, token, payload, *, admitted=False):
+        fixture = self._ex2_local()
+        if action == "fixture-seed-spawn":
+            identity, project, wall, tick = self._ex2_authorized(db, token, payload["project_id"])
+            if (fixture.state != "fresh" or fixture.published or fixture.child is not None
+                    or self.guard.load()["sequence"] != (2 if admitted else 1)
+                    or tick + 12 >= fixture.deadline or wall >= fixture.policy_expiry):
+                ex2.invalid()
+            manifest = payload["manifest_json"]
+            manifest_hash = ex2.first_fixture_manifest(manifest, project_id=project["id"], expires_at=fixture.manifest_expiry)
+            for table in ("ex2_scopes", "ex2_slots", "ex2_commands"):
+                if db.execute(ex2.SQL_READS[table + "_COUNT"]).fetchone()[0] != 0:
+                    ex2.invalid()
+            self._ex2_facts(db, subject=identity["subject"], project_id=project["id"])
+            expires = fixture.bounded_scope_expiry(identity["expires"], ex2.epoch(project["ends_at"]))
+            if ex2.epoch(expires) <= wall:
+                ex2.invalid()
+            metadata = dict(schema="outfitter.execution-session-seed-metadata/v1",
+                waypoint_authority_id=self.guard.binding["authority_id"], project_id=project["id"],
+                scope_id=fixture.scope_id, owner_epoch=fixture.owner_epoch,
+                sampled_at=ex2.utc(fixture.sample, micros=True), session_deadline=ex2.utc(fixture.wall_deadline, micros=True),
+                authorization_expiry=ex2.utc(identity["expires"]), project_expiry=ex2.utc(ex2.epoch(project["ends_at"])),
+                policy_expiry=ex2.utc(fixture.policy_expiry), manifest_sha256=manifest_hash)
+            return dict(subject=identity["subject"], project=project, identity=identity, expires=expires,
+                metadata=metadata, request=dict(action=action, scope_id=fixture.scope_id,
+                    project_id=project["id"], subject=identity["subject"], manifest_sha256=manifest_hash,
+                    control_sha256=digest(ex2.encode(metadata))), role="ex2-fixture-seed-spawn", essential=False)
+        if action == "scope-admit":
+            identity, project, wall, tick = self._ex2_authorized(db, token, fixture.project_id)
+            if (fixture.state != "accepted" or fixture.published or digest(token.encode()) != fixture.token_hash
+                    or identity["subject"] != fixture.subject or identity["expires"] != fixture.auth_expiry
+                    or tick >= fixture.deadline or wall >= ex2.epoch(fixture.scope_expiry)
+                    or payload["manifest_json"] != fixture.manifest):
+                ex2.invalid()
+            ex2.first_fixture_manifest(payload["manifest_json"], project_id=fixture.project_id,
+                                       expires_at=fixture.manifest_expiry)
+            self._ex2_facts(db, subject=fixture.subject, project_id=fixture.project_id)
+            for table in ("ex2_scopes", "ex2_slots", "ex2_commands"):
+                if db.execute(ex2.SQL_READS[table + "_COUNT"]).fetchone()[0] != 0:
+                    ex2.invalid()
+            scope = fixture.scope()
+            return dict(subject=fixture.subject, scope=scope,
+                request=dict(action=action, scope_id=fixture.scope_id, project_id=fixture.project_id,
+                    subject=fixture.subject, manifest_sha256=scope["manifest_sha256"], binding_sha256=scope["binding_sha256"]),
+                role="ex2-admit", essential=False)
+        if action == "deny-auth":
+            # Local security actions can run before admission, but never during
+            # unpublished seed bootstrap. No new sign-in or credential factory.
+            if fixture.state not in {"accepted", "active"}:
+                ex2.invalid()
+            expected = next((x for x in fixture.facts if x["fact_id"] == payload["fact_id"]), None)
+            fact = ex2.row(db, "SECURITY_BY_ID", (payload["fact_id"],))
+            if (expected is None or fact["consumed"] != 0 or type(payload["version"]) is not int
+                    or fact["version"] != payload["version"] or fact["version"] >= ex2.M
+                    or any(fact[key] != expected[key] for key in ("action", "subject", "project_id", "request_key"))):
+                ex2.invalid()
+            operation = fact["action"]
+            identity, project, wall, tick = self._ex2_authorized(db, token, fact["project_id"],
+                owner=operation in {"membership", "close-project"}, active=operation == "close-project")
+            if operation in {"revoke-user", "rotate-user", "logout"} and identity["subject"] != fact["subject"]:
+                raise AccessError("Only the current subject can change this fixture credential.")
+            if operation != "membership" and payload["role"] is not None or operation != "rotate-user" and payload["replacement_key"] is not None:
+                ex2.invalid()
+            if operation == "membership":
+                if payload["role"] not in (None, "editor", "viewer") or fact["subject"] == project["owner"]:
+                    ex2.invalid()
+                member = ex2.row(db, "MEMBER_ROLE", (fact["project_id"], fact["subject"]), required=False)
+                if member is None or member["role"] == payload["role"]:
+                    ex2.invalid()
+                if ex2.row(db, "ACTIVE_USER", (fact["subject"],), required=False) is None:
+                    ex2.invalid()
+            if operation == "rotate-user" and (type(payload["replacement_key"]) is not str
+                    or not 32 <= len(payload["replacement_key"]) <= 256
+                    or digest(payload["replacement_key"].encode()) in fixture.initial_key_hashes.values()):
+                ex2.invalid()
+            scopes = ex2.rows(db, "SCOPE_ALL_META")
+            scopes = [scope for scope in scopes if (fact["subject"] is None or scope["subject"] == fact["subject"])
+                and (fact["project_id"] is None or scope["project_id"] == fact["project_id"])]
+            slots = [slot for scope in scopes for slot in ex2.rows(db, "SLOT_META_FOR_SCOPE", (scope["scope_id"],))]
+            self._ex2_denial_versions(scopes, slots)
+            return dict(subject=identity["subject"], fact=fact, scopes=scopes, slots=slots, project=project,
+                request=dict(action=action, fact_id=fact["fact_id"], subject=identity["subject"]),
+                role="ex2-deny-auth", essential=True)
+        if not fixture.published or fixture.state != "active":
+            ex2.invalid()
+        if action == "deny-scope":
+            scope = ex2.row(db, "SCOPE_META_BY_ID", (payload["scope_id"],))
+            if (scope["scope_id"] != fixture.scope_id or scope["deny_reason"] != "none"
+                    or type(payload["version"]) is not int or scope["version"] != payload["version"]
+                    or payload["reason"] not in {"expired", "restart", "clock_rollback", "access_ended",
+                        "ipc_uncertain", "storage_uncertain", "publication_uncertain"}):
+                ex2.invalid()
+            wall, tick = fixture.now()
+            if payload["reason"] != "expired":
+                # Other first-denial origins need their reviewed original
+                # runtime witness. A caller-supplied label is not that witness.
+                ex2.invalid()
+            if wall < ex2.epoch(scope["expires_at"]) and tick < fixture.deadline:
+                ex2.invalid()
+            slots = ex2.rows(db, "SLOT_META_FOR_SCOPE", (scope["scope_id"],))
+            self._ex2_denial_versions([scope], slots)
+            return dict(subject=scope["subject"], scope=scope, scopes=[scope], slots=slots,
+                request=dict(action=action, scope_id=scope["scope_id"], reason=payload["reason"]),
+                role="ex2-deny-scope", essential=True)
+        identity, project, wall, tick = self._ex2_authorized(db, token, fixture.project_id)
+        if (digest(token.encode()) != fixture.token_hash or identity["subject"] != fixture.subject
+                or identity["expires"] != fixture.auth_expiry or wall >= ex2.epoch(fixture.scope_expiry)
+                or tick >= fixture.deadline):
+            raise AccessError("This original fixture session has ended.")
+        self._ex2_facts(db, subject=fixture.subject, project_id=fixture.project_id)
+        command = ex2.row(db, "COMMAND_BY_ID", (payload["command_id"],))
+        expected = next((x for x in fixture.commands if x["command_id"] == command["command_id"]), None)
+        scope = ex2.row(db, "SCOPE_META_BY_ID" if action == "command-observe" and command["slot_index"] is not None
+                        else "SCOPE_FULL_BY_ID", (fixture.scope_id,))
+        if "manifest_json" in scope and (scope["manifest_json"] != fixture.manifest or scope["binding_json"] != fixture.binding):
+            ex2.invalid()
+        if (expected is None or type(payload["version"]) is not int or command["version"] != payload["version"]
+                or command["version"] >= ex2.M or scope["version"] >= ex2.M
+                or any(command[k] != expected[k] for k in ("scope_id", "lane", "ordinal", "operation", "slot_index", "opportunity", "request_key", "handoff_nonce"))
+                or any(scope[k] != fixture.scope()[k] for k in ("scope_id", "project_id", "subject", "manifest_sha256", "binding_sha256", "expires_at", "admitting_owner_epoch", "helper_epoch"))):
+            ex2.invalid()
+        slot = None
+        slots = ex2.rows(db, "SLOT_META_FOR_SCOPE", (scope["scope_id"],))
+        if command["slot_index"] is not None:
+            slot = next((x for x in slots if x["slot_index"] == command["slot_index"]), None)
+            original = fixture.slots[command["slot_index"]]
+            if slot is None or slot["version"] >= ex2.M or any(slot[k] != original[k] for k in
+                    ("scope_id", "slot_index", "attempt_id", "reservation_id", "stage_id", "sample_role", "sample_size",
+                     "repetition", "handoff_nonce", "request_key", "binding_digest")):
+                ex2.invalid()
+        phases = {"command-pending": "unused", "command-trigger": "pending", "command-observe": "triggered"}
+        if action not in phases or command["state"] != phases[action]:
+            ex2.invalid()
+        pending = ex2.rows(db, "PENDING_LANE", (scope["scope_id"], command["lane"]))
+        if (action == "command-pending" and pending or action != "command-pending"
+                and (len(pending) != 1 or pending[0]["command_id"] != command["command_id"])):
+            ex2.invalid()
+        if scope["deny_reason"] not in ({"none"} if command["lane"] == "P" else {"none", "cancelled"}):
+            ex2.invalid()
+        if action != "command-observe":
+            if action == "command-pending" and command["operation"] == "cancel" and (
+                    slot["deny_reason"] if slot is not None else scope["deny_reason"]) != "none":
+                ex2.invalid()
+            if command["operation"] == "cancel":
+                self._ex2_denial_versions([] if slot else [scope], [slot] if slot else slots)
+            if command["lane"] == "P":
+                if scope["local_phase"] != ("pending" if command["operation"] == "prepare" else "bound"):
+                    ex2.invalid()
+                prior = ex2.rows(db, "COMMANDS_FOR_SCOPE", (scope["scope_id"],))
+                if any(x["lane"] == "P" and x["ordinal"] < command["ordinal"] and x["state"] != "observed" for x in prior):
+                    ex2.invalid()
+                if slot is not None and (slot["deny_reason"] != "none" or slot["local_phase"] != (
+                        "planned" if action == "command-pending" else "pending")):
+                    ex2.invalid()
+                if command["operation"] == "execute" and (scope["scope_state"] != "sealed" or not scope["upload_complete"]
+                        or scope["execution_deny_latched"] or wall + 30 > ex2.epoch(scope["expires_at"])):
+                    ex2.invalid()
+            if tick + (42 if command["operation"] == "execute" else 12) >= fixture.deadline:
+                ex2.invalid()
+        control = self._ex2_control(scope, command, slot)
+        if action == "command-trigger" and (command["control_sha256"] != digest(control)
+                or command["control_length"] != len(control)
+                or command["expected_generation"] != (scope["scope_generation"] if command["lane"] == "P" and command["operation"] != "prepare" else None)):
+            ex2.invalid()
+        target = None
+        if action == "command-observe":
+            if slot is None:
+                target = scope
+                if target["manifest_json"] != fixture.manifest or target["binding_json"] != fixture.binding:
+                    ex2.invalid()
+            else:
+                target = ex2.row(db, "SLOT_FULL_BY_ID", (scope["scope_id"], slot["slot_index"]))
+            # Contradictory definitive evidence is an uncertainty hold even
+            # before begin; unknown/malformed evidence never promotes a cache.
+            try:
+                observed = ex2.observation(payload["observation"], command, scope, target)
+            except BaseException:
+                ex2.post_wait_hold(self)
+                raise
+        else:
+            observed = None
+        request = dict(action=action, command_id=command["command_id"], scope_id=scope["scope_id"],
+            project_id=scope["project_id"], subject=scope["subject"], lane=command["lane"], ordinal=command["ordinal"])
+        if action != "command-observe":
+            request["control_sha256"] = digest(control)
+        return dict(subject=scope["subject"], scope=scope, slot=slot, slots=slots, command=command,
+            control=control, target=target, observed=observed, request=request, role="ex2-command", essential=command["lane"] == "S")
+
+    def _ex2_late_current(self, db, token, checked, *, trigger=False):
+        fixture = self._ex2_local()
+        identity, project, wall, tick = self._ex2_authorized(db, token, fixture.project_id)
+        if (identity["subject"] != fixture.subject or identity["expires"] != fixture.auth_expiry
+                or digest(token.encode()) != fixture.token_hash or wall >= ex2.epoch(fixture.scope_expiry)
+                or tick + ((42 if checked["command"]["operation"] == "execute" else 12) if trigger else 0) >= fixture.deadline
+                or trigger and checked["command"]["operation"] == "execute" and wall + 30 > ex2.epoch(fixture.scope_expiry)):
+            ex2.invalid()
+        return wall
+
+    @staticmethod
+    def _ex2_denial_versions(scopes, slots):
+        if any(value["deny_reason"] == "none" and value["version"] >= ex2.M for value in scopes + slots):
+            ex2.invalid()
+
+    @staticmethod
+    def _ex2_apply_denial(db, scopes, slots, reason):
+        for scope in scopes:
+            if scope["deny_reason"] == "none":
+                ex2.change(db, "SCOPE_DENY", (reason, scope["scope_id"], scope["version"]))
+        for slot in slots:
+            if slot["deny_reason"] == "none":
+                ex2.change(db, "SLOT_DENY", (reason, slot["scope_id"], slot["slot_index"], slot["version"]))
+
+    def _ex2_mutate(self, db, action, token, payload, checked):
+        fixture = self._ex2_local()
+        if action in {"scope-admit", "deny-auth"}:
+            db.effect()
+            late = self._ex2_preflight(db, action, token, payload, admitted=True)
+            if late != checked:
+                ex2.invalid()
+        elif action in {"command-pending", "command-observe"}:
+            db.effect()
+            self._ex2_late_current(db, token, checked, trigger=action == "command-pending")
+        if action == "fixture-seed-spawn":
+            # Publication may block. Recheck real current auth after effect and
+            # immediately before the only external dispatch seam.
+            db.effect()
+            late = self._ex2_preflight(db, action, token, payload, admitted=True)
+            if late["request"] != checked["request"]:
+                ex2.invalid()
+            fixture.subject, fixture.project_id = checked["subject"], checked["project"]["id"]
+            fixture.token_hash, fixture.auth_expiry = digest(token.encode()), checked["identity"]["expires"]
+            fixture.scope_expiry, fixture.manifest = checked["expires"], payload["manifest_json"]
+            fixture.plan()
+            fixture.state = "attempted"
+            try:
+                fixture.child = self._ex2_launch_seed(checked["metadata"])
+            except BaseException as failure:
+                # Retain only the handle attached to the actual original
+                # failed launch. Teardown belongs to deferred J2b outside locks.
+                fixture.child = getattr(failure, "child", None)
+                raise
+            if fixture.child is None:
+                ex2.invalid()
+            return fixture.child
+        if action == "scope-admit":
+            ex2.insert(db, "ex2_scopes", checked["scope"])
+            for slot in fixture.slots:
+                ex2.insert(db, "ex2_slots", slot)
+            for command in fixture.commands:
+                ex2.insert(db, "ex2_commands", command)
+            return fixture.scope_id
+        if action == "deny-auth":
+            fact = checked["fact"]
+            ex2.change(db, "SECURITY_CONSUME", (fact["fact_id"], fact["version"]))
+            operation, subject, project = fact["action"], fact["subject"], fact["project_id"]
+            if operation == "revoke-user":
+                ex2.change(db, "UPDATE users SET active=0 WHERE subject=?", (subject,))
+                if db.execute("DELETE FROM sessions WHERE subject=?", (subject,)).rowcount != 1:
+                    ex2.invalid()
+            elif operation == "rotate-user":
+                if db.execute("DELETE FROM sessions WHERE subject=?", (subject,)).rowcount != 1:
+                    ex2.invalid()
+                ex2.change(db, "UPDATE users SET key_hash=? WHERE subject=?", (digest(payload["replacement_key"].encode()), subject))
+            elif operation == "logout":
+                ex2.change(db, "DELETE FROM sessions WHERE token_hash=?", (digest(token.encode()),))
+            elif operation == "membership":
+                if payload["role"] is None:
+                    ex2.change(db, "DELETE FROM members WHERE project_id=? AND subject=?", (project, subject))
+                else:
+                    ex2.change(db, "INSERT INTO members VALUES(?,?,?) ON CONFLICT(project_id,subject) DO UPDATE SET role=excluded.role",
+                        (project, subject, payload["role"]))
+            elif operation == "close-project":
+                updated = {**checked["project"], "status": "closed"}
+                ex2.change(db, "UPDATE projects SET payload=? WHERE id=?", (ex2.encode(updated).decode("ascii"), project))
+            self._ex2_apply_denial(db, checked["scopes"], checked["slots"], "access_ended")
+            return fact["fact_id"]
+        if action == "deny-scope":
+            self._ex2_apply_denial(db, checked["scopes"], checked["slots"], payload["reason"])
+            return checked["scope"]["scope_id"]
+        command, scope, slot = checked["command"], checked["scope"], checked["slot"]
+        if action == "command-pending":
+            generation = scope["scope_generation"] if command["lane"] == "P" and command["operation"] != "prepare" else None
+            ex2.change(db, "COMMAND_PENDING", (generation, digest(checked["control"]), len(checked["control"]), command["command_id"], command["version"]))
+            if command["operation"] == "execute":
+                ex2.change(db, "SLOT_PHASE", ("pending", scope["scope_id"], slot["slot_index"], "planned", slot["version"]))
+            elif command["operation"] == "cancel":
+                self._ex2_apply_denial(db, [] if slot else [scope], [slot] if slot else checked["slots"], "cancelled")
+        elif action == "command-trigger":
+            variant = ("TRIGGER_SAFETY" if command["lane"] == "S" else "TRIGGER_PREPARE" if command["operation"] == "prepare"
+                       else "TRIGGER_EXECUTE" if command["operation"] == "execute" else "TRIGGER_INGEST_OR_SEAL")
+            parameters = (command["command_id"], command["control_sha256"], command["control_length"],
+                command["expected_generation"], command["version"], scope["project_id"], scope["subject"],
+                fixture.owner_epoch, fixture.helper_epoch, ex2.utc(fixture.now()[0]), scope["version"])
+            if variant == "TRIGGER_EXECUTE":
+                parameters += (slot["version"],)
+            # effect can publish; the final authorization check follows it.
+            db.effect()
+            self._ex2_late_current(db, token, checked, trigger=True)
+            ex2.change(db, variant, parameters)
+            if command["operation"] == "execute":
+                ex2.change(db, "SLOT_PHASE", ("triggered", scope["scope_id"], slot["slot_index"], "pending", slot["version"]))
+            self._ex2_late_current(db, token, checked, trigger=True)
+            sent = self._ex2_trigger_external(command, checked["control"])
+            if type(sent) is not int or sent != 1:
+                ex2.invalid()
+        elif action == "command-observe":
+            value = payload["observation"]
+            generation, reply_hash, equal, promote = checked["observed"]
+            target = checked["target"]
+            cache_field = "scope_generation" if slot is None else "attempt_generation"
+            ex2.complete_command_observation(db, command, correlated=True, validated=True, reply_code=value.code,
+                reply_generation=generation, reply_sha256=reply_hash, cache_generation=target[cache_field], cache_equal=equal)
+            if promote:
+                projection = value.projection
+                if slot is None:
+                    version = scope["version"]
+                    if command["operation"] == "prepare":
+                        ex2.change(db, "SCOPE_BIND", (generation, value.writer_epoch, value.watch_epoch,
+                            projection["scope_state"], scope["scope_id"], version))
+                        version += 1
+                    ex2.change(db, "SCOPE_OBSERVE", tuple(projection[key] for key in ex2.SCOPE_CACHE)
+                        + (scope["scope_id"], generation if command["operation"] == "prepare" else scope["scope_generation"], version))
+                else:
+                    ex2.change(db, "SLOT_OBSERVE", tuple(projection[key] for key in ex2.SLOT_CACHE)
+                        + (scope["scope_id"], slot["slot_index"], slot["attempt_generation"], slot["version"]))
+            if command["operation"] == "execute" and slot["deny_reason"] == "none":
+                ex2.change(db, "SLOT_PHASE", ("observed", scope["scope_id"], slot["slot_index"], "triggered", slot["version"] + int(promote)))
+        return command["command_id"]
+
+    def _ex2_run(self, action, token, payload):
+        """Closed state transition; no callable supplies semantic authority."""
+        fixture = self._ex2_local()
+        with self.guard.locked():
+            owned.available(self.root)
+            # Business reads use the exact writer role for full observations;
+            # a readonly metadata Owner performs all other prebegin gates.
+            if action.startswith("command-"):
+                with self.write(role="ex2-command") as probe:
+                    probe.execute("BEGIN IMMEDIATE")
+                    checked = self._ex2_preflight(probe, action, token, payload)
+                    probe.rollback()
+            else:
+                with self.read(role="ex2-read-meta") as probe:
+                    checked = self._ex2_preflight(probe, action, token, payload)
+            request = checked["request"]
+            ex2.guard_request(request)
+            fixed_key = ex2.request_phase_key(request, self.guard.binding)
+            essential, subject = checked["essential"], checked["subject"]
+            resource = request.get("scope_id", request.get("fact_id", "workspace"))
+            if action == "fixture-seed-spawn":
+                resource = request["project_id"]
+            current = self.guard.check(essential=essential, kind="mutation")
+            ex2.admission(current, essential)
+            if self.guard.lookup("mutation", subject, fixed_key) is not None:
+                ex2.invalid()
+            operation = None
+            try:
+                # This try starts BEFORE begin, including publication failure.
+                operation = self.guard.begin("mutation", resource_id=resource, subject=subject,
+                    request=request, request_key=fixed_key, essential=essential)
+                with self.write(role=checked["role"]) as owner:
+                    try:
+                        owner.execute("BEGIN IMMEDIATE")
+                        checked = self._ex2_preflight(owner, action, token, payload, admitted=True)
+                        if checked["request"] != request:
+                            ex2.invalid()
+                        adapter = owned.Mutation(owner, operation, False)
+                        result = self._ex2_mutate(adapter, action, token, payload, checked)
+                        adapter.commit()
+                    except BaseException as original:
+                        try:
+                            owner.rollback()
+                        except BaseException:
+                            pass
+                        try:
+                            earlier_failure = self.guard.lease.failure
+                            try:
+                                operation.fail(error=original)
+                            finally:
+                                if earlier_failure:
+                                    self.guard.lease.failure = earlier_failure
+                        except BaseException:
+                            pass
+                        raise
+                if action == "fixture-seed-spawn":
+                    fixture.state = "dispatched"
+                elif action == "scope-admit":
+                    fixture.state, fixture.published = "active", True
+                return result
+            except BaseException:
+                owned.hold(self.root)
+                self.guard.lease.failure = self.guard.lease.failure or "operation_failed"
+                raise
+            finally:
+                if operation is not None:
+                    try:
+                        operation.release()
+                    except BaseException:
+                        owned.hold(self.root)
+                        self.guard.lease.failure = self.guard.lease.failure or "operation_failed"
+                        raise
 
     @contextlib.contextmanager
     def _safety_transaction(self, **kwargs):
