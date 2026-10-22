@@ -240,7 +240,12 @@ def exercise(course, browser, args):
                   'workspace_mapping': 'omitted-device-only' if args.device_only else 'configured',
                   'notebook_execution': 'SEPARATE_NOT_ESTABLISHED_HERE',
                   'model_calls': 0, 'real_students': False, 'full_browser_accessibility': 'NOT_ESTABLISHED_HERE'}
-        for user, other, saved in [('alice', 'bob', args.alice_saved), ('bob', 'alice', args.bob_saved)]:
+        attempts = [('alice', 'bob', args.alice_saved), ('bob', 'alice', args.bob_saved)]
+        if getattr(args, 'notebook_data', None):
+            # Exercise the new native/live path first so failures stop early
+            # within the finite grant, before repeating the unchanged control.
+            attempts.reverse()
+        for user, other, saved in attempts:
             learner, item = learners[user]
             notebook_page = None
             fixture = args.fixture_data
