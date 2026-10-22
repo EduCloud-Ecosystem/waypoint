@@ -1,0 +1,116 @@
+{
+  "schema": "CW1-reviewer-fixture-v1",
+  "task_version": "info511-lab3-q4-synthetic-v1",
+  "review_actor_kind": "automated-synthetic-fixture",
+  "purpose": "Authored API transition inputs only. No actual human review, learning, assessment-quality or model evidence. Correctness still requires the real separate four-point checker.",
+  "learners": {
+    "alice": {
+      "artifacts": {
+        "lab3-q4.ipynb": {
+          "bytes": 4044,
+          "sha256": "82ec9dfc9edeb7083dca75678212b3e3bb7c82278922b8aa6c0d47a77f2da763"
+        },
+        "tidy-inflation.csv": {
+          "bytes": 225,
+          "sha256": "f6fc631da6d4a9a8781f986d43bfa7f25e5d7321838d3d122b875b3cfa902faa"
+        },
+        "explanation.md": {
+          "bytes": 407,
+          "sha256": "376e1a1286a337fb7839cbec1568837569e54cc42241c7f244dba8233ce12ad4"
+        },
+        "assistance.md": {
+          "bytes": 169,
+          "sha256": "5b33247611c1471ca66a7968bf961a98707e1e2a9d57c1d14d427f7ed90f3a32"
+        }
+      },
+      "proposal_points": {
+        "correctness": 3,
+        "independent-checks": 1,
+        "explanation-reproducibility": 1,
+        "disclosure": 0
+      },
+      "review_points": {
+        "correctness": 4,
+        "independent-checks": 1,
+        "explanation-reproducibility": 1,
+        "disclosure": 0
+      },
+      "citations": {
+        "correctness": {
+          "path": "tidy-inflation.csv",
+          "location": "line:1",
+          "quote": "country,year,annual_inflation"
+        },
+        "independent-checks": {
+          "path": "lab3-q4.ipynb",
+          "location": "cell:1",
+          "quote": "INFO511 Lab 3 Q4: synthetic engineering rehearsal. This input has three fictional countries and three years. It is not the original course data. See README.md for the task and submission steps.\n"
+        },
+        "explanation-reproducibility": {
+          "path": "explanation.md",
+          "location": "line:1",
+          "quote": "Instructor-created synthetic example, authored but not executed. Each row describes one fictional country and year. The reshape keeps all nine source cells, including three missing values. Independent scalar lookups compare each country/year pair with its original source cell; additional checks cover duplicate keys, row count, missingness and preservation of the input. CSV output excludes the row index."
+        },
+        "disclosure": {
+          "path": "assistance.md",
+          "location": "line:1",
+          "quote": "Task version: info511-lab3-q4-synthetic-v1"
+        }
+      }
+    },
+    "bob": {
+      "artifacts": {
+        "lab3-q4.ipynb": {
+          "bytes": 4044,
+          "sha256": "82ec9dfc9edeb7083dca75678212b3e3bb7c82278922b8aa6c0d47a77f2da763"
+        },
+        "tidy-inflation.csv": {
+          "bytes": 225,
+          "sha256": "f6fc631da6d4a9a8781f986d43bfa7f25e5d7321838d3d122b875b3cfa902faa"
+        },
+        "explanation.md": {
+          "bytes": 407,
+          "sha256": "376e1a1286a337fb7839cbec1568837569e54cc42241c7f244dba8233ce12ad4"
+        },
+        "assistance.md": {
+          "bytes": 169,
+          "sha256": "5b33247611c1471ca66a7968bf961a98707e1e2a9d57c1d14d427f7ed90f3a32"
+        }
+      },
+      "proposal_points": {
+        "correctness": 3,
+        "independent-checks": 1,
+        "explanation-reproducibility": 1,
+        "disclosure": 0
+      },
+      "review_points": {
+        "correctness": 4,
+        "independent-checks": 1,
+        "explanation-reproducibility": 1,
+        "disclosure": 0
+      },
+      "citations": {
+        "correctness": {
+          "path": "tidy-inflation.csv",
+          "location": "line:1",
+          "quote": "country,year,annual_inflation"
+        },
+        "independent-checks": {
+          "path": "lab3-q4.ipynb",
+          "location": "cell:1",
+          "quote": "INFO511 Lab 3 Q4: synthetic engineering rehearsal. This input has three fictional countries and three years. It is not the original course data. See README.md for the task and submission steps.\n"
+        },
+        "explanation-reproducibility": {
+          "path": "explanation.md",
+          "location": "line:1",
+          "quote": "Instructor-created synthetic example, authored but not executed. Each row describes one fictional country and year. The reshape keeps all nine source cells, including three missing values. Independent scalar lookups compare each country/year pair with its original source cell; additional checks cover duplicate keys, row count, missingness and preservation of the input. CSV output excludes the row index."
+        },
+        "disclosure": {
+          "path": "assistance.md",
+          "location": "line:1",
+          "quote": "Task version: info511-lab3-q4-synthetic-v1"
+        }
+      }
+    }
+  }
+}

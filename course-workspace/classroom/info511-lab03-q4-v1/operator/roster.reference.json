@@ -1,0 +1,22 @@
+{
+  "classroom": {
+    "name": "INFO511 Q4 synthetic classroom rehearsal",
+    "host": "forgejo",
+    "host_namespace": "course-test",
+    "join_policy": "roster"
+  },
+  "learners": [
+    {
+      "username": "alice",
+      "planned_route": "non_ai"
+    },
+    {
+      "username": "bob",
+      "planned_route": "optional_hints_only_after_B1_P1_acceptance",
+      "current_route": "non_ai"
+    }
+  ],
+  "instructor": "teacher",
+  "credentials": "Use only generated existing rehearsal credentials; no passwords or tokens in this file.",
+  "activation": "NONE; reference configuration, not a provisioner."
+}

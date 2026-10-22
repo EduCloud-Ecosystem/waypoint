@@ -1,0 +1,11 @@
+{
+  "path_in_belay": "backend/app/packs/datascience/tidy_check.py",
+  "sha256": "6e9406c3c0855f11dce57333fe2b2161caf87b859cc23aa590a79492d6361862",
+  "license": "AGPL-3.0-only",
+  "status": "belay-classroom source fork; checker bytes unchanged; acceptance remains separately evidenced",
+  "function": "check_tidy(original, preserved, result)",
+  "no_model": true,
+  "repository": "https://github.com/EduCloud-Ecosystem/belay-classroom",
+  "revision": "f53b8f19e0e445d9a0caedc734c048c383664134",
+  "source_checkout": "/Users/gregchism/dev/belay-classroom"
+}

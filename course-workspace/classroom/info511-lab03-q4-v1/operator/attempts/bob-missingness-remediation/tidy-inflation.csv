@@ -1,0 +1,7 @@
+country,year,annual_inflation
+Example North,1993,1.25
+Example North,1995,-2.5
+Example South,1993,0
+Example South,1994,3.125
+Example West,1994,4.5
+Example West,1995,6
