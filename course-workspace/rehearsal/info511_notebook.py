@@ -186,7 +186,10 @@ def journey(course, learner, peer, item, contract):
     widgets=page.locator('.jp-Notebook .jp-Cell')
     expect(widgets).to_have_count(len(cells),timeout=60000)
     load=widgets.nth(ids['load-input']); editor=load.locator('.cm-content')
-    editor.fill(turn['source']); expect(editor).to_have_text(turn['source'])
+    editor.fill(turn['source'])
+    # CodeMirror's block lines have no separators in textContent; innerText
+    # preserves their rendered line breaks. Capture and saved-model checks stay exact.
+    expect(editor).to_have_text(turn['source'],use_inner_text=True,timeout=10000)
     require_saved_authored_files(bob['work_directory'])
     with page.expect_popup() as opened:
         page.get_by_role('button',name='Ask Belay about this code',exact=True).click()
