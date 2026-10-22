@@ -181,6 +181,70 @@ def native_login(context, item, *, expect_belay=True, profile=LEGACY):
     return page
 
 
+def verify_interrupted_save(page, editor, origin_url, filename, marker, snapshot, *, read_current, expect):
+    """Prove one actual failed save, independent of Lab's notification style."""
+    blocked=[]
+    pattern='**/api/contents/'+filename
+    def offline(route):
+        request=route.request
+        if request.method!='PUT':
+            return route.continue_()
+        blocked.append(request)
+        # Never let an unexpected/repeated save reach the notebook server.
+        route.abort('internetdisconnected')
+        parsed=urlsplit(request.url)
+        require(parsed.scheme+'://'+parsed.netloc==origin_url and not parsed.query and
+                parsed.path=='/api/contents/'+filename,'interrupted_save_request_scope')
+        require(len(blocked)==1,'interrupted_save_repeated_put')
+        body=request.post_data_json
+        require(isinstance(body,dict) and body.get('type')=='notebook' and
+                isinstance(body.get('content'),dict),'interrupted_save_notebook_body')
+        cells=body['content'].get('cells')
+        require(isinstance(cells,list) and all(isinstance(cell,dict) for cell in cells),
+                'interrupted_save_notebook_cells')
+        selected=[cell for cell in cells if cell.get('id')=='load-input']
+        require(len(selected)==1 and selected[0].get('cell_type')=='code','interrupted_save_cell_identity')
+        source=selected[0].get('source')
+        require(isinstance(source,str) or (isinstance(source,list) and all(isinstance(line,str) for line in source)),
+                'interrupted_save_source_shape')
+        require((''.join(source) if isinstance(source,list) else source)==marker,'interrupted_save_marker_body')
+    page.route(pattern,offline)
+    dialog_dismissed=False
+    try:
+        expect(editor).to_have_text(marker,use_inner_text=True,timeout=10000)
+        with page.expect_event('requestfailed',predicate=lambda request:any(request is item for item in blocked),
+                               timeout=30000) as interrupted:
+            page.keyboard.press('Control+s')
+        request=interrupted.value
+        require(len(blocked)==1 and request is blocked[0],'interrupted_save_failure_identity')
+        require(isinstance(request.failure,str) and bool(request.failure) and request.response() is None,
+                'interrupted_save_transport_failure_unconfirmed')
+        require(read_current()==snapshot,'failed_save_changed_saved_bytes')
+        expect(editor).to_have_text(marker,use_inner_text=True,timeout=10000)
+        # Lab may show a notification instead of a modal. Only dismiss an
+        # actual dialog's non-retry control; keep PUTs blocked throughout.
+        dialog=page.locator('.jp-Dialog')
+        if dialog.count():
+            require(dialog.count()==1,'interrupted_save_dialog_ambiguous')
+            cancel=dialog.get_by_role('button',name='Cancel',exact=True)
+            ok=dialog.get_by_role('button',name='OK',exact=True)
+            require(cancel.count()==1 or ok.count()==1,'interrupted_save_safe_dismiss_unavailable')
+            (cancel if cancel.count()==1 else ok).click()
+            expect(dialog).to_have_count(0,timeout=10000)
+            dialog_dismissed=True
+        require(len(blocked)==1 and read_current()==snapshot,'reconnect_changed_saved_bytes')
+        expect(editor).to_have_text(marker,use_inner_text=True,timeout=10000)
+    finally:
+        page.unroute(pattern,offline)
+    # Reconnection issues no save; the later bridge reads these same saved bytes.
+    require(read_current()==snapshot,'reconnect_changed_saved_bytes')
+    expect(editor).to_have_text(marker,use_inner_text=True,timeout=10000)
+    return {'method':'PUT','failed_request_observed':True,'marker_in_failed_body':True,
+        'http_response_absent':True,'blocked_save_count':len(blocked),
+        'editor_marker_retained':True,'saved_four_files_unchanged':True,
+        'dialog_dismissed':dialog_dismissed}
+
+
 def journey(course, learner, peer, item, contract, *, profile=LEGACY):
     profile = get_profile(profile)
     from playwright.sync_api import expect
@@ -295,21 +359,8 @@ def journey(course, learner, peer, item, contract, *, profile=LEGACY):
     files=saved_files(bob['work_directory'],profile=profile); report['saved_manifest']=manifest(files)
     marker=turn['source']+'\n# UNSAVED_CONNECTION_CONTROL\n'
     editor.fill(marker)
-    failed=[]
-    def offline(route):
-        if route.request.method=='PUT': failed.append(True); route.abort('internetdisconnected')
-        else: route.continue_()
-    page.route('**/api/contents/'+profile.files[0],offline)
-    page.keyboard.press('Control+s')
-    page.wait_for_function('document.querySelector(".jp-Dialog") !== null',timeout=30000)
-    require(failed and saved_files(bob['work_directory'],profile=profile)==files,'failed_save_changed_saved_bytes')
-    # Reconnect read requests; keep the explicit failed-save dialog/unsaved cell
-    # intact. No retry/overwrite or hidden save is issued by this harness.
-    page.unroute('**/api/contents/'+profile.files[0],offline)
-    dialog=page.locator('.jp-Dialog'); cancel=dialog.get_by_role('button',name='Cancel',exact=True)
-    if cancel.count(): cancel.click()
-    else: dialog.get_by_role('button',name='OK',exact=True).click()
-    require(saved_files(bob['work_directory'],profile=profile)==files,'reconnect_changed_saved_bytes')
+    report['failed_save_control']=verify_interrupted_save(page,editor,origin_url,profile.files[0],marker,files,
+        read_current=lambda:saved_files(bob['work_directory'],profile=profile),expect=expect)
     report.update(actual_python_kernel=True,explicit_saved_execution_counts=True,
                   unsaved_snapshot_captured=True,failed_save_preserved_saved_bytes=True,
                   interruption_scope='one_blocked_notebook_save_request',
