@@ -2,8 +2,9 @@
 """Opt-in CW1 synthetic submission/review walkthrough, never automatic acceptance.
 
 Requires pre-existing local images and binaries, a fresh admitted runtime window,
-and explicit interactive or labeled synthetic fixture review. Does not run models or notebook code.
-Notebook execution is a separate admitted step in the existing CPU environment.
+and explicit interactive or labeled synthetic fixture review. The optional native
+notebook contract uses operator-prestarted isolated synthetic services; defaults
+do not execute notebooks or call models.
 """
 import argparse
 import base64
@@ -241,11 +242,26 @@ def exercise(course, browser, args):
                   'model_calls': 0, 'real_students': False, 'full_browser_accessibility': 'NOT_ESTABLISHED_HERE'}
         for user, other, saved in [('alice', 'bob', args.alice_saved), ('bob', 'alice', args.bob_saved)]:
             learner, item = learners[user]
+            notebook_page = None
+            fixture = args.fixture_data
+            if user == 'bob' and getattr(args, 'notebook_data', None):
+                from info511_notebook import journey, derive_fixture
+                notebook, notebook_page, actual = journey(course, learner, learners[other][0], item, args.notebook_data)
+                saved = Path(args.notebook_data['bob']['work_directory'])
+                if fixture is not None:
+                    fixture, provenance = derive_fixture(fixture, actual, args.notebook_review_fixture_out,
+                        args.notebook_data['contract_sha256'], args.fixture_digest)
+                    notebook['derived_automated_fixture'] = provenance
+                result['notebook'] = notebook
+                result['notebook_execution'] = 'ACTUAL_BOB_NATIVE_SYNTHETIC_ONLY'
+                result['model_calls'] = 'NOT_COUNTED_HERE_SEE_BELAY_LEDGER'
+                result['scope'] = 'synthetic-native-notebook-exact-saved-revision-and-review'
             receipt = submit_info511_attempt(course, learner, learners[other][0], item,
-                saved.resolve(), learner_username=user, expected_actions={name: 'create' for name in FILES})
+                saved.resolve(), learner_username=user, expected_actions={name: 'create' for name in FILES},
+                notebook_page=notebook_page)
             correctness = await_grade(course, learner, item['submission_id'], receipt['commit'])
             review = operator_review(course, teacher, item['submission_id'], receipt, course.root, user,
-                                     fixture=args.fixture_data, learner=learner)
+                                     fixture=fixture, learner=learner)
             result['submissions'][user] = {'receipt': receipt, 'correctness': correctness, 'review': review}
         response = teacher.request.get(course.url + f'/classrooms/{cid}/grades.csv')
         if response.status != 200:
@@ -278,6 +294,8 @@ def main():
     destination.add_argument('--workspace', help='Existing approved synthetic workspace URL; no service is created here')
     destination.add_argument('--device-only', action='store_true', help='Omit unused Hub/workspace mapping; actual saved-file device upload only')
     parser.add_argument('--reviewer-fixture', type=Path, help='Explicit authored automated synthetic reviewer fixture; never human review')
+    parser.add_argument('--notebook-contract', type=Path, help='Private operator contract for prestarted native synthetic Jupyter/Belay; no provisioning')
+    parser.add_argument('--notebook-review-fixture-out', type=Path, help='Explicit fresh derived automated fixture output; only Bob executed notebook/CSV hashes may change')
     parser.add_argument('--forgejo-image', default=FORGEJO_IMAGE, help='Existing local Forgejo image ID or fixture-specific tag/reference')
     parser.add_argument('--checkout-image', default='cairn-checkout:local', help='Existing local acquisition image ID or fixture-specific tag')
     parser.add_argument('--execute-synthetic', action='store_true')
@@ -301,6 +319,14 @@ def main():
         fixture_digest = hashlib.sha256(raw_fixture).hexdigest()
         if not isinstance(args.fixture_data, dict) or args.fixture_data.get('schema') != 'CW1-reviewer-fixture-v1' or args.fixture_data.get('task_version') != TASK or args.fixture_data.get('review_actor_kind') != LABEL or set(args.fixture_data.get('learners', {})) != {'alice', 'bob'}:
             parser.error('explicit two-learner CW1 automated synthetic fixture required')
+    args.fixture_digest = fixture_digest
+    args.notebook_data = None
+    if args.notebook_contract:
+        from info511_notebook import read_contract
+        args.notebook_data = read_contract(args.notebook_contract.absolute(), args.workspace,
+            device_only=args.device_only, fixture=args.fixture_data, derivative=args.notebook_review_fixture_out)
+    elif args.notebook_review_fixture_out:
+        parser.error('derived notebook fixture output requires an explicit notebook contract')
     images = {}
     for role, selected in (('correctness', args.image), ('forgejo', args.forgejo_image), ('checkout', args.checkout_image)):
         if not selected or selected.startswith('-') or any(c.isspace() for c in selected):
