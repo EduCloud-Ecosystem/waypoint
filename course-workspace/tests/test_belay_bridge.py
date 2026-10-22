@@ -127,12 +127,83 @@ class BelayBridgeTests(unittest.TestCase):
                             (200,b'{"access_token":"not-a-token"}')):
             with self.assertRaises(ValueError): bridge.issued_token(self.config,status,raw,now=1001)
 
+    def test_browser_assets_preserve_mime_despite_native_api_finish_override(self):
+        class HTTPError(Exception):
+            pass
+        class NativeHandler:
+            xsrf_token = b'native-proof'
+            def set_header(self, name, value):
+                if not hasattr(self, 'response_headers'): self.response_headers = {}
+                self.response_headers[name] = value
+            def finish(self, value): self.result = value
+            def check_xsrf_cookie(self):
+                if self.request.headers.get('X-XSRFToken') != 'native-proof': raise HTTPError(403)
+        class APIHandler(NativeHandler):
+            # Model the Jupyter APIHandler seam that caused HTML/JS responses to
+            # appear as JSON even after the bridge explicitly set their MIME.
+            def finish(self, value):
+                self.api_finish_called = True
+                self.set_header('Content-Type', 'application/json')
+                super().finish(value)
+            def set_status(self, value): self.status = value
+        handlers = []
+        app = SimpleNamespace(web_app=SimpleNamespace(settings={'base_url':'/'},
+            add_handlers=lambda _host, values:handlers.extend(values)))
+        modules = {
+            'jupyter_server':SimpleNamespace(), 'jupyter_server.base':SimpleNamespace(),
+            'jupyter_server.base.handlers':SimpleNamespace(APIHandler=APIHandler),
+            'jupyter_server.utils':SimpleNamespace(url_path_join=lambda base,name:base.rstrip('/')+'/'+name),
+            'tornado':SimpleNamespace(),
+            'tornado.httpclient':SimpleNamespace(AsyncHTTPClient=object,HTTPRequest=object),
+            'tornado.web':SimpleNamespace(authenticated=lambda function:function,HTTPError=HTTPError,RequestHandler=NativeHandler),
+        }
+        with patch.dict(sys.modules,modules), patch.dict(os.environ,self.env,clear=True):
+            bridge._load_jupyter_server_extension(app)
+        Handler = handlers[0][1]
+        headers = {'Host':'127.0.0.1:5190','Referer':self.config.workspace+'/belay/',
+                   'X-XSRFToken':'native-proof'}
+        def handler():
+            value = Handler()
+            value.request = SimpleNamespace(headers=headers,query='',body=b'')
+            return value
+        html = b'<html><script src="auth-client.js"></script></html>'
+        for name, body in (('dev-client.html',html),('dev-client.js',b'window.synthetic=true;'),
+                           ('workspace.css',b'body {}')):
+            (self.root/name).write_bytes(body)
+        async def exercise():
+            for resource, mime in (('', 'text/html; charset=utf-8'),
+                    ('dev-client.js','text/javascript'),('workspace.css','text/css'),
+                    ('bootstrap.js','text/javascript')):
+                value = handler()
+                value.upstream = AsyncMock(return_value=SimpleNamespace(code=200,
+                    body=b"window.BELAY_LEARNER_ID = 'edu:2';"))
+                await value.get(resource)
+                self.assertEqual(value.response_headers['Content-Type'],mime)
+                self.assertFalse(getattr(value,'api_finish_called',False))
+                if not resource: self.assertIn(b'/belay/bootstrap.js',value.result)
+                if resource == 'bootstrap.js': self.assertIn(b'BELAY_SESSION_PROXY = true',value.result)
+            value = handler()
+            await value.get('config')
+            self.assertTrue(value.api_finish_called)
+            self.assertEqual(value.response_headers['Content-Type'],'application/json')
+            self.assertEqual(value.result['max_source_bytes'],8192)
+            value = handler()
+            value.upstream = AsyncMock(side_effect=[SimpleNamespace(code=200,body=b'{}'),
+                SimpleNamespace(code=200,body=b'{"synthetic":true}',headers={'Content-Type':'application/json'})])
+            with patch.object(bridge,'issued_token',return_value='server-only-token'):
+                await value.get('api/api/curriculum')
+            self.assertTrue(value.api_finish_called)
+            self.assertEqual(value.response_headers['Content-Type'],'application/json')
+            self.assertEqual(value.result,b'{"synthetic":true}')
+        asyncio.run(exercise())
+
     def test_authenticated_native_xsrf_and_origin_gate_before_any_upstream(self):
         class HTTPError(Exception):
             def __init__(self, status, *_args): self.status_code = status
         class NativeHandler:
             def check_xsrf_cookie(self):
                 if self.request.headers.get('X-XSRFToken') != 'native-proof': raise HTTPError(403)
+            def finish(self, value): self.result = value
         class APIHandler(NativeHandler):
             def set_header(self, *_args): pass
             def set_status(self, value): self.status = value

@@ -245,7 +245,9 @@ def _load_jupyter_server_extension(serverapp):
                 except (ValueError, UnicodeError):
                     raise HTTPError(502, 'Belay configuration unavailable') from None
                 self.set_header('Content-Type', 'text/javascript')
-                return self.finish(body)
+                # APIHandler.finish forces application/json. These are browser
+                # assets; preserve their explicit MIME type through Tornado.
+                return RequestHandler.finish(self, body)
             name = 'dev-client.html' if resource == '' else resource
             try:
                 body = read_asset(config, name)
@@ -255,7 +257,7 @@ def _load_jupyter_server_extension(serverapp):
             except (ValueError, OSError, UnicodeError):
                 raise HTTPError(404) from None
             self.set_header('Content-Type', ASSETS[name])
-            self.finish(body)
+            RequestHandler.finish(self, body)
 
         @authenticated
         async def post(self, resource=''):

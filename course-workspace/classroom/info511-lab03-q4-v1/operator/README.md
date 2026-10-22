@@ -58,9 +58,13 @@ quality. Existing fixtures are never overwritten or silently rebound.
 Notebook source checkpoint: checkout `waypoint-classroom-notebook`, branch
 `codex/classroom-notebook`, base `0bc7f617`. Reuses `waypoint_cairn` saved-file and
 receipt protocols, extends the existing CW1 runner, and adds a separate opt-in
-Belay proxy and Lab extension. Hermetic checks: 8 bridge, 4 snapshot and 9 private
-contract/derivative controls passed. Runtime browser selectors, isolation, actual
-kernel execution and live AI acceptance remain pending the root-owned rehearsal.
+Belay proxy and Lab extension. Hermetic checks: 9 bridge, 4 snapshot and 9 private
+contract/derivative controls passed. The bridge preserves HTML/JavaScript MIME
+types through Tornado rather than Jupyter's JSON-forcing API finish method;
+config and proxy responses retain the native API handler. Standalone native
+browser/kernel/save and cross-learner denial passed the root-owned preflight.
+The combined selected-cell handoff and live AI acceptance remain pending; failed
+integration controls and cleanup evidence are retained outside the repository.
 
 `rubric.json` includes all four artifacts. The separate Cairn CSV extraction
 source candidate must be built/tested before that capture can succeed. The
