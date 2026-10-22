@@ -122,15 +122,20 @@ class EnrollmentInstallTests(unittest.TestCase):
                 f = RuntimeFixture(root); fixture.write(root / 'runtime.json', f.config)
                 fixture.publish(root / 'control' / 'enrollment-holder-course-main.json', {'pid': 123, 'start_identity': 'a' * 64})
                 f.now += 2; sleeps = []
+                # Fractional start exposes subtraction rounding for the 13-second hold.
+                started = 51.1
                 def sleep(delay):
                     sleeps.append(delay)
                     if delay == .05: f.heartbeat('worker-one', 'course-main')
-                with patch.object(fixture, 'DockerBackend', return_value=f.backend), patch.object(fixture.os, 'getpid', return_value=123), patch.object(fixture, 'process_identity', return_value='a' * 64), patch.object(fixture.time, 'sleep', side_effect=sleep), patch.object(fixture, 'AuthorityClient', side_effect=AssertionError('no heartbeat seeding RPC')):
+                with patch.object(fixture, 'DockerBackend', return_value=f.backend), patch.object(fixture.os, 'getpid', return_value=123), patch.object(fixture, 'process_identity', return_value='a' * 64), patch.object(fixture.time, 'sleep', side_effect=sleep), patch.object(fixture.time, 'monotonic', return_value=started), patch.object(fixture, 'AuthorityClient', side_effect=AssertionError('no heartbeat seeding RPC')):
                     fixture._hold_endpoint(root, 'course-main', seconds)
                 self.assertEqual(sleeps, [.05, seconds])
                 ready = fixture.read_record(root / 'control' / 'enrollment-lock-course-main.json')
                 ended = fixture._contention_marker(root, 'course-main')
-                self.assertEqual(ended, dict(ready, held=False)); self.assertEqual(ready['release_at'] - ready['started'], seconds)
+                self.assertEqual(ended, dict(ready, held=False))
+                self.assertEqual(ready['started'], started)
+                self.assertEqual(ready['seconds'], seconds)
+                self.assertEqual(ready['release_at'], started + seconds)
                 self.assertEqual(ready['checked_at'], f.now)
                 self.assertEqual(ready['heartbeat_sha256'], fixture.digest(fixture._heartbeat(f.backend, 'course-main')))
 
