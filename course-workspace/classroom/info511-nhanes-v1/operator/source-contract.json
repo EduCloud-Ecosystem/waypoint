@@ -1,0 +1,294 @@
+{
+  "version": 1,
+  "status": "source_data_contract_frozen_for_root_review",
+  "root_selection": "Two-table public subset, adult18..79,64keys, exact five-column long output; no execution grant implied.",
+  "cycle": "NHANES August 2021-August 2023",
+  "release_cycle_code": 12,
+  "source_verification": {
+    "method": "Bounded read-only local parsing of two cached public XPT files with bundled pandas 2.2.3; official CDC codebooks browsed and frequencies compared. No raw download, cloud, provider, kernel, app runtime or repository changes.",
+    "remote_byte_identity_rechecked": false,
+    "fixture_files_materialized": true,
+    "review_date": "2026-10-22"
+  },
+  "sources": {
+    "DEMO_L": {
+      "data_url": "https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/2021/DataFiles/DEMO_L.xpt",
+      "codebook_url": "https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/2021/DataFiles/DEMO_L.htm",
+      "local_path": "/Users/gregchism/dev/InfoSciCourses/INFO521/info521-projects-2026/data/raw/DEMO_L.xpt",
+      "sha256": "ca4374a158b493b8b0163e1388da21d57a18d1b9cecff2aa4e2fa2bec494fe23",
+      "bytes": 2582160,
+      "rows": 11933,
+      "selected_columns": [
+        "SEQN",
+        "RIDAGEYR"
+      ],
+      "key": "SEQN",
+      "key_missing": 0,
+      "key_duplicates": 0
+    },
+    "BPXO_L": {
+      "data_url": "https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/2021/DataFiles/BPXO_L.xpt",
+      "codebook_url": "https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/2021/DataFiles/BPXO_L.htm",
+      "local_path": "/Users/gregchism/dev/InfoSciCourses/INFO521/info521-projects-2026/data/raw/BPXO_L.xpt",
+      "sha256": "189aa9bed689d2c69cf8d780b01de85073276fea5694dd52cdf696229f9054a6",
+      "bytes": 696720,
+      "rows": 7801,
+      "selected_columns": [
+        "SEQN",
+        "BPXOSY1",
+        "BPXOSY2",
+        "BPXOSY3"
+      ],
+      "key": "SEQN",
+      "key_missing": 0,
+      "key_duplicates": 0,
+      "eligibility": "Age 8 years and older, subject to documented arm/medical exclusions; file membership does not guarantee a usable reading.",
+      "systolic_unit": "mmHg",
+      "readings": {
+        "BPXOSY1": {
+          "observed": 7517,
+          "missing": 284,
+          "zeros": 0,
+          "range": [
+            61,
+            232
+          ]
+        },
+        "BPXOSY2": {
+          "observed": 7505,
+          "missing": 296,
+          "zeros": 0,
+          "range": [
+            59,
+            233
+          ]
+        },
+        "BPXOSY3": {
+          "observed": 7480,
+          "missing": 321,
+          "zeros": 0,
+          "range": [
+            50,
+            232
+          ]
+        }
+      }
+    }
+  },
+  "source_join_audit": {
+    "bp_ids_absent_demo": 0,
+    "demo_ids_absent_bp": 4132,
+    "full_bp_anchor": {
+      "participants": 7801,
+      "age_range": [
+        8,
+        80
+      ],
+      "long_rows": 23403,
+      "missing_reading_cells": 901
+    }
+  },
+  "adult_cohort": {
+    "definition": "DEMO_L records satisfying 18 <= RIDAGEYR <= 79, before any BP availability filter. This explicitly excludes age-80-plus topcoded records; it is not all adults or a national cohort.",
+    "participants": 7628,
+    "matched_bp": 5995,
+    "unmatched_bp": 1633,
+    "buckets": {
+      "unmatched": 1633,
+      "matched_all_missing": 192,
+      "matched_partial_missing": 18,
+      "matched_complete": 5785
+    },
+    "all_cohort_long_rows": 22884,
+    "all_cohort_long_missing": 5497,
+    "reason_recommended": "Matches the existing donor age definition while preserving unmatched participants and missing readings; avoids the donor complete-case filter."
+  },
+  "fixture": {
+    "participants": 64,
+    "selection_rule": [
+      "Form the explicit adult DEMO cohort.",
+      "Left join the three BPXO systolic columns on SEQN with validate=one_to_one and indicator=join_status.",
+      "Partition into disjoint buckets: left_only; both with 3 missing readings; both with 1 or 2 missing readings; both with 0 missing readings.",
+      "Sort each bucket by numeric SEQN ascending. Take first 8 unmatched, first 8 all-missing, first 8 partly-missing, and first 40 complete. Union and sort by SEQN. No randomness.",
+      "Extract DEMO selected columns for those 64 SEQN and BPXO selected columns for the 56 present SEQN. Retain original values and missing positions; introduce no source rows or values."
+    ],
+    "selection_nonrepresentative": true,
+    "selected_per_bucket": {
+      "unmatched": 8,
+      "matched_all_missing": 8,
+      "matched_partial_missing": 8,
+      "matched_complete": 40
+    },
+    "selected_seqn": [
+      130378,
+      130379,
+      130380,
+      130384,
+      130385,
+      130386,
+      130387,
+      130388,
+      130389,
+      130390,
+      130391,
+      130392,
+      130393,
+      130394,
+      130395,
+      130396,
+      130397,
+      130398,
+      130399,
+      130400,
+      130401,
+      130402,
+      130404,
+      130406,
+      130407,
+      130409,
+      130410,
+      130413,
+      130415,
+      130416,
+      130417,
+      130418,
+      130419,
+      130420,
+      130422,
+      130424,
+      130425,
+      130426,
+      130430,
+      130434,
+      130436,
+      130437,
+      130438,
+      130439,
+      130440,
+      130441,
+      130442,
+      130443,
+      130445,
+      130446,
+      130452,
+      130547,
+      130588,
+      130759,
+      130878,
+      130879,
+      130912,
+      132303,
+      132547,
+      132735,
+      133530,
+      133743,
+      134475,
+      136004
+    ],
+    "selected_seqn_canonical_json_sha256": "ac153d896a56a4edd52fb0ebd5746d8938e4d321d31130192d5a48c5599eb8e5",
+    "selected_age_range": [
+      18,
+      78
+    ],
+    "csv_encoding": "UTF-8, LF, header, final newline; integer-valued numeric fields as base-10 integers; missing numeric cells empty; rows ascending numeric SEQN.",
+    "files": {
+      "DEMO_L_selected.csv": {
+        "columns": [
+          "SEQN",
+          "RIDAGEYR"
+        ],
+        "rows": 64,
+        "bytes": 654,
+        "sha256": "4a9c6d40ccbd4cb8a3886b20e2ec506e74c70c8e641347a941b9209f61369587"
+      },
+      "BPXO_L_selected.csv": {
+        "columns": [
+          "SEQN",
+          "BPXOSY1",
+          "BPXOSY2",
+          "BPXOSY3"
+        ],
+        "rows": 56,
+        "bytes": 983,
+        "sha256": "4ae89d264da5da4020fd6e8fdd0171ae188b7ed9191aeb8b18af20b30c1556a9"
+      }
+    }
+  },
+  "required_output": {
+    "columns": [
+      "SEQN",
+      "RIDAGEYR",
+      "reading",
+      "systolic_mm_hg",
+      "bpxo_match"
+    ],
+    "key": [
+      "SEQN",
+      "reading"
+    ],
+    "reading_type": "integer",
+    "reading_values": [
+      1,
+      2,
+      3
+    ],
+    "bpxo_match_values": [
+      "matched",
+      "no_BPXO_record"
+    ],
+    "bpxo_match_definition": "matched = SEQN present in supplied BPXO table; no_BPXO_record = SEQN absent from supplied BPXO table. Neither category asserts exam attendance or reason for absence.",
+    "expected_counts": {
+      "participants": 64,
+      "matched_participants": 56,
+      "no_BPXO_record_participants": 8,
+      "rows": 192,
+      "matched_rows": 168,
+      "no_BPXO_record_rows": 24,
+      "observed_systolic_cells": 134,
+      "missing_systolic_cells": 58,
+      "within_matched_missing": 34,
+      "no_BPXO_record_missing": 24,
+      "missing_by_reading": {
+        "1": 16,
+        "2": 18,
+        "3": 24
+      },
+      "observed_zero_cells": 0
+    },
+    "canonical_expected_output_sha256": "a30c651328dd19980af2d1fe9a173ef4405922ee743f30e50d9c58cf5248f7dc",
+    "canonical_expected_output_bytes": 4642,
+    "expected_output_file_materialized": false
+  },
+  "task": "Use DEMO as left table. Validate a one_to_one SEQN join, retain bpxo_match, melt exactly BPXOSY1/BPXOSY2/BPXOSY3 into reading1/2/3 and systolic_mm_hg. Preserve all three rows per participant, every source value and every missing position. Explain observational units, unmatched versus within-component missingness, and verify lossless pivot roundtrip.",
+  "missing_value_contract": [
+    "CDC documents numeric dot missing for the selected BP fields; preserve as missing in CSV/pandas, not 0.",
+    "Selected BP fields have no documented refusal/dont-know sentinels; do not apply a generic 7/9/77/99 recode.",
+    "Do not fill missing measurements, average readings, drop incomplete participants, or infer why a particular reading is absent.",
+    "Retain join_status so a missing BP row and a present BP row with missing readings remain distinguishable.",
+    "No observed systolic zero exists in either cached source or selected fixture; fabricate none."
+  ],
+  "checker_assertions": [
+    "Require exact supplied source bytes/hashes and column order; both sources have unique nonmissing integral SEQN.",
+    "Left join with validate=one_to_one; retain exactly64DEMO keys and unchanged ages,56matched and8no_BPXO_record.",
+    "Output exactly the five required columns,192rows, unique(SEQN,reading), integer reading1/2/3 each exactlyonce per SEQN.",
+    "Compare keyed scalar values and missing masks to the approved join/melt, independent of row order; compare unchanged source ages and bpxo_match semantics.",
+    "Verify58missing cells,34within matched rows and24unmatched cells; per-reading16/18/24; no zero-as-missing or fabricatedzero.",
+    "Pivot back to compare exact three-column source values/missing masks after left join.",
+    "Survey-method errors receive learning feedback; they are not misconduct evidence."
+  ],
+  "survey_boundary": "This task makes no population estimates. Population inference would require current CDC survey weights and design guidance; the selected participants/readings must not be treated as an independent national sample. No blood analytes, clinical thresholds or medical advice.",
+  "donor_limitations": [
+    "INFO521 build_nhanes.py labels _L as 2021-2022; official release is August 2021-August 2023.",
+    "The donor CSV prejoins six components, averages readings, filters age18-79, drops complete-case missingness and removes SEQN; do not reuse it for this task.",
+    "The donor prose cites WTMECPRP for _L; official DEMO_L instead documents WTMEC2YR for MEC exams. Weights are excluded from this chosen wrangling fixture.",
+    "Bundled pandas2.2.3 decoded 3073 raw all-zero WTMEC2YR fields as 5.397605346934028e-79 (all interview-only RIDSTATR1); RIDAGEYR raw zero similarly decodes tiny. No parser repair/normalization performed. Adult selected ages are18-78 and unaffected. This is a donor/parser limitation outside this task."
+  ],
+  "verification_performed": [
+    "Input raw SHA256 verified before parsing.",
+    "Selected IDs and both canonical source CSV hashes reproduce initial proposal exactly.",
+    "Actual written CSV bytes parsed back and one_to_one joined with expected keys/counts.",
+    "In-memory192-row melt exact missing counts and unique composite keys verified.",
+    "Pivot roundtrip equals joined source values/missing masks.",
+    "No source normalization or raw mutations. No repository changes, provider, cloud, kernel or live application."
+  ]
+}

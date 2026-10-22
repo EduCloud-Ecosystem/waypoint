@@ -82,6 +82,21 @@ class BelayBridgeTests(unittest.TestCase):
                        {'Referer':'http://evil.invalid'}, {'Referer':'http://['}):
             self.assertFalse(bridge.same_origin(dict(host,**update),self.config.workspace,True))
 
+    def test_nhanes_profile_has_exact_private_route_and_rejects_legacy_or_unknown(self):
+        config=bridge.configuration(dict(self.env,WORKSPACE_BELAY_ASSIGNMENT_PROFILE='nhanes-v1'))
+        self.assertEqual(config.profile,'nhanes-v1')
+        nhanes='/api/classroom/info511-nhanes-wrangling/info511-nhanes-wrangling-v1'
+        legacy='/api/classroom/'+bridge.EXERCISE+'/'+bridge.VERSION
+        for method in ('GET','POST'):
+            self.assertTrue(bridge.allowed_route(method,nhanes,profile=config.profile))
+            self.assertFalse(bridge.allowed_route(method,legacy,profile=config.profile))
+            self.assertFalse(bridge.allowed_route(method,nhanes))
+            self.assertFalse(bridge.allowed_route(method,nhanes,profile='unapproved'))
+        self.assertFalse(bridge.allowed_route('DELETE',nhanes,profile=config.profile))
+        self.assertFalse(bridge.allowed_route('POST','/api/run',profile=config.profile))
+        with self.assertRaises(ValueError):
+            bridge.configuration(dict(self.env,WORKSPACE_BELAY_ASSIGNMENT_PROFILE='unapproved'))
+
     def test_allowlisted_assets_exact_bytes_symlink_fifo_and_size_rejected(self):
         (self.root/'dev-client.js').write_bytes(b'actual reviewed frontend')
         self.assertEqual(bridge.read_asset(self.config,'dev-client.js'),b'actual reviewed frontend')

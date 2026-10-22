@@ -1,0 +1,11 @@
+{
+  "title": "INFO511 NHANES wrangling-v1: draft instructor rubric",
+  "slug": "info511-nhanes-wrangling-v1",
+  "type": "individual",
+  "template": {
+    "namespace": "course-test",
+    "name": "info511-nhanes-template",
+    "ref": null
+  },
+  "grading_spec": "grading.json"
+}

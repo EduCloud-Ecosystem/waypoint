@@ -20,6 +20,8 @@ MAX_ASSET = 1048576
 TIMEOUT = 15
 EXERCISE = 'info511-lab3-q4-synthetic'
 VERSION = EXERCISE + '-v1'
+ASSIGNMENT_PROFILES = {'legacy': (EXERCISE, VERSION),
+    'nhanes-v1': ('info511-nhanes-wrangling', 'info511-nhanes-wrangling-v1')}
 ASSETS = {
     'dev-client.html': 'text/html; charset=utf-8',
     'AI-Powered-Spark.svg': 'image/svg+xml',
@@ -47,11 +49,12 @@ class Configuration:
     workspace: str
     assets: Path
     learner: str
+    profile: str = 'legacy'
 
 
 def configuration(env):
     names = ('HOST_ORIGIN', 'API_ORIGIN', 'WORKSPACE_ORIGIN', 'ASSET_ROOT', 'LEARNER_ID')
-    if not any(env.get('WORKSPACE_BELAY_' + name) for name in names):
+    if not any(env.get('WORKSPACE_BELAY_' + name) for name in (*names, 'ASSIGNMENT_PROFILE')):
         return None
     if env.get('WORKSPACE_BELAY_LOCAL_TEST') != '1':
         raise ValueError('Belay notebook proxy requires explicit synthetic local opt-in')
@@ -67,13 +70,19 @@ def configuration(env):
     learner = env.get('WORKSPACE_BELAY_LEARNER_ID', '')
     if learner not in ('edu:1', 'edu:2'):
         raise ValueError('explicit synthetic learner binding required')
-    return Configuration(host, api, workspace, assets, learner)
+    profile = env.get('WORKSPACE_BELAY_ASSIGNMENT_PROFILE', 'legacy')
+    if profile not in ASSIGNMENT_PROFILES:
+        raise ValueError('unknown synthetic assignment profile')
+    return Configuration(host, api, workspace, assets, learner, profile)
 
 
-def allowed_route(method, path):
+def allowed_route(method, path, *, profile='legacy'):
     if not isinstance(path, str) or len(path) > 256 or not re.fullmatch(r'/[A-Za-z0-9_/-]+', path):
         return False
-    private = '/api/classroom/' + EXERCISE + '/' + VERSION
+    if profile not in ASSIGNMENT_PROFILES:
+        return False
+    exercise, version = ASSIGNMENT_PROFILES[profile]
+    private = '/api/classroom/' + exercise + '/' + version
     if method == 'GET' and path in {'/healthz', '/api/curriculum', '/api/conversations/config', '/api/sol/jobs/config', private}:
         return True
     if method == 'POST' and path in {'/api/participant', '/api/overlay', '/api/sol/jobs', private}:
@@ -267,7 +276,7 @@ def _load_jupyter_server_extension(serverapp):
 
         async def proxy(self, method, path):
             self.local(api=True)
-            if self.request.query or not allowed_route(method, path):
+            if self.request.query or not allowed_route(method, path, profile=config.profile):
                 raise HTTPError(404)
             if len(self.request.body) > MAX_REQUEST:
                 raise HTTPError(413)

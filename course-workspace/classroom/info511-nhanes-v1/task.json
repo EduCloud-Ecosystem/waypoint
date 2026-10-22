@@ -1,0 +1,113 @@
+{
+  "schema": "educloud.classroom.task-package/v1",
+  "task_id": "info511-nhanes-wrangling",
+  "task_version": "info511-nhanes-wrangling-v1",
+  "policy_id": "info511-nhanes-hints-v1",
+  "status": "SOURCE_BOUND_RUNTIME_PENDING",
+  "real_students": false,
+  "synthetic_learners_only": true,
+  "dataset_kind": "public-CDC-selected-nonrepresentative-subset",
+  "learner_files": [
+    "README.md",
+    "nhanes-wrangling.ipynb",
+    "tidy-nhanes.csv",
+    "explanation.md",
+    "assistance.md",
+    "data/DEMO_L_selected.csv",
+    "data/BPXO_L_selected.csv"
+  ],
+  "submission_files": [
+    "nhanes-wrangling.ipynb",
+    "tidy-nhanes.csv",
+    "explanation.md",
+    "assistance.md"
+  ],
+  "datasets": [
+    {
+      "path": "learner/data/DEMO_L_selected.csv",
+      "sha256": "4a9c6d40ccbd4cb8a3886b20e2ec506e74c70c8e641347a941b9209f61369587",
+      "rows": 64,
+      "columns": [
+        "SEQN",
+        "RIDAGEYR"
+      ]
+    },
+    {
+      "path": "learner/data/BPXO_L_selected.csv",
+      "sha256": "4ae89d264da5da4020fd6e8fdd0171ae188b7ed9191aeb8b18af20b30c1556a9",
+      "rows": 56,
+      "columns": [
+        "SEQN",
+        "BPXOSY1",
+        "BPXOSY2",
+        "BPXOSY3"
+      ]
+    }
+  ],
+  "source_contract": {
+    "path": "operator/source-contract.json",
+    "sha256": "6543949a202b02987dba3b1f06f3ca607f536fbc1bff4912b56687d6175a6f17"
+  },
+  "cycle": "NHANES August 2021-August 2023",
+  "expected_output": {
+    "columns": [
+      "SEQN",
+      "RIDAGEYR",
+      "reading",
+      "systolic_mm_hg",
+      "bpxo_match"
+    ],
+    "key": [
+      "SEQN",
+      "reading"
+    ],
+    "reading_type": "integer",
+    "reading_values": [
+      1,
+      2,
+      3
+    ],
+    "bpxo_match_values": [
+      "matched",
+      "no_BPXO_record"
+    ],
+    "bpxo_match_definition": "matched = SEQN present in supplied BPXO table; no_BPXO_record = SEQN absent from supplied BPXO table. Neither category asserts exam attendance or reason for absence.",
+    "expected_counts": {
+      "participants": 64,
+      "matched_participants": 56,
+      "no_BPXO_record_participants": 8,
+      "rows": 192,
+      "matched_rows": 168,
+      "no_BPXO_record_rows": 24,
+      "observed_systolic_cells": 134,
+      "missing_systolic_cells": 58,
+      "within_matched_missing": 34,
+      "no_BPXO_record_missing": 24,
+      "missing_by_reading": {
+        "1": 16,
+        "2": 18,
+        "3": 24
+      },
+      "observed_zero_cells": 0
+    },
+    "canonical_expected_output_sha256": "a30c651328dd19980af2d1fe9a173ef4405922ee743f30e50d9c58cf5248f7dc",
+    "canonical_expected_output_bytes": 4642,
+    "expected_output_file_materialized": false
+  },
+  "environment": {
+    "cpu_only": true,
+    "new_dependencies": false,
+    "runtime_authorized": false
+  },
+  "binding": {
+    "assignment_id": null,
+    "published_template_commit": null,
+    "runtime_calls_enabled": false
+  },
+  "scope": {
+    "no_ai": "Same assignment/rubric and valid no_ai route without model dependency.",
+    "grades": "No automatic full-rubric grade; pinned CSV correctness only, separate explicit review.",
+    "private_guidance": "Never append private coaching, monitoring or hint text to submitted artifacts.",
+    "inference": "No population, causal or medical conclusions."
+  }
+}

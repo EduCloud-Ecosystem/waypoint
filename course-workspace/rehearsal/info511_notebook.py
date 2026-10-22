@@ -18,6 +18,7 @@ ROOT = Path(__file__).resolve().parents[1]
 NOTEBOOK_OPERATOR = ROOT / 'classroom/info511-lab03-q4-v1/operator'
 sys.path[:0] = [str(ROOT / 'classroom'), str(ROOT / 'course')]
 from info511_package import FILES
+from assignment_profiles import LEGACY, get_profile
 from waypoint_cairn import open_root, open_beneath, read_saved
 
 
@@ -56,14 +57,19 @@ def origin(value):
     return value
 
 
-def reviewed_authored_files():
-    return {name:(NOTEBOOK_OPERATOR / 'notebook-bob' / name).read_bytes()
+def reviewed_authored_files(*, profile=LEGACY):
+    profile = get_profile(profile)
+    return {name:(profile.package / 'operator/notebook-bob' / name).read_bytes()
             for name in ('assistance.md','explanation.md')}
 
 
-def require_notebook_fixture(fixture):
+def require_notebook_fixture(fixture, *, profile=LEGACY):
     """Keep the declared live-help scope source-authored, before any live work."""
-    expected = manifest(reviewed_authored_files())
+    profile = get_profile(profile)
+    if profile.key == 'nhanes-v1':
+        require(isinstance(fixture,dict) and fixture.get('task_version')==profile.task,
+                'reviewed_notebook_task_profile_required')
+    expected = manifest(reviewed_authored_files(profile=profile))
     try:
         actual = fixture['learners']['bob']['artifacts']
     except (KeyError, TypeError):
@@ -72,13 +78,14 @@ def require_notebook_fixture(fixture):
             'reviewed_notebook_authored_fixture_required')
 
 
-def require_saved_authored_files(directory):
-    actual = saved_files(directory)
-    require(all(actual.get(name)==body for name,body in reviewed_authored_files().items()),
+def require_saved_authored_files(directory, *, profile=LEGACY):
+    actual = saved_files(directory, profile=profile)
+    require(all(actual.get(name)==body for name,body in reviewed_authored_files(profile=profile).items()),
             'reviewed_notebook_saved_authored_files_required')
 
 
-def read_contract(path, workspace, *, device_only=False, fixture=None, derivative=None):
+def read_contract(path, workspace, *, device_only=False, fixture=None, derivative=None, profile=LEGACY):
+    profile = get_profile(profile)
     raw_contract = private_bytes(path)
     document = json.loads(raw_contract)
     require(isinstance(document,dict) and set(document)=={'version','bob','alice','turn_file'} and
@@ -97,9 +104,12 @@ def read_contract(path, workspace, *, device_only=False, fixture=None, derivativ
     require(isinstance(turn,dict) and set(turn)=={'source','question'} and
             all(isinstance(turn[key],str) and turn[key].strip() for key in turn) and
             len(turn['source'].encode())<=8192 and len(turn['question'].encode())<=8192,'reviewed_turn_shape')
+    if profile.key == 'nhanes-v1':
+        approved = json.loads((profile.package / 'operator/approved-notebook-turn.json').read_bytes())
+        require(turn==approved,'reviewed_turn_profile_mismatch')
     if fixture is not None:
         require(derivative is not None,'explicit_derived_fixture_output_required')
-        require_notebook_fixture(fixture)
+        require_notebook_fixture(fixture, profile=profile)
     if derivative is not None:
         target = Path(derivative)
         require(target.is_absolute() and not target.exists() and not target.is_symlink() and
@@ -108,24 +118,28 @@ def read_contract(path, workspace, *, device_only=False, fixture=None, derivativ
     return {**document,'turn':turn,'contract_sha256':hashlib.sha256(raw_contract).hexdigest()}
 
 
-def saved_files(directory):
+def saved_files(directory, *, profile=LEGACY):
+    profile = get_profile(profile)
     return {entry['path']:base64.b64decode(entry['content_base64'],validate=True)
-            for entry in read_saved(Path(directory),list(FILES))}
+            for entry in read_saved(Path(directory),list(profile.files))}
 
 
 def manifest(files):
     return {name:{'bytes':len(raw),'sha256':hashlib.sha256(raw).hexdigest()} for name,raw in sorted(files.items())}
 
 
-def derive_fixture(original, files, destination, contract_digest, original_digest):
+def derive_fixture(original, files, destination, contract_digest, original_digest, *, profile=LEGACY):
     """Explicitly rebind nondeterministic executed bytes; keep judgments exact."""
+    profile = get_profile(profile)
+    if profile.key == 'nhanes-v1':
+        require(original.get('task_version')==profile.task,'derived_fixture_task_profile_mismatch')
     derived = copy.deepcopy(original)
     actual = manifest(files)
     before = copy.deepcopy(original['learners']['bob']['artifacts'])
-    require(set(actual)==set(FILES) and set(before)==set(FILES),'derived_fixture_four_artifacts')
+    require(set(actual)==set(profile.files) and set(before)==set(profile.files),'derived_fixture_four_artifacts')
     for name in ('explanation.md','assistance.md'):
         require(actual[name]==before[name],'derived_fixture_authored_text_drift')
-    for name in ('lab3-q4.ipynb','tidy-inflation.csv'):
+    for name in profile.files[:2]:
         derived['learners']['bob']['artifacts'][name]=actual[name]
     raw = (json.dumps(derived,indent=2)+'\n').encode()
     previous = hashlib.sha256((json.dumps(original,sort_keys=True,separators=(',',':'))).encode()).hexdigest()
@@ -134,7 +148,7 @@ def derive_fixture(original, files, destination, contract_digest, original_diges
         'original_fixture_canonical_sha256':previous,
         'derived_fixture_sha256':hashlib.sha256(raw).hexdigest(),'contract_sha256':contract_digest,
         'bob_artifacts_before':before,'bob_actual_saved_manifest':actual,
-        'changed_fields':['learners.bob.artifacts.lab3-q4.ipynb','learners.bob.artifacts.tidy-inflation.csv'],
+        'changed_fields':['learners.bob.artifacts.'+name for name in profile.files[:2]],
         'points_quotes_rubric_actor_unchanged':True}
     target = Path(destination)
     for path, content in ((target,raw),(target.with_name(target.name+'.provenance.json'),
@@ -153,9 +167,10 @@ def contents(page, origin_url, path='lab3-q4.ipynb'):
     }""",{'origin':origin_url,'path':path})
 
 
-def native_login(context, item, *, expect_belay=True):
+def native_login(context, item, *, expect_belay=True, profile=LEGACY):
+    profile = get_profile(profile)
     page=context.new_page()
-    page.goto(item['origin']+('/lab/tree/lab3-q4.ipynb' if expect_belay else '/lab'),wait_until='domcontentloaded')
+    page.goto(item['origin']+('/lab/tree/'+profile.files[0] if expect_belay else '/lab'),wait_until='domcontentloaded')
     field=page.locator('#password_input')
     if field.is_visible():
         field.fill(private_bytes(item['token_file'],8192).decode().strip())
@@ -166,17 +181,18 @@ def native_login(context, item, *, expect_belay=True):
     return page
 
 
-def journey(course, learner, peer, item, contract):
+def journey(course, learner, peer, item, contract, *, profile=LEGACY):
+    profile = get_profile(profile)
     from playwright.sync_api import expect
     bob=contract['bob']; turn=contract['turn']; origin_url=bob['origin']
-    require_saved_authored_files(bob['work_directory'])
-    page=native_login(learner,bob)
+    require_saved_authored_files(bob['work_directory'], profile=profile)
+    page=native_login(learner,bob,profile=profile)
     report={'scope':'standalone-synthetic-native-Jupyter-auth-not-Hub-or-institutional-SSO',
         'contract_sha256':contract['contract_sha256'],'real_students':False,
         'source_sha256':hashlib.sha256(turn['source'].encode()).hexdigest(),
         'job_posts':[],'accepted_job_submits':0,'prepared_fallback':False,
         'provider_attempts_independently_verified':False,'wrong_source_exercise_runtime_probe':'NOT_IMPLEMENTED'}
-    current=contents(page,origin_url); require(current.get('ok'),'native_contents_unavailable')
+    current=contents(page,origin_url,profile.files[0]); require(current.get('ok'),'native_contents_unavailable')
     cells=current['body']['content']['cells']
     ids={cell.get('id'):index for index,cell in enumerate(cells)}
     require(all(name in ids for name in ('load-input','learner-work')),'stable_code_cells_required')
@@ -190,7 +206,7 @@ def journey(course, learner, peer, item, contract):
     # CodeMirror's block lines have no separators in textContent; innerText
     # preserves their rendered line breaks. Capture and saved-model checks stay exact.
     expect(editor).to_have_text(turn['source'],use_inner_text=True,timeout=10000)
-    require_saved_authored_files(bob['work_directory'])
+    require_saved_authored_files(bob['work_directory'], profile=profile)
     with page.expect_popup() as opened:
         page.get_by_role('button',name='Ask Belay about this code',exact=True).click()
     tutor=opened.value
@@ -198,6 +214,8 @@ def journey(course, learner, peer, item, contract):
     expect(tutor.locator('#notebook-source')).to_have_text(turn['source'])
     expect(tutor.locator('#notebook-hash')).to_contain_text(report['source_sha256'])
     expect(tutor.locator('#question')).to_have_value(turn['question'],timeout=30000)
+    binding=tutor.evaluate('({exercise_id:window.BELAY_CLASSROOM_DEMO.exercise_id,exercise_version:window.BELAY_CLASSROOM_DEMO.exercise_version})')
+    require(binding=={'exercise_id':profile.exercise,'exercise_version':profile.task},'notebook_demo_assignment_profile_mismatch')
     guidance=tutor.locator('#classroom-guidance'); guidance.wait_for(timeout=30000)
     granted=tutor.evaluate('window.BELAY_CLASSROOM_DEMO.request_id')
     require(bool(re.fullmatch(r'[A-Za-z0-9_-]{16,64}',granted)),'live_request_id_shape')
@@ -208,6 +226,7 @@ def journey(course, learner, peer, item, contract):
         if request.method!='POST': return route.continue_()
         payload=request.post_data_json
         require(isinstance(payload,dict) and payload.get('request_id')==granted and
+                payload.get('exercise_id')==profile.exercise and payload.get('exercise_version')==profile.task and
                 report['accepted_job_submits']==0,'unexpected_job_submit')
         response=route.fetch(timeout=30000,max_redirects=0)
         entry={'phase':phase,'status':response.status}
@@ -260,10 +279,10 @@ def journey(course, learner, peer, item, contract):
         cell=widgets.nth(ids[name]); cell.locator('.cm-content').click(); page.keyboard.press('Shift+Enter')
         expect(cell.locator('.jp-InputPrompt')).to_have_text(re.compile(r'\[\s*\d+\s*\]\s*:'),timeout=60000)
     with page.expect_response(lambda response:response.request.method=='PUT' and
-            urlsplit(response.url).path=='/api/contents/lab3-q4.ipynb') as saved:
+            urlsplit(response.url).path=='/api/contents/'+profile.files[0]) as saved:
         page.keyboard.press('Control+s')
     require(saved.value.status==200,'explicit_native_save_failed')
-    state=contents(page,origin_url); require(state.get('ok'),'saved_notebook_unavailable')
+    state=contents(page,origin_url,profile.files[0]); require(state.get('ok'),'saved_notebook_unavailable')
     actual_cells={cell['id']:cell for cell in state['body']['content']['cells']}
     captured=actual_cells['load-input']['source']
     require((''.join(captured) if isinstance(captured,list) else captured)==turn['source'],
@@ -273,41 +292,41 @@ def journey(course, learner, peer, item, contract):
         require(type(cell.get('execution_count')) is int and cell['execution_count']>0 and
                 not any(output.get('output_type')=='error' for output in cell.get('outputs',[])),
                 'actual_kernel_execution_not_established')
-    files=saved_files(bob['work_directory']); report['saved_manifest']=manifest(files)
+    files=saved_files(bob['work_directory'],profile=profile); report['saved_manifest']=manifest(files)
     marker=turn['source']+'\n# UNSAVED_CONNECTION_CONTROL\n'
     editor.fill(marker)
     failed=[]
     def offline(route):
         if route.request.method=='PUT': failed.append(True); route.abort('internetdisconnected')
         else: route.continue_()
-    page.route('**/api/contents/lab3-q4.ipynb',offline)
+    page.route('**/api/contents/'+profile.files[0],offline)
     page.keyboard.press('Control+s')
     page.wait_for_function('document.querySelector(".jp-Dialog") !== null',timeout=30000)
-    require(failed and saved_files(bob['work_directory'])==files,'failed_save_changed_saved_bytes')
+    require(failed and saved_files(bob['work_directory'],profile=profile)==files,'failed_save_changed_saved_bytes')
     # Reconnect read requests; keep the explicit failed-save dialog/unsaved cell
     # intact. No retry/overwrite or hidden save is issued by this harness.
-    page.unroute('**/api/contents/lab3-q4.ipynb',offline)
+    page.unroute('**/api/contents/'+profile.files[0],offline)
     dialog=page.locator('.jp-Dialog'); cancel=dialog.get_by_role('button',name='Cancel',exact=True)
     if cancel.count(): cancel.click()
     else: dialog.get_by_role('button',name='OK',exact=True).click()
-    require(saved_files(bob['work_directory'])==files,'reconnect_changed_saved_bytes')
+    require(saved_files(bob['work_directory'],profile=profile)==files,'reconnect_changed_saved_bytes')
     report.update(actual_python_kernel=True,explicit_saved_execution_counts=True,
                   unsaved_snapshot_captured=True,failed_save_preserved_saved_bytes=True,
                   interruption_scope='one_blocked_notebook_save_request',
                   lost_202_same_request_recovered=True,policy_refusals_zero_admissions=True)
     peer_page=native_login(peer,contract['alice'],expect_belay=False)
     peer_token=private_bytes(contract['alice']['token_file'],8192).decode().strip()
-    for path in ('/api/contents/lab3-q4.ipynb','/api/kernels','/belay/config'):
+    for path in ('/api/contents/'+profile.files[0],'/api/kernels','/belay/config'):
         response=peer.request.get(origin_url+path,headers={'Authorization':'token '+peer_token},max_redirects=0)
         require(response.status in (302,403,404),'cross_student_native_route_not_denied')
     report['cross_student_denied']=True
     peer_page.close()
     def bridge_page(context, assignment):
-        require(saved_files(bob['work_directory'])==files,'saved_snapshot_changed_before_transfer')
+        require(saved_files(bob['work_directory'],profile=profile)==files,'saved_snapshot_changed_before_transfer')
         with page.expect_popup() as bridge:
             page.get_by_role('link',name='Submit saved files to Cairn',exact=True).click()
         selected=bridge.value
-        for name in FILES: selected.get_by_role('checkbox',name=name,exact=False).check()
+        for name in profile.files: selected.get_by_role('checkbox',name=name,exact=False).check()
         selected.get_by_role('button',name='Prepare saved files',exact=True).click()
         with context.expect_page() as receiver:
             selected.get_by_role('button',name='Continue in Cairn',exact=True).click()
@@ -315,7 +334,7 @@ def journey(course, learner, peer, item, contract):
         received.get_by_label('Assignment',exact=True).select_option(assignment['submission_id'])
         received.get_by_role('button',name='Receive saved files from Waypoint',exact=True).click()
         expect(received.locator('#bridge-status')).to_contain_text('Nothing has been submitted yet.')
-        require(saved_files(bob['work_directory'])==files,'unsaved_marker_entered_transfer')
+        require(saved_files(bob['work_directory'],profile=profile)==files,'unsaved_marker_entered_transfer')
         report['actual_saved_four_file_bridge']=True
         return received
     return report,bridge_page,files

@@ -1,0 +1,21 @@
+{
+  "classroom": {
+    "name": "INFO511 NHANES synthetic-learner rehearsal",
+    "host": "forgejo",
+    "host_namespace": "course-test",
+    "join_policy": "roster"
+  },
+  "learners": [
+    {
+      "username": "alice",
+      "route": "no_ai"
+    },
+    {
+      "username": "bob",
+      "route": "optional_explicit_hints_only"
+    }
+  ],
+  "instructor": "teacher",
+  "credentials": "Generated existing rehearsal credentials only; none stored here.",
+  "activation": "NONE; reference only."
+}

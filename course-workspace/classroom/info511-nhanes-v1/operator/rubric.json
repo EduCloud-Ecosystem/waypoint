@@ -1,0 +1,31 @@
+{
+  "title": "INFO511 NHANES wrangling-v1: draft instructor rubric",
+  "paths": [
+    "nhanes-wrangling.ipynb",
+    "tidy-nhanes.csv",
+    "explanation.md",
+    "assistance.md"
+  ],
+  "criteria": [
+    {
+      "id": "correctness",
+      "description": "Review every selected public source value and missing position after DEMO-anchored join and reshape; retain SEQN/reading keys, age and matched/no_BPXO_record. CSV correctness evidence covers values only.",
+      "max_points": 4
+    },
+    {
+      "id": "independent-checks",
+      "description": "Inspect learner-authored one-to-one join validation, key/missingness audits, pivot roundtrip and source-frame preservation in the submitted notebook. No checkbox or monitoring inference.",
+      "max_points": 3
+    },
+    {
+      "id": "explanation-reproducibility",
+      "description": "Review the at-most-150-word explanation of participant versus participant/reading units, unmatched versus present-but-missing and reproducible saved code. No population, causal or medical claim.",
+      "max_points": 2
+    },
+    {
+      "id": "disclosure",
+      "description": "Review explicit assistance declaration; valid no_ai is equally acceptable. Private hint/coaching/monitoring content is excluded.",
+      "max_points": 1
+    }
+  ]
+}

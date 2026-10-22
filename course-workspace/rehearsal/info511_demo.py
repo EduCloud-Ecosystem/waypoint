@@ -20,10 +20,12 @@ import time
 from cairn_journey import Course, FORGEJO_IMAGE, run
 from classroom_transfer import submit_info511_attempt
 from info511_review_fixture import LABEL, TASK, review_inputs
+from assignment_profiles import LEGACY, get_profile
+from info511_policy import template_files
 from playwright.sync_api import sync_playwright
 
-PACKAGE = Path(__file__).resolve().parents[1] / 'classroom/info511-lab03-q4-v1'
-FILES = ('lab3-q4.ipynb', 'tidy-inflation.csv', 'explanation.md', 'assistance.md')
+PACKAGE = LEGACY.package
+FILES = LEGACY.files
 
 
 def read_json(path, limit=1024 * 1024):
@@ -34,29 +36,6 @@ def read_json(path, limit=1024 * 1024):
     return json.loads(raw)
 
 
-def template_files(belay_source, image):
-    """Stage exact B1 source into instructor policy, not a second checker."""
-    binding = read_json(PACKAGE / 'operator/checker-binding.json')
-    raw = (belay_source / binding['path_in_belay']).read_bytes()
-    if hashlib.sha256(raw).hexdigest() != binding['sha256']:
-        raise ValueError('B1 checker changed; review and rebind before running')
-    task = read_json(PACKAGE / 'task.json')
-    data = (PACKAGE / task['dataset']['path']).read_bytes()
-    if hashlib.sha256(data).hexdigest() != task['dataset']['sha256']:
-        raise ValueError('synthetic input changed')
-    # A real four-point correctness check, not a pass-all/full-rubric substitute.
-    grading = {'version': '1', 'image': image, 'tests': [{
-        'name': 'synthetic-csv-cell-preservation-only',
-        'run': 'python -I -B /cairn-policy/grade_csv.py', 'points': 4}],
-        'limits': {'timeout': 20000000000, 'memory_mb': 256, 'cpus': 1, 'network': 'none'}}
-    return {'grading.json': json.dumps(grading),
-            'grade_csv.py': (PACKAGE / 'operator/grade_csv.py').read_text(),
-            'tidy_check.py': raw.decode(),
-            'checker-binding.json': json.dumps(binding),
-            'data/info511-inflation-synthetic.csv': data.decode(),
-            'README.md': (PACKAGE / 'learner/README.md').read_text()}
-
-
 def req(course, session, method, path, data=None, status=200):
     response = session.request.fetch(course.url + path, method=method, data=data,
                                      headers={'Origin': course.url}, timeout=30000)
@@ -65,11 +44,12 @@ def req(course, session, method, path, data=None, status=200):
     return response.json() if response.body() else None
 
 
-def active_work(course, learner):
+def active_work(course, learner, *, profile=LEGACY):
+    profile = get_profile(profile)
     end = time.monotonic() + 60
     while time.monotonic() < end:
         rows = req(course, learner, 'GET', '/me/work')['work']
-        rows = [row for row in rows if row.get('assignment_slug') == 'info511-lab3-q4-synthetic-v1']
+        rows = [row for row in rows if row.get('assignment_slug') == profile.task]
         if len(rows) > 1:
             raise RuntimeError('ambiguous synthetic assignment binding')
         if rows and rows[0]['status'] == 'active':
@@ -80,7 +60,8 @@ def active_work(course, learner):
     raise RuntimeError('synthetic repository preparation did not finish')
 
 
-def await_grade(course, learner, sid, commit):
+def await_grade(course, learner, sid, commit, *, profile=LEGACY):
+    profile = get_profile(profile)
     end = time.monotonic() + 90
     while time.monotonic() < end:
         detail = req(course, learner, 'GET', '/me/work/' + sid)
@@ -89,22 +70,24 @@ def await_grade(course, learner, sid, commit):
             if len(grades) != 1 or grades[0]['score'] != 4 or grades[0]['max_score'] != 4:
                 raise RuntimeError('submitted CSV did not establish the expected four-point correctness result')
             tests = detail.get('tests') or []
-            if len(tests) != 1 or tests[0]['name'] != 'synthetic-csv-cell-preservation-only' or tests[0]['passed'] is not True:
+            if len(tests) != 1 or tests[0]['name'] != profile.correctness_test or tests[0]['passed'] is not True:
                 raise RuntimeError('expected pinned correctness check is absent or failed')
             return {'grade': grades[0], 'tests': tests}
         time.sleep(.25)
     raise RuntimeError('correctness-only grading did not settle for the submitted revision')
 
 
-def operator_review(course, teacher, sid, receipt, directory, user, *, fixture=None, learner=None):
+def operator_review(course, teacher, sid, receipt, directory, user, *, fixture=None, learner=None, profile=LEGACY):
     """Default human review, or separately opted-in synthetic API gate exercise."""
+    profile = get_profile(profile)
+    selected_files = profile.files
     record = req(course, teacher, 'POST', f'/submissions/{sid}/assessments', {}, 201)
     document = record['document']
     if record['status'] != 'collected' or record['revision'] != receipt['commit'] or record['submission_id'] != sid:
         raise RuntimeError('capture is blocked or does not match the submitted receipt')
     actual = {a['path']: (a['sha256'], a['size']) for a in document['artifacts'] if not a.get('issue')}
     expected = {a['path']: (a['sha256'], a['bytes']) for a in receipt['changes']}
-    if len(document['artifacts']) != len(FILES) or actual != expected or set(actual) != set(FILES):
+    if len(document['artifacts']) != len(selected_files) or actual != expected or set(actual) != set(selected_files):
         raise RuntimeError('capture changed, omitted or could not extract a submitted artifact')
     # Export only the four captured originals, never the operator solution tree,
     # private judgments, tutor history, or mutable saved-home snapshot.
@@ -126,7 +109,7 @@ def operator_review(course, teacher, sid, receipt, directory, user, *, fixture=N
     capture = directory / (user + '-captured-evidence.json')
     capture.write_text(json.dumps(record, indent=2) + '\n'); capture.chmod(0o600)
     if fixture is not None:
-        proposal, review = review_inputs(record, receipt, fixture, user, read_json(PACKAGE / 'operator/rubric.json'))
+        proposal, review = review_inputs(record, receipt, fixture, user, read_json(profile.package / 'operator/rubric.json'), profile=profile)
         before = req(course, learner, 'GET', f'/me/work/{sid}')['history']
         decision = directory / (user + '-automated-synthetic-review.json')
         decision.write_text(json.dumps({'review_actor_kind': LABEL, 'human_review_performed': False,
@@ -189,6 +172,7 @@ def operator_review(course, teacher, sid, receipt, directory, user, *, fixture=N
 
 
 def exercise(course, browser, args):
+    profile = get_profile(getattr(args, 'assignment_profile', 'legacy'))
     revision = course.start()
     teacher, _ = course.login(browser, 'teacher', '/auth/login')
     contexts = [teacher]
@@ -200,7 +184,7 @@ def exercise(course, browser, args):
         for user in ('alice', 'bob'):
             req(course, teacher, 'POST', f'/classrooms/{cid}/roster', {'username': user}, 201)
         assignment = req(course, teacher, 'POST', f'/classrooms/{cid}/assignments', {
-            'title': 'INFO511 Q4 synthetic-v1', 'slug': 'info511-lab3-q4-synthetic-v1',
+            'title': profile.title, 'slug': profile.task,
             'type': 'individual', 'grading_spec': 'grading.json',
             'template': {'namespace': 'course-test', 'name': 'template', 'ref': revision}}, 201)
         aid = assignment['id']
@@ -219,20 +203,20 @@ def exercise(course, browser, args):
         capabilities = req(course, teacher, 'GET', '/assessment-capabilities')
         if not capabilities['review'] or capabilities['model_provider']:
             raise RuntimeError('review-only capabilities required; no model provider')
-        rubric = read_json(PACKAGE / 'operator/rubric.json')
+        rubric = read_json(profile.package / 'operator/rubric.json')
         req(course, teacher, 'PUT', f'/assignments/{aid}/assessment-rubric', rubric)
         learners = {}
         for user in ('alice', 'bob'):
             learner, _ = course.login(browser, user, f'/assignments/{aid}/accept')
             contexts.append(learner)
-            item = active_work(course, learner)
+            item = active_work(course, learner, profile=profile)
             if args.device_only and item.get('workspace_url'):
                 raise RuntimeError('device-only fixture unexpectedly exposes a workspace mapping')
             assigned = req(course, teacher, 'GET', f'/assignments/{aid}/submissions')
             if not any(row['id'] == item['submission_id'] for row in assigned):
                 raise RuntimeError('learner work is not bound to the pinned assignment')
             learners[user] = (learner, item)
-        result = {'template_commit': revision, 'assignment_id': aid, 'submissions': {},
+        result = {'assignment_profile':profile.key, 'task_version':profile.task, 'template_commit': revision, 'assignment_id': aid, 'submissions': {},
                   'scope': 'synthetic-device-transfer-and-automated-review-gates' if args.reviewer_fixture else 'synthetic-explicit-device-transfer-and-human-API-review',
                   'review_actor_kind': LABEL if args.reviewer_fixture else 'interactive-instructor',
                   'human_review_performed': not bool(args.reviewer_fixture),
@@ -251,22 +235,22 @@ def exercise(course, browser, args):
             fixture = args.fixture_data
             if user == 'bob' and getattr(args, 'notebook_data', None):
                 from info511_notebook import journey, derive_fixture
-                notebook, notebook_page, actual = journey(course, learner, learners[other][0], item, args.notebook_data)
+                notebook, notebook_page, actual = journey(course, learner, learners[other][0], item, args.notebook_data, profile=profile)
                 saved = Path(args.notebook_data['bob']['work_directory'])
                 if fixture is not None:
                     fixture, provenance = derive_fixture(fixture, actual, args.notebook_review_fixture_out,
-                        args.notebook_data['contract_sha256'], args.fixture_digest)
+                        args.notebook_data['contract_sha256'], args.fixture_digest, profile=profile)
                     notebook['derived_automated_fixture'] = provenance
                 result['notebook'] = notebook
                 result['notebook_execution'] = 'ACTUAL_BOB_NATIVE_SYNTHETIC_ONLY'
                 result['model_calls'] = 'NOT_COUNTED_HERE_SEE_BELAY_LEDGER'
                 result['scope'] = 'synthetic-native-notebook-exact-saved-revision-and-review'
             receipt = submit_info511_attempt(course, learner, learners[other][0], item,
-                saved.resolve(), learner_username=user, expected_actions={name: 'create' for name in FILES},
-                notebook_page=notebook_page)
-            correctness = await_grade(course, learner, item['submission_id'], receipt['commit'])
+                saved.resolve(), learner_username=user, expected_actions={name: 'create' for name in profile.files},
+                notebook_page=notebook_page, profile=profile)
+            correctness = await_grade(course, learner, item['submission_id'], receipt['commit'], profile=profile)
             review = operator_review(course, teacher, item['submission_id'], receipt, course.root, user,
-                                     fixture=fixture, learner=learner)
+                                     fixture=fixture, learner=learner, profile=profile)
             result['submissions'][user] = {'receipt': receipt, 'correctness': correctness, 'review': review}
         response = teacher.request.get(course.url + f'/classrooms/{cid}/grades.csv')
         if response.status != 200:
@@ -304,12 +288,14 @@ def main():
     parser.add_argument('--forgejo-image', default=FORGEJO_IMAGE, help='Existing local Forgejo image ID or fixture-specific tag/reference')
     parser.add_argument('--checkout-image', default='cairn-checkout:local', help='Existing local acquisition image ID or fixture-specific tag')
     parser.add_argument('--execute-synthetic', action='store_true')
+    parser.add_argument('--assignment-profile', choices=('legacy','nhanes-v1'), default='legacy')
     args = parser.parse_args()
+    profile = get_profile(args.assignment_profile)
     if not args.execute_synthetic or (args.reviewer_fixture is None and not sys.stdin.isatty()):
         parser.error('explicit synthetic execution and either interactive instructor or explicit reviewer fixture are required')
     if not re.fullmatch(r'sha256:[0-9a-f]{64}', args.image):
         parser.error('use the already inspected local immutable CPU course image ID')
-    binding = read_json(PACKAGE / 'operator/cairn-source-binding.json')
+    binding = read_json(profile.package / 'operator/cairn-source-binding.json')
     for name, expected in binding['cairn_files'].items():
         if hashlib.sha256((args.cairn_source / name).read_bytes()).hexdigest() != expected:
             parser.error('Cairn candidate source differs from the reviewed CSV binding')
@@ -322,16 +308,18 @@ def main():
             parser.error('reviewer fixture exceeds the input limit')
         args.fixture_data = json.loads(raw_fixture)
         fixture_digest = hashlib.sha256(raw_fixture).hexdigest()
-        if not isinstance(args.fixture_data, dict) or args.fixture_data.get('schema') != 'CW1-reviewer-fixture-v1' or args.fixture_data.get('task_version') != TASK or args.fixture_data.get('review_actor_kind') != LABEL or set(args.fixture_data.get('learners', {})) != {'alice', 'bob'}:
+        if not isinstance(args.fixture_data, dict) or args.fixture_data.get('schema') != 'CW1-reviewer-fixture-v1' or args.fixture_data.get('task_version') != profile.task or args.fixture_data.get('review_actor_kind') != LABEL or set(args.fixture_data.get('learners', {})) != {'alice', 'bob'}:
             parser.error('explicit two-learner CW1 automated synthetic fixture required')
     args.fixture_digest = fixture_digest
     args.notebook_data = None
     if args.notebook_contract:
         from info511_notebook import read_contract
         args.notebook_data = read_contract(args.notebook_contract.absolute(), args.workspace,
-            device_only=args.device_only, fixture=args.fixture_data, derivative=args.notebook_review_fixture_out)
+            device_only=args.device_only, fixture=args.fixture_data, derivative=args.notebook_review_fixture_out, profile=profile)
     elif args.notebook_review_fixture_out:
         parser.error('derived notebook fixture output requires an explicit notebook contract')
+    # Refuse missing data/checker bindings before any Docker or Course effects.
+    files = template_files(args.belay_source.resolve(), args.image, profile=profile)
     images = {}
     for role, selected in (('correctness', args.image), ('forgejo', args.forgejo_image), ('checkout', args.checkout_image)):
         if not selected or selected.startswith('-') or any(c.isspace() for c in selected):
@@ -340,7 +328,6 @@ def main():
         if len(inspected) != 1 or not re.fullmatch(r'sha256:[0-9a-f]{64}', inspected[0]['Id']):
             parser.error('image selector did not resolve to one immutable local image ID')
         images[role] = inspected[0]['Id']
-    files = template_files(args.belay_source.resolve(), args.image)
     args.output.mkdir(mode=0o700, parents=False, exist_ok=False)
     course = Course(args.output.resolve(), args.cairn_binary.resolve(), args.workspace,
                     args.image, args.cairn_source.resolve(), template_files=files,
