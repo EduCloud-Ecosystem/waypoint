@@ -184,7 +184,12 @@ def native_login(context, item, *, expect_belay=True, profile=LEGACY):
 def verify_interrupted_save(page, editor, origin_url, filename, marker, snapshot, *, read_current, expect):
     """Prove one actual failed save, independent of Lab's notification style."""
     blocked=[]
-    pattern='**/api/contents/'+filename
+    # Lab's no-store transport appends a bare millisecond cachebuster. Match
+    # exact origin/path first so an invalid query cannot bypass the abort;
+    # accept only the observed cachebuster shape inside the scoped handler.
+    def pattern(url):
+        parsed=urlsplit(url)
+        return parsed.scheme+'://'+parsed.netloc==origin_url and parsed.path=='/api/contents/'+filename
     def offline(route):
         request=route.request
         if request.method!='PUT':
@@ -193,8 +198,10 @@ def verify_interrupted_save(page, editor, origin_url, filename, marker, snapshot
         # Never let an unexpected/repeated save reach the notebook server.
         route.abort('internetdisconnected')
         parsed=urlsplit(request.url)
-        require(parsed.scheme+'://'+parsed.netloc==origin_url and not parsed.query and
-                parsed.path=='/api/contents/'+filename,'interrupted_save_request_scope')
+        require(parsed.scheme+'://'+parsed.netloc==origin_url and
+                parsed.path=='/api/contents/'+filename and '#' not in request.url and
+                (not parsed.query or bool(re.fullmatch(r'[0-9]{13}',parsed.query))),
+                'interrupted_save_request_scope')
         require(len(blocked)==1,'interrupted_save_repeated_put')
         body=request.post_data_json
         require(isinstance(body,dict) and body.get('type')=='notebook' and
@@ -226,10 +233,9 @@ def verify_interrupted_save(page, editor, origin_url, filename, marker, snapshot
         dialog=page.locator('.jp-Dialog')
         if dialog.count():
             require(dialog.count()==1,'interrupted_save_dialog_ambiguous')
-            cancel=dialog.get_by_role('button',name='Cancel',exact=True)
-            ok=dialog.get_by_role('button',name='OK',exact=True)
-            require(cancel.count()==1 or ok.count()==1,'interrupted_save_safe_dismiss_unavailable')
-            (cancel if cancel.count()==1 else ok).click()
+            safe=[dialog.get_by_role('button',name=label,exact=True) for label in ('Cancel','OK','Close')]
+            require(sum(button.count() for button in safe)==1,'interrupted_save_safe_dismiss_unavailable')
+            next(button for button in safe if button.count()==1).click()
             expect(dialog).to_have_count(0,timeout=10000)
             dialog_dismissed=True
         require(len(blocked)==1 and read_current()==snapshot,'reconnect_changed_saved_bytes')
