@@ -1,0 +1,4 @@
+{
+  "source": "import pandas as pd\ndemographics = pd.read_csv(\"data/DEMO_L_selected.csv\")\nbp_readings = pd.read_csv(\"data/BPXO_L_selected.csv\")\ndemographics_before = demographics.copy(deep=True)\nbp_readings_before = bp_readings.copy(deep=True)\n# Predicted: SEQN, RIDAGEYR, reading, systolic_mm_hg, bpxo_match.\n# One observation is one selected participant and one reading.\ndemographics\n",
+  "question": "How can I tell a missing reading from a participant with no matching BPXO record?"
+}

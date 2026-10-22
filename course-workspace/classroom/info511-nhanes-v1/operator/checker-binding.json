@@ -1,0 +1,14 @@
+{
+  "path_in_belay": "backend/app/packs/datascience/nhanes_check.py",
+  "sha256": "0316e63d9f2ee54a088a5f1ca9b1c24977eb54c5a00a11ceeda06bfd66443f80",
+  "repository": "https://github.com/EduCloud-Ecosystem/belay-classroom",
+  "revision": "bbc45bb3d4b8d135dc531fb130a40abf66d1e008",
+  "status": "SOURCE_BOUND_RUNTIME_PENDING",
+  "function": "check_nhanes(original_demo, original_bpxo, preserved_demo, preserved_bpxo, result)",
+  "no_model": true,
+  "source_files": {
+    "DEMO_L_selected.csv": "4a9c6d40ccbd4cb8a3886b20e2ec506e74c70c8e641347a941b9209f61369587",
+    "BPXO_L_selected.csv": "4ae89d264da5da4020fd6e8fdd0171ae188b7ed9191aeb8b18af20b30c1556a9"
+  },
+  "limitation": "CSV correctness cannot prove notebook method, source-frame immutability, kernel execution or authorship."
+}

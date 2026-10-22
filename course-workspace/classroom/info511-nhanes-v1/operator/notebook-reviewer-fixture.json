@@ -1,0 +1,115 @@
+{
+  "schema": "CW1-reviewer-fixture-v1",
+  "task_version": "info511-nhanes-wrangling-v1",
+  "review_actor_kind": "automated-synthetic-fixture",
+  "learners": {
+    "alice": {
+      "artifacts": {
+        "nhanes-wrangling.ipynb": {
+          "bytes": 5359,
+          "sha256": "41cbc84b636155e679665241ed5bd53e702ffa39a14606683ba37ae198b37e58"
+        },
+        "tidy-nhanes.csv": {
+          "bytes": 4642,
+          "sha256": "a30c651328dd19980af2d1fe9a173ef4405922ee743f30e50d9c58cf5248f7dc"
+        },
+        "explanation.md": {
+          "bytes": 521,
+          "sha256": "357d2ae3e7d189ab1048327d15b61bde4765d82bc53d0a3016c088cac60e7cc7"
+        },
+        "assistance.md": {
+          "bytes": 165,
+          "sha256": "98027d6450d6d3c7fe7fe970fb6db6d3489cf8578c1397292dbb2920f1f611a3"
+        }
+      },
+      "proposal_points": {
+        "correctness": 4,
+        "independent-checks": 1,
+        "explanation-reproducibility": 0,
+        "disclosure": 0
+      },
+      "review_points": {
+        "correctness": 4,
+        "independent-checks": 1,
+        "explanation-reproducibility": 1,
+        "disclosure": 0
+      },
+      "citations": {
+        "correctness": {
+          "path": "tidy-nhanes.csv",
+          "location": "line:1",
+          "quote": "SEQN,RIDAGEYR,reading,systolic_mm_hg,bpxo_match"
+        },
+        "independent-checks": {
+          "path": "nhanes-wrangling.ipynb",
+          "location": "cell:1",
+          "quote": "INFO511 NHANES wrangling-v1. Selected public CDC August 2021\u2013August 2023 data; two synthetic learners. This purposive subset supports data engineering only, not population or medical conclusions.\n"
+        },
+        "explanation-reproducibility": {
+          "path": "explanation.md",
+          "location": "line:1",
+          "quote": "Each tidy row represents one selected participant and systolic reading. A DEMO-anchored one-to-one join preserves participants without a BPXO record. The status describes file membership, not why a measurement is absent. Melting retains three rows per participant and every missing position. Key checks, per-reading missing counts, scalar comparisons and a pivot roundtrip independently verify values. Both input frames remain unchanged. This purposive public subset supports no population, causal or medical conclusion."
+        },
+        "disclosure": {
+          "path": "assistance.md",
+          "location": "line:1",
+          "quote": "Task version: info511-nhanes-wrangling-v1"
+        }
+      }
+    },
+    "bob": {
+      "artifacts": {
+        "nhanes-wrangling.ipynb": {
+          "bytes": 5359,
+          "sha256": "41cbc84b636155e679665241ed5bd53e702ffa39a14606683ba37ae198b37e58"
+        },
+        "tidy-nhanes.csv": {
+          "bytes": 4642,
+          "sha256": "a30c651328dd19980af2d1fe9a173ef4405922ee743f30e50d9c58cf5248f7dc"
+        },
+        "explanation.md": {
+          "bytes": 521,
+          "sha256": "357d2ae3e7d189ab1048327d15b61bde4765d82bc53d0a3016c088cac60e7cc7"
+        },
+        "assistance.md": {
+          "bytes": 276,
+          "sha256": "af49e25342a4a1afc59466e77f045891b2c2dd7e0757eb2b2f2bec2a7c5ec8f8"
+        }
+      },
+      "proposal_points": {
+        "correctness": 4,
+        "independent-checks": 1,
+        "explanation-reproducibility": 0,
+        "disclosure": 0
+      },
+      "review_points": {
+        "correctness": 4,
+        "independent-checks": 1,
+        "explanation-reproducibility": 1,
+        "disclosure": 0
+      },
+      "citations": {
+        "correctness": {
+          "path": "tidy-nhanes.csv",
+          "location": "line:1",
+          "quote": "SEQN,RIDAGEYR,reading,systolic_mm_hg,bpxo_match"
+        },
+        "independent-checks": {
+          "path": "nhanes-wrangling.ipynb",
+          "location": "cell:1",
+          "quote": "INFO511 NHANES wrangling-v1. Selected public CDC August 2021\u2013August 2023 data; two synthetic learners. This purposive subset supports data engineering only, not population or medical conclusions.\n"
+        },
+        "explanation-reproducibility": {
+          "path": "explanation.md",
+          "location": "line:1",
+          "quote": "Each tidy row represents one selected participant and systolic reading. A DEMO-anchored one-to-one join preserves participants without a BPXO record. The status describes file membership, not why a measurement is absent. Melting retains three rows per participant and every missing position. Key checks, per-reading missing counts, scalar comparisons and a pivot roundtrip independently verify values. Both input frames remain unchanged. This purposive public subset supports no population, causal or medical conclusion."
+        },
+        "disclosure": {
+          "path": "assistance.md",
+          "location": "line:1",
+          "quote": "Task version: info511-nhanes-wrangling-v1"
+        }
+      }
+    }
+  }
+}

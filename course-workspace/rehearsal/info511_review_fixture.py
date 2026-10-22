@@ -4,6 +4,10 @@ import base64
 import hashlib
 import math
 import re
+from pathlib import Path
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'classroom'))
+from assignment_profiles import LEGACY, get_profile
 
 TASK = 'info511-lab3-q4-synthetic-v1'
 FILES = {'lab3-q4.ipynb', 'tidy-inflation.csv', 'explanation.md', 'assistance.md'}
@@ -11,9 +15,11 @@ LABEL = 'automated-synthetic-fixture'
 NOTE = 'Automated synthetic reviewer: API transition test only; no human review, learning or assessment-quality evidence.'
 
 
-def review_inputs(record, receipt, fixture, user, rubric):
+def review_inputs(record, receipt, fixture, user, rubric, *, profile=LEGACY):
     """Refuse drift; bind authored test points/citations to all four originals."""
-    if fixture.get('schema') != 'CW1-reviewer-fixture-v1' or fixture.get('task_version') != TASK or fixture.get('review_actor_kind') != LABEL:
+    profile = get_profile(profile)
+    selected_files = set(profile.files)
+    if fixture.get('schema') != 'CW1-reviewer-fixture-v1' or fixture.get('task_version') != profile.task or fixture.get('review_actor_kind') != LABEL:
         raise ValueError('explicit CW1 automated reviewer fixture required')
     if set(fixture.get('learners', {})) != {'alice', 'bob'} or user not in ('alice', 'bob'):
         raise ValueError('only the two synthetic learners are permitted')
@@ -25,7 +31,7 @@ def review_inputs(record, receipt, fixture, user, rubric):
         raise ValueError('unexpected rubric or input digest')
     artifacts = doc['artifacts']
     changes = receipt['changes']
-    if len(artifacts) != 4 or len(changes) != 4 or {a['path'] for a in artifacts} != FILES or {a['path'] for a in changes} != FILES or set(case['artifacts']) != FILES:
+    if len(artifacts) != 4 or len(changes) != 4 or {a['path'] for a in artifacts} != selected_files or {a['path'] for a in changes} != selected_files or set(case['artifacts']) != selected_files:
         raise ValueError('exactly four fixture artifacts and receipt changes required')
     by_path = {a['path']: a for a in artifacts}
     receipt_by_path = {a['path']: a for a in changes}

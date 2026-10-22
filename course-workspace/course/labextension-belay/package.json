@@ -1,0 +1,7 @@
+{
+  "name": "@educloud/waypoint-belay",
+  "version": "1.0.0",
+  "description": "Explicit active-code snapshot for the synthetic authenticated Belay notebook bridge",
+  "license": "MIT",
+  "jupyterlab": {"extension": true, "_build": {"load": "static/remoteEntry.js", "extension": "./extension"}}
+}

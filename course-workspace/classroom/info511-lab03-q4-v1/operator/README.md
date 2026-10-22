@@ -33,6 +33,39 @@ Keep the manifest operator-only. Changed saved bytes require a newly reviewed
 manifest; no automatic rebinding. See the package README for the one device-only
 command and unique image selectors. The original interactive mode remains default.
 
+The optional `--notebook-contract` journey extends the existing saved-file bridge
+with an operator-prestarted, authenticated native Jupyter server. It requires
+separate learner containers and credentials, explicit extension opt-in, and a
+private contract binding Bob's origin, saved work directory and reviewed turn.
+It captures only the active code cell on a click, then requires a separate Ask.
+The learner executes and explicitly saves before choosing the four saved files.
+An interrupted save must leave that saved revision intact. Hub/campus SSO and
+arbitrary notebook tutoring are outside this synthetic journey.
+
+Use the separate `notebook-reviewer-fixture.json` and the two source-authored
+texts in `notebook-bob/` for this journey. The original no-AI fixture is refused
+before live work. These texts declare the synthetic AI-help scope and keep the
+authored pipeline distinct from the actual saved execution evidence.
+
+For this journey alone, `--notebook-review-fixture-out` explicitly creates a new
+automated fixture from the actual executed notebook and generated CSV. It changes
+only Bob's two byte manifests; explanation, assistance, Alice, points, quotes,
+rubric and actor labels must remain unchanged. Its provenance records the original
+and derivative digests. The existing receipt/capture/citation checks still apply.
+This mechanical fixture exercise establishes no human assessment or learning
+quality. Existing fixtures are never overwritten or silently rebound.
+
+Notebook source checkpoint: checkout `waypoint-classroom-notebook`, branch
+`codex/classroom-notebook`, base `0bc7f617`. Reuses `waypoint_cairn` saved-file and
+receipt protocols, extends the existing CW1 runner, and adds a separate opt-in
+Belay proxy and Lab extension. Hermetic checks: 9 bridge, 4 snapshot and 9 private
+contract/derivative controls passed. The bridge preserves HTML/JavaScript MIME
+types through Tornado rather than Jupyter's JSON-forcing API finish method;
+config and proxy responses retain the native API handler. Standalone native
+browser/kernel/save and cross-learner denial passed the root-owned preflight.
+The combined selected-cell handoff and live AI acceptance remain pending; failed
+integration controls and cleanup evidence are retained outside the repository.
+
 `rubric.json` includes all four artifacts. The separate Cairn CSV extraction
 source candidate must be built/tested before that capture can succeed. The
 old unsupported-CSV/manual-review gap is not waived. `cairn-source-binding.json`
