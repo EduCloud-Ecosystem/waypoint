@@ -1,5 +1,26 @@
 # CHANGELOG.md: Document history for the EduCloud hosting layer repo
 
+## 2026-10-21: Prepared CW1 synthetic classroom package
+
+- Add an opt-in INFO511 Q4 synthetic task, starter notebook, explicit assistance
+  declaration, instructor-only transfer fixtures and draft review configuration.
+- Extend the existing submission rehearsal to check a selected four-file bundle
+  and preserve separate sign-ins, explicit confirmation and exact commit receipts.
+- Add local completeness reminders and receipt-byte comparison without grading,
+  submitting, monitoring or enabling tutoring. Prepare complete instructor-only
+  correct/fault/repair notebooks and an opt-in actual submission/review runner.
+- Bind the existing B1 checker for correctness only and the separate uncommitted
+  Cairn CSV evidence candidate. Require actual instructor judgments, explicit
+  review, matching grade export and byte-identical submitted-work export.
+- Add opt-in device-only and automated synthetic reviewer modes using real
+  capture/import/approval APIs and exact fixture hashes/citations. Preserve
+  interactive defaults; label fixture scores as test inputs, never human review
+  or learning evidence. Resolve selected local images without retagging.
+- Root ran 13 initial package controls successfully in its closed bounded window.
+  Changed fixtures, CSV integration, checker and new runner remain NOT RUN.
+  Prepare a CPU-only offhost recipe without provisioning or new cash. No
+  production defaults, research checkpoints or schedules change.
+
 ## 2026-10-18: Fixed guard scratch for a fresh opt-in profile
 
 - Add version-bound ordinary and safety scratch roles, preserving failed

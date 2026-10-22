@@ -1,0 +1,31 @@
+{
+  "title": "INFO511 Lab 3 Q4 synthetic-v1: draft instructor rubric",
+  "paths": [
+    "lab3-q4.ipynb",
+    "tidy-inflation.csv",
+    "explanation.md",
+    "assistance.md"
+  ],
+  "criteria": [
+    {
+      "id": "correctness",
+      "description": "Review the submitted table against every synthetic source cell; preserve keys, years, values and missingness. Cite CSV source lines from the same captured submitted commit; inspect all values with the deterministic checker evidence.",
+      "max_points": 4
+    },
+    {
+      "id": "independent-checks",
+      "description": "Review learner-authored checks and notebook reasoning, not a checkbox or monitoring flag.",
+      "max_points": 3
+    },
+    {
+      "id": "explanation-reproducibility",
+      "description": "Review the self-written explanation of at most 150 words and reproducibility of the submitted notebook.",
+      "max_points": 2
+    },
+    {
+      "id": "disclosure",
+      "description": "Review the explicit assistance declaration. A valid no_ai declaration meets this requirement; optional monitoring is not required.",
+      "max_points": 1
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "cairn_base": "089911ece3783037d4f96ff0c9ca37e6907da320",
+  "cairn_files": {
+    "internal/assessment/extract.go": "327f9ebdd4f6be368ab9b64979ad98d2681cd93b375fe596c2558ba95fc2242a",
+    "internal/assessment/assessment.go": "8a6892b4f0ef8d1c95471b4600c9361a15200b7e53db13c094d82505963e7b20",
+    "internal/assessment/service.go": "a0ebdd614fdab94501e0ead33fb17942c00c15d7e85889f19c7c80262dff7167"
+  },
+  "build_attestation": "REQUIRED_SEPARATELY_NOT_ESTABLISHED",
+  "executed_binary_sha256": null
+}

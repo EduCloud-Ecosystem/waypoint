@@ -50,9 +50,13 @@ def wait_http(url):
 
 
 class Course:
-    def __init__(self, root, binary, workspace, image, cairn_source, cairn_origin=None):
+    def __init__(self, root, binary, workspace, image, cairn_source, cairn_origin=None, *, template_files=None,
+                 forgejo_image=FORGEJO_IMAGE, checkout_image='cairn-checkout:local'):
         self.root, self.binary, self.workspace, self.image = root, binary, workspace, image
         self.cairn_source = cairn_source
+        self.template_files = template_files
+        self.forgejo_image = forgejo_image
+        self.checkout_image = checkout_image
         self.name = 'rehearsal-' + uuid.uuid4().hex[:10]
         self.forge = 'http://127.0.0.1:' + str(port())
         self.url = cairn_origin or 'http://127.0.0.1:' + str(port())
@@ -88,7 +92,9 @@ class Course:
                   'FORGEJO__webhook__ALLOWED_HOST_LIST': gateway+',host.docker.internal'}
         for key, value in config.items():
             args += ['-e', key + '=' + value]
-        run(*args, FORGEJO_IMAGE)
+        if self.template_files is not None:
+            args += ['--pull=never']  # CW1 uses pre-existing inspected images only.
+        run(*args, self.forgejo_image)
         wait_http(self.forge + '/api/healthz')
         for user in ('teacher', 'alice', 'bob', 'mallory'):
             args = ['docker', 'exec', '--user', 'git', self.name, 'forgejo', '--config', '/data/gitea/conf/app.ini',
@@ -103,11 +109,20 @@ class Course:
         self.api('POST', '/orgs', {'username': 'course-test', 'visibility': 'private'})
         self.api('POST', '/orgs/course-test/repos', {'name': 'template', 'private': True, 'template': True,
                                                   'auto_init': True, 'default_branch': 'main'})
-        spec = {'version': '1', 'image': self.image, 'tests': [
-            {'name': 'instructor-answer', 'run': 'python /cairn-policy/check.py', 'points': 10}],
-            'limits': {'memory_mb': 256, 'cpus': 1, 'network': 'none'}}
-        self.put('course-test/template', 'grading.json', json.dumps(spec))
-        self.put('course-test/template', 'check.py', "import sys\nsys.path.insert(0, '/work')\nfrom solution import answer\nassert answer() == 5\n")
+        if self.template_files is None:
+            spec = {'version': '1', 'image': self.image, 'tests': [
+                {'name': 'instructor-answer', 'run': 'python /cairn-policy/check.py', 'points': 10}],
+                'limits': {'memory_mb': 256, 'cpus': 1, 'network': 'none'}}
+            self.put('course-test/template', 'grading.json', json.dumps(spec))
+            self.put('course-test/template', 'check.py', "import sys\nsys.path.insert(0, '/work')\nfrom solution import answer\nassert answer() == 5\n")
+        else:
+            # Explicit synthetic fixture input, never browser-supplied policy.
+            if not isinstance(self.template_files, dict) or 'grading.json' not in self.template_files:
+                raise ValueError('instructor template requires a grading policy')
+            for name, content in sorted(self.template_files.items()):
+                if not isinstance(name, str) or not isinstance(content, str):
+                    raise ValueError('text instructor template files required')
+                self.put('course-test/template', name, content)
         revision = self.api('GET', '/repos/course-test/template/commits?limit=1')[0]['sha']
         clean = {k: os.environ[k] for k in ('PATH', 'HOME', 'LANG', 'LC_ALL', 'DOCKER_HOST', 'DOCKER_CONTEXT') if k in os.environ}
         # Fixture-only routing: bounded checkout shares the disposable Forgejo
@@ -127,7 +142,7 @@ class Course:
             CAIRN_FORGEJO_OAUTH_CLIENT_ID=client['client_id'], CAIRN_FORGEJO_OAUTH_CLIENT_SECRET=client['client_secret'],
             CAIRN_OAUTH_REDIRECT_URL=self.url + '/auth/callback', CAIRN_GRADER='container',
             CAIRN_WEB_DIR=str(self.cairn_source / 'web' / 'dist'), CAIRN_GRADER_RUNTIME=str(runtime),
-            CAIRN_CHECKOUT_IMAGE='cairn-checkout:local', CAIRN_GRADER_IMAGE=self.image, CAIRN_GRADER_MAX_TIMEOUT='20s', CAIRN_GRADER_MAX_MEMORY_MB='256',
+            CAIRN_CHECKOUT_IMAGE=self.checkout_image, CAIRN_GRADER_IMAGE=self.image, CAIRN_GRADER_MAX_TIMEOUT='20s', CAIRN_GRADER_MAX_MEMORY_MB='256',
             CAIRN_GRADER_MAX_CPUS='1', TMPDIR=str(temp),
             CAIRN_WEBHOOK_BASE_URL=self.relay.origin, CAIRN_FORGEJO_WEBHOOK_SECRET=secrets.token_urlsafe(32))
         self.restart()

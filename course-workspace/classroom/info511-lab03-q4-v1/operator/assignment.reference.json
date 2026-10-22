@@ -1,0 +1,11 @@
+{
+  "title": "INFO511 Lab 3 Q4 synthetic-v1",
+  "slug": "info511-lab3-q4-synthetic-v1",
+  "type": "individual",
+  "template": {
+    "namespace": "course-test",
+    "name": "info511-q4-template",
+    "ref": null
+  },
+  "grading_spec": "grading.json"
+}

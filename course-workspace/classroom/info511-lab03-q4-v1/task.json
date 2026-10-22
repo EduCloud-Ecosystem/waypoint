@@ -1,0 +1,95 @@
+{
+  "schema": "educloud.classroom.task-package/v1",
+  "task_id": "info511-lab3-q4-synthetic",
+  "task_version": "info511-lab3-q4-synthetic-v1",
+  "policy_id": "info511-hints-v1",
+  "status": "SOURCE_ONLY_NOT_ACCEPTED",
+  "synthetic_only": true,
+  "learner_files": [
+    "README.md",
+    "assistance.md",
+    "data/info511-inflation-synthetic.csv",
+    "explanation.md",
+    "lab3-q4.ipynb",
+    "tidy-inflation.csv"
+  ],
+  "submission_files": [
+    "lab3-q4.ipynb",
+    "tidy-inflation.csv",
+    "explanation.md",
+    "assistance.md"
+  ],
+  "dataset": {
+    "path": "learner/data/info511-inflation-synthetic.csv",
+    "sha256": "c638d29069c47efbd4589e80fcf959088809f0b0275942f13a1866fc2703ea7b",
+    "rights": "Instructor-created synthetic fixture from B1, copied byte-for-byte. No original course CSV redistribution.",
+    "countries": 3,
+    "years": [
+      1993,
+      1994,
+      1995
+    ],
+    "expected_rows": 9,
+    "expected_missing": 3,
+    "B1_source_relative": "backend/app/packs/datascience/specs/data/info511-inflation-synthetic.csv"
+  },
+  "environment": {
+    "reuse": "course-workspace/course/Dockerfile",
+    "dockerfile_sha256": "0644c3c5e443035f2f27210007a5bd0d53f666163d404da96244dc9d07e531b6",
+    "requirements": "course-workspace/course/requirements.txt",
+    "requirements_sha256": "dd08e5f5cba4f3bfcd55cc55b7e430b20bee97e9d5556891eda7e76233b108f8",
+    "python_base": "python:3.12-slim-bookworm@sha256:34386ef0cb081344d7ec1c103ba398e6e9f64e9ab3a1509accc92a4e24a07258",
+    "pandas": "3.0.6",
+    "executed_image_id": null,
+    "cpu_only": true,
+    "image_build_or_download_authorized": false
+  },
+  "components": {
+    "waypoint_base": "256f83480113bd4f5ad669df5b72e6c974d8db43",
+    "cairn_configured_rehearsal_pin": "089911ece3783037d4f96ff0c9ca37e6907da320",
+    "belay_candidate_base": "f53b8f19e0e445d9a0caedc734c048c383664134",
+    "belay_contract_status": "belay-classroom fork is the current tutor/checker source; original B1/Belay frozen; checker hash unchanged; integrated acceptance separate",
+    "portage_binding": {
+      "candidate_accepted_main": "79742746b10ace18e498111dd5a8f3227edd995c",
+      "status": "P1 source-only compatibility; trusted consumer transport, single-route qualification and finite attempt authority unresolved",
+      "runtime_enabled": false
+    },
+    "cairn_candidate": {
+      "base": "089911ece3783037d4f96ff0c9ca37e6907da320",
+      "branch": "codex/cw1-csv-evidence",
+      "worktree": "/Users/gregchism/dev/.educloud-worktrees/cairn-cw1-csv-evidence",
+      "extractor": "csv-source-v1",
+      "status": "UNCOMMITTED_UNTESTED_SOURCE_OVERLAY",
+      "remote_pin_update": "After reviewed commit only; current unpatched CI pin is insufficient for CSV."
+    },
+    "historical_original_belay_base": "92a1d3546798cf9e232a207fc0d7c42d4fb4ca6c",
+    "belay_repository": "https://github.com/EduCloud-Ecosystem/belay-classroom",
+    "belay_source_checkout": "/Users/gregchism/dev/belay-classroom"
+  },
+  "binding": {
+    "assignment_id": null,
+    "published_template_commit": null,
+    "rubric_digest": null,
+    "policy_activated": false,
+    "mode": "hints_only",
+    "browser_policy_authority": false,
+    "runtime_calls_enabled": false
+  },
+  "scope": {
+    "monitoring": "No CW1 event store or telemetry. B1 optional private workflow remains separate.",
+    "no_ai": "Same task/rubric, valid no_ai declaration, no model/account dependency.",
+    "receipts": "Existing authenticated Cairn preview/confirm and committed revision only. Local checker never issues receipts.",
+    "grades": "No automatic grades or completion-to-score conversion in CW1."
+  },
+  "demonstration": {
+    "runner": "course-workspace/rehearsal/info511_demo.py",
+    "correctness_policy": "Existing Cairn pinned instructor grading.json, B1 check_tidy unchanged, 4 points only",
+    "review": "Interactive instructor review by default; explicit reviewer-fixture mode exercises synthetic API transitions only, with human_review_performed=false",
+    "actual_notebook_execution": "Root executed trusted authored Python cells: Alice/Bob correct; faulty Bob row_count refusal then repair correct. Not Jupyter kernel acceptance.",
+    "actual_application_run": "NOT_RUN",
+    "actual_model": "NOT_RUN_DISABLED",
+    "initial_13_unit_controls": "PASS on initial frozen source/fixtures; new fixtures/changes not validated",
+    "unattended_mode": "Opt-in device-only and reviewer-fixture flags; new harness controls and connected runtime NOT RUN",
+    "reviewer_fixture": "operator/reviewer-fixture.json"
+  }
+}
