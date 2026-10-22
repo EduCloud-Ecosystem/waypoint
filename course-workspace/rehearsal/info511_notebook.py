@@ -197,7 +197,7 @@ def journey(course, learner, peer, item, contract):
     expect(tutor.locator('#notebook-status')).to_contain_text('Unsaved notebook code captured',timeout=30000)
     expect(tutor.locator('#notebook-source')).to_have_text(turn['source'])
     expect(tutor.locator('#notebook-hash')).to_contain_text(report['source_sha256'])
-    require(tutor.locator('#question').input_value()==turn['question'],'reviewed_question_mismatch')
+    expect(tutor.locator('#question')).to_have_value(turn['question'],timeout=30000)
     guidance=tutor.locator('#classroom-guidance'); guidance.wait_for(timeout=30000)
     granted=tutor.evaluate('window.BELAY_CLASSROOM_DEMO.request_id')
     require(bool(re.fullmatch(r'[A-Za-z0-9_-]{16,64}',granted)),'live_request_id_shape')
