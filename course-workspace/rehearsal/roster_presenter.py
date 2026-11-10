@@ -56,6 +56,7 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--checkout-image', required=True)
     parser.add_argument('--grader-image', required=True)
+    parser.add_argument('--timeout-seconds', type=int, choices=range(60, 901), default=900)
     args = parser.parse_args()
     root = args.output.resolve()
     root.mkdir(mode=0o700)  # Existing runs cannot be overwritten or resumed.
@@ -66,9 +67,9 @@ def main():
     course = None
     started = time.monotonic()
     def timed_out(*_):
-        raise TimeoutError('finite 900-second rehearsal window ended')
+        raise TimeoutError('finite rehearsal window ended')
     signal.signal(signal.SIGALRM, timed_out)
-    signal.alarm(900)
+    signal.alarm(args.timeout_seconds)
     def launch(name, args, env, cwd):
         log = (root / (name + '.log')).open('a')
         logs.append(log)
@@ -223,6 +224,7 @@ def main():
             help_page.keyboard.press('Enter')
             expect(help_page.locator('#status')).to_contain_text('It is not a grade', timeout=60000)
             expect(help_page.locator('#reply')).to_contain_text('Local model stub')
+            expect(help_page.locator('#capture')).not_to_contain_text('Nothing has been sent')
             report['passed'].append('native-jupyter-code-selection-signed-belay-job-stub-response')
             report['axe_sha256'] = audit(help_page, args.cairn)
             help_page.screenshot(path=str(root / 'help-desktop.png'), full_page=True)
@@ -238,6 +240,8 @@ def main():
             issue(expired=True)
             help_page.get_by_role('button', name='Ask for a hint', exact=True).click()
             expect(help_page.locator('#status')).to_contain_text('Your saved work is unchanged', timeout=15000)
+            expect(help_page.locator('#policy')).to_contain_text('expired or unavailable')
+            expect(help_page.locator('#ask')).to_be_disabled()
             assert counts() == before
             expect(help_page.locator('#source')).to_have_value(SOURCE)
             help_page.screenshot(path=str(root / 'help-expired.png'), full_page=True)
@@ -256,14 +260,34 @@ def main():
             help_page.get_by_role('link', name='Ask a person', exact=True).click()
             expect(help_page.get_by_role('heading', name='Human help', exact=True)).to_be_visible()
             report['passed'].append('instructor-disabled-refusal-no-ai-human-help')
-            # Save through Jupyter's authenticated API, then exercise the ordinary
-            # selected-file bridge and explicit Cairn preview/confirmation UI.
+            # Seed an empty synthetic file, then edit and Save through the native
+            # editor. Submission reads saved bytes, not this fixture input.
             saved = notebook_page.evaluate("""async source => {
               const xsrf = document.cookie.split(';').map(x=>x.trim()).find(x=>x.startsWith('_xsrf=')).slice(6);
               const r = await fetch('/api/contents/solution.py', {method:'PUT',headers:{'Content-Type':'application/json','X-XSRFToken':decodeURIComponent(xsrf)},
                 body:JSON.stringify({type:'file',format:'text',content:source})}); return r.status;
-            }""", SOURCE)
-            assert saved in (200, 201) and (workspace / 'solution.py').read_text() == SOURCE
+            }""", '')
+            assert saved in (200, 201) and (workspace / 'solution.py').read_text() == ''
+            notebook_page.goto(notebook_url + '/lab/tree/solution.py')
+            try:
+                dialog = notebook_page.get_by_role('dialog')
+                dialog.wait_for(state='visible', timeout=5000)
+                private(root / 'restored-notebook-dialog.txt', dialog.inner_text())
+                expect(dialog).to_contain_text('Select Kernel')
+                dialog.get_by_role('button', name='No Kernel', exact=True).click()
+            except BrowserTimeout:
+                pass
+            editor = notebook_page.locator('.jp-FileEditor .cm-content')
+            expect(editor).to_be_visible()
+            editor.click()  # Activate the file widget before the Save command.
+            editor.fill(SOURCE)
+            notebook_page.keyboard.press('ControlOrMeta+s')
+            deadline = time.monotonic() + 10
+            while (workspace / 'solution.py').read_text() != SOURCE and time.monotonic() < deadline:
+                notebook_page.wait_for_timeout(100)
+            assert (workspace / 'solution.py').read_text() == SOURCE
+            notebook_page.screenshot(path=str(root / 'native-editor-saved.png'), full_page=True)
+            report['passed'].append('native-editor-keyboard-save')
             def submission_page(context, selected):
                 help_page.get_by_role('link', name='Submit selected saved files', exact=True).click()
                 help_page.get_by_role('checkbox', name='solution.py', exact=False).check()

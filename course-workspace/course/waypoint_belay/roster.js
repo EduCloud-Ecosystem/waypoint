@@ -43,13 +43,17 @@
     enabled(); if (el('ask').disabled) return;
     if (!el('question').value.trim()) {el('status').textContent = 'Add your prediction and question first.'; el('question').focus(); return;}
     busy = true; enabled(); el('status').textContent = 'Checking permitted help…';
+    el('capture').textContent = 'Code selected for this help request. Saving and submission are separate.';
     try {
       const turn = await jobs.ask(base, '/api/sol/jobs', {exercise_id:profile.exercise_id,
         event:'chat',mode:'study',stance:'peer',source:el('source').value,
         recent:[{who:'student',text:el('question').value}]}, state => {el('status').textContent = 'Help request: ' + state + '. Your saved work is unchanged.';});
       el('reply').textContent = turn.message || 'No feedback available.';
       jobs.acknowledge(turn); el('status').textContent = 'Review this hint yourself. It is not a grade or submission.';
-    } catch (e) {el('status').textContent = e.message + ' Your saved work is unchanged. Use the notebook, submission, or human help links.';}
+    } catch (e) {
+      if (e.status === 401 || e.status === 403) {profile.available = false; notice();}
+      el('status').textContent = e.message + ' Your saved work is unchanged. Use the notebook, submission, or human help links.';
+    }
     finally {busy = false; enabled();}
   };
 })();

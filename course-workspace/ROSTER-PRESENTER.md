@@ -105,7 +105,7 @@ One bounded **start/check/stop** command (choose a never-used output directory):
 
 The command builds the two pinned Cairn binaries, starts disposable local fixture
 resources, runs browser checks, and stops its processes and labelled Docker
-resources in `finally`. The deadline is 900 seconds; interruption should be Ctrl-C,
+resources in `finally`. The default deadline is 900 seconds (`--timeout-seconds` may reduce it); interruption should be Ctrl-C,
 not SIGKILL. Existing outputs are refused. Inspect `result.json` for passed/failed
 checks and `cleanup: true`; exit zero requires no failures. A crash or forced kill
 is not verified cleanup. Never use broad Docker prune to recover a fixture.
@@ -134,3 +134,13 @@ publish it wholesale. Keep original failed runs. Export only reviewed result
 metadata, hashes and sanitized screenshots. No production or learner/IRB data is
 an input to this evaluator. Source tests and synthetic success do not authorize
 institutional login, a live model endpoint, cloud provisioning or a classroom run.
+
+
+Latest local acceptance also exercises the native Jupyter file editor and keyboard
+Save before submission. The fixture selects No Kernel when Jupyter restores its
+chooser; no notebook code is executed. Refusal disables further hint requests and
+updates the availability notice while preserving the reviewed code and question.
+Initial capture wording no longer implies that nothing was sent after a request.
+See the versioned verification record for all earlier failed attempts and the
+explicitly recorded follow-up preparation scope/cost. A human walkthrough remains
+separate from these automated rendered checks.
