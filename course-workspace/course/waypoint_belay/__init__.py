@@ -13,6 +13,7 @@ import time
 from urllib.parse import urlsplit
 
 from waypoint_cairn import open_root, open_beneath
+from . import roster
 
 MAX_REQUEST = 32768
 MAX_RESPONSE = 262144
@@ -50,11 +51,12 @@ class Configuration:
     assets: Path
     learner: str
     profile: str = 'legacy'
+    roster_profile: dict | None = None
 
 
 def configuration(env):
     names = ('HOST_ORIGIN', 'API_ORIGIN', 'WORKSPACE_ORIGIN', 'ASSET_ROOT', 'LEARNER_ID')
-    if not any(env.get('WORKSPACE_BELAY_' + name) for name in (*names, 'ASSIGNMENT_PROFILE')):
+    if not any(env.get('WORKSPACE_BELAY_' + name) for name in (*names, 'ASSIGNMENT_PROFILE', 'ROSTER_PROFILE')):
         return None
     if env.get('WORKSPACE_BELAY_LOCAL_TEST') != '1':
         raise ValueError('Belay notebook proxy requires explicit synthetic local opt-in')
@@ -68,20 +70,27 @@ def configuration(env):
     fd = open_root(assets)
     os.close(fd)
     learner = env.get('WORKSPACE_BELAY_LEARNER_ID', '')
-    if learner not in ('edu:1', 'edu:2'):
+    roster_profile = roster.load(env['WORKSPACE_BELAY_ROSTER_PROFILE']) if env.get('WORKSPACE_BELAY_ROSTER_PROFILE') else None
+    if roster_profile and learner != roster_profile['learner_id']:
+        raise ValueError('roster profile identity mismatch')
+    if not roster_profile and learner not in ('edu:1', 'edu:2'):
         raise ValueError('explicit synthetic learner binding required')
-    profile = env.get('WORKSPACE_BELAY_ASSIGNMENT_PROFILE', 'legacy')
-    if profile not in ASSIGNMENT_PROFILES:
+    profile = 'roster' if roster_profile else env.get('WORKSPACE_BELAY_ASSIGNMENT_PROFILE', 'legacy')
+    if not roster_profile and profile not in ASSIGNMENT_PROFILES:
         raise ValueError('unknown synthetic assignment profile')
-    return Configuration(host, api, workspace, assets, learner, profile)
+    return Configuration(host, api, workspace, assets, learner, profile, roster_profile)
 
 
-def allowed_route(method, path, *, profile='legacy'):
+def assignment(config):
+    return (config.roster_profile['exercise_id'], config.roster_profile['exercise_version']) if config.roster_profile else ASSIGNMENT_PROFILES[config.profile]
+
+
+def allowed_route(method, path, *, profile='legacy', bound_assignment=None):
     if not isinstance(path, str) or len(path) > 256 or not re.fullmatch(r'/[A-Za-z0-9_/-]+', path):
         return False
-    if profile not in ASSIGNMENT_PROFILES:
+    if profile not in ASSIGNMENT_PROFILES and bound_assignment is None:
         return False
-    exercise, version = ASSIGNMENT_PROFILES[profile]
+    exercise, version = bound_assignment or ASSIGNMENT_PROFILES[profile]
     private = '/api/classroom/' + exercise + '/' + version
     if method == 'GET' and path in {'/healthz', '/api/curriculum', '/api/conversations/config', '/api/sol/jobs/config', private}:
         return True
@@ -245,7 +254,28 @@ def _load_jupyter_server_extension(serverapp):
             if resource == 'config':
                 self.local(api=True)
                 return self.finish({'version': 1, 'base': base, 'max_source_bytes': 8192})
+            if config.roster_profile and resource in ('', 'roster.js', 'roster.css'):
+                name = 'roster.html' if resource == '' else resource
+                self.xsrf_token
+                self.set_header('Content-Type', {'roster.html':'text/html; charset=utf-8', 'roster.js':'text/javascript', 'roster.css':'text/css'}[name])
+                return RequestHandler.finish(self, (Path(__file__).parent / name).read_bytes())
+            if config.roster_profile and resource == 'profile':
+                self.local(api=True)
+                p = config.roster_profile
+                exercise, version = assignment(config)
+                try:
+                    p = roster.refresh(p)
+                    expiry = roster.current(p, exercise, version)
+                    available = True
+                except (ValueError, OSError, KeyError, TypeError):
+                    expiry, available = p['expires_at'], False
+                return self.finish({'exercise_id':exercise, 'exercise_version':version, 'expires_at':expiry,
+                    'available':available, 'assistance':p['assistance'], 'title':p['assignment_title'], 'base':base,
+                    'notebook':serverapp.web_app.settings['base_url'] + 'lab',
+                    'submission':serverapp.web_app.settings['base_url'] + 'cairn/'})
             if resource == 'bootstrap.js':
+                if config.roster_profile:
+                    raise HTTPError(404)
                 response = await self.upstream(config.host, '/__belay_local__/bootstrap.js')
                 if response.code != 200:
                     raise HTTPError(502)
@@ -276,20 +306,26 @@ def _load_jupyter_server_extension(serverapp):
 
         async def proxy(self, method, path):
             self.local(api=True)
-            if self.request.query or not allowed_route(method, path, profile=config.profile):
+            if self.request.query or not allowed_route(method, path, profile=config.profile, bound_assignment=assignment(config)):
                 raise HTTPError(404)
             if len(self.request.body) > MAX_REQUEST:
                 raise HTTPError(413)
             if method == 'POST' and self.request.headers.get('Content-Type', '').split(';')[0] != 'application/json':
                 raise HTTPError(415)
-            credential = await self.upstream(config.host, '/__belay_local__/token')
             try:
-                token = issued_token(config, credential.code, credential.body)
-            except (ValueError, KeyError, TypeError):
-                raise HTTPError(502, 'Belay authorization unavailable') from None
+                if config.roster_profile:
+                    token = roster.credential(config.roster_profile, *assignment(config))
+                else:
+                    credential = await self.upstream(config.host, '/__belay_local__/token')
+                    token = issued_token(config, credential.code, credential.body)
+            except PermissionError:
+                raise HTTPError(403, 'Assistance is disabled. Saved work and submission remain available.') from None
+            except (ValueError, KeyError, TypeError, OSError):
+                raise HTTPError(401, 'Help access expired or unavailable. Your saved work is unchanged.') from None
             response = await self.upstream(config.api, path,
                 headers={'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json',
-                         'X-Belay-Institution': 'synthetic-inst', 'X-Belay-Class': 'synthetic-class'},
+                         'X-Belay-Institution': config.roster_profile['institution_id'] if config.roster_profile else 'synthetic-inst',
+                         'X-Belay-Class': config.roster_profile['class_id'] if config.roster_profile else 'synthetic-class'},
                 body=self.request.body if method == 'POST' else None, method=method)
             if response.headers.get('Content-Type', '').split(';')[0] != 'application/json':
                 raise HTTPError(502)
