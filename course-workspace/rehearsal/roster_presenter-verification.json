@@ -1,6 +1,6 @@
 {
   "date": "2026-11-10",
-  "source_commit": "1fdbcdcbb67578ba7a51350d11408d55f51a6f06",
+  "source_commit": "349d734fe53f0f4a47f79a017849ffc5091d7b1a",
   "base": "5c9df179a3f914e5ae9e6038f2bf7b95bf6bf824",
   "branch": "codex/classroom-roster-presenter-v1",
   "issue": "https://github.com/EduCloud-Ecosystem/waypoint/issues/58",
@@ -8,10 +8,10 @@
   "source_sha256": {
     "course-workspace/course/waypoint_belay/__init__.py": "698ca0140542bb676dca95f7bdf64103912f8d4e244493ea46e8423046bf4aa7",
     "course-workspace/course/waypoint_belay/roster.py": "ee88efbbdab8edd7650d8dc926c74e433d46731e5c243638e899205d7efde56b",
-    "course-workspace/course/waypoint_belay/roster.js": "45f527f7a27bdb631e94055eded07bbd81238b678b90afdda7fc7f72686beafe",
+    "course-workspace/course/waypoint_belay/roster.js": "1af087fb19dfe7bf4cd0bc85014295c5e83e64c954a3de8572f05a7a6d617206",
     "course-workspace/course/waypoint_belay/roster.html": "7da8ad818c1688cfc4fc593d6ed684f8c74f5b25e660c35d4307905147f91e78",
     "course-workspace/course/waypoint_belay/roster.css": "118f092f5ca69dff6a291f10c684bf34ac3453c1917d53750574a2b70fd1fabd",
-    "course-workspace/rehearsal/roster_presenter.py": "40f75d9e803a8f2c0d39ce6291b980e225974c01a59f95f7da5d91705e212fc7",
+    "course-workspace/rehearsal/roster_presenter.py": "ac9c75d7d99e9f16014990e942aca7ebbd71e284a20e87dc7c1d501c789587d1",
     "course-workspace/rehearsal/roster_presenter-requirements.in": "8c55e7ae903180b0da945d80ab08e49c0199cfdb24bb025e049709f4fe01fc61",
     "course-workspace/rehearsal/roster_presenter-requirements.lock": "c392cad086ca7cbbc8fef16570e8f2211b03298ea4e179384c007f556e59a3f2",
     "course-workspace/tests/test_roster_presenter.py": "8eec00e2570a29d19626ce73c5c960bc7445afedd2f96d0d096c441c6d10b8cb",
@@ -29,6 +29,70 @@
       "failed": 0
     },
     "rendered_result": {
+      "scope": "synthetic-loopback-presenter",
+      "passed": [
+        "actual-forgejo-oauth-cairn-roster-assignment",
+        "native-jupyter-code-selection-signed-belay-job-stub-response",
+        "expired-credential-no-job-or-attempt-preserves-code",
+        "instructor-disabled-refusal-no-ai-human-help",
+        "native-editor-keyboard-save",
+        "no-ai-native-saved-file-submission",
+        "committed-file-reopened-byte-identical",
+        "receipt-survives-restart",
+        "keyboard-and-axe-desktop-mobile"
+      ],
+      "failed": [],
+      "model_calls": 0,
+      "transport_requests_to_model_provider": 0,
+      "institutional_sso": false,
+      "human_review": false,
+      "cleanup": true,
+      "source_pins": {
+        "cairn": "0cf3158fdf5bbbecc52d3cc9cd88ef33bdfb63fc",
+        "belay": "656d6ec1e4be5f9ef7267f5a2bb5145a90238dfe"
+      },
+      "waypoint_revision": "fb53908077651121aabe194c77d6a50454878300",
+      "waypoint_dirty": true,
+      "images": {
+        "checkout": "sha256:aff2cf1eb9177ce2ce61d729ae304df83888f7244eb0c533a265765c47c00010",
+        "grader": "sha256:555abac4f19c239fc6041c9a672bf52c017288fb03ef93195631800462889e5b"
+      },
+      "browser": "153.0.8010.12",
+      "axe_sha256": "20c09fe157a8a34a30e241aaa1fcdade657734f08ab379ecfbeb7d45cc46e878",
+      "receipt": {
+        "id": "c483bb9ef1b9899ce2cb1e4da92f1484",
+        "commit": "2288a39e5be7b7c695a4c5ba3bc2f40cebc986d7",
+        "changes": [
+          {
+            "path": "solution.py",
+            "sha256": "ad64355106bb158b020ecf9702be48f7730fc091dd4bb6a2f092b40393495b3d",
+            "bytes": 12,
+            "action": "create"
+          }
+        ],
+        "checks": [
+          "explicit-saved-file-preview",
+          "exact-file-digest-receipt",
+          "separate-confirmation-required",
+          "submission-csrf-denied",
+          "submission-peer-denied",
+          "submission-unsafe-path-denied",
+          "idempotency-payload-conflict",
+          "lost-confirmation-response-retry",
+          "one-commit-receipt",
+          "submission-ui-keyboard-axe",
+          "submission-receipt-after-restart"
+        ]
+      },
+      "accounting": {
+        "control_jobs": 1,
+        "control_attempts": 4
+      },
+      "grade_claim": "No pedagogical grading acceptance; receipt is repository publication only.",
+      "elapsed_seconds": 43.86
+    },
+    "rendered_inspection": "Native file editor Save and corrected refusal/capture states inspected in screenshots. Desktop and 390px axe/keyboard controls pass; no human usability acceptance.",
+    "previous_rendered_result": {
       "scope": "synthetic-loopback-presenter",
       "passed": [
         "actual-forgejo-oauth-cairn-roster-assignment",
@@ -89,8 +153,7 @@
       },
       "grade_claim": "No pedagogical grading acceptance; receipt is repository publication only.",
       "elapsed_seconds": 38.48
-    },
-    "rendered_inspection": "Desktop and 390px screenshots inspected; no layout overflow; axe and keyboard regression checks pass. No human usability acceptance."
+    }
   },
   "retained_runs": [
     {
@@ -130,6 +193,28 @@
       "failed": [],
       "cleanup": true,
       "seconds": 38.48
+    },
+    {
+      "run": 6,
+      "failed": [
+        "AssertionError: "
+      ],
+      "cleanup": true,
+      "seconds": 41.9
+    },
+    {
+      "run": 7,
+      "failed": [
+        "TimeoutError: Locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\".jp-FileEditor .cm-content\")\n    - locator resolved to <div tabindex=\"0\" translate=\"no\" role=\"textbox\" autocorrect=\"off\" spellcheck=\"false\" autocapitalize=\"off\" aria-multiline=\"true\" contenteditable=\"true\" data-language=\"python\" writingsuggestions=\"false\" class=\"cm-content cm-lineWrapping\">\u2026</div>\n  - attempting click action\n    2 \u00d7 waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div class=\"lm-Widg"
+      ],
+      "cleanup": true,
+      "seconds": 61.98
+    },
+    {
+      "run": 8,
+      "failed": [],
+      "cleanup": true,
+      "seconds": 43.86
     }
   ],
   "raw_private_evidence": {
@@ -184,6 +269,62 @@
     "output/roster-presenter-v1/run-5/course/cairn.log": {
       "bytes": 4451,
       "sha256": "287a9b01ef000fd4d70e386881a743eb5c8f81488255cd4d13f9ee3dd5343fe7"
+    },
+    "output/roster-presenter-v1/run-6/result.json": {
+      "bytes": 960,
+      "sha256": "0cf9e66815ea2098f4d2539c25881d6b5718672b4a0c6c7f02f2c12b8ad4e6b7"
+    },
+    "output/roster-presenter-v1/run-6/failure.txt": {
+      "bytes": 327,
+      "sha256": "3bb13eea0f154e27b1a2faaf1f92af4cf81b6a3209fef7f9113b401c0bfad974"
+    },
+    "output/roster-presenter-v1/run-6/notebook.log": {
+      "bytes": 6237,
+      "sha256": "1d9e2e2c9ffd4d02e3d63ec080bf75eee4442c47a09e915df80c54c977007870"
+    },
+    "output/roster-presenter-v1/run-6/belay-api.log": {
+      "bytes": 775,
+      "sha256": "55f69ce50dda927588e92a02908ea9ee3a35313d7c977a8f8e8062580543d398"
+    },
+    "output/roster-presenter-v1/run-6/belay-worker.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "output/roster-presenter-v1/run-7/result.json": {
+      "bytes": 1603,
+      "sha256": "0fca5a6404a178fe39fa838d133cf266dd7ffe5bd2bade0341975c3f6e9af091"
+    },
+    "output/roster-presenter-v1/run-7/failure.txt": {
+      "bytes": 3472,
+      "sha256": "f2326109726920a9c151d050f6b4de582c61531ae3efc5853816350083c7aec2"
+    },
+    "output/roster-presenter-v1/run-7/notebook.log": {
+      "bytes": 6167,
+      "sha256": "997d1d2413e148eb14886b4cd0501b321a4c48121ec27627f1be3e2157b8f318"
+    },
+    "output/roster-presenter-v1/run-7/belay-api.log": {
+      "bytes": 775,
+      "sha256": "4a7e06f90f1e096639d82a41f4af488d08708851371723e55742fcfdb82d2ad9"
+    },
+    "output/roster-presenter-v1/run-7/belay-worker.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "output/roster-presenter-v1/run-8/result.json": {
+      "bytes": 1873,
+      "sha256": "ecaaa635a2beed6d58b0c96bd2d0c857539f4fa354ae2306a7f6e7951f231c25"
+    },
+    "output/roster-presenter-v1/run-8/notebook.log": {
+      "bytes": 6232,
+      "sha256": "3214cad8b381324e2c3eb74cbacd2ebd84559cdd9e39e5116fec0617b28303ad"
+    },
+    "output/roster-presenter-v1/run-8/belay-api.log": {
+      "bytes": 775,
+      "sha256": "2e3fd3f858d5a3c34dd8656f0763b65a25b4b4d2726647112a34e6d8b92370df"
+    },
+    "output/roster-presenter-v1/run-8/belay-worker.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     }
   },
   "runtime_accounting": {
@@ -194,7 +335,11 @@
     "external_transport_requests": 0,
     "sdk_retries": 0,
     "paid_calls": 0,
-    "local_correction_rounds": 4
+    "local_correction_rounds": 4,
+    "followup_failed_runs": 2,
+    "followup_successful_runs": 1,
+    "total_rehearsal_seconds_including_failures": 519.18,
+    "scope_extensions": "Recorded before execution in EduCloud coordination scope; initial four rounds preserved as complete. Wording/native-Save follow-up retained failed focus and restored-dialog attempts before pass."
   },
   "environment": {
     "python": "3.12.13",
@@ -210,9 +355,9 @@
     "Unmerged draft dependency interfaces; no live classroom launch or institutional SSO qualification.",
     "No live GenAI/OpenMined/model quality or Outfitter qualification; Portage transport is separate prior evidence.",
     "Image IDs are pinned locally; checkout image rebuild uses mutable package acquisition, and grader image distribution is still needed for another machine.",
-    "Saved file is written through the authenticated Jupyter Contents API; manual editing/save UI is not qualified by this harness.",
-    "Rendered copy follow-up: initial capture text still says nothing sent after a completed hint, and policy banner remains hints-permitted after credential refusal. Backend refuses securely; do not mark human usability accepted.",
-    "No comparison experiment, cloud provisioning, real data, merge or deployment."
+    "No comparison experiment, cloud provisioning, real data, merge or deployment.",
+    "Automated native Save and corrected refusal/capture wording now pass. Independent human synthetic walkthrough remains unexecuted."
   ],
-  "ci": "pending draft publication"
+  "ci": "Current implementation changed after initial PR checks; exact final-head status is tracked in EduCloud coordination record.",
+  "previous_source_commit": "1fdbcdcbb67578ba7a51350d11408d55f51a6f06"
 }
