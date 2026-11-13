@@ -278,6 +278,20 @@ class Notebook:
         self.readiness_diagnostics(last_status)
         raise AssertionError('OIDC fixture did not become ready')
 
+    def reuse_images(self, source):
+        """Select a started peer's exact images before this fixture starts."""
+        if (self.mounted or hasattr(self, 'env') or self.requested_hub_image
+                or self.synthetic_candidate_images):
+            raise ValueError('image reuse requires an unstarted default fixture')
+        source.verify_manifest_frozen()
+        images = source.manifest['images']
+        if (images != {'hub': source.hub_image, 'course': source.image}
+                or any(not isinstance(value, str) or not re.fullmatch(r'sha256:[0-9a-f]{64}', value)
+                       for value in images.values())):
+            raise ValueError('image reuse requires verified local image identities')
+        self.requested_hub_image = images['hub']
+        self.image = images['course']
+
     def prepare_images(self):
         if not self.requested_hub_image:
             print('Building the current notebook images.', flush=True)

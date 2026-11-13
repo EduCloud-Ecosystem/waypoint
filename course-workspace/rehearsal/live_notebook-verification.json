@@ -65,8 +65,23 @@
     }
   },
   "historical_ci_failure": "https://github.com/EduCloud-Ecosystem/waypoint/actions/runs/42911189219",
-  "candidate_ci": "pending",
-  "stub_regression": "pending",
+  "candidate_ci": {
+    "source": "6b2aad6fe56dfb757f9dba358d038de14edd627a",
+    "status": "failed",
+    "course_run": 43528577222,
+    "worker_channel_run": 43528577360,
+    "authenticated_runtime_run": 43528577074,
+    "authenticated_runtime_status": "PASS_BOTH_REPORTS_INDEPENDENTLY_INSPECTED",
+    "follow_up": "peer image reuse correction awaiting CI; see docs/classroom-live-notebook-checkpoint.md for final snapshot"
+  },
+  "stub_regression": {
+    "status": "PASS",
+    "source": "6b2aad6fe56dfb757f9dba358d038de14edd627a",
+    "result_sha256": "c2e394ce5de4d684b681a456d6da44dae75b5e39f77c069ca0bc7057809c7f90",
+    "provider_requests": 0,
+    "cleanup": true,
+    "includes": "fresh instructor login and protected submission repository read after Cairn restart"
+  },
   "limitations": [
     "fixed echo example, no notebook kernel execution",
     "no campus SSO or real learners",
@@ -80,7 +95,28 @@
       "error": "401 instructor session invalidated by Cairn restart",
       "provider_requests": 0,
       "cleanup": true,
-      "resolution": "explicit fresh instructor OAuth login before protected read, validation pending"
+      "resolution": "fresh instructor OAuth login, validated by stub-regression-2"
+    },
+    {
+      "run": "43528577222",
+      "error": "three independent fixture rebuilds fail exact image equality; course retirement probe timed out",
+      "provider_requests": 0,
+      "resolution": "image pin reuse correction prepared; retirement timeout unresolved"
+    },
+    {
+      "run": "43528577360",
+      "error": "peer Python kernel POST ConnectionError after source Python/R success",
+      "provider_requests": 0,
+      "cleanup": true,
+      "resolution": "unresolved; no blind retries or weakened acceptance"
+    },
+    {
+      "run": "local_rehearsal_suite_after_image_fix",
+      "error": "pending-reconciliation concurrent race loser returned an unexpected refusal code at verify_pending_reconciliation.py:299; code not retained by existing assertion",
+      "checks": 328,
+      "failed": 1,
+      "skipped": 8,
+      "resolution": "unresolved; no code broadening or automatic retry; focused changed-path checks62 passed"
     }
   ]
 }

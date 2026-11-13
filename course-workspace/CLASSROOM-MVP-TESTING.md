@@ -24,8 +24,9 @@ self-evaluation establishes instructional quality, grading validity or scientifi
 acceptance. Human instructional review remains required.
 
 A later HTML-only correction clearly discloses external inference. It was rendered
-at1280px/390px without additional paid calls. The unchanged stub journey remains
-a separate zero-model regression; see the verification record for its outcome.
+at1280px/390px without additional paid calls. The unchanged stub journey passed at6b2aad6 as a separate zero-model regression,
+including fresh instructor OAuth login and protected access to the submitted repository.
+The first instructor-read regression failed401 after restart; its evidence is retained.
 
 ## Compatible branch map
 
@@ -103,7 +104,12 @@ matched. Exact candidate CI and retained historical failures are recorded separa
 PR59's historical runtime failed at the peer Python kernel call with a ConnectionError;
 its saved report was independently inspected and confirms cleanup. Basic authenticated
 runtime passed, enrollment runtime failed. The cause remains unproven; do not call
-it a flake or weaken its acceptance. Fresh candidate CI must finish before release.
+it a flake or weaken its acceptance. Candidate6b2aad6 also failed the peer kernel transport and retirement HTTP probe,
+and three multi-course checks exposed independently rebuilt image mismatches.
+The follow-up shares a verified immutable image pair without weakening equality
+checks. These are separate from live tutoring acceptance. Read the final
+[checkpoint](../docs/classroom-live-notebook-checkpoint.md) for exact CI status;
+no unresolved runtime failure permits release.
 
 Next decisions after source checks: Greg reviews the hint/help/submission experience;
 engineering replaces the echo fixture with the accepted course package and evaluates

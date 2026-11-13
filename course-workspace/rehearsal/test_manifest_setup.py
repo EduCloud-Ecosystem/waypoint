@@ -37,6 +37,45 @@ class ManifestSetupTests(unittest.TestCase):
             default.prepare_images()
             default.compose.assert_called_once_with('--profile', 'build', 'build')
 
+    def test_peer_reuses_frozen_image_pair_without_build_or_identity_change(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            source = self.fixture(root)
+            peer = Notebook(root / 'peer', domain='two.rehearsal.test', auth_domain='authtwo.rehearsal.test')
+            original = (peer.instance, peer.original_dns, peer.origin, peer.auth, peer.root)
+            peer.compose = Mock()
+            peer.reuse_images(source)
+            peer.prepare_images()
+            peer.compose.assert_not_called()
+            self.assertEqual((peer.requested_hub_image, peer.image), (source.hub_image, source.image))
+            self.assertEqual((peer.instance, peer.original_dns, peer.origin, peer.auth, peer.root), original)
+
+    def test_peer_refuses_changed_or_mutable_source_images_before_selecting(self):
+        for case in ('manifest', 'mismatch', 'mutable'):
+            with self.subTest(case=case), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory).resolve(); source = self.fixture(root); peer = Notebook(root / 'peer')
+                if case == 'manifest': source.manifest_path.write_text('{}')
+                elif case == 'mismatch': source.image = 'sha256:'+'c'*64
+                else:
+                    source.image = source.manifest['images']['course'] = 'course:latest'
+                    source.manifest_path.write_text(json.dumps(source.manifest))
+                    source.freeze_manifest()
+                with self.assertRaises((AssertionError, ValueError)): peer.reuse_images(source)
+                self.assertIsNone(peer.requested_hub_image)
+                self.assertEqual(peer.image, 'educloud-python-r:2026-10-06')
+
+    def test_peer_refuses_started_or_explicit_image_selection(self):
+        for case in ('mounted', 'env', 'explicit', 'canary'):
+            with self.subTest(case=case), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory); peer = Notebook(root)
+                if case == 'mounted': peer.mounted = True
+                elif case == 'env': peer.env = {}
+                elif case == 'explicit': peer.requested_hub_image = 'sha256:'+'a'*64
+                else: peer.synthetic_candidate_images = True
+                source = Mock()
+                with self.assertRaises(ValueError): peer.reuse_images(source)
+                source.verify_manifest_frozen.assert_not_called()
+
     def test_synthetic_candidate_uses_exact_parent_and_is_distinct(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory).resolve()

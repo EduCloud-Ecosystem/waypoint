@@ -316,7 +316,9 @@ def main():
                       client_id='course-two',capacity=capacity,allocation_policy=policy_path)
     source_instance = first.instance; recovered = None; checks = []
     try:
-        first.start(); second.start()
+        first.start()
+        second.reuse_images(first)
+        second.start()
         initial = allocation.inventory(policy_path)
         assert initial['active_courses'] == 2 and initial['memory_reserved_mb'] == 3072 and initial['cpu_reserved'] == 2.5
         checks.append('two-managed-courses-enrolled')
