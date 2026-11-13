@@ -1,0 +1,124 @@
+{
+  "base_revision": "504009aff30d97fde1ec472b64d08cd3cabb211c",
+  "browser": "Chrome 157.0.8103.51 on macOS",
+  "candidate_source_sha256": {
+    "prepare.py": "6421e1780f0f27ff4c0ed5ccf4cb2700129da1c0e438629396771646bbc800c4",
+    "waypoint-browser.css": "506acd99dfcbba02c87ced86d64d21a8c58251bea4dc58f6a1c8211624601729",
+    "waypoint-browser.js": "c4d4886bdceef037212a9fb2bfe2d0daacd955c1e1f2258d1be33e3a70cf9f9d"
+  },
+  "mobile_emulation": {
+    "cpu_slowdown": 4,
+    "down_bytes_sec": 200000,
+    "latency_ms": 150,
+    "up_bytes_sec": 90000,
+    "width": 412
+  },
+  "qualification": "experimental candidate, retain hosted fallback",
+  "recovery": {
+    "file_bytes_match": {
+      "assistance.md": true,
+      "explanation.md": true,
+      "nhanes-wrangling.ipynb": false,
+      "tidy-nhanes.csv": true
+    },
+    "initial_generated_csv_absent": true,
+    "nonloopback_app_requests": [],
+    "notebook_parsed_json_identical": true,
+    "original_notebook_sha256": "133358bd417c04088383b00f3f2ff3c40463a77f4829f251c559b9e2dbc380ac",
+    "restored_notebook_sha256": "833a322db6bafe6ef8e947c9cf40d99c7a924e42d314a4d42554b313b68bbcc1",
+    "strict_byte_gate": "failed_notebook_reserialized"
+  },
+  "retained_failures": [
+    "first diagnostic port was in use",
+    "initial mobile layout was overwritten by Lab restoring its panel",
+    "denied probe was initially included in application request counter",
+    "open file panel needed a geometry observer for keyboard scroll regions",
+    "fresh-profile recovery preserved notebook JSON but failed strict byte equality"
+  ],
+  "runs": {
+    "desktop_keyboard": {
+      "axe": {
+        "axe": {
+          "manual_review": [
+            "aria-prohibited-attr"
+          ],
+          "violations": []
+        },
+        "axe_dialog": {
+          "manual_review": [],
+          "violations": []
+        }
+      },
+      "denied_browser_background": 15,
+      "external_probe_denied": true,
+      "external_requests": [],
+      "geometry": {
+        "clientWidth": 846,
+        "dock": 952,
+        "scrollWidth": 846,
+        "viewport": 1280,
+        "wrap": true
+      },
+      "sha256": {
+        "assistance.md": "cbe3deafd193ad1a6e69305530fcc0c482dd6e5eb4e1abe88d1a1e4878ed4329",
+        "explanation.md": "aff4dc1bf68acf7a732f883ba974dd4c87169e2bef1ea0818a059c8a595e1606",
+        "nhanes-wrangling.ipynb": "133358bd417c04088383b00f3f2ff3c40463a77f4829f251c559b9e2dbc380ac",
+        "tidy-nhanes.csv": "0f15ad84fbf6441dbe3c6a3c7d850dcae080410d92d392c07754a3ef1ad1e8b8"
+      },
+      "status": "executed_saved_exported"
+    },
+    "throttled_pixel7_taps": {
+      "axe": {
+        "axe": {
+          "manual_review": [
+            "aria-prohibited-attr"
+          ],
+          "violations": []
+        },
+        "axe_dialog": {
+          "manual_review": [],
+          "violations": []
+        },
+        "axe_files_open": {
+          "manual_review": [
+            "aria-prohibited-attr"
+          ],
+          "violations": []
+        }
+      },
+      "denied_browser_background": 17,
+      "external_probe_denied": true,
+      "external_requests": [],
+      "geometry": {
+        "clientWidth": 289,
+        "dock": 336,
+        "scrollWidth": 289,
+        "viewport": 412,
+        "wrap": true
+      },
+      "sha256": {
+        "assistance.md": "cbe3deafd193ad1a6e69305530fcc0c482dd6e5eb4e1abe88d1a1e4878ed4329",
+        "explanation.md": "aff4dc1bf68acf7a732f883ba974dd4c87169e2bef1ea0818a059c8a595e1606",
+        "nhanes-wrangling.ipynb": "133358bd417c04088383b00f3f2ff3c40463a77f4829f251c559b9e2dbc380ac",
+        "tidy-nhanes.csv": "0f15ad84fbf6441dbe3c6a3c7d850dcae080410d92d392c07754a3ef1ad1e8b8"
+      },
+      "status": "executed_saved_exported"
+    }
+  },
+  "runtime": {
+    "jupyterlab": "4.6.5",
+    "jupyterlite": "0.8.7",
+    "pandas": "3.0.2",
+    "pyodide": "314.0.6",
+    "python": "3.14.2"
+  },
+  "runtime_asset_lock_sha256": "dbcee361845e34bf1d68bf4769880550058d5b2c63f286501b9a94e49e8cc0dd",
+  "scope": "synthetic public data on loopback, not learner acceptance",
+  "unrun": [
+    "physical device",
+    "soft keyboard editing on hardware",
+    "screen reader",
+    "full hosted fallback access and submission",
+    "accessibility conformance"
+  ]
+}

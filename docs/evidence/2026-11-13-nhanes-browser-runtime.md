@@ -121,3 +121,45 @@ address the narrow layout and keyboard/ARIA issues, then repeat with a real
 low-end phone or tablet, human screen-reader checks and a touch-only export.
 Hosted authorization, committed submission and inference qualification
 remain separate gates.
+
+## Narrow layout and keyboard candidate
+
+The optional [Waypoint adapter](../../browser-candidate/README.md) uses the
+pinned Lab controls and existing notebook commands. It keeps the file panel
+closed by default on narrow screens, wraps code, labels cell editors and
+scroll areas, and exposes native Run, Save and per-file Download controls.
+The hosted workspace remains the fallback, and the original bundle and release
+are unchanged.
+
+[Observed results](../../browser-candidate/REHEARSAL.json) bind the adapter
+sources, cold runtime inventory, and export hashes. On desktop Chrome, Tab and
+Enter reached notebook actions; Arrow Down and Enter reached the solution
+editor. Run, Save, dialog downloads and Escape were exercised with keys. On
+throttled Pixel 7 emulation, the fresh notebook opened without the file panel;
+tap actions edited (with automated text insertion), ran, saved, toggled files
+and downloaded each artifact. At 412 CSS pixels the notebook was 336 pixels
+wide and the wrapped solution editor had no horizontal overflow. Both produced
+the same 192-row CSV as native Python, and all four exports matched across runs.
+A clean profile recovered the CSV and both Markdown files byte for byte.
+Opening and saving the imported notebook preserved its full parsed JSON, but
+JupyterLite reserialized its bytes. The strict notebook byte gate failed;
+retain the original download. The deny proxy blocked external browser traffic and the
+app made no non-loopback requests during the recorded runs.
+
+Axe-core 4.10.3 reported zero violations for the scanned A/AA rules in the
+desktop and emulated notebook, open file panel and download dialog states.
+It still requested manual review of labels on upstream shadow-DOM toolbar
+hosts. This result is limited to those states and rules. See the
+[physical device and assistive technology runbook](../../browser-candidate/DEVICE-CHECKS.md)
+for the remaining checks. The emulation did not exercise a device's OS
+keyboard or an actual screen reader.
+
+Checkpoint: `codex/browser-accessibility-candidate-v1` in the reused Waypoint
+browser worktree, starting from `504009aff30d97fde1ec472b64d08cd3cabb211c`.
+Changes are limited to the opt-in adapter, documentation and bounded evidence.
+The 15 existing packager tests passed, and preparation rejected changed starter
+bytes, extra files, and an existing destination. Raw browser traces, failed
+attempts and rendered evidence are retained under ignored
+`course-workspace/output/browser-accessibility-candidate-v1/`. Test servers
+and browser sessions were closed. Next run the prepared checks with physical
+devices and human assistive technology use, without promoting the candidate.
