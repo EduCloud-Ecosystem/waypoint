@@ -47,6 +47,21 @@ def refused(operation, error=ValueError):
     raise AssertionError('retired, stale, or corrupt state was accepted')
 
 
+def forget_unprotected_fixture_snapshots(cfg, root):
+    """One policy group for this invocation's local synthetic repository only."""
+    repository = Path(cfg['repository'])
+    root = Path(root).resolve()
+    if (cfg.get('local_test') is not True or not repository.is_absolute()
+            or repository.resolve() != repository or repository == root
+            or not repository.is_relative_to(root)):
+        raise ValueError('retention control requires the invocation-owned local repository')
+    # The control snapshot has a different path. Default host,paths grouping
+    # would put it alone in a group and correctly refuse removing its last
+    # snapshot. One group keeps every protected tag while dropping the control;
+    # the CLI's remove-all refusal remains enabled if the protected tag is lost.
+    restic(cfg, 'forget', '--group-by', '', '--keep-tag', RETIRED_TAG)
+
+
 def publish_pass(root, report, cleanup_verified):
     keys={'waypoint_revision','fixture_sha256','exporter_sha256','source_manifest_sha256',
           'snapshot_id','source_export_sha256','restored_export_sha256','images','counts','checks'}
@@ -222,7 +237,7 @@ def main():
                 control=root/'retention-control.txt'; control.write_text('synthetic retention control')
                 output=restic(cfg,'backup','--json','--tag','synthetic-unprotected-control',str(control))
                 control_id=next(json.loads(line)['snapshot_id'] for line in output.splitlines() if json.loads(line).get('message_type')=='summary')
-                restic(cfg,'forget','--keep-tag',RETIRED_TAG)
+                forget_unprotected_fixture_snapshots(cfg, root)
                 snapshots=json.loads(restic(cfg,'snapshots','--json'))
                 assert plan['snapshot_id'] in {item['id'] for item in snapshots} and control_id not in {item['id'] for item in snapshots}
                 checks.append('protected-snapshot-retained'); restic(cfg,'check','--read-data'); checks.append('snapshot-integrity')

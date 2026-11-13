@@ -204,3 +204,38 @@ without copying identity state. Final AST/diff checks pass. No Docker, downloads
 commit or push ran here; local hermetic results do not replace a successful real
 rehearsal. Next action is parent review, commit and exact-new-head CI for all
 three original failures, retaining their evidence and remaining release gates.
+
+### PR60 synthetic retention CLI correction
+
+At `80303aff2da1a568c7ac7d911d4380cada515236`, the three corrected shared-image
+rehearsals passed hosted CI. The remaining course-job failure was retirement's
+synthetic `restic forget --keep-tag` command (job `132091766389`, installed Restic
+0.18.1). The original failed log remains untouched at
+`course-workspace/output/browser-bundle-release-v1/retirement-ci-failed.log`.
+Restic's default `host,paths` grouping put the different-path unprotected control
+in its own group; retaining only protected tags would remove that group's last
+snapshot and is refused. See the [official grouping and retention semantics](https://github.com/restic/restic/blob/master/doc/060_forget.rst).
+
+The fixture-only helper now explicitly uses `--group-by '' --keep-tag` against
+only a local-test repository beneath this invocation's root. It refuses foreign,
+nonlocal or ambiguous paths. No unsafe-remove flag is used. Protected snapshot
+tag/ID checks, control-removal assertions, real integrity verification and closed
+restore/export controls remain intact. Production `recovery.retention` and
+`retirement.py` are byte-unchanged; their host/tag/count rules are unaffected.
+
+A permitted new-temporary-repository probe with installed local Restic 0.19.1
+reproduced the original exit 1, then verified corrected exit 0, protected snapshot
+retention, control removal and `check --read-data` exit 0. The repository and
+password were private and removed on context exit; no existing repository was
+accessed. Regression checks then exercised the actual fixture helper with two
+distinct snapshot paths, verified protected file bytes and integrity, and proved
+that a missing protected tag still refuses whole-group deletion. Focused
+retirement results: **9/9 passed in 10.822 seconds**, no skips. The existing
+production-retention scoping/preview control also passed, **1/1**. AST and diff
+checks pass. Local evidence is retained separately under ignored
+`course-workspace/output/retirement-retention-fix-2026-11-13/`.
+
+No Docker, download, production retention change, commit, push or release asset
+change ran here. Local Restic 0.19.1 evidence is distinct from the still-pending
+new-head hosted run with Restic 0.18.1. Parent review/commit and successful exact
+new-head retirement CI remain required; the release candidate remains a draft.

@@ -2,6 +2,8 @@
 import json
 import os
 from pathlib import Path
+import secrets
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -20,6 +22,53 @@ def report():
 
 
 class RetirementAcceptanceTests(unittest.TestCase):
+    def test_fixture_retention_refuses_foreign_or_nonlocal_repository_before_cli(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            for repository, local in ((str(root / 'repository'), False), (str(root.parent / 'foreign'), True),
+                                      ('sftp:example.invalid:/repository', True), (str(root), True),
+                                      (str(root / '..' / 'foreign'), True)):
+                with self.subTest(repository=repository), patch.object(r, 'restic') as restic:
+                    with self.assertRaises(ValueError):
+                        r.forget_unprotected_fixture_snapshots({'repository': repository, 'local_test': local}, root)
+                    restic.assert_not_called()
+
+    @unittest.skipUnless(shutil.which('restic'), 'installed Restic required for fresh local repository regression')
+    def test_real_fixture_retention_keeps_protected_bytes_and_removes_other_path_group(self):
+        with tempfile.TemporaryDirectory(prefix='retirement-retention-control-') as directory:
+            root = Path(directory).resolve(); root.chmod(0o700)
+            password = root / 'password'; password.write_text(secrets.token_urlsafe(32)); password.chmod(0o600)
+            cfg = {'repository': str(root / 'repository'), 'password_file': str(password), 'local_test': True}
+            retained = root / 'protected'; retained.mkdir()
+            saved = retained / 'saved.txt'; saved.write_text('synthetic protected coursework\n')
+            control = root / 'unprotected.txt'; control.write_text('synthetic unprotected control\n')
+            r.restic(cfg, 'init')
+            def backup(path, tag):
+                output = r.restic(cfg, 'backup', '--json', '--tag', tag, str(path))
+                return next(json.loads(line)['snapshot_id'] for line in output.splitlines()
+                            if json.loads(line).get('message_type') == 'summary')
+            protected_id = backup(retained, r.RETIRED_TAG)
+            control_id = backup(control, 'synthetic-unprotected-control')
+            before = json.loads(r.restic(cfg, 'snapshots', '--json'))
+            self.assertEqual({row['id'] for row in before}, {protected_id, control_id})
+            self.assertEqual(len({tuple(row['paths']) for row in before}), 2)
+            # Actual CLI execution distinguishes the corrected policy from the
+            # old default grouping, which refuses the control-only group.
+            with patch.object(r, 'restic', wraps=r.restic) as command:
+                r.forget_unprotected_fixture_snapshots(cfg, root)
+            self.assertNotIn('--unsafe-allow-remove-all', command.call_args.args)
+            after = json.loads(r.restic(cfg, 'snapshots', '--json'))
+            self.assertEqual({row['id'] for row in after}, {protected_id})
+            self.assertIn(r.RETIRED_TAG, after[0]['tags'])
+            self.assertEqual(r.restic(cfg, 'dump', protected_id, str(saved)), saved.read_text())
+            r.restic(cfg, 'check', '--read-data')
+            # A broken/missing keep tag must still fail closed rather than
+            # acquire a general permission to delete the whole snapshot group.
+            with patch.object(r, 'RETIRED_TAG', 'synthetic-missing-protected-tag'):
+                with self.assertRaises(RuntimeError): r.forget_unprotected_fixture_snapshots(cfg, root)
+            remaining = json.loads(r.restic(cfg, 'snapshots', '--json'))
+            self.assertEqual({row['id'] for row in remaining}, {protected_id})
+
     def test_all_controls_and_cleanup_are_required_and_publication_is_private_exclusive(self):
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory).resolve()
