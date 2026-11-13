@@ -186,3 +186,23 @@ authorize learners, institutional SSO, deployment, grading acceptance or cloud.
 Step1 remaining: investigate failed authenticated runtime CI on PR59 separately
 from notebook proof; no red gate may be relabeled green. Merges/release remain
 separate from compatible branch testing.
+
+## Bounded CI follow-up (2026-11-13)
+
+At candidate6b2aad6, the joined live path and zero-model regression passed.
+CI jobs132240318667,132240318586,132240318559 each fail their same-image
+assertion after independently building two fixtures. The fixture already accepts
+paired immutable images. Extend only rehearsal/notebook.py and the multiple-course,
+resource-amendment and cutover evaluators plus focused tests to reuse the first
+fixture's verified exact image pair before starting the second. Preserve both
+resolver captures, independent course authority/storage, equality assertions and
+cleanup controls. No change to runtime admission or image acceptance policy.
+
+Retain original CI logs under output/live-notebook-v1. At most one follow-up
+candidate push for this image-selection correction, focused hermetic tests and
+existing CI; no further provider calls, no local privileged Linux provisioning,
+no other chat edits. Inspect existing worker-channel and retirement failures as
+separate unresolved blockers; do not repair by blind request retries or timeout
+acceptance. Record final CI and evidence in a checkpoint without claiming green
+checks from another source revision. Broader runtime remediation remains a
+separate next action if this finite correction does not close it.
