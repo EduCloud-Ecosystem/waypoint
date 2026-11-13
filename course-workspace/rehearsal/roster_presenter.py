@@ -28,6 +28,7 @@ from playwright.sync_api import sync_playwright, expect, TimeoutError as Browser
 from accessibility import audit, tab_to
 from cairn_journey import Course, port, wait_http
 from submission_handoff import first_submission, verify_receipt_after_restart
+from live_notebook import LiveNotebook
 
 ROOT = Path(__file__).resolve().parents[1]
 PINS = {'cairn': '0cf3158fdf5bbbecc52d3cc9cd88ef33bdfb63fc',
@@ -54,10 +55,16 @@ def main():
     parser.add_argument('--cairn', type=Path, required=True)
     parser.add_argument('--belay', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--live-portage', type=Path, help='Pinned synthetic live adapter checkout')
+    parser.add_argument('--env-file', type=Path, help='Private OpenRouter credential file')
+    parser.add_argument('--execute-approved', action='store_true')
     parser.add_argument('--checkout-image', required=True)
     parser.add_argument('--grader-image', required=True)
     parser.add_argument('--timeout-seconds', type=int, choices=range(60, 901), default=900)
     args = parser.parse_args()
+    if args.live_portage and not (args.env_file and args.execute_approved):
+        parser.error("live mode requires --env-file and --execute-approved: at most 7 calls/USD0.175")
+    os.umask(0o077)
     root = args.output.resolve()
     root.mkdir(mode=0o700)  # Existing runs cannot be overwritten or resumed.
     report = {'scope': 'synthetic-loopback-presenter', 'passed': [], 'failed': [],
@@ -65,6 +72,7 @@ def main():
               'institutional_sso': False, 'human_review': False, 'cleanup': False}
     processes, logs = [], []
     course = None
+    live = None
     started = time.monotonic()
     def timed_out(*_):
         raise TimeoutError('finite rehearsal window ended')
@@ -78,13 +86,16 @@ def main():
         processes.append(proc)
         return proc
     try:
-        for name in PINS:
+        pins = dict(PINS)
+        if args.live_portage:
+            pins['belay'] = 'c5a27073e74b9eeb7ab697190915378b50132883'
+        for name in pins:
             repo = getattr(args, name).resolve()
-            if command(['git', 'rev-parse', 'HEAD'], cwd=repo) != PINS[name]:
+            if command(['git', 'rev-parse', 'HEAD'], cwd=repo) != pins[name]:
                 raise ValueError('dependency source revision mismatch: ' + name)
             if command(['git', 'status', '--porcelain', '--untracked-files=no'], cwd=repo):
                 raise ValueError('dependency tracked source dirty: ' + name)
-        report['source_pins'] = PINS
+        report['source_pins'] = pins
         report['waypoint_revision'] = command(['git', 'rev-parse', 'HEAD'], cwd=ROOT)
         report['waypoint_dirty'] = bool(command(['git', 'status', '--porcelain'], cwd=ROOT))
         for image in (args.checkout_image, args.grader_image):
@@ -177,9 +188,17 @@ def main():
                 CONTROLS_DATA_KEY_FILE=str(root / 'execution.key'), AUTH_ISSUER=binding['issuer'],
                 AUTH_AUDIENCE=binding['audience'], AUTH_PUBLIC_KEY_FILE=str(root / 'public.pem'),
                 AUTH_AUTHORIZATION_FILE=str(snapshot), AUTH_AUTHORITY_STATE_FILE=str(root / 'watermark.db'))
-            limits = dict(tokens=100000, microunits=100000, runs=10, wall_ms=120000)
+            if args.live_portage:
+                if command(['git', 'rev-parse', 'HEAD'], cwd=args.live_portage) != '0653fd9' and not command(['git', 'rev-parse', 'HEAD'], cwd=args.live_portage).startswith('0653fd9'):
+                    raise ValueError('Portage integration revision mismatch')
+                if command(['git', 'status', '--porcelain', '--untracked-files=no'], cwd=args.live_portage):
+                    raise ValueError('commit Portage source before live use')
+                report['portage_revision'] = command(['git', 'rev-parse', 'HEAD'], cwd=args.live_portage)
+                live = LiveNotebook(args.live_portage.resolve(), args.belay.resolve(), args.env_file, root, snapshot, document, member, env)
+                env.update(live.environment)
+            limits = dict(tokens=114688, microunits=175000, runs=10, wall_ms=180000)
             private(root / 'policy.json', dict(version='presenter-v1', price_version='synthetic-v1', currency='USD',
-                input_price=0, output_price=0, deployment=limits, institution=limits, classroom=limits, learner=limits))
+                input_price=1 if live else 0, output_price=2 if live else 0, deployment=limits, institution=limits, classroom=limits, learner=limits))
             private(root / 'initialize.log', command([python, '-m', 'app.controls.cli', 'init', '--policy', root / 'policy.json'], env=env, cwd=root))
             command([python, '-m', 'app.authority_state', root / 'watermark.db', authority], env=env, cwd=root)
             launch('belay-api', [python, '-m', 'uvicorn', 'app.main:app', '--host', '127.0.0.1', '--port', api_url.rsplit(':', 1)[1]], env, root)
@@ -222,10 +241,20 @@ def main():
             help_page.screenshot(path=str(root / 'help-before-request.png'), full_page=True)
             tab_to(help_page, help_page.get_by_role('button', name='Ask for a hint', exact=True))
             help_page.keyboard.press('Enter')
-            expect(help_page.locator('#status')).to_contain_text('It is not a grade', timeout=60000)
-            expect(help_page.locator('#reply')).to_contain_text('Local model stub')
+            expect(help_page.locator('#status')).to_contain_text('It is not a grade', timeout=180000)
+            if live:
+                expect(help_page.locator('#reply')).not_to_be_empty()
+                expect(help_page.locator('#reply')).not_to_contain_text('Local model stub')
+                private(root / 'synthetic-tutor-reply.txt', help_page.locator('#reply').inner_text())
+                accounting = live.evidence()['accounting']
+                assert 3 <= accounting['dispatch_claims'] <= 7
+                assert all(a['state'] == 'complete' for a in accounting['attempts'])
+                report['passed'].append('native-notebook-signed-job-live-portage-tutoring')
+            else:
+                expect(help_page.locator('#reply')).to_contain_text('Local model stub')
             expect(help_page.locator('#capture')).not_to_contain_text('Nothing has been sent')
-            report['passed'].append('native-jupyter-code-selection-signed-belay-job-stub-response')
+            if not live:
+                report['passed'].append('native-jupyter-code-selection-signed-belay-job-stub-response')
             report['axe_sha256'] = audit(help_page, args.cairn)
             help_page.screenshot(path=str(root / 'help-desktop.png'), full_page=True)
             help_page.set_viewport_size({'width': 390, 'height': 844})
@@ -313,6 +342,9 @@ def main():
             verify_receipt_after_restart(course, alice, item['submission_id'], receipt)
             report['passed'] += ['no-ai-native-saved-file-submission', 'committed-file-reopened-byte-identical', 'receipt-survives-restart', 'keyboard-and-axe-desktop-mobile']
             report['accounting'] = before
+            if live:
+                assert live.evidence()['accounting'] == accounting
+                report['passed'].append('expired-disabled-and-submission-add-no-provider-transports')
             report['grade_claim'] = 'No pedagogical grading acceptance; receipt is repository publication only.'
             browser.close()
     except Exception as exc:
@@ -329,6 +361,10 @@ def main():
                     proc.kill(); proc.wait(timeout=5)
         for log in logs:
             log.close()
+        if live:
+            live.close()
+            report['live_tutoring'] = live.evidence()
+            report['model_calls'] = report['transport_requests_to_model_provider'] = live.guard.summary()['dispatch_claims']
         try:
             report['cleanup'] = course.close() if course else True
         except Exception as exc:
