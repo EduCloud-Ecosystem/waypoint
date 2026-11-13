@@ -144,3 +144,45 @@ Initial capture wording no longer implies that nothing was sent after a request.
 See the versioned verification record for all earlier failed attempts and the
 explicitly recorded follow-up preparation scope/cost. A human walkthrough remains
 separate from these automated rendered checks.
+
+## Live notebook integration preparation (2026-11-13)
+
+Requested by Greg: proceed with compatible classroom candidate and live tutoring
+in the actual notebook-to-submission workflow (EduCloud #56, Waypoint #58,
+Belay-classroom #4, Portage #16). Reuse the existing presenter, Cairn exporter,
+Belay authenticated job worker, Portage gateway, saved-file bridge and receipts.
+Do not add another UI or modify original Belay, Cairn, Outfitter or other worktrees.
+
+Ownership/base map:
+- Waypoint: this isolated worktree, codex/classroom-live-notebook-v1, base
+  3ec286f5d41e857622d9b24f23b3c31e6f248605; presenter adapter/rehearsal and tests.
+- Portage: /Users/gregchism/.codex/worktrees/classroom-live-tutoring/portage,
+  codex/classroom-live-tutoring-v1, base9298030d2aef6f011ae2b2720bca2e961bb1c866;
+  separate finite notebook provider profile, gateway compatibility and tests.
+- Belay-classroom: read-only /Users/gregchism/dev/.educloud-worktrees/
+  belay-classroom-system-one-consumer-v1 at c5a27073e74b9eeb7ab697190915378b50132883.
+- Cairn: read-only cairn-classroom-enrollment-export-v1 at
+  0cf3158fdf5bbbecc52d3cc9cd88ef33bdfb63fc.
+- Other Waypoint chat 01a1d5c1-a9f0-7a50-bb3c-bb91a4389d84 owns mobile IDE
+  work in waypoint-browser-notebook-bundle-v1, codex/code-server-pilot. Untouched.
+
+Finite execution scope: hermetic checks first, then one fresh synthetic live
+window, at most seven actual provider transports, 600 seconds, USD0.175 total
+reservation (USD0.025 each), no SDK/HTTP retries, no resume, no automatic repeat
+after failure. Only the fixed echo notebook/question and model-derived reasoning
+may leave the machine. At most16384 accounted tokens per transport, output800.
+Catalog capability/price metadata must be fresh before live execution. Existing
+unknown USD0.025 historical liability remains separate and unresolved.
+Refinement/escalation use existing Belay bounds; no governance floors weakened.
+
+Acceptance: actual signed notebook job through Belay and Portage with counted
+transport and ledger evidence; nonempty displayed reply (instructional quality
+requires human review); expired/disabled controls add no calls and preserve work;
+native save, explicit preview/confirmation, exact published bytes, instructor
+receipt and restart recovery. No-AI path remains functional. Desktop/narrow
+rendered inspection. Preserve all failures. Synthetic-only testing does not
+authorize learners, institutional SSO, deployment, grading acceptance or cloud.
+
+Step1 remaining: investigate failed authenticated runtime CI on PR59 separately
+from notebook proof; no red gate may be relabeled green. Merges/release remain
+separate from compatible branch testing.
