@@ -1,0 +1,86 @@
+{
+  "version": 1,
+  "status": "PASS_SYNTHETIC_LIVE_NOTEBOOK_TO_SUBMISSION",
+  "live_source": "f6ee6cae926aea8f3a09077fd1e0b301344e99a6",
+  "portage_source": "0653fd94fe86acf235a74f72a1ff4af6aa2fa1b9",
+  "dependency_pins": {
+    "cairn": "0cf3158fdf5bbbecc52d3cc9cd88ef33bdfb63fc",
+    "belay": "c5a27073e74b9eeb7ab697190915378b50132883"
+  },
+  "passed": [
+    "actual-forgejo-oauth-cairn-roster-assignment",
+    "native-notebook-signed-job-live-portage-tutoring",
+    "expired-credential-no-job-or-attempt-preserves-code",
+    "instructor-disabled-refusal-no-ai-human-help",
+    "native-editor-keyboard-save",
+    "no-ai-native-saved-file-submission",
+    "committed-file-reopened-byte-identical",
+    "receipt-survives-restart",
+    "keyboard-and-axe-desktop-mobile",
+    "expired-disabled-and-submission-add-no-provider-transports"
+  ],
+  "failed": [],
+  "transport_requests": 3,
+  "sdk_retries": 0,
+  "tokens": 3276,
+  "provider_reported_usd": 0.0016332,
+  "new_unknown_liability_usd": 0,
+  "historical_unknown_liability_usd": 0.025,
+  "cleanup": true,
+  "instructional_acceptance": "pending_human_review",
+  "student_deployment_ready": false,
+  "images": {
+    "checkout": "sha256:bc9bc6929aafd69d37158bbd273a11818a2b222539242949d5d3c3066d02db8c",
+    "grader": "sha256:726d304906fa5eb468e5531e366548d1903286352f5adb54ef508ac01fbd80c6"
+  },
+  "raw_private_directory": "/Users/gregchism/.codex/worktrees/classroom-live-notebook/waypoint/output/live-notebook-v1/run-1",
+  "evidence": {
+    "result.json": {
+      "bytes": 4475,
+      "sha256": "77ce6b9a5facb858b71ea8b5d53a64761f768a7cb93896fe737e255f4a70d2a5"
+    },
+    "provider/journal.jsonl": {
+      "bytes": 3361,
+      "sha256": "dc1dec2aacbaba8d7da904061bc1fb57c808e23100ea85b2b77c45dcf77c6ab7"
+    },
+    "provider/result.json": {
+      "bytes": 3511,
+      "sha256": "5e1c3652882813eea4725f7b27a3a0e7ef0a503b3303dec0d9d583a1f9c88b81"
+    },
+    "independent-ledger-readback.json": {
+      "bytes": 1776,
+      "sha256": "a2add8ad4bfdda778f5d92a29ebbf573bd6edbdc93fbc0658b1005337842e5d9"
+    },
+    "help-desktop.png": {
+      "bytes": 136716,
+      "sha256": "3494396c82d3a3724d050dce71cfb76f21838bc315dc5c41ed5c13675e409bf5"
+    },
+    "help-mobile.png": {
+      "bytes": 129503,
+      "sha256": "1e2f71b234187760e82d197c70574b65fbdfce165562a25e069312a0adc82220"
+    },
+    "course/submission-receipt.png": {
+      "bytes": 152225,
+      "sha256": "3a4b116c53be440fb8e035fa4bc2ce7cd232cf60252567f2f2b0b23ecb55f36d"
+    }
+  },
+  "historical_ci_failure": "https://github.com/EduCloud-Ecosystem/waypoint/actions/runs/42911189219",
+  "candidate_ci": "pending",
+  "stub_regression": "pending",
+  "limitations": [
+    "fixed echo example, no notebook kernel execution",
+    "no campus SSO or real learners",
+    "no grading or scientific acceptance",
+    "checkout image acquisition not byte reproducible",
+    "no second-operator reproduction"
+  ],
+  "retained_failures": [
+    {
+      "run": "stub-regression-1",
+      "error": "401 instructor session invalidated by Cairn restart",
+      "provider_requests": 0,
+      "cleanup": true,
+      "resolution": "explicit fresh instructor OAuth login before protected read, validation pending"
+    }
+  ]
+}

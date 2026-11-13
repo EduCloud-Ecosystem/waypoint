@@ -330,6 +330,13 @@ def main():
                 return receiver
             receipt = first_submission(course, alice, bob, item, SOURCE, submission_page)
             report['receipt'] = receipt
+            teacher.close()
+            teacher, instructor_page = course.login(browser, 'teacher', '/auth/login')
+            instructor_rows = course.request(teacher, 'GET', f'/assignments/{aid}/submissions')
+            instructor_item = next(row for row in instructor_rows if row['id'] == item['submission_id'])
+            assert instructor_item['repo']['namespace'] + '/' + instructor_item['repo']['name'] == item['repo_web_url'].removeprefix(course.forge + '/')
+            instructor_page.screenshot(path=str(root / 'instructor-signed-in.png'), full_page=True)
+            report['passed'].append('instructor-authorized-submission-repository-visible')
             assert counts() == before
             repository = item['repo_web_url'].removeprefix(course.forge + '/')
             if '/' not in repository or repository.startswith(('http:', 'https:')):
