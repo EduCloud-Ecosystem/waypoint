@@ -39,3 +39,24 @@ Upstream version changes require rechecking selectors, labels, focus behavior,
 and byte-for-byte export. The adapter is not intended for untrusted extensions,
 arbitrary notebooks, or general JupyterLab deployments. Do not treat passing
 automated scans as accessibility conformance.
+
+## Optional phone view
+
+Pass `--mobile` to the same preparation command and open `/mobile/` on the
+new site. Preparation verifies the Pyodide 314.0.6 core and local pandas
+dependency hashes. Serve the isolated test site with a policy restricting
+connections to the same origin, including worker responses. Use only the
+reviewed public-data assignment and synthetic rehearsals.
+
+The single-column view provides the existing seven cells in order, native
+editors for the code and predictions, a table preview with headers, and
+individual exports. Run starts a fresh Python worker and stops at the first
+error. Save keeps a copy in the current browser origin; working notebook and
+coursework downloads are independent of that copy. The original download
+links directly to the byte-identical starter. The existing Lab adapter and
+its download controls remain available at their original URL.
+
+This view supports the NHANES task's pandas, text and CSV workflow. Plots,
+third-party notebook imports, general notebook authoring and offline reload
+without the test server are outside this slice. Keep the hosted course
+workspace available for those workflows and for authorized submission.
