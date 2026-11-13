@@ -76,6 +76,8 @@ class Notebook:
         self.env_file = self.root / 'bootstrap.env'
         self.manifest_path = None
         self.manifest_digest = None
+        self._start_attempted = False
+        self._startup_complete = False
 
     def compose(self, *args):
         env = {k:v for k,v in os.environ.items() if not k.startswith(('WORKSPACE_', 'COMPOSE_'))}
@@ -93,6 +95,8 @@ class Notebook:
         self.env_file.chmod(0o600)
 
     def start(self):
+        self._start_attempted = True
+        self._startup_complete = False
         if sys.platform != 'linux' or os.geteuid() != 0:
             raise ValueError('full notebook rehearsal needs root on disposable Linux for real XFS quotas')
         # Only this newly created loop-image is formatted; never a caller-provided device.
@@ -154,6 +158,7 @@ class Notebook:
         self.wait_for_fixture()
         inspect(self.homes,self.instance)
         print('Keycloak discovery, TLS and Hub are ready.',flush=True)
+        self._startup_complete = True
 
     def container_state_diagnostic(self, identity):
         """Read only state scalars; never print Docker error text or environment."""
@@ -284,6 +289,30 @@ class Notebook:
             self.compose('--profile', 'build', 'build')
         else:
             print('Using the preloaded immutable notebook images.', flush=True)
+
+    def reuse_images_from(self, source):
+        """Share only a ready fixture's frozen local image pins, never its state.
+
+        Construct both fixtures before either starts so their original DNS
+        resolver remains independent of the first fixture's temporary override.
+        The recipient's ordinary image inspection and preflight remain required.
+        """
+        if (not isinstance(source, Notebook) or source is self
+                or not source._startup_complete or not source.mounted
+                or 'course-manifest-startup-preflight' not in source.report):
+            raise ValueError('shared images require a ready source fixture')
+        if (self._start_attempted or self.mounted or self.manifest_path is not None
+                or hasattr(self, 'env') or self.requested_hub_image is not None
+                or self.synthetic_candidate_images or self.image != 'educloud-python-r:2026-10-06'):
+            raise ValueError('shared images require a fresh unconfigured recipient')
+        source.verify_manifest_frozen()
+        manifest = json.loads(source.manifest_path.read_bytes())
+        pins = {'hub': source.hub_image, 'course': source.image}
+        if (manifest.get('images') != pins or source.manifest.get('images') != pins
+                or any(not isinstance(pin, str) or not re.fullmatch(r'sha256:[0-9a-f]{64}', pin)
+                       for pin in pins.values())):
+            raise ValueError('shared images differ from frozen local image identities')
+        self.requested_hub_image, self.image = pins['hub'], pins['course']
 
     def configure_fixture_edges(self):
         # The operator-rendered client drives the real fixture realm. The sole
@@ -709,6 +738,7 @@ proxy_set_header X-Forwarded-Port {self.port}; proxy_set_header X-Forwarded-For 
 
     def close(self):
         """Attempt every owned cleanup, then verify absence before reporting success."""
+        self._startup_complete=False
         self.cleanup_verified=False
         socket.getaddrinfo=self.original_dns
         failures=[]

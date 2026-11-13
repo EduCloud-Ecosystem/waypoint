@@ -1,0 +1,19 @@
+{
+  "legacy": {
+    "README.md": "ea6dac8da8b7b4472e778a2644b3532d2f67deb57046540ddb4a7781f7c71319",
+    "assistance.md": "446d6826c6236298aececbbdaa60cb8931d5c230bd46b5d82aff660bd9d376a9",
+    "data/info511-inflation-synthetic.csv": "c638d29069c47efbd4589e80fcf959088809f0b0275942f13a1866fc2703ea7b",
+    "explanation.md": "ba3079f847928f888be0082ce90a51f5d11ebe18660cbded4c0252404c7371c1",
+    "lab3-q4.ipynb": "1074bab39d4daabe07b05722c214d1d69978cd51247f1472a40fc9217fa76ff4",
+    "tidy-inflation.csv": "823b9b458a4a3286a497109b0946eaca05d43e878b9c2e1289060da96a93b2b7"
+  },
+  "nhanes-v1": {
+    "README.md": "e0456d0decb8f418819c4ecbca4ab7541333238e748b2c67952126224d58cf01",
+    "assistance.md": "cbe3deafd193ad1a6e69305530fcc0c482dd6e5eb4e1abe88d1a1e4878ed4329",
+    "data/BPXO_L_selected.csv": "4ae89d264da5da4020fd6e8fdd0171ae188b7ed9191aeb8b18af20b30c1556a9",
+    "data/DEMO_L_selected.csv": "4a9c6d40ccbd4cb8a3886b20e2ec506e74c70c8e641347a941b9209f61369587",
+    "explanation.md": "aff4dc1bf68acf7a732f883ba974dd4c87169e2bef1ea0818a059c8a595e1606",
+    "nhanes-wrangling.ipynb": "2ce6f39c9f8ebf08ab6c381ceb200837508fa8aa21930238d9eb0d74c73f9099",
+    "tidy-nhanes.csv": "bc99364ad22d5b546cbaffaa59f01b63ccc56f41a048b32d31ea9e71b3818b72"
+  }
+}
