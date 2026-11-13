@@ -1,0 +1,87 @@
+{
+  "baseline": {
+    "hosted_container_exercised": false,
+    "pandas": "3.0.6",
+    "python": "3.14.5"
+  },
+  "browser": "Chrome 157.0.8103.51, macOS, headless",
+  "build": {
+    "build_only_jupyter_server": "2.17.0",
+    "initial_build": "failed_missing_jupyter_server",
+    "jupyterlite_core": "0.8.7",
+    "pyodide_kernel": "0.8.7",
+    "python": "3.14.5"
+  },
+  "build_dependencies_sha256": "93978b32f75753404303f43194f5e14cb4e5ea51811ebf144b30ec5434a02fe7",
+  "execution": {
+    "exported_csv_matches_native_bytes": true,
+    "missing_values": 58,
+    "pinned_checker_passed_on": [
+      "native",
+      "exported",
+      "restored_csv"
+    ],
+    "rows": 192
+  },
+  "export": {
+    "assistance.md": "cbe3deafd193ad1a6e69305530fcc0c482dd6e5eb4e1abe88d1a1e4878ed4329",
+    "explanation.md": "aff4dc1bf68acf7a732f883ba974dd4c87169e2bef1ea0818a059c8a595e1606",
+    "nhanes-wrangling.ipynb": "b04f3b6a23b7983db66070c9bb6f4bf6dd586beddac20f862006074980ca2369",
+    "tidy-nhanes.csv": "0f15ad84fbf6441dbe3c6a3c7d850dcae080410d92d392c07754a3ef1ad1e8b8"
+  },
+  "fixture_notebook_sha256": "41cbc84b636155e679665241ed5bd53e702ffa39a14606683ba37ae198b37e58",
+  "narrow_desktop_viewport": {
+    "collapsing_sidebar_improves_layout": true,
+    "height": 844,
+    "mobile_device_qualification": false,
+    "sidebar_open_impedes_reading": true,
+    "width": 390
+  },
+  "not_run": [
+    "cold offline",
+    "low bandwidth",
+    "storage quota and eviction",
+    "human accessibility",
+    "real mobile device",
+    "hosted fallback authorization",
+    "submission receipt",
+    "live inference endpoint"
+  ],
+  "observed_external_requests": {
+    "GET cdn.jsdelivr.net": 24,
+    "GET files.pythonhosted.org": 2,
+    "GET pypi.org": 1
+  },
+  "reopened_saved_notebook_in_original_profile": true,
+  "restore": {
+    "assistance.md": {
+      "after_open_save_matches": true,
+      "direct_bytes_match": true
+    },
+    "explanation.md": {
+      "after_open_save_matches": true,
+      "direct_bytes_match": true
+    },
+    "nhanes-wrangling.ipynb": {
+      "after_open_save_matches": true,
+      "direct_bytes_match": false
+    },
+    "tidy-nhanes.csv": {
+      "after_open_save_matches": true,
+      "direct_bytes_match": true
+    }
+  },
+  "retained_failures": [
+    "initial build missing build dependency",
+    "two local virtual folder index 404s",
+    "notebook direct upload/download returned JSON base64 string"
+  ],
+  "runtime": {
+    "pandas": "3.0.2",
+    "pyodide": "314.0.6",
+    "python": "3.14.2"
+  },
+  "scope": "loopback_public_data_synthetic_reference_not_learner_approval",
+  "source_revision": "aab24cf32987e6593715e84b24050ccc8fb64746",
+  "starter_zip_sha256": "c16d1e2800fb751e33969eb4cbb0edf8563d4d7283db04fdfa6ea5d03c0ab172"
+}
