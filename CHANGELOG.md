@@ -1,5 +1,11 @@
 # CHANGELOG.md: Document history for the EduCloud hosting layer repo
 
+## 2026-11-13: Optional phone view for the NHANES notebook
+
+- Stage a single-column phone notebook with labeled editors, browser-local
+  Python execution, table previews, local save and coursework downloads.
+- Keep the original download and hosted fallback available.
+
 ## 2026-10-21: Prepared CW1 synthetic classroom package
 
 - Add an opt-in INFO511 Q4 synthetic task, starter notebook, explicit assistance

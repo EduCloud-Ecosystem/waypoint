@@ -1,0 +1,67 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+:root {
+  color-scheme: light;
+  font-family: "Instrument Sans", system-ui, sans-serif;
+  color: #18302b;
+  background: #f5f7f4;
+}
+* { box-sizing: border-box; }
+body { margin: 0; }
+.page-width { max-inline-size: 49rem; margin-inline: auto; padding-inline: clamp(1rem, 4vw, 2rem); }
+header { background: #18332d; color: #fff; padding-block: 1.1rem; }
+.brand { font-weight: 650; margin: 0; color: #c0e2d0; }
+h1 { font-size: clamp(1.7rem, 6vw, 2.4rem); margin: .2rem 0 .55rem; }
+h2 { margin-block: 0 .8rem; }
+h3, h4 { margin-block: 0 .55rem; }
+main { padding-block: 1.35rem 2.5rem; }
+section + section { margin-block-start: 1rem; }
+nav, .actions { display: flex; gap: .45rem .8rem; flex-wrap: wrap; align-items: center; }
+nav a, nav span { display: inline-flex; align-items: center; min-block-size: 44px; }
+a { color: inherit; text-underline-offset: .2em; }
+button {
+  border: 1px solid #49685d;
+  border-radius: .45rem;
+  background: #fff;
+  color: #18302b;
+  min-block-size: 44px;
+  padding: .6rem .8rem;
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+#run { background: #225543; color: white; }
+button:disabled { opacity: .65; cursor: default; }
+:focus-visible { outline: 3px solid #1674ce; outline-offset: 3px; }
+header :focus-visible { outline-color: #addaff; }
+article, #coursework + p, .file { margin-block-end: .8rem; }
+article, .file {
+  padding: clamp(.85rem, 3vw, 1.3rem);
+  border: 1px solid #cbd8d0;
+  border-radius: .65rem;
+  background: #fff;
+  min-inline-size: 0;
+}
+label { display: block; font-weight: 650; margin-block-end: .45rem; }
+textarea {
+  display: block;
+  width: 100%;
+  min-height: 7rem;
+  resize: vertical;
+  padding: .65rem;
+  border: 1px solid #647f74;
+  border-radius: .35rem;
+  font: 1rem/1.5 "IBM Plex Mono", ui-monospace, monospace;
+  background: #fbfcfb;
+  color: inherit;
+}
+textarea[readonly] { background: #edf1ee; }
+pre, .instruction { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.5; margin: 0; }
+.output { margin-block-start: 1rem; }
+.output > * + * { margin-block-start: .6rem; }
+.table-region { overflow-x: auto; margin-block-end: .55rem; }
+table { border-collapse: collapse; width: 100%; font-size: .93rem; }
+caption { text-align: start; font-weight: 600; padding-block-end: .3rem; }
+th, td { text-align: start; padding: .4rem; border-bottom: 1px solid #cbd8d0; overflow-wrap: anywhere; }
+.file button { margin-block-start: .65rem; }
+.file button + button { margin-inline-start: .4rem; }
+.jump-action { display: inline-flex; align-items: center; min-block-size: 44px; margin-block-start: .45rem; }
