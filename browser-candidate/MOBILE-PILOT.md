@@ -17,22 +17,37 @@ reviewed starter and the preserved rehearsal export) retain their bytes.
 | [CyVerse VICE](https://docs.cyverse.org/deployment/06-applications/vice/) | Hosted architecture reference. A launch can provision an interactive container with a mounted Data Store home. Its [featured JupyterLab flow](https://learning.cyverse.org/de/vice/quick-jupyter/) does not establish touch or TalkBack usability. |
 | [marimo](https://docs.marimo.io/guides/exporting/webassembly_html/) | Relevant for touch-first interactive lessons and browser execution. Its Python source format and reactive execution would require changes to the current notebook assignment. |
 
-Evaluate the custom view first for opening, reading, editing and exporting
-this small assignment. Keep hosted Notebook 7 as the comparison for plots,
-additional packages, persistent server-side work and submission. The
-controls can be evaluated independently of where Python executes. Callisto
-and Juno are benchmarks and optional tools until their accessibility, file
-round trip, packages and institutional sign-in are tested. No native app
-integration is required for the browser view.
+## Decision
 
-Candidates for a second iteration include a small symbol and indent row
-with visible undo, an output view that stays readable when the keyboard
-opens, and a draft that can be reopened after an interruption. Measure
-taps, time to resume, and lost work. For field coursework, a phone can also
-collect a dataset where the observation happens. For example, import a
-[phyphox export](https://phyphox.org/docs/) from an accelerometer experiment
-and analyze it in the notebook. Use an explicit import action and a sample
-dataset for students without the relevant sensor.
+Use the Waypoint view for short, touch-first assignments built around a
+known notebook and its exports. Keep Notebook 7 as the general-purpose
+hosted candidate, where arbitrary notebooks, additional packages, plots
+and server-side persistence matter. Keep the current hosted fallback and
+the original notebook download available.
+
+A local comparison used stock Notebook 7.6.5 and the Waypoint candidate in
+Chrome 157 with a 412 CSS-pixel Pixel 7 emulation. Both supported edit and
+undo, rendered a table, and produced the same 192-row fixture CSV. For
+Notebook 7, a disposable copy used a runtime-independent print marker.
+Both pages fit the viewport. In Notebook 7, the default code editor
+required horizontal scrolling for long lines, and Run All Cells was inside
+the Run menu. Waypoint wrapped the code, used named fields for editing,
+and exposed a direct Run all cells action. This comparison covers default
+UI behavior in emulation. Device screen readers, the on-screen keyboard,
+interrupted sessions and hosted submission still need paired checks.
+
+Build the Callisto and Juno ideas into the existing web view in this order:
+a small symbol and indent row with visible undo, controls to move between
+the editor and its output, and draft recovery with a clear save state.
+Keep the standard notebook format. An installable web app is a later option
+if offline reopening and runtime caching can be verified. Consider native
+clients if testing establishes a need for deep file and share integration
+or on-device Python packages unavailable in the browser.
+
+For a field assignment, a phone can collect a dataset at the observation
+site. For example, import a [phyphox export](https://phyphox.org/docs/) from
+an accelerometer experiment and inspect it on site. Use an explicit import
+action and a sample dataset for students without the relevant sensor.
 
 ## Checkpoint
 
