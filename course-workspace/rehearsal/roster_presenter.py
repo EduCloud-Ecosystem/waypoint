@@ -189,7 +189,7 @@ def main():
                 AUTH_AUDIENCE=binding['audience'], AUTH_PUBLIC_KEY_FILE=str(root / 'public.pem'),
                 AUTH_AUTHORIZATION_FILE=str(snapshot), AUTH_AUTHORITY_STATE_FILE=str(root / 'watermark.db'))
             if args.live_portage:
-                if command(['git', 'rev-parse', 'HEAD'], cwd=args.live_portage) != '0653fd9' and not command(['git', 'rev-parse', 'HEAD'], cwd=args.live_portage).startswith('0653fd9'):
+                if command(['git', 'rev-parse', 'HEAD'], cwd=args.live_portage) != '0653fd94fe86acf235a74f72a1ff4af6aa2fa1b9':
                     raise ValueError('Portage integration revision mismatch')
                 if command(['git', 'status', '--porcelain', '--untracked-files=no'], cwd=args.live_portage):
                     raise ValueError('commit Portage source before live use')

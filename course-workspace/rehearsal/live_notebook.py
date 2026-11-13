@@ -58,6 +58,7 @@ class LiveNotebook:
                                        expected['context'], expected['systems'])
             self.guard.deadline = min(self.guard.deadline, document['authority']['expires_at'])
             self.guard.mono_deadline = time.monotonic() + max(0, self.guard.deadline - time.time())
+            self.guard._append({'event': 'course_expiry_bound', 'deadline': self.guard.deadline})
             (root / 'provider/catalog.json').write_text(json.dumps(raw, indent=2))
             # Snapshot identity is exact and immutable for this finite session.
             # Belay also rechecks the export + durable watermark before every call.
