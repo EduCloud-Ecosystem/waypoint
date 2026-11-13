@@ -1,5 +1,9 @@
 # Portable browser Python/R coursework
 
+For offline starter distribution, use [reviewed learner bundles and browser
+readiness](classroom/BROWSER-BUNDLE.md). This source-only archive does not qualify
+or launch a browser kernel; the existing hosted workspace remains the fallback.
+
 See [course worker operations](OPERATIONS.md) for startup preflight, health reports,
 stopped-course roster/quota maintenance and the repeatable operator workflow.
 Use the [course setup manifest](COURSE-MANIFEST.md) to validate one course and
