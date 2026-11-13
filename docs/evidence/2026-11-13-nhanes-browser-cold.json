@@ -1,0 +1,311 @@
+{
+  "browser": "Chrome 157.0.8103.51 on macOS",
+  "conditions": {
+    "fresh_browser_profiles": true,
+    "mobile_cpu_slowdown": 4,
+    "mobile_down_bytes_per_sec": 200000,
+    "mobile_latency_ms": 150,
+    "mobile_up_bytes_per_sec": 90000,
+    "pypi_fallback_disabled": true
+  },
+  "fresh_profile_recovery": {
+    "blocked_browser_requests": 14,
+    "fresh_empty_profile": true,
+    "generated_csv_absent_before_import": true,
+    "match": {
+      "assistance.md": true,
+      "explanation.md": true,
+      "nhanes-wrangling.ipynb": true,
+      "tidy-nhanes.csv": true
+    },
+    "nonlocal_requests": [],
+    "status": "recovered_all_four_bytes"
+  },
+  "not_qualified": [
+    "physical mobile devices",
+    "screen reader",
+    "full keyboard-only workflow",
+    "accessibility conformance",
+    "offline reload without loopback server",
+    "storage quota or eviction behavior",
+    "hosted fallback",
+    "submission",
+    "redistribution",
+    "live inference"
+  ],
+  "prestage_assets": {
+    "bytes": 25702484,
+    "count": 25,
+    "files": [
+      {
+        "bytes": 27047,
+        "sha256": "17d8be9e2f37492162ad731c2599fc9291653bb313651ae15227e8012b58ef2f",
+        "upstream_hash_verified": true,
+        "url": "https://cdn.jsdelivr.net/pyodide/v314.0.6/full/asttokens-3.0.1-py3-none-any.whl"
+      },
+      {
+        "bytes": 9167,
+        "sha256": "70c5b218495d55cd610752b01dc3d9f593dfd720bec271b5bebe4d86b51ae3c0",
+        "upstream_hash_verified": true,
+        "url": "https://cdn.jsdelivr.net/pyodide/v314.0.6/full/decorator-5.2.1-py3-none-any.whl"
+      },
+      {
+        "bytes": 28317,
+        "sha256": "38cc37f2fe6b804a260a9f058cde84d3ea977d7a4b1cf17be7a3e80ddcdd06e0",
+        "upstream_hash_verified": true,
+        "url": "https://cdn.jsdelivr.net/pyodide/v314.0.6/full/executing-2.2.1-py2.py3-none-any.whl"
+      },
+      {
+        "bytes": 624224,
+        "sha256": "31c0bc0d219ac5efb97c3d3284be1f66300621331b944a2fafd175b3495e408a",
+        "upstream_hash_verified": true,
+        "url": "https://cdn.jsdelivr.net/pyodide/v314.0.6/full/ipython-9.12.0-py3-none-any.whl"
+      },
+      {
+        "bytes": 1563101,
+        "sha256": "cb1adff438e7d12cf11cf14323641db73498097a36c3bfc89b89e6350e203e70",
+        "upstream_hash_verified": true,
+        "url": "https://cdn.jsdelivr.net/pyodide/v314.0.6/full/jedi-0.19.2-py2.py3-none-any.whl"
+      },
+      {
+        "bytes": 9514,
+        "sha256": "71f6069bbd521ba4f2c2ab3e78952d67e2951c5bbbd5c34655818246ff505af6",
+        "upstream_hash_verified": true,
+        "url": "https://cdn.jsdelivr.net/pyodide/v314.0.6/full/matplotlib_inline-0.2.1-py3-none-any.whl"
+      },
+      {
+        "bytes": 115486,
+        "sha256": "0ad7104a3cde648e5486a718799f3852f1d782ff19d4bfc13db9dc631df083f8",
+        "upstream_hash_verified": true,
+        "url": "https://cdn.jsdelivr.net/pyodide/v314.0.6/full/micropip-0.11.1-py3-none-any.whl"
+      },
+      {
+        "bytes": 2918760,
+        "sha256": "32959d4137cec8143d75016d029281df3d2e80a232896ed903c2b59e1c44ee9f",
+        "upstream_hash_verified": true,
+        "url": "https://cdn.jsdelivr.net/pyodide/v314.0.6/full/numpy-2.4.6-cp314-cp314-pyemscripten_2026_0_wasm32.whl"
+      },
+      {
+        "bytes": 4177814,
+        "sha256": "99cef063109bb03956af3987b2351c4d6615060732597e224e9fc49ecd345392",
+        "upstream_hash_verified": true,
+        "url": "https://cdn.jsdelivr.net/pyodide/v314.0.6/full/pandas-3.0.2-cp314-cp314-pyemscripten_2026_0_wasm32.whl"
+      },
+      {
+        "bytes": 106894,
+        "sha256": "759953027815d4cd9c3cfbc677ff58da463ea311d830dbe59ba63df85e32ff49",
+        "upstream_hash_verified": true,
+        "url": "https://cdn.jsdelivr.net/pyodide/v314.0.6/full/parso-0.8.6-py2.py3-none-any.whl"
+      },
+      {
+        "bytes": 391431,
+        "sha256": "baec31bee7497706f62615fd1f4a0adcc3ac07aaa428c605898e385417e0e500",
+        "upstream_hash_verified": true,
+        "url": "https://cdn.jsdelivr.net/pyodide/v314.0.6/full/prompt_toolkit-3.0.52-py3-none-any.whl"
+      },
+      {
+        "bytes": 11842,
+        "sha256": "51497667f5fae6668334b841e6c3aa090ab1f64c1c649395d60c648a8d4b7b1c",
+        "upstream_hash_verified": true,
+        "url": "https://cdn.jsdelivr.net/pyodide/v314.0.6/full/pure_eval-0.2.3-py3-none-any.whl"
+      },
+      {
+        "bytes": 1231151,
+        "sha256": "30f3c928127039f39462e3690c2e0ff03977c5ee1766df0a1e9bad09a377ae8e",
+        "upstream_hash_verified": true,
+        "url": "https://cdn.jsdelivr.net/pyodide/v314.0.6/full/pygments-2.20.0-py3-none-any.whl"
+      },
+      {
+        "bytes": 114440,
+        "sha256": "3fdaef09e9e365c85e002737720f8d0ab8f278c1c244a2dde6a37663cf488ad4",
+        "upstream_hash_verified": false,
+        "url": "https://cdn.jsdelivr.net/pyodide/v314.0.6/full/pyodide-lock.json"
+      },
+      {
+        "bytes": 1250344,
+        "sha256": "2ac5eba365ec12839c75c03b39b3be1dd63b798852cc460b014b52238be042f7",
+        "upstream_hash_verified": false,
+        "url": "https://cdn.jsdelivr.net/pyodide/v314.0.6/full/pyodide.asm.mjs"
+      },
+      {
+        "bytes": 9598218,
+        "sha256": "3a0a00dfeaa348ac20f9ef09904233d32d33f644339662d4af368f8a2010f37a",
+        "upstream_hash_verified": false,
+        "url": "https://cdn.jsdelivr.net/pyodide/v314.0.6/full/pyodide.asm.wasm"
+      },
+      {
+        "bytes": 17931,
+        "sha256": "69e3f6ccec3e14b465df60be577ca62f536251406b9a00cce019eac5252a2495",
+        "upstream_hash_verified": false,
+        "url": "https://cdn.jsdelivr.net/pyodide/v314.0.6/full/pyodide.mjs"
+      },
+      {
+        "bytes": 229892,
+        "sha256": "9c1d350424840e15c16450ac0b0d6007e908d266746b61d64760dd77263085af",
+        "upstream_hash_verified": true,
+        "url": "https://cdn.jsdelivr.net/pyodide/v314.0.6/full/python_dateutil-2.9.0.post0-py2.py3-none-any.whl"
+      },
+      {
+        "bytes": 2545564,
+        "sha256": "80c5be6babfe03297069703410c3c29404dcf2525d2b128746bae5536f94831f",
+        "upstream_hash_verified": false,
+        "url": "https://cdn.jsdelivr.net/pyodide/v314.0.6/full/python_stdlib.zip"
+      },
+      {
+        "bytes": 510489,
+        "sha256": "c8eaf8e55b79c2a7e765bdce5c1b84e05a43a585a16a00efadd96a0b7913914e",
+        "upstream_hash_verified": true,
+        "url": "https://cdn.jsdelivr.net/pyodide/v314.0.6/full/pytz-2026.1.post1-py2.py3-none-any.whl"
+      },
+      {
+        "bytes": 11050,
+        "sha256": "29edb1e328c61cad6ac21a2ff92c7d274a2b662eb7c12b2d147f04917b765ad6",
+        "upstream_hash_verified": true,
+        "url": "https://cdn.jsdelivr.net/pyodide/v314.0.6/full/six-1.17.0-py2.py3-none-any.whl"
+      },
+      {
+        "bytes": 24521,
+        "sha256": "05d35330361a91dd9f64df8a9fc33d0a60d5df0c931c75efe6a915bfca45724e",
+        "upstream_hash_verified": true,
+        "url": "https://cdn.jsdelivr.net/pyodide/v314.0.6/full/stack_data-0.6.3-py3-none-any.whl"
+      },
+      {
+        "bytes": 83806,
+        "sha256": "b767faf502b685952680136221f7c65792bb801ec5b2ed310b865e3c3b083b82",
+        "upstream_hash_verified": true,
+        "url": "https://cdn.jsdelivr.net/pyodide/v314.0.6/full/traitlets-5.14.3-py3-none-any.whl"
+      },
+      {
+        "bytes": 94187,
+        "sha256": "28ff3daf700aeabd06f3f4db9ff6827b5da337e1f889fc7ae52dabbcd5eccf5e",
+        "upstream_hash_verified": true,
+        "url": "https://cdn.jsdelivr.net/pyodide/v314.0.6/full/wcwidth-0.6.0-py3-none-any.whl"
+      },
+      {
+        "bytes": 7294,
+        "sha256": "c615d91d75f7f04f095b30d1c1711babd43bdc6419c1be9886a85f2f4e489417",
+        "upstream_hash_verified": true,
+        "url": "https://files.pythonhosted.org/packages/60/97/891a0971e1e4a8c5d2b20bbe0e524dc04548d2307fee33cdeba148fd4fc7/comm-0.2.3-py3-none-any.whl"
+      }
+    ],
+    "sha256_manifest": "dbcee361845e34bf1d68bf4769880550058d5b2c63f286501b9a94e49e8cc0dd"
+  },
+  "qualification": "keep_hosted_fallback_browser_candidate_only",
+  "retained_attempts": [
+    "proxy negative control raced app navigation",
+    "bundled headless browser attempt stopped after a stall",
+    "desktop executed and exported but initial focus harness timed out",
+    "device descriptor included unsupported metadata",
+    "throttled app did not reach kernel chooser within 30 seconds",
+    "open mobile file panel intercepted editor interaction"
+  ],
+  "runs": {
+    "desktop": {
+      "application_nonloopback_requests": 0,
+      "application_request_events": 386,
+      "axe_incomplete": [
+        "aria-prohibited-attr"
+      ],
+      "axe_version": "4.10.3",
+      "axe_violations": [
+        {
+          "id": "aria-allowed-attr",
+          "impact": "critical",
+          "nodes": 2
+        },
+        {
+          "id": "aria-input-field-name",
+          "impact": "serious",
+          "nodes": 2
+        },
+        {
+          "id": "aria-required-children",
+          "impact": "critical",
+          "nodes": 1
+        },
+        {
+          "id": "scrollable-region-focusable",
+          "impact": "serious",
+          "nodes": 1
+        }
+      ],
+      "browser_background_requests_denied": {
+        "accounts.google.com:443": 3,
+        "content-autofill.googleapis.com:443": 8,
+        "www.google.com:443": 5
+      },
+      "export_sha256": {
+        "assistance.md": "cbe3deafd193ad1a6e69305530fcc0c482dd6e5eb4e1abe88d1a1e4878ed4329",
+        "explanation.md": "aff4dc1bf68acf7a732f883ba974dd4c87169e2bef1ea0818a059c8a595e1606",
+        "nhanes-wrangling.ipynb": "833a322db6bafe6ef8e947c9cf40d99c7a924e42d314a4d42554b313b68bbcc1",
+        "tidy-nhanes.csv": "0f15ad84fbf6441dbe3c6a3c7d850dcae080410d92d392c07754a3ef1ad1e8b8"
+      },
+      "external_probe_denied": true,
+      "focus_after_skip": "Markdown Cell Content",
+      "layout": null,
+      "save_shortcut_exercised": "Meta+s",
+      "seconds_to_result": 10.01,
+      "skip_link_reached_with_tab_and_activated_with_enter": true
+    },
+    "pixel7_emulated": {
+      "application_nonloopback_requests": 0,
+      "application_request_events": 387,
+      "axe_incomplete": [
+        "aria-prohibited-attr"
+      ],
+      "axe_version": "4.10.3",
+      "axe_violations": [
+        {
+          "id": "aria-allowed-attr",
+          "impact": "critical",
+          "nodes": 3
+        },
+        {
+          "id": "aria-input-field-name",
+          "impact": "serious",
+          "nodes": 2
+        },
+        {
+          "id": "aria-required-children",
+          "impact": "critical",
+          "nodes": 1
+        },
+        {
+          "id": "scrollable-region-focusable",
+          "impact": "serious",
+          "nodes": 8
+        }
+      ],
+      "browser_background_requests_denied": {
+        "accounts.google.com:443": 4,
+        "content-autofill.googleapis.com:443": 9,
+        "www.google.com:443": 5
+      },
+      "export_sha256": {
+        "assistance.md": "cbe3deafd193ad1a6e69305530fcc0c482dd6e5eb4e1abe88d1a1e4878ed4329",
+        "explanation.md": "aff4dc1bf68acf7a732f883ba974dd4c87169e2bef1ea0818a059c8a595e1606",
+        "nhanes-wrangling.ipynb": "833a322db6bafe6ef8e947c9cf40d99c7a924e42d314a4d42554b313b68bbcc1",
+        "tidy-nhanes.csv": "0f15ad84fbf6441dbe3c6a3c7d850dcae080410d92d392c07754a3ef1ad1e8b8"
+      },
+      "external_probe_denied": true,
+      "focus_after_skip": "Markdown Cell Content",
+      "layout": {
+        "document": 412,
+        "notebook": 336,
+        "width": 412
+      },
+      "save_shortcut_exercised": "Meta+s",
+      "seconds_to_result": 44.69,
+      "skip_link_reached_with_tab_and_activated_with_enter": true
+    }
+  },
+  "runtime": {
+    "jupyterlite_core": "0.8.7",
+    "jupyterlite_pyodide_kernel": "0.8.7",
+    "pandas": "3.0.2",
+    "pyodide": "314.0.6",
+    "python": "3.14.2"
+  },
+  "scope": "local_public_data_synthetic_developer_rehearsal",
+  "source_revision": "6f29f4a3fd60062713b1ecb4f005e11312ca6376"
+}
