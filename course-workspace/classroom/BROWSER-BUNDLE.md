@@ -171,3 +171,36 @@ corrected focused results and final full-suite log are retained privately in
 retry, production edit, commit, push, release or deployment was performed here.
 Next action: independent source review and parent-owned commit/CI/release work;
 all actual browser qualification and institutional acceptance gates remain open.
+
+### PR60 shared-runtime rehearsal correction
+
+Exact-head CI at `30163640900ddacbbf7d701bd2ea3e14b2fa5315` found a separate
+fixture fault: multiple-course, resource-amendment and cutover rehearsals each
+built default notebook images twice, then asserted that the independently built
+Hub/course IDs were identical. Both fixtures reached readiness, but the actual
+image equality assertions failed. The three original CI logs remain retained in
+ignored `course-workspace/output/browser-bundle-release-v1/`; they are not passes.
+
+The rehearsal-only `Notebook.reuse_images_from` now takes the first successfully
+started fixture's exact local Hub/course IDs, checks them against its frozen
+manifest, and supplies them through the existing immutable no-build path for the
+fresh second fixture. All three callers still construct both objects before
+startup, preserving original DNS resolvers. The helper refuses incomplete/closed
+sources, changed source manifests or image pins, attempted/configured recipients,
+explicit image replacements and candidate-image mode. Only image pins are shared;
+identity, credentials, storage, quotas, allocation and cleanup remain separate.
+The second fixture still inspects its own actual image IDs and passes ordinary
+startup preflight. Every existing real same-image assertion remains unchanged.
+No production source, deadline, image build recipe or acceptance gate changed.
+
+Focused hermetic checks: **8/8 passed**. Existing rehearsal unit suite: **333
+tests, 325 passed and eight explicit skips**, zero failures/errors, in 36.842
+seconds with the existing CPython 3.12.13 environment. Skips require Linux
+process/root/mixed-ownership facilities or the optional Docker SDK. An initial
+focused run refused legitimate normalized subject ordering during an overly broad
+manifest comparison; that failure is retained. The corrected comparison binds
+only the exact image pair against both source fields and the frozen manifest,
+without copying identity state. Final AST/diff checks pass. No Docker, downloads,
+commit or push ran here; local hermetic results do not replace a successful real
+rehearsal. Next action is parent review, commit and exact-new-head CI for all
+three original failures, retaining their evidence and remaining release gates.

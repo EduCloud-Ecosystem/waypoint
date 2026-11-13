@@ -363,7 +363,9 @@ def main():
                       client_id='course-two', capacity=capacity, allocation_policy=policy_path)
     recovered = None; source_instance = first.instance; checks = []
     try:
-        first.start(); second.start()
+        first.start()
+        second.reuse_images_from(first)
+        second.start()
         inventory = allocation.inventory(policy_path)
         assert inventory['active_courses'] == 2 and inventory['released_courses'] == 0
         assert inventory['memory_reserved_mb'] == 3072 and inventory['cpu_reserved'] == 2.5

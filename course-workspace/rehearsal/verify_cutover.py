@@ -382,7 +382,9 @@ def main():
                   client_id='course-two',capacity=capacity,allocation_policy=policy_path)
     checks=[]
     try:
-        first.start(); peer.start()
+        first.start()
+        peer.reuse_images_from(first)
+        peer.start()
         initial=allocation.inventory(policy_path)
         assert bounded_allocation(initial)==dict(active_courses=2,released_courses=0,transferred_courses=0,
             memory_reserved_mb=3072,cpu_reserved=2.5,memory_budget_mb=8192,cpu_budget=2.75,host_reserve_mb=4096,host_reserve_cpu=1.25)
