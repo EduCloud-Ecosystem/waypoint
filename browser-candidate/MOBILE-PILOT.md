@@ -17,37 +17,67 @@ reviewed starter and the preserved rehearsal export) retain their bytes.
 | [CyVerse VICE](https://docs.cyverse.org/deployment/06-applications/vice/) | Hosted architecture reference. A launch can provision an interactive container with a mounted Data Store home. Its [featured JupyterLab flow](https://learning.cyverse.org/de/vice/quick-jupyter/) does not establish touch or TalkBack usability. |
 | [marimo](https://docs.marimo.io/guides/exporting/webassembly_html/) | Relevant for touch-first interactive lessons and browser execution. Its Python source format and reactive execution would require changes to the current notebook assignment. |
 
-## Decision
+## Current product decision
 
-Use the Waypoint view for short, touch-first assignments built around a
-known notebook and its exports. Keep Notebook 7 as the general-purpose
-hosted candidate, where arbitrary notebooks, additional packages, plots
-and server-side persistence matter. Keep the current hosted fallback and
-the original notebook download available.
+The target is a hosted project IDE with a phone-friendly presentation.
+The user's reference is GitHub Codespaces. Students should learn and use
+files, repositories, branches, diffs, terminals, tests, breakpoints,
+dependencies and notebooks. Those concepts remain available across screen
+sizes. The fixed NHANES page is an interaction prototype and its successful
+checks apply to that prototype alone.
 
-A local comparison used stock Notebook 7.6.5 and the Waypoint candidate in
-Chrome 157 with a 412 CSS-pixel Pixel 7 emulation. Both supported edit and
-undo, rendered a table, and produced the same 192-row fixture CSV. For
-Notebook 7, a disposable copy used a runtime-independent print marker.
-Both pages fit the viewport. In Notebook 7, the default code editor
-required horizontal scrolling for long lines, and Run All Cells was inside
-the Run menu. Waypoint wrapped the code, used named fields for editing,
-and exposed a direct Run all cells action. This comparison covers default
-UI behavior in emulation. Device screen readers, the on-screen keyboard,
-interrupted sessions and hosted submission still need paired checks.
+Use code-server as the first implementation candidate. It retains the
+Code OSS workbench and extension model while supporting a self-hosted
+browser service. Evaluate required Python, Jupyter and debugger extensions
+from permitted distributions on the pinned build. Microsoft's marketplace
+availability and exact Codespaces parity are not established by the shared
+editor core. [code-server documentation](https://coder.com/docs/code-server/FAQ)
 
-Build the Callisto and Juno ideas into the existing web view in this order:
-a small symbol and indent row with visible undo, controls to move between
-the editor and its output, and draft recovery with a clear save state.
-Keep the standard notebook format. An installable web app is a later option
-if offline reopening and runtime caching can be verified. Consider native
-clients if testing establishes a need for deep file and share integration
-or on-device Python packages unavailable in the browser.
+A repo-defined development environment should supply the language tools,
+dependencies and tests. Persistent project files and compute belong in the
+hosted workspace. Waypoint should reuse its existing identity, workspace
+authorization and lifecycle contracts, with the compute broker governing
+resource use. Development containers are an environment format; their
+configuration alone does not provide multi-user isolation.
+[Codespaces environment model](https://docs.github.com/en/codespaces/about-codespaces/what-are-codespaces)
 
-For a field assignment, a phone can collect a dataset at the observation
-site. For example, import a [phyphox export](https://phyphox.org/docs/) from
-an accelerometer experiment and inspect it on site. Use an explicit import
-action and a sample dataset for students without the relevant sensor.
+## Phone presentation
+
+| Familiar IDE activity | Phone presentation |
+| --- | --- |
+| Explorer and search | Full-width file drawer, quick open and search across the project |
+| Editing | One active editor, reachable file switcher, symbol/indent row, Undo/Redo and completion |
+| Terminal | Full-width terminal with explicit Escape, Tab, Ctrl and arrow controls |
+| Problems and debugging | Reachable panel, source-linked errors, breakpoint and step controls |
+| Source control | Full-width diff, explicit stage/unstage, commit message, branch and sync actions |
+| Notebook analysis | Notebook editor with expandable outputs and plot inspection |
+| Preview | Explicit switch to the running app through the authenticated workspace |
+| Resume on a laptop | Same persistent repository and environment, with the full workbench layout |
+
+Use the same commands, document models, filesystem and extension host behind
+both layouts. Investigate supported configuration and extension APIs first.
+A substantially different workbench layout may require a maintained source
+patch. Scope that cost before committing to a fork. A separate custom editor
+would also need reliable integration with language services, notebooks,
+debuggers, terminals and extension UI.
+
+## First complete IDE pilot
+
+Create an isolated code-server workspace from a small Python repository with
+a module, tests, a notebook and a documented environment. Exercise opening
+files, editing, running a failing test, fixing the code, stepping through a
+breakpoint, viewing a notebook result, reviewing a diff and committing on a
+branch. Reconnect from a laptop to the same project. Then measure the same
+workflow on a phone with its keyboard and TalkBack, including interruption
+and recovery.
+
+The existing notebook prototype supplies evidence for touch controls and
+draft interactions. It does not satisfy this IDE pilot. Evaluate code-server
+against Codespaces and the unmodified workbench on the same tasks. Continue
+if the phone presentation substantially improves task completion while
+preserving file integrity and familiar IDE operations. Shelf the custom
+presentation if comparable configuration provides the same benefit or if
+maintaining it compromises compatibility and reliability.
 
 ## Checkpoint
 
@@ -72,51 +102,12 @@ touch-only edit, table reading, export/reopen and interruption tasks on
 physical Android and iOS. Server-backed submission and fallback
 authorization remain outside this local run.
 
-## Student workspace direction
-
-The product should support students choosing it for substantial notebook
-coursework and carrying their work into a professional environment. The
-current NHANES implementation establishes a narrow first workflow. Its fixed
-cells, pandas runtime and limited outputs constrain its suitability for other
-assignments.
-
-The next workspace iteration adds a desktop outline and compact phone
-navigation, a larger focused editor, explicit Undo and Redo, programming
-symbols and indentation, automatic device drafts, and direct access to the
-assignment and original data. Python source, exceptions, execution results
-and standard notebook exports remain visible. The design aims to reduce
-navigation and text-entry effort while preserving the reasoning and debugging
-students need to practice.
-
-The wider product requires the following before an everyday IDE claim is
-appropriate.
-
-| Student activity | Required behavior | Current evidence |
-| --- | --- | --- |
-| Develop and debug an analysis | Edit code, inspect exceptions, run checks, inspect tables and plots | Text, exceptions and tables exercised; plots pending |
-| Work across sessions | Recover edits, code outputs and data after closing or switching devices | Device drafts and downloads exercised; cross-device import pending |
-| Build a project | Open multiple files, use modules and manage dependencies | Fixed NHANES files and pandas only |
-| Collaborate and review | Inspect changes, use Git, explain decisions and reproduce results | Standard notebook export available; Git workflow pending |
-| Move into workplace tools | Open exported work in ordinary Jupyter and run it with documented dependencies | JSON and CSV checks passed; independent desktop round trip pending |
-| Use a phone comfortably | Reach controls, edit with the OS keyboard and read outputs with TalkBack/VoiceOver | New workspace physical checks pending |
-
-Keep future hosting behind the existing authenticated workspace contracts.
-A mobile client can use a persistent Jupyter kernel once identity, saved
-files and reconnect behavior are implemented and tested. Retain the browser
-runtime for supported small exercises. This allows the interface to improve
-without making phone hardware the course's compute limit.
-
-Continue only if students can independently complete and reopen a realistic
-assignment, explain their code, diagnose an intentional error, and run the
-export in a conventional workstation environment. Compare those tasks with
-configured Notebook 7 on the same devices, including line wrapping and
-accessible settings. Shelf a separate editor if its advantage disappears
-after configuring Notebook 7, if it increases lost work or excludes common
-course tasks, or if its maintenance cost exceeds the benefit observed.
+## Prior prototype checkpoint
 
 The workspace iteration passed the 15 bundle checks and the prior emulated
 execution/export rehearsal. Additional rendered checks covered Undo through
 an empty editor, Redo, indentation insertion, editor expansion and Escape,
 automatic save/reload, 320-pixel layout, and zero axe A/AA violations in the
 checked state. Screenshots were inspected at phone and desktop widths.
-The physical device evaluation remains pending.
+The physical device evaluation remains pending. The hosted project IDE is
+the next implementation target and is not implemented by this branch.
