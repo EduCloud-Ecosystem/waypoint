@@ -12,7 +12,7 @@
   <header>
     <div class="page-width">
       <p class="brand">Waypoint</p>
-      <h1>NHANES notebook</h1>
+      <h1>NHANES data workshop</h1>
       <nav aria-label="Notebook links">
         <a href="#cell-6">Go to solution</a>
         <a href="#coursework">Go to downloads</a>
@@ -21,14 +21,24 @@
       </nav>
     </div>
   </header>
-  <main class="page-width">
+  <main class="page-width workspace">
+    <aside aria-label="Workspace navigation">
+      <p class="workspace-label">Your workspace</p>
+      <a href="#cell-1">Assignment brief</a>
+      <a href="#cell-4">Source data</a>
+      <a href="#cell-6">Solution</a>
+      <a href="#coursework">Files and handoff</a>
+      <p>Python · pandas</p>
+    </aside>
+    <div class="workspace-body">
     <section aria-labelledby="cells">
-      <h2 id="cells" tabindex="-1">Notebook cells</h2>
+      <h2 id="cells" tabindex="-1">Explore and build</h2>
       <div class="actions">
         <button id="run" disabled>Run all cells</button>
         <button id="stop" hidden>Stop run</button>
         <button id="save" disabled>Save on this device</button>
       </div>
+      <p id="save-status" role="status">Checking saved work…</p>
       <p id="status" role="status">Opening the notebook…</p>
       <div id="notebook"></div>
     </section>
@@ -38,6 +48,7 @@
       <div id="files"></div>
       <p id="download-status" role="status"></p>
     </section>
+    </div>
   </main>
 </body>
 </html>

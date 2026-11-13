@@ -65,3 +65,39 @@ th, td { text-align: start; padding: .4rem; border-bottom: 1px solid #cbd8d0; ov
 .file button { margin-block-start: .65rem; }
 .file button + button { margin-inline-start: .4rem; }
 .jump-action { display: inline-flex; align-items: center; min-block-size: 44px; margin-block-start: .45rem; }
+
+/* Workspace layout keeps the document readable at both desk and phone sizes. */
+.page-width { max-inline-size: 78rem; }
+header { background: #f5f7f4; color: #18302b; border-bottom: 1px solid #cbd8d0; padding-block: 1rem; }
+.brand { color: #225543; letter-spacing: -.03em; font-size: 1.25rem; }
+h1 { font-size: clamp(1.45rem, 4vw, 2rem); font-weight: 600; }
+header nav { font-size: .88rem; gap: .25rem 1rem; }
+header :focus-visible { outline-color: #1674ce; }
+.workspace { display: grid; grid-template-columns: 12rem minmax(0, 1fr); gap: 2rem; }
+.workspace-body { max-inline-size: 54rem; min-inline-size: 0; }
+aside { align-self: start; position: sticky; top: 1rem; }
+aside a { display: flex; min-height: 44px; align-items: center; text-decoration: none; padding-inline: .65rem; border-radius: .4rem; }
+aside a:hover { background: #e1eae4; }
+aside p { color: #49685d; font-size: .85rem; padding-inline: .65rem; }
+.workspace-label { font-weight: 650; }
+article { border-radius: .45rem; }
+article:focus-within { border-color: #225543; }
+textarea { line-height: 1.65; }
+.editor-tools { display: flex; flex-wrap: wrap; gap: .3rem; margin-top: .5rem; }
+.editor-tools button { font-size: .85rem; padding: .5rem .65rem; border-color: #cbd8d0; }
+.editor-tools button:last-child { margin-inline-start: auto; }
+#save-status { color: #49685d; font-size: .85rem; margin-bottom: .25rem; }
+#status { margin-top: .4rem; line-height: 1.4; }
+.output { background: #f3f6f3; padding: .9rem; border-radius: .35rem; }
+.focused-editor textarea { min-height: 55svh; }
+.focused-editor { scroll-margin-top: 1rem; }
+.focused-editor .output { margin-top: 1.5rem; }
+@media (max-width: 760px) {
+  .workspace { grid-template-columns: minmax(0, 1fr); gap: .75rem; }
+  aside { position: static; display: flex; flex-wrap: wrap; border-bottom: 1px solid #cbd8d0; padding-bottom: .6rem; }
+  aside p { display: none; }
+  aside a { font-size: .9rem; }
+  main { padding-top: .6rem; }
+  article { padding: .85rem; }
+  .editor-tools button:last-child { margin-inline-start: 0; }
+}

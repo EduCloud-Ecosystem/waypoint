@@ -29,6 +29,79 @@ function editor(parent, label, value, rows, code = false) {
   return field;
 }
 
+function editingTools(article, field, title) {
+  const tools = append(article, 'div');
+  tools.className = 'editor-tools';
+  tools.setAttribute('role', 'group');
+  tools.setAttribute('aria-label', title + ' editing tools');
+  const history = [field.value];
+  let cursor = 0;
+  let selection = [0, 0];
+  function rememberSelection() {
+    selection = [field.selectionStart, field.selectionEnd];
+  }
+  field.addEventListener('select', rememberSelection);
+  field.addEventListener('keyup', rememberSelection);
+  field.addEventListener('pointerup', rememberSelection);
+  field.addEventListener('input', () => {
+    if (history[cursor] !== field.value) {
+      history.splice(cursor + 1);
+      history.push(field.value);
+      if (history.length > 100) history.shift();
+      cursor = history.length - 1;
+    }
+    rememberSelection();
+    syncHistory();
+  });
+  function action(label, handler) {
+    const control = append(tools, 'button', label);
+    control.type = 'button';
+    control.addEventListener('pointerdown', event => event.preventDefault());
+    control.addEventListener('click', handler);
+    return control;
+  }
+  function restore(offset) {
+    if (field.readOnly || cursor + offset < 0 || cursor + offset >= history.length) return;
+    cursor += offset;
+    field.value = history[cursor];
+    field.dispatchEvent(new Event('input', { bubbles: true }));
+    field.focus();
+  }
+  const undo = action('Undo', () => restore(-1));
+  const redo = action('Redo', () => restore(1));
+  function syncHistory() {
+    undo.disabled = cursor === 0 || field.readOnly;
+    redo.disabled = cursor === history.length - 1 || field.readOnly;
+  }
+  for (const [label, text] of [['Indent', '    '], ['( )', '()'], ['[ ]', '[]'], ['Quotes', '""'], [':', ':']]) {
+    action(label, () => {
+      if (field.readOnly) return;
+      field.focus();
+      field.setSelectionRange(...selection);
+      field.setRangeText(text, selection[0], selection[1], 'end');
+      field.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+  }
+  const focus = action('Focus editor', () => {
+    const active = !article.classList.contains('focused-editor');
+    article.classList.toggle('focused-editor', active);
+    focus.textContent = active ? 'Exit focus' : 'Focus editor';
+    focus.setAttribute('aria-pressed', String(active));
+    article.scrollIntoView({ block: 'start' });
+    field.focus({ preventScroll: true });
+  });
+  focus.setAttribute('aria-pressed', 'false');
+  article.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && article.classList.contains('focused-editor')) {
+      article.classList.remove('focused-editor');
+      focus.textContent = 'Focus editor';
+      focus.setAttribute('aria-pressed', 'false');
+      focus.focus();
+    }
+  });
+  syncHistory();
+}
+
 function renderTable(output, table) {
   const region = append(output, 'div');
   region.className = 'table-region';
@@ -137,6 +210,7 @@ async function open() {
     if (!code) append(article, 'p', [starter.cells[index].source].flat().join('').replace(/^REPLACE_ME: /, ''));
     const field = editor(article, prompt, source, code ? (index === 3 ? 7 : 10) : 3, code);
     fields.push(field);
+    if (code) editingTools(article, field, prompt);
     field.addEventListener('input', () => {
       cell.source = field.value;
       if (code && (resultCount.size || csv !== null)) clearResults();
@@ -157,6 +231,14 @@ async function open() {
   });
 
   const files = byId('files');
+  const sourceFiles = append(files, 'details');
+  sourceFiles.className = 'file';
+  append(sourceFiles, 'summary', 'Assignment and source files');
+  for (const path of ['README.md', ...inputs]) {
+    const link = append(append(sourceFiles, 'p'), 'a', path);
+    link.href = '../files/' + path;
+    link.download = path.split('/').at(-1);
+  }
   const notebookFile = append(files, 'div');
   notebookFile.className = 'file';
   append(notebookFile, 'button', 'Download working notebook').addEventListener('click', () => {
@@ -191,6 +273,7 @@ async function open() {
       byId('run').focus();
     }
     busy(false);
+    saveDraft();
     announce(message);
   }
 
@@ -229,16 +312,30 @@ async function open() {
     clearResults();
     finish('Run stopped.');
   });
-  byId('save').addEventListener('click', () => {
+  let saveTimer;
+  function saveDraft() {
     try {
       localStorage.setItem(key, JSON.stringify({
         notebook, csv, notes: noteFields.map(field => field.value), results: Object.fromEntries(resultCount),
       }));
-      announce('Saved in this browser. Download copies before switching devices.');
+      byId('save-status').textContent = 'Saved on this device · ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     } catch {
-      announce('Could not save in this browser. Download copies to keep your work.');
+      byId('save-status').textContent = 'Device save failed. Download your work to keep a copy.';
     }
+  }
+  byId('save').addEventListener('click', saveDraft);
+  for (const field of fields) {
+    field.addEventListener('input', () => {
+      byId('save-status').textContent = 'Saving changes…';
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(saveDraft, 500);
+    });
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') saveDraft();
   });
+  window.addEventListener('pagehide', saveDraft);
+  byId('save-status').textContent = draft ? 'Saved draft restored on this device.' : 'Edits save automatically on this device.';
   busy(false);
   announce(openMessage);
 }

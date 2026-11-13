@@ -4,6 +4,7 @@
 
 - Stage a single-column phone notebook with labeled editors, browser-local
   Python execution, table previews, local save and coursework downloads.
+- Add workspace navigation, focused editing, Undo/Redo, coding symbols and automatic device drafts.
 - Keep the original download and hosted fallback available.
 
 ## 2026-10-21: Prepared CW1 synthetic classroom package

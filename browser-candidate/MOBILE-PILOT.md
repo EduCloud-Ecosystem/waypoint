@@ -71,3 +71,52 @@ require verification on the Pixel. The comparison requires the same
 touch-only edit, table reading, export/reopen and interruption tasks on
 physical Android and iOS. Server-backed submission and fallback
 authorization remain outside this local run.
+
+## Student workspace direction
+
+The product should support students choosing it for substantial notebook
+coursework and carrying their work into a professional environment. The
+current NHANES implementation establishes a narrow first workflow. Its fixed
+cells, pandas runtime and limited outputs constrain its suitability for other
+assignments.
+
+The next workspace iteration adds a desktop outline and compact phone
+navigation, a larger focused editor, explicit Undo and Redo, programming
+symbols and indentation, automatic device drafts, and direct access to the
+assignment and original data. Python source, exceptions, execution results
+and standard notebook exports remain visible. The design aims to reduce
+navigation and text-entry effort while preserving the reasoning and debugging
+students need to practice.
+
+The wider product requires the following before an everyday IDE claim is
+appropriate.
+
+| Student activity | Required behavior | Current evidence |
+| --- | --- | --- |
+| Develop and debug an analysis | Edit code, inspect exceptions, run checks, inspect tables and plots | Text, exceptions and tables exercised; plots pending |
+| Work across sessions | Recover edits, code outputs and data after closing or switching devices | Device drafts and downloads exercised; cross-device import pending |
+| Build a project | Open multiple files, use modules and manage dependencies | Fixed NHANES files and pandas only |
+| Collaborate and review | Inspect changes, use Git, explain decisions and reproduce results | Standard notebook export available; Git workflow pending |
+| Move into workplace tools | Open exported work in ordinary Jupyter and run it with documented dependencies | JSON and CSV checks passed; independent desktop round trip pending |
+| Use a phone comfortably | Reach controls, edit with the OS keyboard and read outputs with TalkBack/VoiceOver | New workspace physical checks pending |
+
+Keep future hosting behind the existing authenticated workspace contracts.
+A mobile client can use a persistent Jupyter kernel once identity, saved
+files and reconnect behavior are implemented and tested. Retain the browser
+runtime for supported small exercises. This allows the interface to improve
+without making phone hardware the course's compute limit.
+
+Continue only if students can independently complete and reopen a realistic
+assignment, explain their code, diagnose an intentional error, and run the
+export in a conventional workstation environment. Compare those tasks with
+configured Notebook 7 on the same devices, including line wrapping and
+accessible settings. Shelf a separate editor if its advantage disappears
+after configuring Notebook 7, if it increases lost work or excludes common
+course tasks, or if its maintenance cost exceeds the benefit observed.
+
+The workspace iteration passed the 15 bundle checks and the prior emulated
+execution/export rehearsal. Additional rendered checks covered Undo through
+an empty editor, Redo, indentation insertion, editor expansion and Escape,
+automatic save/reload, 320-pixel layout, and zero axe A/AA violations in the
+checked state. Screenshots were inspected at phone and desktop widths.
+The physical device evaluation remains pending.
