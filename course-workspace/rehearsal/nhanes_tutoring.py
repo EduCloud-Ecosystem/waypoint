@@ -55,6 +55,16 @@ class NhanesTutoring:
         private(self.root / 'binding.json', binding)
         command([exporter, '-database', database, '-journal', journal, '-config', self.root / 'binding.json', '-output', snapshot])
         document = json.loads(snapshot.read_text()); member = document['subjects']['synthetic-alice'][0]
+        # Keep Cairn's actual roster export immutable; only the operator supplies
+        # the separate teaching policy for this registered synthetic course.
+        private(self.root / 'cairn-authorization-original.json', document)
+        if (profile.exercise, profile.task) != ('info511-nhanes-wrangling', 'info511-nhanes-wrangling-v1'):
+            raise ValueError('NHANES teaching policy version mismatch')
+        overlay = {profile.exercise: {'exercise_version': profile.task,
+            'policy_id': 'info511-nhanes-hints-v1', 'mode': 'hints_only', 'retention_seconds': 3600}}
+        private(self.root / 'operator-teaching-policy.json', overlay)
+        document = dict(document, teaching_policies=overlay)
+        private(snapshot, document)
         self.key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
         private(self.root / 'public.pem', self.key.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo))
         self.binding = binding
@@ -71,6 +81,7 @@ class NhanesTutoring:
         private(self.root / 'execution.key', Fernet.generate_key())
         env = dict(clean, PYTHONPATH=str(args.belay / 'backend'), BELAY_ENV='test', TUTOR_PACK='datascience',
             STORE_BACKEND='memory', PROVIDER='local_stub', LLM_BILLING_MODE='unmetered',
+            DATABASE_URL='sqlite:///' + str(self.root / 'private.db'), CLASSROOM_CLEANUP_ENABLED='1',
             CONTROLS_MODE='enforced', CONTROLS_JOBS_ENABLED='1', CONTROLS_DEPLOYMENT_ID='presenter',
             CONTROLS_DATABASE_URL='sqlite:///' + str(self.root / 'controls.db'),
             CONTROLS_DATA_KEY_FILE=str(self.root / 'execution.key'), AUTH_ISSUER=binding['issuer'],
@@ -90,6 +101,7 @@ class NhanesTutoring:
                 input_price=1 if self.live else 0, output_price=2 if self.live else 0,
                 deployment=limits, institution=limits, classroom=limits, learner=limits))
             python = args.belay / '.venv/bin/python'
+            command([python, '-c', 'from app.classroom.store import configured_store, metadata; metadata.create_all(configured_store().engine)'], env=env, cwd=self.root)
             private(self.root / 'initialize.log', command([python, '-m', 'app.controls.cli', 'init', '--policy', self.root / 'policy.json'], env=env, cwd=self.root))
             command([python, '-m', 'app.authority_state', self.root / 'watermark.db', authority], env=env, cwd=self.root)
             launch('belay-api', [python, '-m', 'uvicorn', 'app.main:app', '--host', '127.0.0.1', '--port', self.api.rsplit(':', 1)[1]], env)
@@ -129,8 +141,17 @@ class NhanesTutoring:
 
     def verify(self, page, report):
         help_page = self.open_help(page)
+        before_checkpoint = self.counts()
         help_page.get_by_role('button', name='Ask for a hint', exact=True).click()
-        expect(help_page.locator('#status')).to_contain_text('It is not a grade', timeout=180000)
+        expect(help_page.locator('#status')).to_contain_text('Your saved work is unchanged', timeout=15000)
+        assert self.counts() == before_checkpoint
+        if self.live: assert self.live.evidence()['accounting']['dispatch_claims'] == 0
+        # This is an operator-authored test prediction, explicitly recorded via UI.
+        help_page.locator('#schema-present').check(); help_page.locator('#unit-present').check()
+        help_page.get_by_role('button', name='Record prediction checkpoint', exact=True).click()
+        expect(help_page.locator('#checkpoint-status')).to_contain_text('Prediction checkpoint recorded', timeout=15000)
+        help_page.get_by_role('button', name='Ask for a hint', exact=True).click()
+        expect(help_page.locator('#status')).to_contain_text('It is not a grade', timeout=120000)
         expect(help_page.locator('#reply')).not_to_be_empty()
         if self.live:
             expect(help_page.locator('#reply')).not_to_contain_text('Local model stub')
@@ -159,13 +180,13 @@ class NhanesTutoring:
         text = ('Automated synthetic instructor test: requested one ' + ('live' if self.live else 'local-stub') +
                 ' Belay hint about missing readings versus missing BPXO records. '
                 'The supplied operator-authored solution remains a test fixture, not learner authorship. '
-                'Tutoring did not submit, grade, or supply the assessed pipeline. Human review remains pending.\n')
+                'Saving, submission and grading used separate explicit controls. Human review of the hint remains pending.\n')
         status = page.evaluate("""async text => {
             const x=document.cookie.split(';').map(s=>s.trim()).find(s=>s.startsWith('_xsrf='));
             const r=await fetch('/api/contents/assistance.md',{method:'PUT',headers:{'Content-Type':'application/json','X-XSRFToken':decodeURIComponent(x.slice(6))},body:JSON.stringify({type:'file',format:'text',content:text})}); return r.status;
         }""", text)
         assert status in (200, 201)
-        report['passed'] += ['NHANES-signed-job-' + self.mode + '-hint', 'expired-and-disabled-help-no-extra-attempts']
+        report['passed'] += ['missing-checkpoint-refused-before-admission', 'NHANES-signed-job-' + self.mode + '-hint', 'expired-and-disabled-help-no-extra-attempts']
         report['tutoring_tested'] = True
 
     def review(self, browser, page, seconds):
