@@ -140,3 +140,18 @@ Expected: failed=[],cleanup=true,model_calls=0. The output directory must be fre
 This is an automated browser rehearsal; it closes its own resources. The finite
 live command in the testing guide uses the new Belay and Portage pins and actual
 provider calls. Neither command is a persistent classroom deployment.
+
+
+## Authorized reliability follow-up (2026-11-13)
+
+Greg authorized fixing backup retention and recovery concurrency and coordinating
+with the Waypoint chat. Starting clean at4af2964, retain this worktree and PR66.
+Own retirement/recovery/reconciliation source, evaluators and focused controls.
+First reproduce with an invocation-owned local Restic repository and bounded
+concurrency diagnostics; keep original failures under output/classroom-reliability-v1.
+No weakening protected snapshots, authority, race checks or cleanup. Verify fixes
+with deterministic controls, whole relevant suites, exact-source CI and the
+zero-model desktop notebook-to-submission regression. Existing paid live evidence
+stays pinned; no new inference is required. Preserve other worktrees and services.
+Wayfare/physical-phone acceptance is explicitly deferred, not an MVP dependency.
+The linked Waypoint chat was notified of ownership and nonoverlap before edits.
