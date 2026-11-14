@@ -5,7 +5,7 @@ import re
 
 from jupyterhub.spawner import Spawner
 from traitlets import Integer, Unicode
-from authority_client import AuthorityClient
+from authority_client import AuthorityClient, AuthorityError, ERRORS
 
 ENV_KEYS = frozenset({'JUPYTERHUB_API_TOKEN', 'JUPYTERHUB_CLIENT_ID', 'JUPYTERHUB_HOST',
     'JUPYTERHUB_USER', 'JUPYTERHUB_OAUTH_CALLBACK_URL', 'JUPYTERHUB_API_URL',
@@ -86,7 +86,9 @@ class AuthoritySpawner(Spawner):
         try:
             result = await self.call('hub.poll', {'subject': self.user.name,
                         'server_id': self.server_id, 'epoch': self.server_epoch})
-        except Exception:
+        except Exception as error:
+            code = error.code if isinstance(error, AuthorityError) and error.code in ERRORS else 'other'
+            self.log.warning('Authority notebook poll refused: %s', code)
             # Runtime guardian/supervisor handles stopping; an unavailable view
             # cannot make an old Hub believe its server is currently authorized.
             return 1

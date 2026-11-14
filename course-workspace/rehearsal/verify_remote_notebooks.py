@@ -123,18 +123,26 @@ def bounded_container_logs(identifier, *, popen=subprocess.Popen, monotonic=time
 def diagnostic_log_counts(raw):
     result = {'supervisor': {code: 0 for code in sorted(DIAGNOSTIC_SUPERVISOR_CODES)},
         'guardian': {code: 0 for code in sorted(DIAGNOSTIC_GUARDIAN_CODES)}, 'snapshot_busy': 0, 'stop_busy': 0,
+        'hub_poll': {code: 0 for code in sorted(ERRORS | {'other'})},
+        'notebook': {code: 0 for code in ('kernel_info_timeout', 'kernel_restart', 'kernel_dead', 'http503')},
         'transport': {stage + '/' + category: 0 for stage in sorted(DIAGNOSTIC_TRANSPORT_STAGES)
             for category in sorted(DIAGNOSTIC_TRANSPORT_CATEGORIES)},
         'replay': {stage + '/' + category: 0 for stage in sorted(REPLAY_STAGES)
             for category in sorted(REPLAY_FAILURES)}}
     for line in raw[:131072].splitlines():
         for field, prefix in (('supervisor', 'Worker runtime supervisor failed: supervision/'),
-                ('supervisor', 'Worker runtime stopping owned learners: '), ('guardian', 'Guardian observation refused: ')):
+                ('supervisor', 'Worker runtime stopping owned learners: '), ('guardian', 'Guardian observation refused: '),
+                ('hub_poll', 'Authority notebook poll refused: ')):
             if prefix in line:
                 code = line.partition(prefix)[2].strip()
                 if code in result[field]: result[field][code] = min(10000, result[field][code] + 1)
         for field, phrase in (('snapshot_busy', 'Guardian snapshot deferred: endpoint_busy'), ('stop_busy', 'Guardian stop deferred: endpoint_busy')):
             if line.endswith(phrase): result[field] = min(10000, result[field] + 1)
+        for code, phrase in (('kernel_info_timeout', 'Timeout waiting for kernel_info reply'),
+                ('kernel_restart', 'KernelRestarter: restarting kernel'), ('kernel_dead', 'Kernel died')):
+            if phrase in line: result['notebook'][code] = min(10000, result['notebook'][code] + 1)
+        if re.search(r'\b503 (?:GET|POST) /(?:user/alice/)?api/kernels/', line):
+            result['notebook']['http503'] = min(10000, result['notebook']['http503'] + 1)
         match = re.search(r'authority_transport_failure stage=([a-z_]+) category=([a-z_]+)$', line)
         if match:
             key = match[1] + '/' + match[2]
@@ -192,8 +200,9 @@ def runtime_diagnostics(error, name, images, authority_id, *, invoke=command, re
                 or (expected_name is not None and value.get('Name') != '/' + expected_name)):
             raise ValueError('fixture_diagnostic_scope_invalid')
         return value
-    result = {'version': 'waypoint-remote-runtime-diagnostics-v2', 'scope': 'post-failure-nonatomic-readonly', 'available': True,
-        'http': diagnostic_http_context(error), 'learners': {}, 'enforcers': {}, 'authority': {}}
+    result = {'version': 'waypoint-remote-runtime-diagnostics-v3', 'scope': 'post-failure-nonatomic-readonly', 'available': True,
+        'http': diagnostic_http_context(error), 'learners': {}, 'enforcers': {}, 'authority': {}, 'notebooks': {}}
+    learner_ids = {}
     # Capture learner state before any potentially slow log reads.
     for _, _, suffix in ENDPOINTS:
         item = {'available': False, 'container_count': None, 'running_count': None, 'states': []}
@@ -203,6 +212,7 @@ def runtime_diagnostics(error, name, images, authority_id, *, invoke=command, re
             if len(identifiers) > 1 or any(not re.fullmatch(r'[0-9a-f]{64}', identifier) for identifier in identifiers):
                 raise ValueError('fixture_diagnostic_bounds')
             states = [state(owned(identifier, name + '-' + suffix + '-learner-' + hashlib.sha256(b'alice').hexdigest()[:24])) for identifier in identifiers]
+            learner_ids[suffix] = identifiers
             item.update(available=True, container_count=len(states), running_count=sum(value['running'] for value in states), states=states)
         except Exception: pass
         result['learners'][suffix] = item
@@ -226,6 +236,20 @@ def runtime_diagnostics(error, name, images, authority_id, *, invoke=command, re
                 item.update(logs_available=True, truncated=truncated, counts=diagnostic_log_counts(raw))
             except Exception: pass
             result['enforcers'][worker + '-' + kind] = item
+    # State above is captured before these optional log reads. Never publish raw
+    # Hub/learner logs: URLs, tokens, submitted code and output may occur there.
+    for _, _, suffix in ENDPOINTS:
+        for kind in ('hub', 'learner'):
+            item = {'available': False, 'logs_available': False, 'truncated': False, 'counts': diagnostic_log_counts('')}
+            try:
+                expected = name + '-' + suffix + ('-hub' if kind == 'hub' else '-learner-' + hashlib.sha256(b'alice').hexdigest()[:24])
+                identifier = expected if kind == 'hub' else learner_ids[suffix][0]
+                value = owned(identifier, expected)
+                raw, truncated = read_logs(value['Id'])
+                if not isinstance(raw, str) or type(truncated) is not bool: raise ValueError('fixture_diagnostic_log_invalid')
+                item.update(available=True, logs_available=True, truncated=truncated, counts=diagnostic_log_counts(raw))
+            except Exception: pass
+            result['notebooks'][suffix + '-' + kind] = item
     return result
 
 
@@ -235,7 +259,7 @@ def capture_runtime_diagnostics(path, error, name, images, authority_id, *, coll
         if publish is None:
             from authority_access import publish
         try: value = collect(error, name, images, authority_id)
-        except Exception: value = {'version': 'waypoint-remote-runtime-diagnostics-v2', 'scope': 'post-failure-nonatomic-readonly', 'available': False}
+        except Exception: value = {'version': 'waypoint-remote-runtime-diagnostics-v3', 'scope': 'post-failure-nonatomic-readonly', 'available': False}
         publish(path, value)
     except Exception: pass
 

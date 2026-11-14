@@ -1,11 +1,12 @@
 from pathlib import Path
 import sys
+import logging
 from types import SimpleNamespace
 import unittest
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, Mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'hub'))
-from authority_spawner import AuthoritySpawner
+from authority_spawner import AuthoritySpawner, AuthorityError
 
 
 class SpawnerTests(unittest.IsolatedAsyncioTestCase):
@@ -37,6 +38,17 @@ class SpawnerTests(unittest.IsolatedAsyncioTestCase):
         value.call = AsyncMock(side_effect=ConnectionError())
         self.assertEqual(await value.poll(), 1)
         self.assertEqual(value.server_epoch, 1)
+
+    async def test_poll_diagnostic_is_allowlisted_without_error_message_or_retry(self):
+        for error, code in ((AuthorityError('authority_operation_refused'), 'authority_operation_refused'),
+                            (RuntimeError('private-message'), 'other')):
+            value = self.spawner(); value.load_state({'server_id': 'a' * 64, 'server_epoch': 1})
+            value.call = AsyncMock(side_effect=error)
+            value.log = Mock(spec=logging.Logger)
+            self.assertEqual(await value.poll(), 1)
+            value.call.assert_awaited_once()
+            value.log.warning.assert_called_once_with('Authority notebook poll refused: %s', code)
+            self.assertEqual(value.server_id, 'a' * 64)
 
     async def test_later_epoch_response_not_adopted(self):
         value = self.spawner()

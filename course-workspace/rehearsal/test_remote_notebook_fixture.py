@@ -744,6 +744,11 @@ class RuntimeDiagnosticsTests(unittest.TestCase):
                 'educloud.runtime.worker': worker, 'educloud.runtime.kind': 'guardian'}
             records[actual] = {'Id': format(index, '064x'), 'Name': '/' + actual, 'Image': images['controller'],
                 'Config': {'Labels': labels}, 'State': {'Running': True, 'OOMKilled': False, 'ExitCode': 0}}
+        for index, (_, _, suffix) in enumerate(fixture.ENDPOINTS, 20):
+            actual = name + '-' + suffix + '-hub'
+            records[actual] = {'Id': format(index, '064x'), 'Name': '/' + actual, 'Image': images['hub'],
+                'Config': {'Labels': {'educloud.workspace.instance': name + '-' + suffix, 'educloud.workspace.kind': 'hub'}},
+                'State': {'Running': True, 'OOMKilled': False, 'ExitCode': 0}}
         for index, suffix in enumerate(('source', 'peer'), 10):
             actual = name + '-' + suffix + '-learner-' + subject
             labels = {'educloud.workspace.instance': name + '-' + suffix, 'educloud.workspace.kind': 'learner',
@@ -759,7 +764,8 @@ class RuntimeDiagnosticsTests(unittest.TestCase):
                 return json.dumps([value])
             self.assertEqual(args[:3], ('ps', '-aq', '--no-trunc'))
             instance = args[4].split('=', 2)[-1]
-            return '\n'.join(value['Id'] for value in records.values() if value['Config']['Labels'].get('educloud.workspace.instance') == instance)
+            return '\n'.join(value['Id'] for value in records.values() if value['Config']['Labels'].get('educloud.workspace.instance') == instance
+                and value['Config']['Labels'].get('educloud.workspace.kind') == 'learner')
         def logs(identifier):
             events.append(('logs', identifier))
             return ('private-token-cert-path-canary\nWorker runtime stopping owned learners: stale_or_changed\n'
@@ -776,6 +782,9 @@ class RuntimeDiagnosticsTests(unittest.TestCase):
         self.assertEqual(result['learners']['peer']['running_count'], 1)
         self.assertEqual(result['learners']['receiver']['container_count'], 0)
         self.assertEqual(len(result['enforcers']), 4)
+        self.assertTrue(result['notebooks']['source-hub']['logs_available'])
+        self.assertTrue(result['notebooks']['peer-learner']['logs_available'])
+        self.assertFalse(result['notebooks']['receiver-learner']['available'])
         self.assertTrue(result['authority']['logs_available'])
         self.assertEqual(result['authority']['counts']['replay']['begin/sqlite_busy'], 1)
         self.assertTrue(all(value['available'] and value['logs_available'] for value in result['enforcers'].values()))
@@ -794,7 +803,11 @@ class RuntimeDiagnosticsTests(unittest.TestCase):
         self.assertIs(result['enforcers']['worker-two-service']['available'], True)
 
     def test_log_categories_reject_unknown_suffixes_and_private_messages(self):
-        raw = ('Worker runtime supervisor failed: supervision/runtime_endpoint_enforcement_unavailable\n'
+        raw = ('Authority notebook poll refused: authority_operation_refused\n'
+            'Authority notebook poll refused: private-token-canary\n'
+            'Timeout waiting for kernel_info reply\nKernelRestarter: restarting kernel\n'
+            '[W] 503 GET /user/alice/api/kernels/private-id/channels?token=private-token-canary\n'
+            'Worker runtime supervisor failed: supervision/runtime_endpoint_enforcement_unavailable\n'
             'Guardian snapshot deferred: endpoint_busy\nGuardian stop deferred: endpoint_busy\n'
             'Guardian observation refused: private-token-canary\n'
             'Worker runtime stopping owned learners: private-path-canary\n'
@@ -806,6 +819,9 @@ class RuntimeDiagnosticsTests(unittest.TestCase):
             'authority_transport_failure stage=response_headers category=timeout\n')
         result = verifier.diagnostic_log_counts(raw)
         self.assertEqual(result['supervisor']['runtime_endpoint_enforcement_unavailable'], 1)
+        self.assertEqual(result['hub_poll']['authority_operation_refused'], 1)
+        self.assertEqual(sum(result['hub_poll'].values()), 1)
+        self.assertEqual(result['notebook'], {'kernel_info_timeout': 1, 'kernel_restart': 1, 'kernel_dead': 0, 'http503': 1})
         self.assertEqual(result['snapshot_busy'], 1); self.assertEqual(result['stop_busy'], 1)
         self.assertEqual(sum(result['guardian'].values()), 0)
         self.assertEqual(sum(result['transport'].values()), 1)
@@ -849,7 +865,7 @@ class RuntimeDiagnosticsTests(unittest.TestCase):
         from unittest.mock import Mock
         collect = Mock(side_effect=ValueError('private-diagnostic-canary')); publish = Mock()
         verifier.capture_runtime_diagnostics(Path('/unused'), RuntimeError('private-original'), 'unused', {}, None, collect=collect, publish=publish)
-        self.assertEqual(publish.call_args.args[1], {'version': 'waypoint-remote-runtime-diagnostics-v2',
+        self.assertEqual(publish.call_args.args[1], {'version': 'waypoint-remote-runtime-diagnostics-v3',
             'scope': 'post-failure-nonatomic-readonly', 'available': False})
         publish.side_effect = RuntimeError('private-publication-canary')
         verifier.capture_runtime_diagnostics(Path('/unused'), RuntimeError('private-original'), 'unused', {}, None, collect=collect, publish=publish)

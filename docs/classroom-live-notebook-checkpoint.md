@@ -180,3 +180,25 @@ historical error lacked its cause, so it is not retrospectively labeled proven.
 The testing command's grader reference was corrected to the existing immutable
 local image ID required by the evaluator. Final validation follows at a pinned
 candidate; historical outcomes above remain unchanged.
+
+
+### Runtime diagnostic follow-up after repair candidate57fc8b2
+
+The repaired candidate's worker-channel job43548520258 failed after actual
+source Python success and successful R-kernel creation, at the R WebSocket
+handshake (HTTP503), before any R execution request. Cleanup passed. This is a
+new observation, not proof of the historical peer transport failure's cause.
+Post-failure source and peer containers were running with no OOM indication.
+Cumulative Guardian contention/refusal counts are not time-correlated causes.
+The coordinated Waypoint chat independently read the same evidence and identified
+Hub route withdrawal on failed ownership polling and notebook readiness as
+unresolved possibilities; it did not edit or rerun this candidate.
+
+Bounded follow-up: collect only fixed log categories from verified invocation-owned
+Hub and learner containers, using the existing128KiB/256-read/3-second per-container
+bound; no raw log, content, URL, credential, or arbitrary exception message is
+published. Add a fixed-code Hub-poll diagnostic without changing its fail-closed
+behavior. One fresh CI run can gather this evidence; do not replay kernel POSTs,
+raise timeout/resource limits, ignore503, or claim a runtime fix from diagnostics.
+All existing evidence remains in output/classroom-reliability-v1. Mobile is deferred
+and its other chat's live container remains untouched.
