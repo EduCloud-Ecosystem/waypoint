@@ -125,6 +125,7 @@ def diagnostic_log_counts(raw):
         'guardian': {code: 0 for code in sorted(DIAGNOSTIC_GUARDIAN_CODES)}, 'snapshot_busy': 0, 'stop_busy': 0,
         'hub_poll': {code: 0 for code in sorted(ERRORS | {'other'})},
         'notebook': {code: 0 for code in ('kernel_info_timeout', 'kernel_restart', 'kernel_dead', 'http503')},
+        'proxy_transport': {code: 0 for code in ('ECONNREFUSED', 'ECONNRESET', 'EHOSTUNREACH', 'ETIMEDOUT', 'unknown')},
         'transport': {stage + '/' + category: 0 for stage in sorted(DIAGNOSTIC_TRANSPORT_STAGES)
             for category in sorted(DIAGNOSTIC_TRANSPORT_CATEGORIES)},
         'replay': {stage + '/' + category: 0 for stage in sorted(REPLAY_STAGES)
@@ -143,6 +144,14 @@ def diagnostic_log_counts(raw):
             if phrase in line: result['notebook'][code] = min(10000, result['notebook'][code] + 1)
         if re.search(r'\b503 (?:GET|POST) /(?:user/alice/)?api/kernels/', line):
             result['notebook']['http503'] = min(10000, result['notebook']['http503'] + 1)
+        # CHP5.1.0 logs HTTP code, method, URL, then an upstream message.
+        # Inspect only the message after this exact synthetic channels route;
+        # never emit addresses, queries, arbitrary codes, or stack text.
+        proxy = re.search(r'\b503 GET /user/alice/api/kernels/[A-Za-z0-9-]+/channels(?:\?\S*)?\s+(.*)$', line)
+        if proxy:
+            known = re.findall(r'\b(?:ECONNREFUSED|ECONNRESET|EHOSTUNREACH|ETIMEDOUT)\b', proxy[1])
+            category = known[0] if len(set(known)) == 1 else 'unknown'
+            result['proxy_transport'][category] = min(10000, result['proxy_transport'][category] + 1)
         match = re.search(r'authority_transport_failure stage=([a-z_]+) category=([a-z_]+)$', line)
         if match:
             key = match[1] + '/' + match[2]

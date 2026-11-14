@@ -829,6 +829,16 @@ class RuntimeDiagnosticsTests(unittest.TestCase):
         for secret in ('private-token-canary', 'private-path-canary', 'private_path', 'private_key'):
             self.assertNotIn(secret, json.dumps(result))
 
+    def test_proxy_transport_categories_exclude_urls_messages_and_other_routes(self):
+        route = '503 GET /user/alice/api/kernels/synthetic-id/channels'
+        raw = '\n'.join('[ConfigProxy] error: ' + route + '?token=private-canary connect ' + code + ' private-address:123'
+            for code in ('ECONNREFUSED', 'ECONNRESET', 'EHOSTUNREACH', 'ETIMEDOUT'))
+        raw += '\n[ConfigProxy] error: ' + route + '?token=ECONNREFUSED private-unknown-error'
+        raw += '\n[ConfigProxy] error: 503 GET /other/path connect ECONNREFUSED private-canary'
+        result = verifier.diagnostic_log_counts(raw)['proxy_transport']
+        self.assertEqual(result, {'ECONNREFUSED': 1, 'ECONNRESET': 1, 'EHOSTUNREACH': 1, 'ETIMEDOUT': 1, 'unknown': 1})
+        for value in ('private', 'synthetic-id', '/channels', '123'): self.assertNotIn(value, json.dumps(result))
+
     def test_http_diagnostics_use_only_path_content_and_json_message_categories(self):
         response = verifier.requests.Response(); response.status_code = 403
         response.headers['Content-Type'] = 'application/json; charset=utf-8'
