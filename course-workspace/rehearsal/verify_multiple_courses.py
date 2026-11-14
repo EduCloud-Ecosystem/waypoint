@@ -364,7 +364,7 @@ def main():
     recovered = None; source_instance = first.instance; checks = []
     try:
         first.start()
-        second.reuse_images(first)
+        second.reuse_images_from(first)
         second.start()
         inventory = allocation.inventory(policy_path)
         assert inventory['active_courses'] == 2 and inventory['released_courses'] == 0

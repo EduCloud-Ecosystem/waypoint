@@ -47,6 +47,29 @@ def refused(operation, error=ValueError):
     raise AssertionError('retired, stale, or corrupt state was accepted')
 
 
+def require_fixture_repository(cfg, root, *, host=None):
+    """Refuse foreign/nonlocal evidence stores before any backup mutation."""
+    repository = Path(cfg['repository'])
+    root = Path(root).resolve()
+    if (cfg.get('local_test') is not True or not repository.is_absolute()
+            or repository.resolve() != repository or repository == root
+            or not repository.is_relative_to(root)):
+        raise ValueError('retention control requires the invocation-owned local repository')
+    if host is not None and (not isinstance(host, str) or not re.fullmatch(r'[a-z0-9][a-z0-9-]{0,63}', host)):
+        raise ValueError('retention host must be a course instance')
+
+
+def forget_unprotected_fixture_snapshots(cfg, root, *, host=None):
+    """Retain protected tags within the invocation-owned repository."""
+    require_fixture_repository(cfg, root, host=host)
+    # The control snapshot has a different path. Default host,paths grouping
+    # would put it alone in a group and correctly refuse removing its last
+    # snapshot. One group keeps every protected tag while dropping the control;
+    # the CLI's remove-all refusal remains enabled if the protected tag is lost.
+    scope = () if host is None else ('--host', host)
+    restic(cfg, 'forget', *scope, '--group-by', '' if host is None else 'host', '--keep-tag', RETIRED_TAG)
+
+
 def publish_pass(root, report, cleanup_verified):
     keys={'waypoint_revision','fixture_sha256','exporter_sha256','source_manifest_sha256',
           'snapshot_id','source_export_sha256','restored_export_sha256','images','counts','checks'}
@@ -111,6 +134,8 @@ def verify_legacy_refusal(cfg, snapshot_id, root):
 
 def verify_protected_retention(cfg, instance, snapshot_id, control):
     """Exercise tag retention within this course's one explicit host group."""
+    if not control.is_absolute(): raise ValueError('retention control must be invocation-local')
+    require_fixture_repository(cfg, control.parent, host=instance)
     output=restic(cfg,'backup','--json','--host',instance,
                   '--tag','synthetic-unprotected-control',str(control))
     control_id=next(json.loads(line)['snapshot_id'] for line in output.splitlines()
@@ -120,7 +145,7 @@ def verify_protected_retention(cfg, instance, snapshot_id, control):
     # cannot be emptied. Use the course host explicitly, retaining its protected
     # snapshot without disabling Restic's last-snapshot protection or touching
     # another course's backups.
-    restic(cfg,'forget','--host',instance,'--group-by','host','--keep-tag',RETIRED_TAG)
+    forget_unprotected_fixture_snapshots(cfg, control.parent, host=instance)
     snapshots=json.loads(restic(cfg,'snapshots','--json'))
     remaining={item['id'] for item in snapshots}
     assert snapshot_id in remaining and control_id not in remaining

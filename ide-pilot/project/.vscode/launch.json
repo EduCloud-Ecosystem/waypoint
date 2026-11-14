@@ -1,0 +1,14 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug analysis",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/analysis.py",
+      "console": "internalConsole",
+      "justMyCode": true,
+      "python": "/usr/bin/python3"
+    }
+  ]
+}

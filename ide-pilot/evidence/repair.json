@@ -1,0 +1,3 @@
+{
+  "git_diff": "diff --git a/analysis.py b/analysis.py\nindex 6c50d02..9cd0f5c 100644\n--- a/analysis.py\n+++ b/analysis.py\n@@ -3,7 +3,7 @@\n \n def mean_reading(values):\n     valid = [value for value in values if value is not None]\n-    return sum(valid) / len(values)  # Fix the failing missing-value test.\n+    return sum(valid) / len(valid)  # Fix the failing missing-value test.\n \n \n if __name__ == \"__main__\":\n"
+}

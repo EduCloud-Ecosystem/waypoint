@@ -215,6 +215,11 @@ def main():
             jupyter_data = root / 'jupyter-data'
             extensions = jupyter_data / 'labextensions/@educloud'; extensions.mkdir(parents=True)
             shutil.copytree(ROOT / 'course/labextension-belay', extensions / 'waypoint-belay')
+            # Resolve this fixture's kernel to the same locked environment, not
+            # an ambient user kernelspec or whichever python appears on PATH.
+            kernel_dir = jupyter_data / 'kernels/python3'; kernel_dir.mkdir(parents=True)
+            private(kernel_dir / 'kernel.json', {'argv': [sys.executable, '-m', 'ipykernel_launcher', '-f', '{connection_file}'],
+                'display_name': 'Python 3 (ipykernel)', 'language': 'python'})
             jupyter_token = secrets.token_urlsafe(32)
             config_dir = root / 'jupyter-config'; config_dir.mkdir()
             private(config_dir / 'jupyter_server_config.json', {'ServerApp': {
@@ -231,15 +236,24 @@ def main():
             wait_http(notebook_url + '/login')
             notebook_page.goto(notebook_url + '/lab/tree/assignment.ipynb?token=' + jupyter_token)
             expect(notebook_page.get_by_role('button', name='Ask Belay about this code', exact=True)).to_be_visible(timeout=60000)
-            # This slice edits/captures saved code; it does not execute a kernel.
-            # A fresh isolated Jupyter data directory may offer a kernel chooser.
+            # Execute only the supplied synthetic cell in the pinned local
+            # Python kernel. Worker-isolation/Python-R acceptance stays separate.
             try:
                 notebook_page.get_by_role('dialog').wait_for(state='visible', timeout=5000)
                 private(root / 'notebook-dialog.txt', notebook_page.get_by_role('dialog').inner_text())
-                notebook_page.keyboard.press('Escape')
+                notebook_page.get_by_role('dialog').get_by_role('combobox').select_option(label='Python 3 (ipykernel)')
+                notebook_page.get_by_role('dialog').get_by_role('button', name='Select', exact=True).click()
             except BrowserTimeout:
                 pass
-            notebook_page.locator('.jp-Notebook .jp-CodeCell').first.click()
+            cell = notebook_page.locator('.jp-Notebook .jp-CodeCell').first
+            cell.click(); notebook_page.keyboard.press('Shift+Enter')
+            expect(cell.locator('.jp-OutputArea-output')).to_have_text('ok', timeout=60000)
+            notebook_page.screenshot(path=str(root / 'python-cell-executed.png'), full_page=True)
+            report['passed'].append('native-jupyter-python-cell-executed')
+            report['local_kernel'] = {'python': sys.version.split()[0], 'executable': sys.executable,
+                'source_sha256': hashlib.sha256(SOURCE.encode()).hexdigest(), 'expected_output': 'ok',
+                'isolation': 'trusted-synthetic-operator-local-process-not-worker-isolation'}
+            cell.click()
             with notebook_page.expect_popup() as popup:
                 notebook_page.get_by_role('button', name='Ask Belay about this code', exact=True).click()
             help_page = popup.value
@@ -371,7 +385,9 @@ def main():
                     review_page = review_context.new_page()
                     review_page.goto(notebook_url + '/lab/tree/assignment.ipynb?token=' + jupyter_token)
                     expect(review_page.get_by_role('button', name='Ask Belay about this code', exact=True)).to_be_visible(timeout=60000)
-                    if review_page.get_by_role('dialog').is_visible(): review_page.keyboard.press('Escape')
+                    if review_page.get_by_role('dialog').is_visible():
+                        review_page.get_by_role('dialog').get_by_role('combobox').select_option(label='Python 3 (ipykernel)')
+                        review_page.get_by_role('dialog').get_by_role('button', name='Select', exact=True).click()
                     review_page.bring_to_front()
                     review_page.screenshot(path=str(root / 'operator-review-open.png'), full_page=True)
                     initial = counts()

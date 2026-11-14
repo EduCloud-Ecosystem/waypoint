@@ -1,0 +1,12 @@
+- document:
+  - heading "Paused values" [level=1]
+  - button "Step over"
+  - button "Continue"
+  - button "Refresh values"
+  - button "Return to code"
+  - status: "Paused: mean_reading, line 6"
+  - term: "Locals: valid"
+  - definition: "[10, 20]"
+  - term: "Locals: values"
+  - definition: "[10, None, 20]"
+  - paragraph: Top stack frame; up to 100 values from the first local or non-expensive scope. Use the native debugger for nested objects, watches and other frames.

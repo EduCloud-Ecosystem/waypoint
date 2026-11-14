@@ -317,7 +317,7 @@ def main():
     source_instance = first.instance; recovered = None; checks = []
     try:
         first.start()
-        second.reuse_images(first)
+        second.reuse_images_from(first)
         second.start()
         initial = allocation.inventory(policy_path)
         assert initial['active_courses'] == 2 and initial['memory_reserved_mb'] == 3072 and initial['cpu_reserved'] == 2.5

@@ -30,13 +30,27 @@ The first instructor-read regression failed401 after restart; its evidence is re
 
 ## Visible desktop review, without model calls
 
-For an operator review, use the zero-model command in the checkpoint and add
-`--operator-review-seconds 120`. It first runs the automated controls, then opens
+From this checkout, use a fresh output path:
+
+```sh
+cd /Users/gregchism/.codex/worktrees/classroom-live-notebook/waypoint
+.venv/bin/python course-workspace/rehearsal/roster_presenter.py \
+  --cairn /Users/gregchism/dev/.educloud-worktrees/cairn-classroom-enrollment-export-v1 \
+  --belay /Users/gregchism/dev/.educloud-worktrees/belay-classroom-enrollment-authority-v1 \
+  --checkout-image sha256:bc9bc6929aafd69d37158bbd273a11818a2b222539242949d5d3c3066d02db8c \
+  --grader-image sha256:726d304906fa5eb468e5531e366548d1903286352f5adb54ef508ac01fbd80c6 \
+  --operator-review-seconds 120 --output output/classroom-operator-review-new
+```
+
+It first runs the automated controls, then opens
 an authenticated synthetic learner notebook in a visible Chromium window for at
 most two minutes. Only the supplied example should be used. Choose a cell and
 **Ask Belay about this code**, review the local-stub hint, return to the notebook,
 save, and use **Submit selected saved files** to inspect the explicit Cairn path.
-The fixture already contains one test submission; subsequent changes still need
+Run the supplied cell with Shift+Enter and check that it prints `ok`. If a kernel
+chooser appears, select **Python 3 (ipykernel)**. This trusted synthetic local
+process is not the isolated learner worker; actual worker Python/R acceptance is
+recorded separately. The fixture already contains one test submission; subsequent changes still need
 explicit confirmation. Tutoring is separate from saving, submission and grading.
 
 This mode refuses `--live-portage`, `--env-file` and `--execute-approved`. It
@@ -56,15 +70,15 @@ readiness handoff. This is a local testing session, not an always-on classroom.
 
 | Component | Candidate/base | Checkout and responsibility |
 |---|---|---|
-| Waypoint | `codex/classroom-live-notebook-v1`, base `3ec286f5d41e857622d9b24f23b3c31e6f248605` | `/Users/gregchism/.codex/worktrees/classroom-live-notebook/waypoint`; notebook integration, launch, browser acceptance. Draft PR66, stacked on PR59. |
-| Portage | `codex/classroom-live-tutoring-v1`, `0653fd94fe86acf235a74f72a1ff4af6aa2fa1b9` | `/Users/gregchism/.codex/worktrees/classroom-live-tutoring/portage`; bounded provider route and ledger. Draft PR17; CI gate/controls green, paid review skipped. |
-| Belay-classroom | `codex/system-one-classroom-consumer-v1`, `c5a27073e74b9eeb7ab697190915378b50132883` | `/Users/gregchism/dev/.educloud-worktrees/belay-classroom-system-one-consumer-v1`; unchanged authenticated jobs, governance, SDK, accounting. Builds on draft PR5→6→7. |
-| Cairn | `codex/classroom-enrollment-export-v1`, `0cf3158fdf5bbbecc52d3cc9cd88ef33bdfb63fc` | `/Users/gregchism/dev/.educloud-worktrees/cairn-classroom-enrollment-export-v1`; unchanged roster exporter, repository publication and instructor authority. Draft PR38. |
+| Waypoint | `codex/classroom-live-notebook-v1`, base `3ec286f5d41e857622d9b24f23b3c31e6f248605` | `/Users/gregchism/.codex/worktrees/classroom-live-notebook/waypoint`; notebook integration, launch, browser acceptance. PR66 targets main and includes PR59; merge/release state is recorded in the current handoff. |
+| Portage | `codex/classroom-live-tutoring-v1`, `0653fd94fe86acf235a74f72a1ff4af6aa2fa1b9` | `/Users/gregchism/.codex/worktrees/classroom-live-tutoring/portage`; bounded provider route and ledger. PR17 merged as2c9031dcf3a016b355c861e0a3c6398b234022de; paid review remains separate. |
+| Belay-classroom | `codex/system-one-classroom-consumer-v1`, `c5a27073e74b9eeb7ab697190915378b50132883` | `/Users/gregchism/dev/.educloud-worktrees/belay-classroom-system-one-consumer-v1`; unchanged authenticated jobs, governance, SDK, accounting. PR8 merged as979d7fbbd55021beeae768f151bfd80462243d82, including PR5–7. |
+| Cairn | `codex/classroom-enrollment-export-v1`, `0cf3158fdf5bbbecc52d3cc9cd88ef33bdfb63fc` | `/Users/gregchism/dev/.educloud-worktrees/cairn-classroom-enrollment-export-v1`; unchanged roster exporter, repository publication and instructor authority. PR38 merged asfc038eb93cba16fe8265718e8472aca6f9ecf2d9. |
 
 Original Belay is untouched. Outfitter is not required for this local MVP; its
-native Jetstream2 qualification remains separate. The active mobile IDE chat owns
-`waypoint-browser-notebook-bundle-v1` / `codex/code-server-pilot`; this candidate
-does not incorporate or edit it. No component has been merged or deployed here.
+native Jetstream2 qualification remains separate. The separate mobile IDE work was merged independently through PR67.
+Its source is preserved when integrating current main; phone testing and mobile
+incorporation remain deferred. Dependency source merges are not a deployment.
 
 ## Reproduce
 
@@ -120,7 +134,7 @@ No image-distribution closure or second-machine reproduction is claimed.
 
 ## Testing and release boundaries
 
-Local checks:742 Waypoint tests,4 notebook snapshot tests,7 focused presenter
+Repair checks:744 Waypoint source tests passed before main integration;4 notebook snapshot tests,7 focused presenter
 checks, offline actual orchestration; Portage580 tests passed/9 optional checks
 skipped,44 focused adapter cases with3 optional SDK skips, three generated profiles
 matched. Exact candidate CI and retained historical failures are recorded separately.
@@ -133,7 +147,9 @@ and three multi-course checks exposed independently rebuilt image mismatches.
 The follow-up shares a verified immutable image pair without weakening equality
 checks. These are separate from live tutoring acceptance. Read the final
 [checkpoint](../docs/classroom-live-notebook-checkpoint.md) for exact CI status;
-no unresolved runtime failure permits release.
+source integration and controlled synthetic testing can proceed with explicit
+limits. The historical R WebSocket503 remains unexplained and holds a real
+classroom release; subsequent passes do not establish a causal repair.
 
 Next decisions after source checks: Greg reviews the hint/help/submission experience;
 engineering replaces the echo fixture with the accepted course package and evaluates

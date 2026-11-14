@@ -209,18 +209,44 @@ class WorkerRuntimeTests(unittest.TestCase):
     def test_stop_response_grace_never_extends_absolute_session_deadline(self):
         self.heartbeat(); result = self.spawn()
         container = self.fixture.client.containers.get(result['server_id'])
-        original = container.stop
-        def slow_stop(timeout):
-            time.sleep(.35)
+        original = container.stop; clock = [0.0]
+        def expiring_stop(timeout):
             original(timeout)
-        container.stop = slow_stop
+            # Advance only after Docker stop: a wall-clock 150 ms session can
+            # correctly expire during TLS/SQL/authorization before reaching it.
+            clock[0] = self.server.session_seconds + .1
+        container.stop = expiring_stop
         self.server.session_seconds = .15
-        self.refuses(lambda: self.rpc('hub.stop', dict(subject='alice', server_id=result['server_id'], epoch=1)),
-            'worker_session_expired')
+        # Replace this module's clock binding, not the shared time module:
+        # real socket timeouts and other threads' clocks remain unchanged.
+        transport_clock = SimpleNamespace(monotonic=lambda: clock[0], time=time.time)
+        with patch('worker_transport.time', transport_clock):
+            self.refuses(lambda: self.rpc('hub.stop', dict(subject='alice', server_id=result['server_id'], epoch=1)),
+                'worker_session_expired')
         self.assertIs(self.fixture.client.containers.items[result['server_id']], container)
         self.assertFalse(container.attrs['State']['Running'])
         self.assertNotIn(('remove', False, False), container.actions)
         self.assertEqual(container.actions.count(('stop', 5)), 1)
+
+    def test_session_expiry_before_stop_preserves_running_container(self):
+        self.heartbeat(); result = self.spawn()
+        container = self.fixture.client.containers.get(result['server_id'])
+        clock = [0.0]; self.server.session_seconds = .15
+        dispatch = self.server.runtime_v2_dispatch
+        def expire_before_effect(*args):
+            clock[0] = self.server.session_seconds + .1
+            return dispatch(*args)
+        # Expire at the worker's dispatch boundary, before any stop effect or
+        # reverse challenge; do not race the client's challenge-frame receive.
+        self.server.runtime_v2_dispatch = expire_before_effect
+        transport_clock = SimpleNamespace(monotonic=lambda: clock[0], time=time.time)
+        with patch('worker_transport.time', transport_clock):
+            self.refuses(lambda: self.rpc('hub.stop', dict(subject='alice', server_id=result['server_id'], epoch=1)),
+                'worker_session_expired')
+        self.assertIs(self.fixture.client.containers.items[result['server_id']], container)
+        self.assertTrue(container.attrs['State']['Running'])
+        self.assertNotIn(('stop', 5), container.actions)
+        self.assertNotIn(('remove', False, False), container.actions)
 
     def test_non_stop_runtime_retains_ordinary_response_timeout(self):
         original = self.server.runtime_v2_dispatch

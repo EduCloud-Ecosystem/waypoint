@@ -234,3 +234,36 @@ A slow-control startup failure was retained; the synthetic HTTP server no longer
 performs reverse-DNS lookup on the intentionally isolated network. These setup
 failures are not counted as proxy acceptance passes.
 The15-second retirement probe and its502/503 requirement are unchanged.
+
+### Main integration and operator testing
+
+The merge coordinator verified source merges for Cairn38, Belay-classroom8
+(including5–7), and Portage17. PR66 now targets main and includes PR59.
+Current main is integrated without editing its mobile/browser-bundle files.
+Image reuse converges on main's ready-source/frozen-image helper, preserving
+both regression sets. Retention combines main's invocation-local repository
+guard with exact-host grouping and foreign-host protection; missing-tag refusal
+and all protected restore checks remain.
+
+The local presenter now includes an opt-in1–120second visible operator window
+with local-stub tutoring only. It rejects provider/credential options, preserves
+original authority deadlines and reports operator job counts separately.
+Human acceptance is never inferred from opening the window. The initial
+operator smoke at82bfc58 opened/closed a2second window with zero provider calls
+and verified cleanup, but showed the kernel chooser; that historical result
+is UI-only. The integrated candidate adds actual fixed-cell execution with
+expected output`ok`, using a private per-run kernelspec pointing to the already
+locked presenter Python/ipykernel environment. The active kernel remains
+available to the operator; its process is a trusted synthetic local test, not
+the isolated learner-worker acceptance. Actual worker Python/R has separateCI.
+
+All60626a5 required CI checks passed, with the manual-only continuity job skipped.
+The earlier R WebSocket503 remains causally unresolved; two later worker passes
+are evidence of successful runs, not a causal repair. Fixed-category proxy
+transport diagnostics are retained for any recurrence, never raw logs or retries.
+Source integration/local synthetic testing and real classroom release are
+separate decisions. The coordinating chat owns PR merges; this chat owns runtime
+source and the final ignored evidence handoff. No new paid inference, actual
+learner use, mobile acceptance or production deployment is claimed.
+
+Integrated main: `34605f5f709005a5dc0eecb72f9ecbd7d490d5e3`.

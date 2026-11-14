@@ -383,7 +383,7 @@ def main():
     checks=[]
     try:
         first.start()
-        peer.reuse_images(first)
+        peer.reuse_images_from(first)
         peer.start()
         initial=allocation.inventory(policy_path)
         assert bounded_allocation(initial)==dict(active_courses=2,released_courses=0,transferred_courses=0,

@@ -1,0 +1,16 @@
+test_complete_readings (test_analysis.MeanReadingTests.test_complete_readings) ... ok
+test_missing_reading (test_analysis.MeanReadingTests.test_missing_reading) ... FAIL
+
+======================================================================
+FAIL: test_missing_reading (test_analysis.MeanReadingTests.test_missing_reading)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/coder/project/test_analysis.py", line 7, in test_missing_reading
+    self.assertEqual(mean_reading([10, None, 20]), 15)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 10.0 != 15
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.002s
+
+FAILED (failures=1)
