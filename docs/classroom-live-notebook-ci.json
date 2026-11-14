@@ -1,0 +1,162 @@
+{
+  "version": 1,
+  "runtime_candidate": "137c38bb0b880d5b873d970a69bf647201b85e74",
+  "ci_merge": "16a5af6fe8f95abd7035b173e5bdace223180c85",
+  "identical_tree": "8fa17732f0da3edc5911c78bac516326fe759db6",
+  "checks": [
+    {
+      "link": "https://github.com/EduCloud-Ecosystem/waypoint/actions/runs/43531144614/job/132248877848",
+      "name": "course",
+      "state": "FAILURE"
+    },
+    {
+      "link": "https://github.com/EduCloud-Ecosystem/waypoint/actions/runs/43531144614/job/132248877501",
+      "name": "Multiple course allocation and isolation",
+      "state": "SUCCESS"
+    },
+    {
+      "link": "https://github.com/EduCloud-Ecosystem/waypoint/actions/runs/43531144630/job/132248877290",
+      "name": "institutional-recovery",
+      "state": "SUCCESS"
+    },
+    {
+      "link": "https://github.com/EduCloud-Ecosystem/waypoint/actions/runs/43531144614/job/132248877668",
+      "name": "Saved-file bridge browser boundaries",
+      "state": "SUCCESS"
+    },
+    {
+      "link": "https://github.com/EduCloud-Ecosystem/waypoint/actions/runs/43531144585/job/132248879209",
+      "name": "independent-worker-recovery",
+      "state": "SUCCESS"
+    },
+    {
+      "link": "https://github.com/EduCloud-Ecosystem/waypoint/actions/runs/43531144729/job/132248878110",
+      "name": "Actual worker-channel Python R and Guardian recovery",
+      "state": "SUCCESS"
+    },
+    {
+      "link": "https://github.com/EduCloud-Ecosystem/waypoint/actions/runs/43531145033/job/132248879314",
+      "name": "policy",
+      "state": "SUCCESS"
+    },
+    {
+      "link": "https://github.com/EduCloud-Ecosystem/waypoint/actions/runs/43531144585/job/132248879709",
+      "name": "maintenance",
+      "state": "SUCCESS"
+    },
+    {
+      "link": "https://github.com/EduCloud-Ecosystem/waypoint/actions/runs/43531144600/job/132248877206",
+      "name": "Actual mTLS Hub Python R runtime",
+      "state": "SUCCESS"
+    },
+    {
+      "link": "https://github.com/EduCloud-Ecosystem/waypoint/actions/runs/43531144614/job/132248877688",
+      "name": "Reviewed pending-transfer reconciliation",
+      "state": "SUCCESS"
+    },
+    {
+      "link": "https://github.com/EduCloud-Ecosystem/waypoint/actions/runs/43531145033/job/132248878696",
+      "name": "https-configuration",
+      "state": "SUCCESS"
+    },
+    {
+      "link": "https://github.com/EduCloud-Ecosystem/waypoint/actions/runs/43531144614/job/132248878278",
+      "name": "Course resource amendments",
+      "state": "SUCCESS"
+    },
+    {
+      "link": "https://github.com/EduCloud-Ecosystem/waypoint/actions/runs/43531144614/job/132248878025",
+      "name": "Reviewed replacement cutover",
+      "state": "SUCCESS"
+    },
+    {
+      "link": "https://github.com/EduCloud-Ecosystem/waypoint/actions/runs/43531144614/job/132248877664",
+      "name": "Logical-worker ownership and fencing contract",
+      "state": "SUCCESS"
+    },
+    {
+      "link": "https://github.com/EduCloud-Ecosystem/waypoint/actions/runs/43531145033/job/132248881754",
+      "name": "continuity",
+      "state": "SKIPPED"
+    }
+  ],
+  "counts": {
+    "SUCCESS": 13,
+    "FAILURE": 1,
+    "SKIPPED": 1
+  },
+  "synthetic_joined_live_workflow": "PASS_AT_f6ee6ca",
+  "student_pilot_ready": false,
+  "release_ready": false,
+  "local_rehearsal_suite": {
+    "total": 328,
+    "passed": 319,
+    "failed": 1,
+    "skipped": 8,
+    "failed_control": "pending reconciliation concurrent loser code",
+    "one_later_diagnostic_pass_does_not_resolve_failure": true
+  },
+  "private_evidence_root": "/Users/gregchism/.codex/worktrees/classroom-live-notebook/waypoint/output/live-notebook-v1",
+  "evidence": {
+    "authenticated-ci-137c/AUTHENTICATED-RUNTIME.json": {
+      "bytes": 3548,
+      "sha256": "00b329fd8bb331b077ac2694853577a5ddbf51382d66ad204852b4842d630d06"
+    },
+    "authenticated-ci-137c/ENROLLMENT-RUNTIME.json": {
+      "bytes": 3913,
+      "sha256": "d0003205b8d430d583cf3ae7ee550c9deeb9300e3e5924c09611112923616f77"
+    },
+    "ci-137c-multiple/MULTI-COURSE-PASS.json": {
+      "bytes": 2670,
+      "sha256": "17516a3aa31c6054e42b2c6b72cd67242b3e44b3dc85cfa7f8fc3e0f4a98c214"
+    },
+    "ci-137c-synthetic-cutover-evidence/CUTOVER-PASS.json": {
+      "bytes": 4951,
+      "sha256": "f199a049a59a4c3bf8aa55187760ceeedd1eac3dc2ec63d6bd50790de7a201c9"
+    },
+    "ci-137c-synthetic-resource-amendment-evidence/RESOURCE-AMENDMENT-PASS.json": {
+      "bytes": 4117,
+      "sha256": "49f0c06feda49ea083422f4332219fed21c349e5d3f5b8f5b0e9ee7dfd323a79"
+    },
+    "course-ci-137c.log": {
+      "bytes": 207572,
+      "sha256": "65ab42ef0fb64d2b5c951b31838ba69614d58ec4065ce3d10a03b347be38bc07"
+    },
+    "peer-image-regression.log": {
+      "bytes": 753,
+      "sha256": "53e63f78e68e8c1041216a6f6512e721e6b42c8ee7ce08a5c3d8e81daddd4fda"
+    },
+    "reconciliation-diagnostic.log": {
+      "bytes": 567,
+      "sha256": "ce9f441d63a58ca72a84e63b60f86b9bb5b0abc0028d9bacb31ff68f10c44346"
+    },
+    "rehearsal-final.log": {
+      "bytes": 3224,
+      "sha256": "cf140f911a9d78bfd4022577905eaa5e40205624ea08f639b84302c357fee6d1"
+    },
+    "run-1/independent-ledger-readback.json": {
+      "bytes": 1776,
+      "sha256": "a2add8ad4bfdda778f5d92a29ebbf573bd6edbdc93fbc0658b1005337842e5d9"
+    },
+    "run-1/result.json": {
+      "bytes": 4475,
+      "sha256": "77ce6b9a5facb858b71ea8b5d53a64761f768a7cb93896fe737e255f4a70d2a5"
+    },
+    "stub-regression-1/result.json": {
+      "bytes": 1633,
+      "sha256": "2b319e192d95d07e9f7746e8b5d04a9db2fcb5007d64843cb6db943575b8d5e1"
+    },
+    "stub-regression-2/result.json": {
+      "bytes": 1929,
+      "sha256": "c2e394ce5de4d684b681a456d6da44dae75b5e39f77c069ca0bc7057809c7f90"
+    },
+    "worker-channel-ci-137c/waypoint-remote-notebooks/REMOTE-NOTEBOOKS.json": {
+      "bytes": 4566,
+      "sha256": "319ecec9986ed0ccdc1031f005c7d3360b9e5a5ce34733578704ae7a433106d9"
+    },
+    "worker-channel-ci-137c/waypoint-replay-contention.json": {
+      "bytes": 443,
+      "sha256": "83350b7452904dc2db1fc69dda5ddf7a218af2ba05af3a5f6784b03f4dafb561"
+    }
+  }
+}
