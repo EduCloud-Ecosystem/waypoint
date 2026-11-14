@@ -1,0 +1,54 @@
+{
+  "date": "2026-11-13",
+  "evidence_kind": "Synthetic local browser emulation; not physical-device or classroom evidence",
+  "base_revision": "f60c9489b843d68a42288ee4d9cf01cfa16686f8",
+  "image": "sha256:1253c904d8681713b536d643ec18463205576a9302a0f10bcb4f1f00f245478f",
+  "code_server": "4.145.2",
+  "code_oss": "1.145.2",
+  "extensions": {
+    "educloud.waypoint-mobile": "0.1.0",
+    "ms-python.python": "2026.4.0",
+    "ms-python.debugpy": "2026.6.0",
+    "ms-python.vscode-python-envs": "1.42.0"
+  },
+  "phone": {
+    "profile": "Playwright Pixel 7",
+    "viewport_css": [
+      412,
+      839
+    ],
+    "narrow_controls_css": [
+      320,
+      740
+    ],
+    "result": "PHONE_WORKFLOW_OK"
+  },
+  "laptop": {
+    "viewport_css": [
+      1440,
+      1000
+    ],
+    "container_restarted_before_login": true,
+    "result": "LAPTOP_WORKFLOW_OK"
+  },
+  "git_fixture": {
+    "branch": "fix/missing-readings",
+    "commit": "10ed10c43e6ed25e1936a6f15d117184bd0e2acb",
+    "laptop_commit": "10ed10c43e6ed25e1936a6f15d117184bd0e2acb",
+    "working_tree_clean": true,
+    "remote_push_tested": false
+  },
+  "preserved_notebook_sha256": "133358bd417c04088383b00f3f2ff3c40463a77f4829f251c559b9e2dbc380ac",
+  "source_sha256": {
+    "ide-pilot/Dockerfile": "57af49586128e7e6acce89c3033e0eba3f6aaf7ca3fef0b3bebe3a5610c7db74",
+    "ide-pilot/prepare.py": "5e455f8653d3c1d767378af296c9366d1040586d5af83a4cd9f0be9661ed0617",
+    "ide-pilot/start.sh": "9ee533053a1e180fdd1297ead68c9a5860430556591321ffcda5803fed2fdc2d",
+    "ide-pilot/verify-browser.cjs": "41392ef981b63911b8b8c2a1ea093427444e6b600214c44931cfe01199a7669d",
+    "ide-pilot/extension/extension.js": "eb42007c1bf5e0925c10f81ff1e033d21041a282d685fd92b32dfa783fbc6d9c",
+    "ide-pilot/extension/inspector.js": "dc0dea377bb49a01588d5abb24903c50172cafd3e58d8ee1069947d91f826912",
+    "ide-pilot/extension/inspector.test.cjs": "6c43b7ffc8f1b885912f36cea1538ed3f92deee71f292d869e24024ad6bab1e4",
+    "ide-pilot/extension/package.json": "22b22948c79d017ac4c9b7e7782698d04c81c2ba562e0d24ec77beb6f751ddfd",
+    "ide-pilot/extension/test.cjs": "0a237fb1d384562d23aa570b5b034c96b8ced4ca7c788b180c15d904c5209a68"
+  },
+  "physical_keyboard_talkback_ios": "NOT RUN"
+}
