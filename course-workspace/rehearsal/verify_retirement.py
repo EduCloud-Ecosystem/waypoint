@@ -109,6 +109,23 @@ def verify_legacy_refusal(cfg, snapshot_id, root):
         else: raise AssertionError('legacy recovery accepted a protected retired package')
 
 
+def verify_protected_retention(cfg, instance, snapshot_id, control):
+    """Exercise tag retention within this course's one explicit host group."""
+    output=restic(cfg,'backup','--json','--host',instance,
+                  '--tag','synthetic-unprotected-control',str(control))
+    control_id=next(json.loads(line)['snapshot_id'] for line in output.splitlines()
+                    if json.loads(line).get('message_type')=='summary')
+    # Restic protects the last snapshot of each group. The control has a
+    # different path from the protected bundle, so its default host/path group
+    # cannot be emptied. Use the course host explicitly, retaining its protected
+    # snapshot without disabling Restic's last-snapshot protection or touching
+    # another course's backups.
+    restic(cfg,'forget','--host',instance,'--group-by','host','--keep-tag',RETIRED_TAG)
+    snapshots=json.loads(restic(cfg,'snapshots','--json'))
+    remaining={item['id'] for item in snapshots}
+    assert snapshot_id in remaining and control_id not in remaining
+
+
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     if not __debug__: parser.error('optimized Python cannot enforce retirement acceptance assertions')
@@ -220,11 +237,7 @@ def main():
                 # Run real retention against this invocation-owned local repository.
                 # Only protected snapshots may survive this synthetic policy.
                 control=root/'retention-control.txt'; control.write_text('synthetic retention control')
-                output=restic(cfg,'backup','--json','--tag','synthetic-unprotected-control',str(control))
-                control_id=next(json.loads(line)['snapshot_id'] for line in output.splitlines() if json.loads(line).get('message_type')=='summary')
-                restic(cfg,'forget','--keep-tag',RETIRED_TAG)
-                snapshots=json.loads(restic(cfg,'snapshots','--json'))
-                assert plan['snapshot_id'] in {item['id'] for item in snapshots} and control_id not in {item['id'] for item in snapshots}
+                verify_protected_retention(cfg,fixture.instance,plan['snapshot_id'],control)
                 checks.append('protected-snapshot-retained'); restic(cfg,'check','--read-data'); checks.append('snapshot-integrity')
                 disk=root/'replacement.img'
                 with disk.open('xb') as out: out.truncate(2*1024**3)

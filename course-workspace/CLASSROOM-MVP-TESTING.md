@@ -85,7 +85,7 @@ must retain the output directory. A receipt verifies publication, not a grade.
 
 Tested image identities:
 - Checkout `sha256:bc9bc6929aafd69d37158bbd273a11818a2b222539242949d5d3c3066d02db8c`.
-- Grader `python@sha256:726d304906fa5eb468e5531e366548d1903286352f5adb54ef508ac01fbd80c6`.
+- Grader `sha256:726d304906fa5eb468e5531e366548d1903286352f5adb54ef508ac01fbd80c6`.
 - Forgejo `codeberg.org/forgejo/forgejo:16.0.5@sha256:cf5f5ae6acf2ababca0ee3d255705b83a47f35b25e07fc931d694d60664053fe`.
 
 Historical image IDs were unavailable on the current Docker daemon. A new checkout

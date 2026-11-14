@@ -132,7 +132,7 @@ From the Waypoint checkout with the documented environment and image pins:
   --cairn /Users/gregchism/dev/.educloud-worktrees/cairn-classroom-enrollment-export-v1 \
   --belay /Users/gregchism/dev/.educloud-worktrees/belay-classroom-enrollment-authority-v1 \
   --checkout-image sha256:bc9bc6929aafd69d37158bbd273a11818a2b222539242949d5d3c3066d02db8c \
-  --grader-image python@sha256:726d304906fa5eb468e5531e366548d1903286352f5adb54ef508ac01fbd80c6 \
+  --grader-image sha256:726d304906fa5eb468e5531e366548d1903286352f5adb54ef508ac01fbd80c6 \
   --output output/classroom-stub-review-new
 ```
 
@@ -155,3 +155,28 @@ zero-model desktop notebook-to-submission regression. Existing paid live evidenc
 stays pinned; no new inference is required. Preserve other worktrees and services.
 Wayfare/physical-phone acceptance is explicitly deferred, not an MVP dependency.
 The linked Waypoint chat was notified of ownership and nonoverlap before edits.
+
+
+The phone-dependent Wayfare gate is deferred explicitly. The coordinating chat
+confirmed its mobile pilot is isolated (PR67 merged separately; own local container
+and loopback58771 preserved). No mobile merge is included in this candidate.
+
+Retention repair: a real invocation-owned Restic0.19.1 repository reproduced
+last-snapshot-group refusal. The evaluator now puts its disposable control on the
+same exact course host and selects group-by host, without disabling last-snapshot
+protection. Real backup/delete/check/restore tests preserve the protected snapshot
+and a separate host, and verify the disposable control is removed.
+
+Concurrency repair: a controlled real writer lock held until the other contender's
+unchanged1s SQLite deadline reproduced one winner plus the formerly generic refusal.
+The regression records SQLITE_BUSY and failed on old source. The authority now
+classifies only SQLITE_BUSY as authority_database_busy; other database errors stay
+refused. No timeout increase or automatic retry. The evaluator additionally requires
+no durable loser transaction and fresh stale-plan rejection after winner completion;
+zero/two winners, unknown errors, incomplete recovery and service starts still fail.
+This resolves the demonstrated bounded-contention handling defect; the original
+historical error lacked its cause, so it is not retrospectively labeled proven.
+
+The testing command's grader reference was corrected to the existing immutable
+local image ID required by the evaluator. Final validation follows at a pinned
+candidate; historical outcomes above remain unchanged.

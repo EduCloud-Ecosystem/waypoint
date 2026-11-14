@@ -5,6 +5,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import shutil
 import unittest
 from unittest.mock import Mock, patch
 
@@ -20,6 +21,39 @@ def report():
 
 
 class RetirementAcceptanceTests(unittest.TestCase):
+    @unittest.skipUnless(shutil.which('restic'), 'real Restic is required for protected-retention acceptance')
+    def test_real_retention_keeps_protected_course_and_foreign_host(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory).resolve(); password=root/'password'
+            password.write_text('synthetic-retention-test-only'); password.chmod(0o600)
+            cfg={'repository':str(root/'repository'),'password_file':str(password)}
+            r.restic(cfg,'init')
+            protected=root/'protected'; protected.write_text('retained coursework')
+            foreign=root/'foreign'; foreign.write_text('another course')
+            control=root/'control'; control.write_text('disposable control')
+            def snapshot(path,host,*tags):
+                output=r.restic(cfg,'backup','--json','--host',host,*tags,str(path))
+                return next(json.loads(line)['snapshot_id'] for line in output.splitlines()
+                            if json.loads(line).get('message_type')=='summary')
+            protected_id=snapshot(protected,'synthetic-course','--tag',r.RETIRED_TAG)
+            foreign_id=snapshot(foreign,'foreign-course')
+            r.verify_protected_retention(cfg,'synthetic-course',protected_id,control)
+            rows=json.loads(r.restic(cfg,'snapshots','--json'))
+            self.assertEqual({row['id'] for row in rows},{protected_id,foreign_id})
+            r.restic(cfg,'check','--read-data')
+            r.restic(cfg,'restore',protected_id,'--target',str(root/'restored'),'--verify')
+            restored=list((root/'restored').rglob('protected'))
+            self.assertEqual(len(restored),1)
+            self.assertEqual(restored[0].read_text(),'retained coursework')
+
+    def test_retention_failure_or_missing_protected_snapshot_cannot_pass(self):
+        backup=json.dumps({'message_type':'summary','snapshot_id':'b'*64})
+        for remaining in ([],[{'id':'b'*64}],[{'id':'a'*64},{'id':'b'*64}]):
+            with self.subTest(remaining=remaining), patch.object(r,'restic',side_effect=[backup,'',json.dumps(remaining)]):
+                with self.assertRaises(AssertionError):r.verify_protected_retention({},'synthetic-course','a'*64,Path('control'))
+        with patch.object(r,'restic',side_effect=[backup,RuntimeError('retention refused')]):
+            with self.assertRaises(RuntimeError):r.verify_protected_retention({},'synthetic-course','a'*64,Path('control'))
+
     def test_all_controls_and_cleanup_are_required_and_publication_is_private_exclusive(self):
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory).resolve()
