@@ -21,7 +21,7 @@ notebook review. Every invocation creates a fresh private evidence directory.
 Do not rerun after an uncertain paid outcome until its liability is resolved.
 
 In live mode, the browser first runs execution, grading and receipt controls.
-Then a course-help tab opens with the one prepared NHANES question. No model
+Then a new code cell is added for the prepared question, preserving the completed solution cell, and a course-help tab opens. No model
 request is sent automatically in this mode. The remaining help window is at most
 four minutes and is shortened by the original credential expiry; the terminal
 prints its actual remaining time. The whole invocation is limited to ten minutes.

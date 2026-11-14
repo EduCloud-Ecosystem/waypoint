@@ -128,8 +128,15 @@ class NhanesTutoring:
             return {name: db.execute('SELECT count(*) FROM ' + name).fetchone()[0]
                     for name in ('control_jobs', 'control_attempts')}
 
-    def open_help(self, page):
+    def open_help(self, page, preserve_completed_work=False):
         cell = page.locator('.jp-Notebook .jp-CodeCell').first.locator('.cm-content')
+        original = None
+        if preserve_completed_work:
+            original = cell.inner_text()
+            count = page.locator('.jp-Notebook .jp-CodeCell').count()
+            cell.click(); page.keyboard.press('Escape'); page.keyboard.press('b')
+            expect(page.locator('.jp-Notebook .jp-CodeCell')).to_have_count(count + 1)
+            cell = page.locator('.jp-Notebook .jp-CodeCell').nth(1).locator('.cm-content')
         cell.fill(self.inputs['source']); cell.click()
         with page.context.expect_page() as opened:
             page.get_by_role('button', name='Ask Belay about this code', exact=True).click()
@@ -137,6 +144,8 @@ class NhanesTutoring:
         expect(help_page.locator('#source')).to_have_value(self.inputs['source'])
         expect(help_page.locator('#assignment')).to_contain_text('NHANES')
         help_page.locator('#question').fill(self.inputs['question'])
+        if original is not None:
+            assert page.locator('.jp-Notebook .jp-CodeCell').first.locator('.cm-content').inner_text() == original
         return help_page
 
     def verify(self, page, report):
@@ -190,7 +199,7 @@ class NhanesTutoring:
         report['tutoring_tested'] = True
 
     def review(self, browser, page, seconds):
-        help_page = self.open_help(page)
+        help_page = self.open_help(page, preserve_completed_work=True)
         help_page.locator('#question').evaluate('(el)=>el.readOnly=true')
         help_page.locator('#provider-notice').evaluate("el=>el.textContent='Instructor test: one prepared NHANES question is available through OpenRouter/OpenAI. Use only this supplied example. Saving, submission and grading remain separate.'")
         help_page.bring_to_front()
