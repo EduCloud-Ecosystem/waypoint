@@ -29,6 +29,7 @@ from accessibility import audit, tab_to
 from cairn_journey import Course, port, wait_http
 from submission_handoff import first_submission, verify_receipt_after_restart
 from live_notebook import LiveNotebook
+from operator_review import validate as validate_operator_review, wait_for_review
 
 ROOT = Path(__file__).resolve().parents[1]
 PINS = {'cairn': '0cf3158fdf5bbbecc52d3cc9cd88ef33bdfb63fc',
@@ -61,7 +62,14 @@ def main():
     parser.add_argument('--checkout-image', required=True)
     parser.add_argument('--grader-image', required=True)
     parser.add_argument('--timeout-seconds', type=int, choices=range(60, 901), default=900)
+    parser.add_argument('--operator-review-seconds', type=int, default=0,
+                        help='After controls pass, open a visible local-stub review window (1–120 seconds)')
     args = parser.parse_args()
+    try:
+        validate_operator_review(args.operator_review_seconds, live_portage=args.live_portage,
+                                 env_file=args.env_file, execute_approved=args.execute_approved)
+    except ValueError as error:
+        parser.error(str(error))
     if args.live_portage and not (args.env_file and args.execute_approved):
         parser.error("live mode requires --env-file and --execute-approved: at most 7 calls/USD0.175")
     os.umask(0o077)
@@ -353,6 +361,36 @@ def main():
                 assert live.evidence()['accounting'] == accounting
                 report['passed'].append('expired-disabled-and-submission-add-no-provider-transports')
             report['grade_claim'] = 'No pedagogical grading acceptance; receipt is repository publication only.'
+            if args.operator_review_seconds:
+                # Restore the original hints policy after the disabled-control
+                # check. Do not renew credentials or extend course authorization.
+                private(root / 'profile.json', profile)
+                review_browser = playwright.chromium.launch(headless=False)
+                try:
+                    review_context, _ = course.login(review_browser, 'alice', '/student/login?host=forgejo')
+                    review_page = review_context.new_page()
+                    review_page.goto(notebook_url + '/lab/tree/assignment.ipynb?token=' + jupyter_token)
+                    expect(review_page.get_by_role('button', name='Ask Belay about this code', exact=True)).to_be_visible(timeout=60000)
+                    if review_page.get_by_role('dialog').is_visible(): review_page.keyboard.press('Escape')
+                    review_page.bring_to_front()
+                    review_page.screenshot(path=str(root / 'operator-review-open.png'), full_page=True)
+                    initial = counts()
+                    private(root / 'operator-review.json', {'status': 'open',
+                        'maximum_seconds': args.operator_review_seconds, 'provider': 'local_stub',
+                        'notebook_url': notebook_url, 'course_url': course.url,
+                        'human_acceptance_recorded': False})
+                    print('Synthetic desktop review is open for at most ' + str(args.operator_review_seconds) +
+                          ' seconds. Use only the supplied example. Closing the window ends review.', flush=True)
+                    report['operator_review'] = wait_for_review(review_browser, review_page, args.operator_review_seconds)
+                    report['operator_review'].update(accounting_before=initial, accounting_after=counts(), provider='local_stub')
+                    report['accounting'] = counts()
+                    private(root / 'operator-review.json', dict(report['operator_review'], status='closed'))
+                finally:
+                    try:
+                        if review_browser.is_connected(): review_browser.close()
+                    finally:
+                        private(root / 'operator-review.json', dict(report.get('operator_review',
+                            {'ended_by': 'interrupted', 'human_acceptance_recorded': False}), status='closed'))
             browser.close()
     except Exception as exc:
         report['failed'].append(type(exc).__name__ + ': ' + str(exc)[:600])

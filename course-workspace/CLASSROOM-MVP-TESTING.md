@@ -28,6 +28,30 @@ at1280px/390px without additional paid calls. The unchanged stub journey passed 
 including fresh instructor OAuth login and protected access to the submitted repository.
 The first instructor-read regression failed401 after restart; its evidence is retained.
 
+## Visible desktop review, without model calls
+
+For an operator review, use the zero-model command in the checkpoint and add
+`--operator-review-seconds 120`. It first runs the automated controls, then opens
+an authenticated synthetic learner notebook in a visible Chromium window for at
+most two minutes. Only the supplied example should be used. Choose a cell and
+**Ask Belay about this code**, review the local-stub hint, return to the notebook,
+save, and use **Submit selected saved files** to inspect the explicit Cairn path.
+The fixture already contains one test submission; subsequent changes still need
+explicit confirmation. Tutoring is separate from saving, submission and grading.
+
+This mode refuses `--live-portage`, `--env-file` and `--execute-approved`. It
+restores the original hints policy after the disabled-control check but does not
+renew the credential or course authorization. Expiry can still refuse tutoring;
+saved work remains available during the finite window. Closing the review page
+or browser ends the window early. The runner then closes its own services.
+Keep the terminal running. Use a fresh output directory for every invocation.
+
+`operator-review.json` records the window state and its before/after job counts;
+`result.json` records cleanup. Opening or using the window does not record human
+acceptance, instructional quality, real-student readiness or physical-phone
+acceptance. The exact tested source and current release holds are in the latest
+readiness handoff. This is a local testing session, not an always-on classroom.
+
 ## Compatible branch map
 
 | Component | Candidate/base | Checkout and responsibility |
