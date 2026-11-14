@@ -62,11 +62,11 @@ acceptance. Optional conversation persistence remains disabled in this fixture.
 
 Required dependency checkouts, including unchanged tracked source:
 
-- Cairn `0cf3158fdf5bbbecc52d3cc9cd88ef33bdfb63fc` (draft PR38).
+- Cairn `a3e9b4c4261fc88813ebb541d1881ce16002a6bb` (merged PR39 security patch, includes PR38).
 - Belay-classroom `656d6ec1e4be5f9ef7267f5a2bb5145a90238dfe` (draft PR7, stacked).
 - This Waypoint branch; use the exact reviewed commit from the handoff.
 
-Tools used locally: CPython 3.12.13, uv 0.11.16, Go 1.26.4, Node 26.7.0,
+Tools used locally: CPython 3.12.13, uv 0.11.16, Go 1.26.11 for the current Cairn rebuild (historical runs used 1.26.4), Node 26.7.0,
 Docker 29.8.2 on macOS arm64. The complete presenter dependency lock is adjacent
 to the rehearsal. Belay's complete dependency lock is in its pinned checkout.
 Cairn uses its pinned Go modules and dashboard npm lock.

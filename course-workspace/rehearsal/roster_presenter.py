@@ -32,7 +32,7 @@ from live_notebook import LiveNotebook
 from operator_review import validate as validate_operator_review, wait_for_review
 
 ROOT = Path(__file__).resolve().parents[1]
-PINS = {'cairn': '0cf3158fdf5bbbecc52d3cc9cd88ef33bdfb63fc',
+PINS = {'cairn': 'a3e9b4c4261fc88813ebb541d1881ce16002a6bb',
         'belay': '656d6ec1e4be5f9ef7267f5a2bb5145a90238dfe'}
 SOURCE = "print('ok')\n"
 

@@ -35,7 +35,7 @@ From this checkout, use a fresh output path:
 ```sh
 cd /Users/gregchism/.codex/worktrees/classroom-live-notebook/waypoint
 .venv/bin/python course-workspace/rehearsal/roster_presenter.py \
-  --cairn /Users/gregchism/dev/.educloud-worktrees/cairn-classroom-enrollment-export-v1 \
+  --cairn /Users/gregchism/.codex/worktrees/cairn-go-security-ci/cairn \
   --belay /Users/gregchism/dev/.educloud-worktrees/belay-classroom-enrollment-authority-v1 \
   --checkout-image sha256:bc9bc6929aafd69d37158bbd273a11818a2b222539242949d5d3c3066d02db8c \
   --grader-image sha256:726d304906fa5eb468e5531e366548d1903286352f5adb54ef508ac01fbd80c6 \
@@ -73,7 +73,7 @@ readiness handoff. This is a local testing session, not an always-on classroom.
 | Waypoint | `codex/classroom-live-notebook-v1`, base `3ec286f5d41e857622d9b24f23b3c31e6f248605` | `/Users/gregchism/.codex/worktrees/classroom-live-notebook/waypoint`; notebook integration, launch, browser acceptance. PR66 targets main and includes PR59; merge/release state is recorded in the current handoff. |
 | Portage | `codex/classroom-live-tutoring-v1`, `0653fd94fe86acf235a74f72a1ff4af6aa2fa1b9` | `/Users/gregchism/.codex/worktrees/classroom-live-tutoring/portage`; bounded provider route and ledger. PR17 merged as2c9031dcf3a016b355c861e0a3c6398b234022de; paid review remains separate. |
 | Belay-classroom | `codex/system-one-classroom-consumer-v1`, `c5a27073e74b9eeb7ab697190915378b50132883` | `/Users/gregchism/dev/.educloud-worktrees/belay-classroom-system-one-consumer-v1`; unchanged authenticated jobs, governance, SDK, accounting. PR8 merged as979d7fbbd55021beeae768f151bfd80462243d82, including PR5–7. |
-| Cairn | `codex/classroom-enrollment-export-v1`, `0cf3158fdf5bbbecc52d3cc9cd88ef33bdfb63fc` | `/Users/gregchism/dev/.educloud-worktrees/cairn-classroom-enrollment-export-v1`; unchanged roster exporter, repository publication and instructor authority. PR38 merged asfc038eb93cba16fe8265718e8472aca6f9ecf2d9. |
+| Cairn | `codex/cairn-go-security-ci`, `a3e9b4c4261fc88813ebb541d1881ce16002a6bb` | `/Users/gregchism/.codex/worktrees/cairn-go-security-ci/cairn`; unchanged roster exporter, repository publication and instructor authority; Go1.26.11 security patch. PR38 merged asfc038eb93cba16fe8265718e8472aca6f9ecf2d9; PR39 merged asd28f7e48cd905cf18e08331572a6d467347ebd58. |
 
 Original Belay is untouched. Outfitter is not required for this local MVP; its
 native Jetstream2 qualification remains separate. The separate mobile IDE work was merged independently through PR67.
@@ -85,7 +85,7 @@ incorporation remain deferred. Dependency source merges are not a deployment.
 Prepare the exact checkouts and hash-locked environments using
 [ROSTER-PRESENTER.md](ROSTER-PRESENTER.md). The new adapter is standard-library-only;
 it adds no dependencies. The tested tools are Python3.12.13, uv0.11.16,
-Go1.26.4, Node26.7.0, Docker client29.5.3/server29.8.2, Chromium153.0.8010.12,
+Go1.26.4 for historical evidence (current Cairn rebuild requires Go1.26.11), Node26.7.0, Docker client29.5.3/server29.8.2, Chromium153.0.8010.12,
 macOS arm64. Installed package inventories and lock hashes accompany private
 evidence. Live cost/model observations are dated evidence, not future guarantees.
 
