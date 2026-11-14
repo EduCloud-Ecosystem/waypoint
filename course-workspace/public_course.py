@@ -63,7 +63,15 @@ server {{
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection $educloud_connection;
         proxy_buffering off;
+        # Report an unreachable/stopped Hub within the operator's finite probe.
+        # This bounds connection establishment, not active notebook/WebSocket IO.
+        proxy_connect_timeout 5s;
+        proxy_next_upstream off;
+        error_page 502 504 =503 @workspace_unavailable;
         proxy_read_timeout 3600s;
+    }}
+    location @workspace_unavailable {{
+        return 503;
     }}
 }}
 '''

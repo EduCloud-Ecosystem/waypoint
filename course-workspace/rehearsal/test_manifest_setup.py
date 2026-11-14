@@ -11,13 +11,18 @@ from course_manifest import ManifestError
 
 
 class ManifestSetupTests(unittest.TestCase):
-    def fixture(self, root):
+    def fixture(self, root, *, ready=False):
+        root = root.resolve()
+        root.mkdir(parents=True, exist_ok=True)
         book = Notebook(root)
         book.homes = root / 'homes'
         book.homes.mkdir()
         book.env = {'WORKSPACE_PORT': '18000', 'WORKSPACE_OIDC_CLIENT_SECRET': 'synthetic-oidc-secret'}
         with patch('notebook.run', side_effect=['sha256:' + 'a' * 64, 'sha256:' + 'b' * 64]):
             book.render_setup()
+        if ready:
+            book.mounted = True; book._startup_complete = True
+            book.report.append('course-manifest-startup-preflight')
         return book
 
     def test_preloaded_image_pair_skips_build_and_mutually_exclusive_modes_refuse(self):
@@ -36,6 +41,46 @@ class ManifestSetupTests(unittest.TestCase):
             default.compose = Mock()
             default.prepare_images()
             default.compose.assert_called_once_with('--profile', 'build', 'build')
+
+    def test_peer_reuses_frozen_image_pair_without_build_or_identity_change(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            source = self.fixture(root, ready=True)
+            peer = Notebook(root / 'peer', domain='two.rehearsal.test', auth_domain='authtwo.rehearsal.test')
+            original = (peer.instance, peer.original_dns, peer.origin, peer.auth, peer.root)
+            peer.compose = Mock()
+            peer.reuse_images_from(source)
+            peer.prepare_images()
+            peer.compose.assert_not_called()
+            self.assertEqual((peer.requested_hub_image, peer.image), (source.hub_image, source.image))
+            self.assertEqual((peer.instance, peer.original_dns, peer.origin, peer.auth, peer.root), original)
+
+    def test_peer_refuses_changed_or_mutable_source_images_before_selecting(self):
+        for case in ('manifest', 'mismatch', 'mutable'):
+            with self.subTest(case=case), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory).resolve(); source = self.fixture(root, ready=True); peer = Notebook(root / 'peer')
+                if case == 'manifest': source.manifest_path.write_text('{}')
+                elif case == 'mismatch': source.image = 'sha256:'+'c'*64
+                else:
+                    source.image = source.manifest['images']['course'] = 'course:latest'
+                    source.manifest_path.write_text(json.dumps(source.manifest))
+                    source.freeze_manifest()
+                with self.assertRaises((AssertionError, ValueError)): peer.reuse_images_from(source)
+                self.assertIsNone(peer.requested_hub_image)
+                self.assertEqual(peer.image, 'educloud-python-r:2026-10-06')
+
+    def test_peer_refuses_started_or_explicit_image_selection(self):
+        for case in ('mounted', 'env', 'explicit', 'canary'):
+            with self.subTest(case=case), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory); peer = Notebook(root)
+                if case == 'mounted': peer.mounted = True
+                elif case == 'env': peer.env = {}
+                elif case == 'explicit': peer.requested_hub_image = 'sha256:'+'a'*64
+                else: peer.synthetic_candidate_images = True
+                source = self.fixture(root / 'source', ready=True)
+                source.verify_manifest_frozen = Mock()
+                with self.assertRaises(ValueError): peer.reuse_images_from(source)
+                source.verify_manifest_frozen.assert_not_called()
 
     def test_synthetic_candidate_uses_exact_parent_and_is_distinct(self):
         with tempfile.TemporaryDirectory() as directory:
