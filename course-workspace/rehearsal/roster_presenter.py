@@ -46,6 +46,25 @@ def private(path, value):
         stream.write(raw)
 
 
+def select_python_kernel(page, root, prefix):
+    dialog = page.get_by_role('dialog')
+    try:
+        dialog.wait_for(state='visible', timeout=5000)
+    except BrowserTimeout:
+        pass
+    else:
+        private(root / (prefix + '-dialog.txt'), dialog.inner_text())
+        options = dialog.locator('select').evaluate_all("nodes => nodes.map(n => Array.from(n.options).map(o => ({value:o.value,label:o.label,text:o.text})))")
+        private(root / (prefix + '-kernel-options.json'), options)
+        choices = [(i, o['value']) for i, values in enumerate(options) for o in values
+                   if o['label'].strip() == 'Python 3 (ipykernel)' or o['text'].strip() == 'Python 3 (ipykernel)']
+        if len(choices) != 1: raise ValueError('expected one pinned Python kernel choice')
+        dialog.locator('select').nth(choices[0][0]).select_option(value=choices[0][1])
+        private(root / (prefix + '-kernel-buttons.json'), dialog.locator('button').evaluate_all("nodes => nodes.map(n => ({text:n.textContent,label:n.getAttribute('aria-label'),title:n.title}))"))
+        dialog.locator('button').filter(has_text='Select').click()
+        expect(dialog).not_to_be_visible()
+
+
 def command(args, *, env=None, cwd=None):
     return subprocess.check_output([str(x) for x in args], env=env, cwd=cwd,
                                    stderr=subprocess.STDOUT, text=True, timeout=90).strip()
@@ -238,22 +257,7 @@ def main():
             expect(notebook_page.get_by_role('button', name='Ask Belay about this code', exact=True)).to_be_visible(timeout=60000)
             # Execute only the supplied synthetic cell in the pinned local
             # Python kernel. Worker-isolation/Python-R acceptance stays separate.
-            dialog = notebook_page.get_by_role('dialog')
-            try:
-                dialog.wait_for(state='visible', timeout=5000)
-            except BrowserTimeout:
-                pass
-            else:
-                private(root / 'notebook-dialog.txt', dialog.inner_text())
-                options = dialog.locator('select').evaluate_all("nodes => nodes.map(n => Array.from(n.options).map(o => ({value:o.value,label:o.label,text:o.text})))")
-                private(root / 'kernel-options.json', options)
-                choices = [(i, o['value']) for i, values in enumerate(options) for o in values
-                           if o['label'].strip() == 'Python 3 (ipykernel)' or o['text'].strip() == 'Python 3 (ipykernel)']
-                if len(choices) != 1: raise ValueError('expected one pinned Python kernel choice')
-                dialog.locator('select').nth(choices[0][0]).select_option(value=choices[0][1])
-                private(root / 'kernel-buttons.json', dialog.locator('button').evaluate_all("nodes => nodes.map(n => ({text:n.textContent,label:n.getAttribute('aria-label'),title:n.title}))"))
-                dialog.locator('button').filter(has_text='Select').click()
-                expect(dialog).not_to_be_visible()
+            select_python_kernel(notebook_page, root, 'notebook')
             cell = notebook_page.locator('.jp-Notebook .jp-CodeCell').first
             expect(cell.locator('.cm-content')).to_have_text(SOURCE.strip(), timeout=30000)
             expect(notebook_page.get_by_role('button', name='Python 3 (ipykernel) | Idle', exact=True)).to_be_visible(timeout=60000)
@@ -401,9 +405,8 @@ def main():
                     review_page = review_context.new_page()
                     review_page.goto(notebook_url + '/lab/tree/assignment.ipynb?token=' + jupyter_token)
                     expect(review_page.get_by_role('button', name='Ask Belay about this code', exact=True)).to_be_visible(timeout=60000)
-                    if review_page.get_by_role('dialog').is_visible():
-                        review_page.get_by_role('dialog').get_by_role('combobox').select_option(label='Python 3 (ipykernel)')
-                        review_page.get_by_role('dialog').get_by_role('button', name='Select', exact=True).click()
+                    select_python_kernel(review_page, root, 'operator')
+                    expect(review_page.get_by_role('button', name='Python 3 (ipykernel) | Idle', exact=True)).to_be_visible(timeout=60000)
                     review_page.bring_to_front()
                     review_page.screenshot(path=str(root / 'operator-review-open.png'), full_page=True)
                     initial = counts()
