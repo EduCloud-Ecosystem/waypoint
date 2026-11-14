@@ -1,0 +1,37 @@
+{
+  "created_at": "2026-11-14T17:22:48.972424+00:00",
+  "base": "946f11bf0e64b7230b92631607e88e7c2dc4d4db",
+  "branch": "codex/waypoint-runtime-release",
+  "maximum_targeted_runtime_attempts": 3,
+  "total_runtime_budget_seconds": 2700,
+  "attempts_started": 1,
+  "scope": "Synthetic loopback CHP5.1.0 failure-layer control and secure WebSocket probe regression; no student deployment",
+  "hypotheses": [
+    "Pinned CHP emits503 on upstream refused WebSocket; fixed-category diagnostics recognize actual output and distinguish explicit upstream HTTP503",
+    "Existing kernel probe leaves https URL unchanged; convert structurally to wss preserving host/path"
+  ],
+  "excluded": [
+    "full already-green runtime suites",
+    "private data",
+    "paid inference",
+    "cloud provisioning",
+    "deployment",
+    "mobile",
+    "large Rocker image pulls"
+  ],
+  "stop": "Stop on first unexpected result, retain failure, inspect before any separately justified next attempt; never retry mutation or weaken authority/timeouts",
+  "rocker": "Manifest and official source review only; no runtime compatibility claim",
+  "runtime_window_started_at": "2026-11-14T17:25:24.525858+00:00",
+  "attempts": [
+    {
+      "number": 1,
+      "hypothesis": "Actual pinned CHP distinguishes refused upstream from application503; TLS wss probe succeeds",
+      "directory": "attempt-001",
+      "maximum_seconds": 120,
+      "status": "PASS"
+    }
+  ],
+  "runtime_elapsed_seconds": 0.354,
+  "closed_at": "2026-11-14T17:28:47.351641+00:00",
+  "stop_reason": "Targeted control passed; no evidence justifies a full notebook rerun or second runtime attempt."
+}
