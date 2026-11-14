@@ -1,0 +1,24 @@
+# INFO 511 NHANES live classroom preparation
+
+User request: finish NHANES testing, repair failures, then integrate live tutoring for a complete local instructor test. Student deployment, AWS provisioning, real learner data and mobile are excluded.
+
+## Ownership and reuse
+
+Waypoint live stage: `codex/nhanes-live-tutoring` in the former runtime-release checkout, based on `96cc2b8c1922f06bb28933908d426a2efa849599`. The active Waypoint chat owns the isolated no-AI NHANES helper and Cairn grading-handoff repair until it commits and hands off. Preserve its failed attempt. Reuse its accepted commit only after review. Root owns live adapter, its focused tests and a finite instructor launcher. Belay-classroom `c5a27073e74b9eeb7ab697190915378b50132883` and Portage `0653fd94fe86acf235a74f72a1ff4af6aa2fa1b9` remain read-only; Cairn's repaired exact pin will be recorded before runtime. No original Belay or mobile changes.
+
+Reuse the actual Cairn roster exporter and assignment digest, signed synthetic identity, existing Jupyter Belay extension, Belay authenticated jobs and planner/reasoner/evaluator, finite Portage NotebookGuard, four-file saved submission and exact receipts. Existing echo and no-AI routes retain their behavior. Add an explicit source-authored NHANES tutoring profile from the existing approved-notebook-turn.json and datascience exercise; never accept a browser request as its own authorization. No second provider, reservation, roster or grading authority.
+
+## Finite scope and acceptance before implementation
+
+1. Finish independent no-AI NHANES qualification with correct 192-row output, incorrect-output grading, changed-after-preview refusal, saved bytes, receipt recovery and cleanup. No live transport before the repaired no-AI handoff.
+2. Verify the actual NHANES Belay orchestration offline against Portage, including refused altered context and existing echo compatibility. Pin source and complete environments; retain all failed checks.
+3. One fresh live synthetic qualification window only: maximum seven sequential external transport requests, 600 seconds (shortened by original course/credential expiry), USD 0.175 total reservation and USD 0.025 per request; 16384 request-token ceiling and at most 800 output tokens. No SDK/HTTP retry, automatic resume or replacement paid run after failure. Stop on unknown liability and preserve the existing historical USD 0.025 hold. Use the protected existing key, never expose it.
+4. Only the source-authored public/synthetic NHANES turn and resulting bounded tutor state may leave the machine. Before execution, refresh existing provider endpoint/pricing checks. No operator answers, learner files or arbitrary edited text are silently admitted upstream.
+5. Verify actual selected notebook code -> signed Belay job -> Portage transport -> displayed hint -> saved four-file submission -> exact receipt. Refusal/expiry/disabled controls add no provider requests; no-AI completion remains available. Tutor self-evaluation does not establish instructional acceptance.
+6. Provide a finite local instructor launch/stop command and visible task UI with inference disclosure, time/cost boundaries, tested dependency identities and retained logs. A new human live window requires a deliberate fresh invocation; no background restart or standing endpoint. Do not relax the existing stub review guard to enable paid calls; use an explicitly live NHANES entry point.
+
+Permitted initial edits: `course-workspace/rehearsal/live_notebook.py`, its focused contract/tests, a new NHANES tutoring helper/launcher and documentation. Changes to the no-AI helper require its owner's committed handoff first. Any necessary application change follows the component boundary and receives focused regression checks.
+
+## Current issue
+
+The first no-AI journey produced 192 rows and published the wrong-output control, but Cairn refused grading because the saved-file handoff emitted a legacy job payload. The active Waypoint chat owns the narrow Cairn producer repair and single justified correction run. Its failure is not a tutor or R defect and must remain visible.
