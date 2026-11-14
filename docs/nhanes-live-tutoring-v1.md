@@ -22,3 +22,9 @@ Permitted initial edits: `course-workspace/rehearsal/live_notebook.py`, its focu
 ## Current issue
 
 The first no-AI journey produced 192 rows and published the wrong-output control, but Cairn refused grading because the saved-file handoff emitted a legacy job payload. The active Waypoint chat owns the narrow Cairn producer repair and single justified correction run. Its failure is not a tutor or R defect and must remain visible.
+
+## Pre-live profile adjustment from offline evidence
+
+The actual NHANES offline orchestration fit only a minimal placeholder plan: reasoner reservation 16,356 against the inherited 16,384 byte-conservative token ceiling. A normal six-field planner reply needs more room. No paid request has occurred. Prepare a separate Portage NHANES guard/manifest with a 24,576 request ceiling and 7 x 24,576 project allowance; keep USD0.175 total, seven transports, USD0.025 each, 800 output tokens, expiry and unknown-liability stops unchanged. Preserve the echo guard/manifest unchanged. Test realistic bounded plan/critique fields, over-limit refusal and changed-context refusal before live admission. This is an explicit course-context preparation change, not a retry or silent relaxation after a paid failure.
+
+Additional ownership: root owns isolated Portage `codex/nhanes-live-tutoring-v1`, only `notebook_adapter.py`, focused tests and its specification. LiveNotebook will explicitly select the NHANES class/manifest/project; callers cannot supply arbitrary profiles. No model/provider selection change.
