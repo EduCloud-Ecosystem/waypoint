@@ -15,7 +15,7 @@ portage=/Users/gregchism/.codex/worktrees/classroom-live-tutoring/portage
 keyfile=/Users/gregchism/dev/.educloud-worktrees/portage-system-one-shadow-pilot-v1/.qualification/openrouter/.env
 [[ -x "$driver" && -x "$kernel" && -d "$cairn" && -d "$belay" && -d "$portage" ]] || { print -u2 'A qualified local checkout or environment is missing. See NHANES-LIVE-TESTING.md.'; exit 1; }
 [[ -z "$(git status --porcelain --untracked-files=no)" ]] || { print -u2 'Commit the Waypoint source before starting a qualified window.'; exit 1; }
-[[ "$(git -C "$cairn" rev-parse HEAD)" == 2eb0a0415f791f7d53734d5909a3a3d7454e34f0 && "$(git -C "$belay" rev-parse HEAD)" == c5a27073e74b9eeb7ab697190915378b50132883 && "$(git -C "$portage" rev-parse HEAD)" == e79e21934caa62365e9992c4b9016afcaa74f088 ]] || { print -u2 'A component source pin changed; requalify before running.'; exit 1; }
+[[ "$(git -C "$cairn" rev-parse HEAD)" == 2eb0a0415f791f7d53734d5909a3a3d7454e34f0 && "$(git -C "$belay" rev-parse HEAD)" == c5a27073e74b9eeb7ab697190915378b50132883 && "$(git -C "$portage" rev-parse HEAD)" == b72881f009e61e1311b6e46b92b42841991fd163 ]] || { print -u2 'A component source pin changed; requalify before running.'; exit 1; }
 if [[ "$mode" == --live || "$mode" == --check ]]; then
   [[ -f "$keyfile" && "$(stat -f %Lp "$keyfile")" == 600 ]] || { print -u2 'The existing private provider key file is missing or has incorrect permissions.'; exit 1; }
 fi

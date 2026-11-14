@@ -15,7 +15,7 @@ from cairn_journey import port, wait_http
 from live_notebook import LiveNotebook, notebook_inputs
 from roster_presenter import private, command
 
-PORTAGE_PIN = 'e79e21934caa62365e9992c4b9016afcaa74f088'
+PORTAGE_PIN = 'b72881f009e61e1311b6e46b92b42841991fd163'
 
 
 def validate_tutoring(mode, portage, env_file, approved, review_seconds):

@@ -55,7 +55,7 @@ self-evaluation is not instructional acceptance. No-AI completion remains availa
 `NHANES-DESKTOP-TESTING.md` records the fixed Cairn/Belay sources, driver and
 hash-locked kernel environment, grader/checkout images, dataset/checker binding,
 and prior failed no-AI attempts. The live launcher additionally checks Portage
-`e79e21934caa62365e9992c4b9016afcaa74f088`. Runtime records the exact Waypoint source,
+`b72881f009e61e1311b6e46b92b42841991fd163`. Runtime records the exact Waypoint source,
 images, actual kernel packages and file hashes. The provider catalog is rechecked
 before live admission, so a changed price/endpoint can refuse a fresh window.
 
