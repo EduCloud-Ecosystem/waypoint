@@ -255,8 +255,15 @@ def main():
                 dialog.locator('button').filter(has_text='Select').click()
                 expect(dialog).not_to_be_visible()
             cell = notebook_page.locator('.jp-Notebook .jp-CodeCell').first
-            cell.click(); notebook_page.keyboard.press('Shift+Enter')
-            expect(cell.locator('.jp-OutputArea-output')).to_have_text('ok', timeout=60000)
+            expect(cell.locator('.cm-content')).to_have_text(SOURCE.strip(), timeout=30000)
+            expect(notebook_page.get_by_role('button', name='Python 3 (ipykernel) | Idle', exact=True)).to_be_visible(timeout=60000)
+            cell.locator('.cm-content').click()
+            notebook_page.get_by_role('button', name='Run this cell and advance (⇧ ⏎)', exact=True).click()
+            try:
+                expect(cell.locator('.jp-OutputArea-output')).to_have_text('ok', timeout=60000)
+            finally:
+                private(root / 'python-cell-state.txt', cell.inner_text())
+                notebook_page.screenshot(path=str(root / 'python-cell-observed.png'), full_page=True)
             notebook_page.screenshot(path=str(root / 'python-cell-executed.png'), full_page=True)
             report['passed'].append('native-jupyter-python-cell-executed')
             report['local_kernel'] = {'python': sys.version.split()[0], 'executable': sys.executable,
