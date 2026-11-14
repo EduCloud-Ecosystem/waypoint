@@ -202,3 +202,35 @@ behavior. One fresh CI run can gather this evidence; do not replay kernel POSTs,
 raise timeout/resource limits, ignore503, or claim a runtime fix from diagnostics.
 All existing evidence remains in output/classroom-reliability-v1. Mobile is deferred
 and its other chat's live container remains untouched.
+
+### Retired gateway connection bound
+
+At57fc8b2, full CI retirement stopped the course successfully but timed out
+on its old-session HTTPS probe before reaching the repaired retention check.
+The generated proxy left connection establishment at nginx's60-second default,
+longer than the evaluator's unchanged15-second deadline. A controlled stalled
+TCP accept queue reproduced client timeout using the old generated policy.
+The new generated policy bounds upstream connection establishment at5seconds,
+disables upstream replay and maps gateway connection failures to503 through a
+local named location. It preserves the3600-second established read timeout and
+does not intercept upstream authentication errors.
+
+Official semantics: [nginx proxy_connect_timeout](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_connect_timeout)
+and [error_page](https://nginx.org/en/docs/http/ngx_http_core_module.html#error_page).
+This reproduces and fixes the missing connection bound; the historical timeout
+trace alone does not prove precisely which network operation stalled in CI.
+
+A reproducible local nginx control is in
+`course-workspace/rehearsal/verify_proxy_offline.py`. Run it with an immutable
+local Python image and a fresh output path; select `--control blocked`, `slow`
+or `forbidden`. No models, classroom content, external network, or host port
+are used. Only its invocation-owned containers/network are removed.
+The old rendered config failed with TimeoutError after10.507seconds. Final
+controls passed: blocked connection503 in5.729seconds, slow successful200 in
+6.538seconds, upstream403 preserved in0.996seconds, all cleanup verified.
+The first control attempt failed because an internal Docker network did not
+publish a host port; the probe now runs inside that same private network.
+A slow-control startup failure was retained; the synthetic HTTP server no longer
+performs reverse-DNS lookup on the intentionally isolated network. These setup
+failures are not counted as proxy acceptance passes.
+The15-second retirement probe and its502/503 requirement are unchanged.
