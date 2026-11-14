@@ -88,6 +88,16 @@ Private evidence is under `output/nhanes-qualification-v1/`:
 The classroom coordinator explicitly amended the original two-attempt limit
 for exactly one additional no-AI attempt, capped at10minutes, to test that
 identified fresh-login correction. History/counts are not reset; unexpected
-failure stops the extension. No third result is claimed by this source checkpoint.
-The original45minute runtime ceiling remains in force. Root owns the later,
+failure stops the extension. `attempt-003` passed in 72.39 seconds on clean
+Waypoint `fa763d8bd4de950e59c16c3ecfe348df16b10c14` and Cairn `2eb0a04`:
+native output192, incorrectCSV0/4, correctCSV4/4, exact four-file receipt,
+changed-preview refusal and receipt readback after restart with fresh OAuth.
+Cleanup passed; independent process/container inspection found no remaining
+owned kernel or fixture service. Both notebook and receipt screenshots were
+visually inspected. No provider transport occurred.
+
+The three attempts consumed 297.35 seconds of runtime in total. The amended
+budget is closed; the earlier failures remain retained. This is automated
+synthetic qualification, not human acceptance or hosted deployment. The optional
+human review window was not exercised. The classroom chat owns the later,
 separately authorized live-tutoring qualification and its accounting limits.
