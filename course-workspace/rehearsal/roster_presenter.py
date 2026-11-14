@@ -238,13 +238,21 @@ def main():
             expect(notebook_page.get_by_role('button', name='Ask Belay about this code', exact=True)).to_be_visible(timeout=60000)
             # Execute only the supplied synthetic cell in the pinned local
             # Python kernel. Worker-isolation/Python-R acceptance stays separate.
+            dialog = notebook_page.get_by_role('dialog')
             try:
-                notebook_page.get_by_role('dialog').wait_for(state='visible', timeout=5000)
-                private(root / 'notebook-dialog.txt', notebook_page.get_by_role('dialog').inner_text())
-                notebook_page.get_by_role('dialog').get_by_role('combobox').select_option(label='Python 3 (ipykernel)')
-                notebook_page.get_by_role('dialog').get_by_role('button', name='Select', exact=True).click()
+                dialog.wait_for(state='visible', timeout=5000)
             except BrowserTimeout:
                 pass
+            else:
+                private(root / 'notebook-dialog.txt', dialog.inner_text())
+                options = dialog.locator('select').evaluate_all("nodes => nodes.map(n => Array.from(n.options).map(o => ({value:o.value,label:o.label,text:o.text})))")
+                private(root / 'kernel-options.json', options)
+                choices = [(i, o['value']) for i, values in enumerate(options) for o in values
+                           if o['label'].strip() == 'Python 3 (ipykernel)' or o['text'].strip() == 'Python 3 (ipykernel)']
+                if len(choices) != 1: raise ValueError('expected one pinned Python kernel choice')
+                dialog.locator('select').nth(choices[0][0]).select_option(value=choices[0][1])
+                dialog.get_by_role('button', name='Select', exact=True).click()
+                expect(dialog).not_to_be_visible()
             cell = notebook_page.locator('.jp-Notebook .jp-CodeCell').first
             cell.click(); notebook_page.keyboard.press('Shift+Enter')
             expect(cell.locator('.jp-OutputArea-output')).to_have_text('ok', timeout=60000)
