@@ -177,7 +177,7 @@ class NhanesTutoring:
         help_page.get_by_role('button', name='Continue without AI', exact=True).click()
         help_page.close()
         private(self.root / 'profile.json', self.profile)
-        text = ('Automated synthetic instructor test: requested one ' + ('live' if self.live else 'local-stub') +
+        text = ('Task version: info511-nhanes-wrangling-v1\nDeclaration: ai_assisted\nSummary: Automated synthetic instructor test: requested one ' + ('live' if self.live else 'local-stub') +
                 ' Belay hint about missing readings versus missing BPXO records. '
                 'The supplied operator-authored solution remains a test fixture, not learner authorship. '
                 'Saving, submission and grading used separate explicit controls. Human review of the hint remains pending.\n')

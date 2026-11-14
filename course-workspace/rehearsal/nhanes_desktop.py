@@ -229,7 +229,7 @@ def main():
                 if args.live_review_seconds:
                     report['live_review'] = tutor.review(browser, page, args.live_review_seconds)
             finally:browser.close()
-    except Exception as exc:
+    except (Exception, KeyboardInterrupt) as exc:
         report['failed'].append(type(exc).__name__+': '+str(exc)[:500]);private(root/'failure.txt',traceback.format_exc())
     finally:
         signal.alarm(0)
