@@ -8,7 +8,7 @@ from pathlib import Path
 import time
 import subprocess
 import uuid
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, urlunsplit
 
 import requests
 import websocket
@@ -49,11 +49,20 @@ def login(base, username, password):
     raise RuntimeError(f'{username}: workspace did not become ready')
 
 
+def websocket_url(url):
+    """Keep the origin/path intact and preserve TLS for hosted kernel probes."""
+    parts = urlsplit(url)
+    scheme = {'http': 'ws', 'https': 'wss'}.get(parts.scheme)
+    if scheme is None or not parts.hostname or parts.username is not None or parts.fragment:
+        raise ValueError('kernel_websocket_url_invalid')
+    return urlunsplit((scheme, parts.netloc, parts.path, parts.query, ''))
+
+
 def kernel(session, base, username, name, code):
     url = f'{base}/user/{username}/api/kernels'
     response = change(session, 'POST', url, json={'name':name}); response.raise_for_status()
     kid = response.json()['id']
-    wsurl = url.replace('http://', 'ws://') + '/' + kid + '/channels'
+    wsurl = websocket_url(url + '/' + kid + '/channels')
     cookie = session.prepare_request(requests.Request('GET', url)).headers.get('Cookie', '')
     connection = websocket.create_connection(wsurl, cookie=cookie, origin=base, timeout=30)
     msg_id = uuid.uuid4().hex
