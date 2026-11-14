@@ -25,6 +25,7 @@ from classroom_transfer import submit_info511_attempt
 from roster_presenter import select_python_kernel, private, command
 from submission_handoff import verify_receipt_after_restart
 from operator_review import wait_for_review, validate
+from nhanes_tutoring import NhanesTutoring, validate_tutoring
 from playwright.sync_api import sync_playwright, expect
 
 PINS = {'cairn': '2eb0a0415f791f7d53734d5909a3a3d7454e34f0',
@@ -51,17 +52,30 @@ def main():
     for name in ('grader-image', 'checkout-image'):
         parser.add_argument('--' + name, required=True)
     parser.add_argument('--operator-review-seconds', type=int, default=0)
+    parser.add_argument('--tutor-mode', choices=('none', 'stub', 'live'), default='none')
+    parser.add_argument('--live-portage', type=Path)
+    parser.add_argument('--env-file', type=Path)
+    parser.add_argument('--execute-approved', action='store_true')
+    parser.add_argument('--live-review-seconds', type=int, default=0,
+                        help='After no-AI controls, open one prepared live hint for at most 240 seconds')
     parser.add_argument('--execute-synthetic', action='store_true')
     args = parser.parse_args()
     if not args.execute_synthetic: parser.error('explicit synthetic execution required')
     args.kernel_python = args.kernel_python.absolute()  # Preserve the venv symlink path.
-    validate(args.operator_review_seconds)
+    validate(args.operator_review_seconds, live_portage=args.live_portage,
+             env_file=args.env_file, execute_approved=args.execute_approved)
+    validate_tutoring(args.tutor_mode, args.live_portage, args.env_file,
+                      args.execute_approved, args.live_review_seconds)
+    for name in ('cairn', 'belay', 'live_portage', 'env_file'):
+        if getattr(args, name) is not None: setattr(args, name, getattr(args, name).resolve())
     os.umask(0o077)
     root = args.output.resolve(); root.mkdir(mode=0o700)
     report = {'scope': 'synthetic-local-NHANES-no-AI-native-notebook-submission',
         'real_students': False, 'institutional_sso': False, 'human_acceptance': False,
         'model_transports': 0, 'tutoring_tested': False, 'passed': [], 'failed': [], 'cleanup': False}
-    processes = []; logs = []; course = None; started = time.monotonic()
+    processes = []; logs = []; course = None; tutor = None; started = time.monotonic()
+    if args.tutor_mode != 'none':
+        report['scope'] = 'synthetic-local-NHANES-' + args.tutor_mode + '-notebook-submission'
     def expired(*_): raise TimeoutError('finite native journey deadline')
     signal.signal(signal.SIGALRM, expired); signal.alarm(600)
     def launch(name, argv, env):
@@ -109,7 +123,7 @@ def main():
                       template_files=policy,checkout_image=args.checkout_image)
         clean={k:os.environ[k] for k in ('PATH','HOME','LANG','DOCKER_HOST','DOCKER_CONTEXT') if k in os.environ}
         with sync_playwright() as pw:
-            browser=pw.chromium.launch(headless=not bool(args.operator_review_seconds))
+            browser=pw.chromium.launch(headless=not bool(args.operator_review_seconds or args.live_review_seconds))
             try:
                 revision=course.start();teacher,_=course.login(browser,'teacher','/auth/login')
                 cid=req(course,teacher,'POST','/classrooms',{'name':'Disposable NHANES synthetic qualification',
@@ -125,17 +139,24 @@ def main():
                 item=active_work(course,alice,profile=NHANES);peer=active_work(course,bob,profile=NHANES)
                 report['binding']={'assignment_id':aid,'classroom_id':cid,'template_commit':revision,
                                    'kind':'disposable-synthetic-only','profile':'nhanes-v1'}
+                if args.tutor_mode != 'none':
+                    tutor = NhanesTutoring(args, root, course, cid, aid, clean, launch, notebook_url, NHANES)
                 data=root/'jupyter-data';ext=data/'labextensions/@educloud';ext.mkdir(parents=True)
                 shutil.copytree(ROOT/'course/labextension',ext/'waypoint-cairn')
+                if tutor:
+                    shutil.copytree(ROOT/'course/labextension-belay', ext/'waypoint-belay')
                 kernels=data/'kernels/python3';kernels.mkdir(parents=True)
                 private(kernels/'kernel.json',{'argv':[str(args.kernel_python),'-m','ipykernel_launcher','-f','{connection_file}'],
                     'display_name':'Python 3 (ipykernel)','language':'python'})
                 config=root/'jupyter-config';config.mkdir()
-                private(config/'jupyter_server_config.json',{'ServerApp':{'jpserver_extensions':{'waypoint_cairn':True}}})
+                extensions = {'waypoint_cairn': True}
+                if tutor: extensions['waypoint_belay'] = True
+                private(config/'jupyter_server_config.json',{'ServerApp':{'jpserver_extensions':extensions}})
                 token=secrets.token_urlsafe(32)
                 env=dict(clean,PYTHONPATH=str(ROOT/'course'),JUPYTER_PATH=str(data),JUPYTER_DATA_DIR=str(data),
                     JUPYTER_CONFIG_DIR=str(config),JUPYTER_RUNTIME_DIR=str(root/'jupyter-runtime'),JUPYTER_TOKEN=token,
                     WORKSPACE_CAIRN_ORIGIN=course.url,WORKSPACE_CAIRN_LOCAL_TEST='1')
+                if tutor: env.update(tutor.environment)
                 launch('notebook',[sys.executable,'-m','jupyterlab','--no-browser','--ip=127.0.0.1',
                     '--port='+notebook_url.rsplit(':',1)[1],'--ServerApp.port_retries=0','--ServerApp.root_dir='+str(work)],env)
                 wait_http(notebook_url+'/login')
@@ -143,6 +164,8 @@ def main():
                 expect(page.get_by_role('link',name='Submit saved files to Cairn',exact=True)).to_be_visible(timeout=60000)
                 select_python_kernel(page,root,'nhanes')
                 widgets=page.locator('.jp-Notebook .jp-Cell');expect(widgets).to_have_count(len(notebook['cells']),timeout=60000)
+                if tutor and not args.live_review_seconds:
+                    tutor.verify(page, report)
                 for index,cell in enumerate(notebook['cells']):
                     if cell['cell_type']!='code':continue
                     widget=widgets.nth(index);editor=widget.locator('.cm-content')
@@ -162,7 +185,7 @@ def main():
                 assert any('NHANES_NATIVE_OK 192' in ''.join(o.get('text',[])) for c in codes for o in c['outputs'])
                 report['observed_output']='NHANES_NATIVE_OK 192'
                 files=saved_files(work,profile=NHANES);report['saved_manifest']=manifest(files)
-                report['passed'].append('native-python-NHANES-execution-and-save-no-AI')
+                report['passed'].append('native-python-NHANES-execution-and-save')
                 page.screenshot(path=str(root/'notebook-saved.png'),full_page=True)
                 # Wrong numeric output must fail the real network-off Cairn checker.
                 wrong=root/'wrong-output';shutil.copytree(work,wrong)
@@ -203,6 +226,8 @@ def main():
                 report['passed'].append('receipt-persists-after-restart')
                 if args.operator_review_seconds:
                     page.bring_to_front();report['operator_review']=wait_for_review(browser,page,args.operator_review_seconds)
+                if args.live_review_seconds:
+                    report['live_review'] = tutor.review(browser, page, args.live_review_seconds)
             finally:browser.close()
     except Exception as exc:
         report['failed'].append(type(exc).__name__+': '+str(exc)[:500]);private(root/'failure.txt',traceback.format_exc())
@@ -214,6 +239,17 @@ def main():
                 try:proc.wait(timeout=10)
                 except subprocess.TimeoutExpired:os.killpg(proc.pid,signal.SIGKILL);proc.wait(timeout=5)
         for log in logs:log.close()
+        if tutor:
+            try:
+                tutor.close()
+                report['tutoring'] = tutor.evidence()
+                if tutor.live:
+                    accounting = report['tutoring']['accounting']
+                    report['model_transports'] = accounting['dispatch_claims']
+                    if accounting['unknown_liability_usd']:
+                        report['failed'].append('live provider usage remains unresolved; do not retry this window')
+            except Exception as exc:
+                report['failed'].append('tutoring cleanup: ' + type(exc).__name__)
         try:report['cleanup']=course.close() if course else True
         except Exception as exc:report['failed'].append('cleanup: '+type(exc).__name__)
         report['elapsed_seconds']=round(time.monotonic()-started,2)
