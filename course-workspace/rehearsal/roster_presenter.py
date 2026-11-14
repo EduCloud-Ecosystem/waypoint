@@ -251,7 +251,8 @@ def main():
                            if o['label'].strip() == 'Python 3 (ipykernel)' or o['text'].strip() == 'Python 3 (ipykernel)']
                 if len(choices) != 1: raise ValueError('expected one pinned Python kernel choice')
                 dialog.locator('select').nth(choices[0][0]).select_option(value=choices[0][1])
-                dialog.get_by_role('button', name='Select', exact=True).click()
+                private(root / 'kernel-buttons.json', dialog.locator('button').evaluate_all("nodes => nodes.map(n => ({text:n.textContent,label:n.getAttribute('aria-label'),title:n.title}))"))
+                dialog.locator('button').filter(has_text='Select').click()
                 expect(dialog).not_to_be_visible()
             cell = notebook_page.locator('.jp-Notebook .jp-CodeCell').first
             cell.click(); notebook_page.keyboard.press('Shift+Enter')
