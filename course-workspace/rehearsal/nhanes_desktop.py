@@ -152,9 +152,14 @@ def main():
                 extensions = {'waypoint_cairn': True}
                 if tutor: extensions['waypoint_belay'] = True
                 private(config/'jupyter_server_config.json',{'ServerApp':{'jpserver_extensions':extensions}})
+                settings = root/'jupyter-settings'
+                notifications = settings/'@jupyterlab/apputils-extension'
+                notifications.mkdir(parents=True)
+                private(notifications/'notification.jupyterlab-settings', {'fetchNews':'false','checkForUpdates':False})
                 token=secrets.token_urlsafe(32)
                 env=dict(clean,PYTHONPATH=str(ROOT/'course'),JUPYTER_PATH=str(data),JUPYTER_DATA_DIR=str(data),
                     JUPYTER_CONFIG_DIR=str(config),JUPYTER_RUNTIME_DIR=str(root/'jupyter-runtime'),JUPYTER_TOKEN=token,
+                    JUPYTERLAB_SETTINGS_DIR=str(settings),
                     WORKSPACE_CAIRN_ORIGIN=course.url,WORKSPACE_CAIRN_LOCAL_TEST='1')
                 if tutor: env.update(tutor.environment)
                 launch('notebook',[sys.executable,'-m','jupyterlab','--no-browser','--ip=127.0.0.1',
@@ -208,6 +213,7 @@ def main():
                     with page.expect_popup() as opened:page.get_by_role('link',name='Submit saved files to Cairn',exact=True).click()
                     picker=opened.value
                     for name in NHANES.files:picker.get_by_role('checkbox',name=name,exact=False).check()
+                    picker.screenshot(path=str(root/'saved-file-picker.png'),full_page=True)
                     picker.get_by_role('button',name='Prepare saved files',exact=True).click()
                     with context.expect_page() as received:picker.get_by_role('button',name='Continue in Cairn',exact=True).click()
                     receiver=received.value;receiver.get_by_label('Assignment',exact=True).select_option(selected['submission_id'])

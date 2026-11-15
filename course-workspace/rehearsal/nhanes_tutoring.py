@@ -151,6 +151,9 @@ class NhanesTutoring:
 
     def verify(self, page, report):
         help_page = self.open_help(page)
+        help_page.locator('#context-details').evaluate('(el)=>el.open=false')
+        help_page.locator('h1').scroll_into_view_if_needed()
+        page.screenshot(path=str(self.root / 'studio-ready.png'), full_page=True)
         before_checkpoint = self.counts()
         help_page.get_by_role('button', name='Ask for a hint', exact=True).click()
         expect(help_page.locator('#status')).to_contain_text('Your saved work is unchanged', timeout=15000)
@@ -206,6 +209,7 @@ class NhanesTutoring:
         help_page.locator('#question').evaluate('(el)=>el.readOnly=true')
         help_page.locator('#provider-notice').evaluate("el=>el.textContent='Instructor test: one prepared NHANES question is available through OpenRouter/OpenAI. Use only this supplied example. Saving, submission and grading remain separate.'")
         help_page.locator('#context-details').evaluate('(el)=>el.open=false')
+        help_page.locator('h1').scroll_into_view_if_needed()
         page.bring_to_front()
         started = time.monotonic()
         duration = max(0, min(seconds, self.expires - time.time()))
