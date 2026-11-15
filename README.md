@@ -1,5 +1,16 @@
 # Waypoint
 
+
+<!-- educloud-status-badges:start -->
+[![License](https://img.shields.io/github/license/EduCloud-Ecosystem/waypoint)](https://github.com/EduCloud-Ecosystem/waypoint/blob/main/LICENSING.md)
+[![Workspace tests](https://github.com/EduCloud-Ecosystem/waypoint/actions/workflows/course-workspace.yml/badge.svg?branch=main)](https://github.com/EduCloud-Ecosystem/waypoint/actions/workflows/course-workspace.yml)
+[![Open issues](https://img.shields.io/github/issues/EduCloud-Ecosystem/waypoint)](https://github.com/EduCloud-Ecosystem/waypoint/issues)
+[![Sonar quality gate (advisory)](https://sonarcloud.io/api/project_badges/measure?project=EduCloud-Ecosystem_waypoint&metric=alert_status)](https://sonarcloud.io/dashboard?id=EduCloud-Ecosystem_waypoint)
+[![CodeRabbit advisory review](https://img.shields.io/badge/CodeRabbit-advisory-orange)](https://github.com/EduCloud-Ecosystem/waypoint/blob/main/.coderabbit.yaml)
+<!-- educloud-status-badges:end -->
+
+Review checks are advisory; badges do not certify deployment or classroom readiness.
+
 Waypoint is EduCloud's publishing and federation layer: the hosting engine
 (Coolify), the identity provider (Keycloak), the tenant onboarding contract,
 and, as a separate workstream, the registry (catalog, register CLI, and the
