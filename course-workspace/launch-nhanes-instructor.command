@@ -17,9 +17,9 @@ portage=/Users/gregchism/.codex/worktrees/classroom-live-tutoring/portage
 keyfile=/Users/gregchism/dev/.educloud-worktrees/portage-system-one-shadow-pilot-v1/.qualification/openrouter/.env
 [[ -x "$driver" && -x "$kernel" && -d "$cairn" && -d "$belay" && -d "$portage" ]] || { print -u2 'A qualified local checkout or environment is missing. See NHANES-LIVE-TESTING.md.'; exit 1; }
 [[ -z "$(git status --porcelain --untracked-files=no)" ]] || { print -u2 'Commit the Waypoint source before starting a qualified window.'; exit 1; }
-cairn_pin=a6322abfa687a206e659e8e874134ad8effad8b1
+cairn_pin=04d7aed2434e96c4b70c8340eb1d31ef3aa35abb
 if [[ "$mode" == --live || "$mode" == --check ]]; then
-  cairn_pin=a6322abfa687a206e659e8e874134ad8effad8b1
+  cairn_pin=04d7aed2434e96c4b70c8340eb1d31ef3aa35abb
 fi
 [[ "$(git -C "$cairn" rev-parse HEAD)" == "$cairn_pin" && "$(git -C "$belay" rev-parse HEAD)" == c5a27073e74b9eeb7ab697190915378b50132883 && "$(git -C "$portage" rev-parse HEAD)" == b72881f009e61e1311b6e46b92b42841991fd163 ]] || { print -u2 'The component pins for this mode do not match. Restore the reviewed source revisions before retrying.'; exit 1; }
 if [[ "$mode" == --live || "$mode" == --check ]]; then
