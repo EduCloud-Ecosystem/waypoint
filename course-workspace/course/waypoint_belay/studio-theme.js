@@ -6,8 +6,15 @@
   const media = matchMedia('(prefers-color-scheme: dark)');
   let preference = 'light';
   try { const stored = localStorage.getItem(key); if (valid(stored)) preference = stored; } catch (_) {}
-  const supplied = new URL(location.href).searchParams.get('appearance');
-  if (valid(supplied)) { preference = supplied; try { localStorage.setItem(key, preference); } catch (_) {} }
+  const handoff = new URL(location.href);
+  const supplied = handoff.searchParams.get('appearance');
+  if (valid(supplied)) {
+    preference = supplied;
+    try { localStorage.setItem(key, preference); } catch (_) {}
+    // Consume the handoff once, retaining the submission and nonce fragment.
+    handoff.searchParams.delete('appearance');
+    history.replaceState(history.state, '', handoff.pathname + handoff.search + handoff.hash);
+  }
   function apply() {
     const resolved = preference === 'system' ? (media.matches ? 'dark' : 'light') : preference;
     document.documentElement.dataset.studioTheme = resolved;

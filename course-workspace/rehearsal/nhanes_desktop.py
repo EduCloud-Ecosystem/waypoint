@@ -28,9 +28,9 @@ from operator_review import wait_for_review, validate
 from nhanes_tutoring import NhanesTutoring, validate_tutoring
 from playwright.sync_api import sync_playwright, expect
 
-PINS = {'cairn': '04d7aed2434e96c4b70c8340eb1d31ef3aa35abb',
+PINS = {'cairn': '240b8b9c9f802e759175f6941b34c194f780e84c',
         'belay': 'c5a27073e74b9eeb7ab697190915378b50132883'}
-STUB_CAIRN_PIN = '04d7aed2434e96c4b70c8340eb1d31ef3aa35abb'
+STUB_CAIRN_PIN = '240b8b9c9f802e759175f6941b34c194f780e84c'
 
 
 def restart_receipt(course, browser, learner, submission, receipt):
