@@ -95,5 +95,5 @@
     }
   });
   window.addEventListener('pagehide', () => { stop(); snapshot = null; });
-  try { config = await request('config'); await browse(''); } catch (e) { error(e.message); status('Cairn handoff is unavailable.'); }
+  try { config = await request('config'); $('course-title').textContent = config.course_title || ''; await browse(''); } catch (e) { error(e.message); status('Cairn handoff is unavailable.'); }
 })();

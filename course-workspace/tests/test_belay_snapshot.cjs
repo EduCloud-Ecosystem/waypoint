@@ -84,3 +84,44 @@ test('opt-in activation does not open/send/save/Ask; explicit action freezes one
   assert.deepEqual(Object.keys(posted[0].body).sort(),['dirty','nonce','source','type','version']);
   assert.equal(listeners.has('message'),false); assert.equal(fetchCount,1);
 });
+
+test('native panel reuses one frame, authenticates messages and protects a pending hint', () => {
+  const listeners = new Map(), frames = [], sent = [], added = [], activated = [];
+  const origin = 'http://127.0.0.1:5190';
+  const {app,tracker} = notebook(); tracker.currentWidget.id = 'my-notebook';
+  app.shell.add = (...args) => added.push(args);
+  app.shell.activateById = id => activated.push(id);
+  const document = {createElement(tag) {
+    const node = {append(){}, addEventListener(){}};
+    if (tag === 'iframe') {node.contentWindow = {postMessage:(body,target)=>sent.push({body,target})}; frames.push(node);}
+    return node;
+  }};
+  class Widget {constructor({node}) {this.node=node; this.title={};}}
+  const {panelBridge} = loaded({document,location:{origin},
+    window:{addEventListener:(name,fn)=>listeners.set(name,fn)},
+    crypto:{getRandomValues:b=>b.fill(2)},Uint8Array}).module.exports;
+  const status = {};
+  const show = panelBridge(app,tracker,Widget,'/belay/',status);
+  assert.equal(frames.length,0); assert.equal(sent.length,0);
+  show(Object.freeze({source:'selected code',dirty:true}));
+  assert.equal(frames.length,1); assert.equal(added[0][1],'right'); assert.equal(sent.length,0);
+  const frame = frames[0], nonce = frame.src.split('=')[1], receive = listeners.get('message');
+  const event = (type,fields={}) => ({source:frame.contentWindow,origin,data:{type,version:1,nonce,...fields}});
+  for (const bad of [{...event('belay-notebook-ready'),origin:'https://evil.invalid'},
+    {...event('belay-notebook-ready'),source:{}},event('belay-notebook-ready',{nonce:'bad'}),
+    event('belay-notebook-ready',{extra:true})]) receive(bad);
+  assert.equal(sent.length,0);
+  receive(event('belay-notebook-ready'));
+  assert.equal(sent[0].body.source,'selected code'); assert.equal(sent[0].target,origin);
+  receive(event('belay-notebook-state',{busy:true}));
+  show({source:'must not replace pending',dirty:false}); assert.equal(sent.length,1);
+  assert.match(status.textContent,/pending/);
+  receive(event('belay-notebook-state',{busy:false,extra:true}));
+  show({source:'still pending',dirty:false}); assert.equal(sent.length,1);
+  receive(event('belay-notebook-state',{busy:false}));
+  show({source:'new reviewed selection',dirty:false});
+  assert.equal(sent.length,2); assert.equal(frames.length,1); assert.equal(added.length,1);
+  assert.deepEqual(Object.keys(sent[1].body).sort(),['dirty','nonce','source','type','version']);
+  receive(event('belay-notebook-return')); assert.equal(activated.at(-1),'my-notebook');
+  receive(event('belay-notebook-captured',{accepted:false})); assert.match(status.textContent,/pending/);
+});

@@ -31,10 +31,14 @@
           try { response = await fetch(base + 'config', {credentials: 'same-origin', cache: 'no-store', redirect: 'error',
             headers: {'X-XSRFToken': decodeURIComponent(xsrfCookie.slice(6))}}); } catch (_) { return; }
           if (!response.ok) return;
+          const config = await response.json();
           const command = 'waypoint-cairn:submit';
           app.commands.addCommand(command, {label: 'Submit saved files to Cairn', caption: 'Select saved coursework to review and submit in Cairn', execute: () => window.open(base, '_blank', 'noopener')});
           launcher.add({command, category: 'Coursework', rank: 0});
           const link = document.createElement('a'); link.href = base; link.target = '_blank'; link.rel = 'noopener'; link.textContent = 'Submit saved files to Cairn';
+          if (config.course_title === 'INFO 511 · NHANES') {
+            link.textContent = 'Submit work'; link.setAttribute('aria-label', 'Submit saved files to Cairn');
+          }
           link.style.cssText = 'display:flex;align-items:center;padding:0 12px;color:var(--jp-ui-font-color1);text-decoration:underline;font-size:var(--jp-ui-font-size1);white-space:nowrap';
           const widget = new Widget({node: link}); widget.id = 'waypoint-cairn-link';
           app.shell.add(widget, 'top', {rank: 900});

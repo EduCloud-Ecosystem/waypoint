@@ -21,12 +21,12 @@ notebook review. Every invocation creates a fresh private evidence directory.
 Do not rerun after an uncertain paid outcome until its liability is resolved.
 
 In live mode, the browser first runs execution, grading and receipt controls.
-Then a new code cell is added for the prepared question, preserving the completed solution cell, and a course-help tab opens. No model
+Then a new code cell is added for the prepared question, preserving the completed solution cell, and the **Tutor** sidebar opens inside Jupyter. No model
 request is sent automatically in this mode. The remaining help window is at most
 four minutes and is shortened by the original credential expiry; the terminal
-prints its actual remaining time. The whole invocation is limited to ten minutes.
+prints its actual remaining time; the tutor panel also shows a countdown. The whole invocation is limited to ten minutes.
 
-1. Review the selected code and question. The code includes a predicted output
+1. Expand **Selected cell & sharing** to review the exact selected code and provider disclosure, then review the question. The code includes a predicted output
    schema and observational unit. Confirm both boxes and click **Record prediction
    checkpoint**. This records presence only, not the notebook contents, consent or a grade.
 2. Click **Ask for a hint**. Only the supplied example is accepted by the provider
@@ -34,11 +34,11 @@ prints its actual remaining time. The whole invocation is limited to ten minutes
    uses OpenRouter/OpenAI `gpt-4.1-mini`, with a maximum of seven transport requests,
    800 output tokens each, USD0.025 reservation each and USD0.175 total. SDK/HTTP
    retries are disabled. A hint can require several planner/reasoner/evaluator calls.
-3. Use **Return to notebook** to inspect/edit/run and explicitly save. Help does
+3. Use **Back to notebook** to inspect/edit/run and explicitly save. Help does
    not save the notebook. If submitting after AI use, edit `assistance.md` to
    `Declaration: ai_assisted` with a brief summary; omit the private conversation.
    The test's previously saved no-AI submission remains a separate historical receipt.
-4. Use **Submit selected saved files** to review the four selected files, preview
+4. Use **Submit work** to review the four selected files, preview
    their changes, then explicitly confirm. Inspect the exact repository receipt
    and the separate correctness result. Four CSV correctness points are not a full
    course grade or an LMS publication.
@@ -61,9 +61,10 @@ before live admission, so a changed price/endpoint can refuse a fresh window.
 
 The existing private key file is used in place; its contents never enter source
 or reports. An older USD0.025 unknown liability remains recorded separately; a
-new successful run does not resolve it. One automated live qualification is
-allowed by the committed scope; human use requires deliberately invoking this
-launcher and clicking Ask. Nothing resumes a stopped paid window automatically.
+new successful run does not resolve it. The earlier automated live qualification is historical evidence. This interface
+revision uses a local stub for automated verification; no new automated paid run
+is authorized by it. Human use requires deliberately invoking this launcher and
+clicking Ask. Nothing resumes a stopped paid window automatically.
 
 The Cairn export remains preserved separately from the explicit operator-owned
 NHANES teaching-policy overlay. Membership, original deadlines, submission and
@@ -75,3 +76,17 @@ Hosted sign-in, student data destinations, free-form tutoring acceptance, actual
 course enrollment, host capacity/backup recovery and instructor approval remain
 student-release gates. Mobile is deferred. Outfitter is not needed to provision
 this local test; its native cloud acceptance is a separate gate.
+
+## Learning Studio interface
+
+The INFO 511 skin retains native Jupyter menus, file browser, cells, execution and
+save controls. **Ask tutor** captures only the currently selected code cell; it
+does not send a model request. The optional, resizable Tutor sidebar stays open
+while you work and can be collapsed using Jupyter's right sidebar tab. The
+question and selected-cell review precede a separate **Ask for a hint** action.
+
+**Submit work** opens the existing saved-file picker. Check the four required
+files, choose **Prepare saved files**, then **Continue in Cairn** to inspect
+changes and explicitly confirm. A hint, saved notebook, repository receipt and
+correctness result are distinct. There is no new course dashboard or AI chat
+landing page. Inquiry and researcher benchmarking are separate development lines.

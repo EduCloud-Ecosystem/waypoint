@@ -85,6 +85,13 @@ def assignment(config):
     return (config.roster_profile['exercise_id'], config.roster_profile['exercise_version']) if config.roster_profile else ASSIGNMENT_PROFILES[config.profile]
 
 
+def studio_enabled(config, env):
+    """Presentation opt-in only; it grants no course or model authority."""
+    return (env.get('WORKSPACE_STUDIO_PROFILE') == 'info511-nhanes-v1'
+            and bool(config.roster_profile)
+            and assignment(config) == ASSIGNMENT_PROFILES['nhanes-v1'])
+
+
 def allowed_route(method, path, *, profile='legacy', bound_assignment=None):
     if not isinstance(path, str) or len(path) > 256 or not re.fullmatch(r'/[A-Za-z0-9_/-]+', path):
         return False
@@ -209,6 +216,7 @@ def _load_jupyter_server_extension(serverapp):
     if config is None:
         return
     base = url_path_join(serverapp.web_app.settings['base_url'], 'belay')
+    studio = studio_enabled(config, os.environ)
 
     class BelayHandler(APIHandler):
         def set_default_headers(self):
@@ -253,9 +261,19 @@ def _load_jupyter_server_extension(serverapp):
                 raise HTTPError(400)
             if resource == 'config':
                 self.local(api=True)
-                return self.finish({'version': 1, 'base': base, 'max_source_bytes': 8192})
+                return self.finish({'version': 1, 'base': base, 'max_source_bytes': 8192,
+                                    'notebook_panel': studio})
+            if studio and resource == 'studio.css':
+                self.set_header('Content-Type', 'text/css')
+                return RequestHandler.finish(self, (Path(__file__).parent / 'studio.css').read_bytes())
             if config.roster_profile and resource in ('', 'roster.js', 'roster.css'):
                 name = 'roster.html' if resource == '' else resource
+                if studio and resource == '':
+                    # Only the opted-in course help page can be embedded by its
+                    # own authenticated notebook origin. API/legacy pages remain
+                    # unframeable; cross-origin framing is never permitted.
+                    self.set_header('Content-Security-Policy', "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; frame-ancestors 'self'; form-action 'none'")
+                    self.set_header('X-Frame-Options', 'SAMEORIGIN')
                 self.xsrf_token
                 self.set_header('Content-Type', {'roster.html':'text/html; charset=utf-8', 'roster.js':'text/javascript', 'roster.css':'text/css'}[name])
                 return RequestHandler.finish(self, (Path(__file__).parent / name).read_bytes())
@@ -271,6 +289,7 @@ def _load_jupyter_server_extension(serverapp):
                     expiry, available = p['expires_at'], False
                 return self.finish({'exercise_id':exercise, 'exercise_version':version, 'expires_at':expiry,
                     'available':available, 'assistance':p['assistance'], 'title':p['assignment_title'], 'base':base,
+                    'notebook_panel':studio,
                     'notebook':serverapp.web_app.settings['base_url'] + 'lab',
                     'submission':serverapp.web_app.settings['base_url'] + 'cairn/'})
             if resource == 'bootstrap.js':

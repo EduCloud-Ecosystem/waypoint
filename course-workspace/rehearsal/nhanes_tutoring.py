@@ -110,7 +110,7 @@ class NhanesTutoring:
         except BaseException:
             self.close()
             raise
-        self.environment = dict(WORKSPACE_BELAY_LOCAL_TEST='1',
+        self.environment = dict(WORKSPACE_BELAY_LOCAL_TEST='1', WORKSPACE_STUDIO_PROFILE='info511-nhanes-v1',
             WORKSPACE_BELAY_HOST_ORIGIN='http://127.0.0.1:' + str(port()),
             WORKSPACE_BELAY_API_ORIGIN=self.api, WORKSPACE_BELAY_WORKSPACE_ORIGIN=notebook_url,
             WORKSPACE_BELAY_ASSET_ROOT=str(args.belay / 'frontend'), WORKSPACE_BELAY_LEARNER_ID=member['learner_id'],
@@ -138,9 +138,10 @@ class NhanesTutoring:
             expect(page.locator('.jp-Notebook .jp-CodeCell')).to_have_count(count + 1)
             cell = page.locator('.jp-Notebook .jp-CodeCell').nth(1).locator('.cm-content')
         cell.fill(self.inputs['source']); cell.click()
-        with page.context.expect_page() as opened:
-            page.get_by_role('button', name='Ask Belay about this code', exact=True).click()
-        help_page = opened.value
+        page.get_by_role('button', name='Ask Belay about this code', exact=True).click()
+        expect(page.locator('iframe[title="Course tutor"]')).to_be_visible()
+        help_page = page.frame_locator('iframe[title="Course tutor"]')
+        help_page.locator('#context-details').evaluate('(el)=>el.open=true')
         expect(help_page.locator('#source')).to_have_value(self.inputs['source'])
         expect(help_page.locator('#assignment')).to_contain_text('NHANES')
         help_page.locator('#question').fill(self.inputs['question'])
@@ -168,7 +169,7 @@ class NhanesTutoring:
             assert 3 <= accounting['dispatch_claims'] <= 7
             assert all(a['state'] == 'complete' for a in accounting['attempts'])
         private(self.root / 'reply.txt', help_page.locator('#reply').inner_text())
-        help_page.screenshot(path=str(self.root / 'hint.png'), full_page=True)
+        page.screenshot(path=str(self.root / 'hint.png'), full_page=True)
         before = self.counts()
         transports = self.live.evidence()['accounting']['dispatch_claims'] if self.live else 0
         self.issue(expired=True)
@@ -177,14 +178,16 @@ class NhanesTutoring:
         assert self.counts() == before
         self.issue()  # Restore the original expiration, never renew the authority window.
         private(self.root / 'profile.json', dict(self.profile, assistance='disabled'))
-        help_page.reload()
+        page.locator('iframe[title="Course tutor"]').evaluate('(el)=>el.contentWindow.location.reload()')
         expect(help_page.locator('#ask')).to_be_disabled()
         expect(help_page.locator('#policy')).to_contain_text('disabled')
         assert self.counts() == before
         if self.live:
             assert self.live.evidence()['accounting']['dispatch_claims'] == transports
         help_page.get_by_role('button', name='Continue without AI', exact=True).click()
-        help_page.close()
+        help_page.get_by_role('link', name='Back to notebook', exact=True).click()
+        # Collapse the native sidebar, preserving its session and request state.
+        page.get_by_role('tab', name='Tutor', exact=True).click()
         private(self.root / 'profile.json', self.profile)
         text = ('Task version: info511-nhanes-wrangling-v1\nDeclaration: ai_assisted\nSummary: Automated synthetic instructor test: requested one ' + ('live' if self.live else 'local-stub') +
                 ' Belay hint about missing readings versus missing BPXO records. '
@@ -202,7 +205,8 @@ class NhanesTutoring:
         help_page = self.open_help(page, preserve_completed_work=True)
         help_page.locator('#question').evaluate('(el)=>el.readOnly=true')
         help_page.locator('#provider-notice').evaluate("el=>el.textContent='Instructor test: one prepared NHANES question is available through OpenRouter/OpenAI. Use only this supplied example. Saving, submission and grading remain separate.'")
-        help_page.bring_to_front()
+        help_page.locator('#context-details').evaluate('(el)=>el.open=false')
+        page.bring_to_front()
         started = time.monotonic()
         duration = max(0, min(seconds, self.expires - time.time()))
         end = started + duration

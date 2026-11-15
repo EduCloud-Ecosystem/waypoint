@@ -6,13 +6,20 @@
   const base = origin + basePath + '/api';
   window.BELAY_SESSION_PROXY = true; window.BELAY_AUTH_ORIGIN = origin;
   let profile, captured = false, optedOut = false, busy = false;
+  let notebookWindow = null, nonce = null;
+  const tellNotebook = (type, fields = {}) => {
+    if (notebookWindow) notebookWindow.postMessage({type, version:1, nonce, ...fields}, origin);
+  };
   const jobs = globalThis.belayAskJobs();
   function enabled() {el('ask').disabled = busy || optedOut || !captured || !profile?.available || profile.assistance !== 'hints' || Date.now() >= profile.expires_at * 1000;}
   function notice() {
-    el('policy').textContent = !profile?.available || Date.now() >= profile.expires_at * 1000
+    const policy = !profile?.available || Date.now() >= profile.expires_at * 1000
       ? 'Help access expired or unavailable. Your saved work is unchanged; you can still submit it.'
       : profile.assistance === 'disabled' ? 'Your instructor has disabled AI assistance. Continue in your notebook and submit saved work normally.'
       : 'Hints are permitted. Only the code and question you review here will be sent to the course tutoring service.';
+    if (el('policy').textContent !== policy) el('policy').textContent = policy;
+    const remaining = Math.max(0, Math.floor((profile?.expires_at || 0) - Date.now() / 1000));
+    el('time-remaining').textContent = remaining ? `Hint access: ${Math.floor(remaining / 60)}:${String(remaining % 60).padStart(2, '0')} remaining` : 'Hint access ended · save and continue without AI';
     enabled();
   }
   el('no-ai').onclick = () => {optedOut = true; el('status').textContent = 'AI help is off for this page. Return to your notebook or submit selected saved files.'; enabled();};
@@ -52,24 +59,34 @@
       finally {el('checkpoint').disabled = false;}
     };
   }
-  const nonce = /^#belay-notebook=([0-9a-f]{64})$/.exec(location.hash)?.[1];
-  if (nonce && window.opener && window.opener !== window) {
+  nonce = /^#belay-notebook=([0-9a-f]{64})$/.exec(location.hash)?.[1];
+  const embedded = profile.notebook_panel === true && window.parent !== window;
+  notebookWindow = embedded ? window.parent : window.opener;
+  if (embedded) {
+    document.body.classList.add('embedded');
+    el('notebook').onclick = event => {event.preventDefault(); tellNotebook('belay-notebook-return');};
+    el('submission').target = '_blank'; el('submission').rel = 'noopener';
+  }
+  if (nonce && notebookWindow && notebookWindow !== window) {
     window.addEventListener('message', event => {
       const v = event.data;
-      if (busy || event.origin !== origin || event.source !== window.opener || !v ||
+      if (event.origin !== origin || event.source !== notebookWindow || !v ||
           Object.keys(v).sort().join(',') !== 'dirty,nonce,source,type,version' ||
           v.type !== 'belay-notebook-snapshot' || v.version !== 1 || v.nonce !== nonce ||
           typeof v.source !== 'string' || !v.source.trim() || new TextEncoder().encode(v.source).length > 8192 || typeof v.dirty !== 'boolean') return;
+      if (busy) {tellNotebook('belay-notebook-captured', {accepted:false}); return;}
       el('source').value = v.source; captured = true;
       el('capture').textContent = v.dirty ? 'Unsaved code captured. Save in your notebook before submitting.' : 'Code captured for review. Nothing has been sent or submitted.';
       enabled();
+      if (embedded) tellNotebook('belay-notebook-captured', {accepted:true});
     });
-    window.opener.postMessage({type:'belay-notebook-ready', version:1, nonce}, origin);
+    tellNotebook('belay-notebook-ready');
   }
   el('ask').onclick = async () => {
     enabled(); if (el('ask').disabled) return;
     if (!el('question').value.trim()) {el('status').textContent = 'Add your prediction and question first.'; el('question').focus(); return;}
     busy = true; enabled(); el('status').textContent = 'Checking permitted help…';
+    if (embedded) tellNotebook('belay-notebook-state', {busy:true});
     el('capture').textContent = 'Code selected for this help request. Saving and submission are separate.';
     try {
       const turn = await jobs.ask(base, '/api/sol/jobs', {exercise_id:profile.exercise_id,
@@ -81,6 +98,6 @@
       if (e.status === 401 || e.status === 403) {profile.available = false; notice();}
       el('status').textContent = e.message + ' Your saved work is unchanged. Use the notebook, submission, or human help links.';
     }
-    finally {busy = false; enabled();}
+    finally {busy = false; enabled(); if (embedded) tellNotebook('belay-notebook-state', {busy:false});}
   };
 })();

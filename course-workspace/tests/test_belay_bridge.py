@@ -1,5 +1,6 @@
 """Hermetic synthetic Belay proxy policy tests; no server/provider execution."""
 import base64
+from dataclasses import replace
 import asyncio
 import json
 import os
@@ -26,6 +27,16 @@ class BelayBridgeTests(unittest.TestCase):
             WORKSPACE_BELAY_WORKSPACE_ORIGIN='http://127.0.0.1:5190',
             WORKSPACE_BELAY_ASSET_ROOT=str(self.root), WORKSPACE_BELAY_LEARNER_ID='edu:2')
         self.config = bridge.configuration(self.env)
+
+    def test_studio_requires_operator_opt_in_and_exact_roster_task(self):
+        opt = {'WORKSPACE_STUDIO_PROFILE':'info511-nhanes-v1'}
+        profile = dict(zip(('exercise_id','exercise_version'), bridge.ASSIGNMENT_PROFILES['nhanes-v1']))
+        config = replace(self.config, roster_profile=profile)
+        self.assertTrue(bridge.studio_enabled(config, opt))
+        self.assertFalse(bridge.studio_enabled(config, {}))
+        self.assertFalse(bridge.studio_enabled(self.config, opt))
+        self.assertFalse(bridge.studio_enabled(replace(config, roster_profile=dict(profile, exercise_version='stale')), opt))
+        self.assertFalse(bridge.studio_enabled(config, {'WORKSPACE_STUDIO_PROFILE':'other'}))
 
     def test_disabled_default_and_explicit_synthetic_complete_binding(self):
         self.assertIsNone(bridge.configuration({}))
@@ -147,6 +158,7 @@ class BelayBridgeTests(unittest.TestCase):
             pass
         class NativeHandler:
             xsrf_token = b'native-proof'
+            def set_default_headers(self): pass
             def set_header(self, name, value):
                 if not hasattr(self, 'response_headers'): self.response_headers = {}
                 self.response_headers[name] = value
@@ -211,6 +223,24 @@ class BelayBridgeTests(unittest.TestCase):
             self.assertEqual(value.response_headers['Content-Type'],'application/json')
             self.assertEqual(value.result,b'{"synthetic":true}')
         asyncio.run(exercise())
+
+        # Only the explicitly selected roster HTML may be framed by its own
+        # notebook origin. Config/API and the non-opted-in page stay unframeable.
+        profile = dict(zip(('exercise_id','exercise_version'), bridge.ASSIGNMENT_PROFILES['nhanes-v1']))
+        for opted_in in (False, True):
+            handlers.clear()
+            env = dict(self.env, **({'WORKSPACE_STUDIO_PROFILE':'info511-nhanes-v1'} if opted_in else {}))
+            with patch.dict(sys.modules,modules), patch.dict(os.environ,env,clear=True), patch.object(bridge,'configuration',return_value=replace(self.config,roster_profile=profile)):
+                bridge._load_jupyter_server_extension(app)
+            Handler = handlers[0][1]
+            async def frame_policy():
+                page = handler(); page.set_default_headers(); await page.get('')
+                self.assertIn("frame-ancestors " + ("'self'" if opted_in else "'none'"), page.response_headers['Content-Security-Policy'])
+                if opted_in: self.assertEqual(page.response_headers['X-Frame-Options'],'SAMEORIGIN')
+                api = handler(); api.set_default_headers(); await api.get('config')
+                self.assertEqual(api.result['notebook_panel'],opted_in)
+                self.assertIn("frame-ancestors 'none'",api.response_headers['Content-Security-Policy'])
+            asyncio.run(frame_policy())
 
     def test_authenticated_native_xsrf_and_origin_gate_before_any_upstream(self):
         class HTTPError(Exception):
