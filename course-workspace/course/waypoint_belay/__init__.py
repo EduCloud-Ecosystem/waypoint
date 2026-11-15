@@ -263,9 +263,9 @@ def _load_jupyter_server_extension(serverapp):
                 self.local(api=True)
                 return self.finish({'version': 1, 'base': base, 'max_source_bytes': 8192,
                                     'notebook_panel': studio})
-            if studio and resource == 'studio.css':
-                self.set_header('Content-Type', 'text/css')
-                return RequestHandler.finish(self, (Path(__file__).parent / 'studio.css').read_bytes())
+            if config.roster_profile and resource in ('studio.css', 'studio-theme.css', 'studio-theme.js'):
+                self.set_header('Content-Type', 'text/javascript' if resource.endswith('.js') else 'text/css')
+                return RequestHandler.finish(self, (Path(__file__).parent / resource).read_bytes())
             if config.roster_profile and resource in ('', 'roster.js', 'roster.css'):
                 name = 'roster.html' if resource == '' else resource
                 if studio and resource == '':

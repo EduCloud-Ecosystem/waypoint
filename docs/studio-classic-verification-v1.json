@@ -1,0 +1,73 @@
+{
+  "scope": "synthetic-local-NHANES-stub-notebook-submission",
+  "sources": {
+    "cairn": "a6322abfa687a206e659e8e874134ad8effad8b1",
+    "belay": "c5a27073e74b9eeb7ab697190915378b50132883",
+    "waypoint": "c554bfcc2be6bcfadf048acec23af61e80954d31",
+    "waypoint_dirty": false
+  },
+  "images": {
+    "grader": "sha256:d8e7745e5644f4e4c4dd49902981a8953485cc188a2263d866ba042aa0e4fab7",
+    "checkout": "sha256:bc9bc6929aafd69d37158bbd273a11818a2b222539242949d5d3c3066d02db8c"
+  },
+  "passed": [
+    "native-notebook-and-tutor-light-dark-system",
+    "missing-checkpoint-refused-before-admission",
+    "NHANES-signed-job-stub-hint",
+    "expired-and-disabled-help-no-extra-attempts",
+    "native-python-NHANES-execution-and-save",
+    "wrong-numeric-output-fails-real-pinned-checker",
+    "appearance-preserved-through-cross-origin-handoff",
+    "studio-320-keyboard-pane-switch",
+    "cairn-320-keyboard-preview-and-committed-receipt",
+    "workspace-save-and-cairn-submit-after-tutor-expiry",
+    "explicit-four-file-native-bridge-and-byte-exact-receipt",
+    "changed-preview-payload-refused-409",
+    "receipt-persists-after-restart"
+  ],
+  "failed": [],
+  "cleanup": true,
+  "model_transports": 0,
+  "elapsed_seconds": 159.99,
+  "observed_output": "NHANES_NATIVE_OK 192",
+  "cairn_controls": {
+    "scope": "actual-Cairn-loopback-synthetic-fixture",
+    "model_requests": 0,
+    "passed": [
+      "real-detail-response-after-injected-503-and-keyboard-retry",
+      "work-refresh-preserves-focused-expanded-history",
+      "student-three-modes-reload-and-320-reflow",
+      "built-instructor-console-dark-persistence-and-320-reflow"
+    ],
+    "failed": []
+  },
+  "qualification": "local synthetic instructor testing only",
+  "deployment": false,
+  "student_admission": false,
+  "live_provider_retested_on_this_ui": false,
+  "human_accessibility_acceptance": false,
+  "raw_result_path": "/Users/gregchism/dev/.educloud-worktrees/waypoint-studio-classic-v1/output/nhanes-instructor-20261115T191752Z-75169/result.json",
+  "raw_result_sha256": "64a5bf2b7518faa8bc302ed4681f725c411bf2b4793ec1c4f963c5ed2ba9fc92",
+  "retained_failures": [
+    {
+      "path": "/Users/gregchism/dev/.educloud-worktrees/waypoint-studio-classic-v1/output/nhanes-instructor-20261115T191407Z-73673/result.json",
+      "sha256": "adb43cc68b92006fbc4f37be4dd02e7ade8c0f635e325a435b677e1e37892592",
+      "failed": [
+        "AssertionError: Locator expected to be hidden\nActual value: visible \nCall log:\n  - Expect \"to_be_hidden\" locator(\"iframe[title=\\\"Course tutor\\\"]\") with timeout 5000ms\n  - waiting for locator(\"iframe[title=\\\"Course tutor\\\"]\")\n    14 \u00d7 locator resolved to <iframe title=\"Course tutor\" src=\"/belay/#belay-notebook=5f297db41d695412845a5b13ddd3764a5ad5b43fe8054ccd491ddb73db08a869\"></iframe>\n       - unexpected value \"visible\"\n\nAria snapshot:\n- iframe"
+      ],
+      "cleanup": true,
+      "model_transports": 0
+    },
+    {
+      "path": "/Users/gregchism/dev/.educloud-worktrees/waypoint-studio-classic-v1/output/nhanes-instructor-20261115T191520Z-74196/result.json",
+      "sha256": "d27396c312476f74b9c16aa1c4d906662874c581957c1b5f1e086317bab19acf",
+      "failed": [
+        "FileNotFoundError: [Errno 2] No such file or directory: '/Users/gregchism/dev/.educloud-worktrees/cairn-studio-classic-v1/web/node_modules/axe-core/package.json'"
+      ],
+      "cleanup": true,
+      "model_transports": 0
+    }
+  ],
+  "kernel_lock_sha256": "850c920e279a24048b9c04c1a50925702fe178507cd338d240e6a30b7ebd5676",
+  "cairn_dependency_lock_sha256": "483f9e9006dc8ed09be39b7c7200545fd122019b49728ac7c4ef4c19a1bc5ea5"
+}

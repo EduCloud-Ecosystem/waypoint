@@ -169,9 +169,39 @@ class NhanesTutoring:
         page.screenshot(path=str(self.root / 'studio-ready.png'), full_page=True)
         if self.verify_studio_ui:
             self.verify_narrow(page, help_page)
+            appearance = page.locator('[data-studio-theme-picker]')
+            expect(appearance).to_have_value('light')
+            for value, resolved in [('dark', 'dark'), ('light', 'light'), ('system', 'dark')]:
+                page.emulate_media(color_scheme='dark')
+                appearance.select_option(value)
+                expect(page.locator('html')).to_have_attribute('data-studio-theme', resolved)
+                expect(page.locator('body')).to_have_attribute('data-jp-theme-name', 'JupyterLab ' + resolved.title())
+                expect(help_page.locator('html')).to_have_attribute('data-studio-theme', resolved)
+                expect(help_page.locator('[data-studio-theme-picker]')).to_have_value(value)
+            page.emulate_media(color_scheme='light')
+            expect(page.locator('body')).to_have_attribute('data-jp-theme-name', 'JupyterLab Light')
+            appearance.select_option('dark')
+            expect(page.locator('body')).to_have_attribute('data-jp-theme-name', 'JupyterLab Dark')
+            page.screenshot(path=str(self.root / 'studio-dark.png'), full_page=True)
+            report['passed'].append('native-notebook-and-tutor-light-dark-system')
         before_checkpoint = self.counts()
-        help_page.get_by_role('button', name='Ask for a hint', exact=True).click()
-        expect(help_page.locator('#status')).to_contain_text('Your saved work is unchanged', timeout=15000)
+        expect(help_page.get_by_role('button', name='Ask for a hint', exact=True)).to_be_disabled()
+        # Retain a direct authenticated negative control: a disabled UI alone
+        # cannot establish that the server refuses before admission/accounting.
+        refused = help_page.locator('body').evaluate(r"""async () => {
+          const base = location.origin + location.pathname.replace(/\/$/, '') + '/api';
+          try {
+            await globalThis.belayAskJobs().ask(base, '/api/sol/jobs', {
+              exercise_id:'info511-nhanes-wrangling',event:'chat',mode:'study',stance:'peer',
+              source:document.querySelector('#source').value,
+              recent:[{who:'student',text:document.querySelector('#question').value}]
+            }, () => {});
+            return {accepted:true};
+          } catch (e) { return {accepted:false,status:e.status,message:e.message}; }
+        }""")
+        assert refused['accepted'] is False and refused['status'] == 409, refused
+        assert 'checkpoint' in refused['message'].lower(), refused
+        report['checkpoint_refusal'] = refused
         assert self.counts() == before_checkpoint
         if self.live: assert self.live.evidence()['accounting']['dispatch_claims'] == 0
         # This is an operator-authored test prediction, explicitly recorded via UI.

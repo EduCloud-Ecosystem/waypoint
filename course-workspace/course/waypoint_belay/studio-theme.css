@@ -1,0 +1,10 @@
+/* Same versioned palette is shipped in Cairn; no external styles or fonts. */
+:root{color-scheme:light;--studio-paper:#fff;--studio-canvas:#f7f9fc;--studio-ink:#172b48;--studio-muted:#506075;--studio-line:#d9e0e8;--studio-control:#6f7e91;--studio-soft:#e5eff7;--studio-focus:#106ab1;--studio-mark:#ab0520;--studio-link:#0c234b;--studio-good:#245943;--studio-warn:#785000}
+:root[data-studio-theme=dark]{color-scheme:dark;--studio-paper:#20252d;--studio-canvas:#181d24;--studio-ink:#f1f3f5;--studio-muted:#bdc5d1;--studio-line:#4c5868;--studio-control:#909caa;--studio-soft:#303d4e;--studio-focus:#91caff;--studio-mark:#ff9dad;--studio-link:#b4d4f0;--studio-good:#9ed2b9;--studio-warn:#ffd18b}
+.studio-appearance{display:flex;align-items:center;gap:8px;font:13px/1.5 system-ui,sans-serif;color:var(--studio-ink);margin:8px 0}
+.studio-appearance select{font:inherit;padding:6px 8px;min-height:36px;border:1px solid var(--studio-control);border-radius:4px;color:var(--studio-ink);background:var(--studio-paper);max-width:100%}
+:focus-visible{outline:3px solid var(--studio-focus);outline-offset:3px}
+textarea::placeholder,input::placeholder{color:var(--studio-muted);opacity:1}
+@media(pointer:coarse){.studio-appearance select{min-height:44px;font-size:16px}}
+@media(forced-colors:active){:root,:root[data-studio-theme=dark]{--studio-paper:Canvas;--studio-canvas:Canvas;--studio-ink:CanvasText;--studio-muted:CanvasText;--studio-line:GrayText;--studio-control:ButtonText;--studio-soft:Canvas;--studio-focus:Highlight;--studio-mark:Highlight;--studio-link:LinkText;--studio-good:CanvasText;--studio-warn:CanvasText}button{border:1px solid ButtonText!important} :focus-visible{outline:3px solid Highlight!important}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}

@@ -108,6 +108,23 @@
           if (integrated) {
             document.body.dataset.educloudStudio = 'info511-nhanes-v1';
             const css = document.createElement('link'); css.rel = 'stylesheet'; css.href = base + 'studio.css'; document.head.append(css);
+            const palette = document.createElement('link'); palette.rel = 'stylesheet'; palette.href = base + 'studio-theme.css'; document.head.append(palette);
+            const appearance = document.createElement('script'); appearance.src = base + 'studio-theme.js';
+            const label = document.createElement('label'); label.className = 'studio-appearance'; label.append('Theme ');
+            const picker = document.createElement('select'); picker.setAttribute('data-studio-theme-picker', ''); picker.setAttribute('aria-label', 'Appearance');
+            for (const [value, text] of [['light','Light'],['dark','Dark'],['system','System']]) { const option = document.createElement('option'); option.value = value; option.textContent = text; picker.append(option); }
+            label.append(picker); node.append(label);
+            let themeQueue = Promise.resolve();
+            const syncTheme = () => {
+              const theme = window.EduCloudAppearance?.resolved() === 'dark' ? 'JupyterLab Dark' : 'JupyterLab Light';
+              themeQueue = themeQueue.then(() => app.restored).then(() => {
+                if (app.commands.hasCommand('apputils:change-theme')) return app.commands.execute('apputils:change-theme', {theme});
+                throw Error('Notebook appearance command unavailable');
+              }).catch(() => { status.className = 'educloud-action-error'; status.textContent = 'Notebook theme could not be changed. Use Settings → Theme, or reload the workspace.'; });
+            };
+            window.addEventListener('educloud-appearance', syncTheme);
+            appearance.onload = () => { picker.value = window.EduCloudAppearance.get(); syncTheme(); };
+            document.head.append(appearance);
             const course = document.createElement('span'); course.className = 'educloud-course'; course.textContent = 'INFO 511 · NHANES';
             node.prepend(course); node.className = 'educloud-course-actions';
             button.textContent = 'Ask tutor'; button.setAttribute('aria-label', 'Ask Belay about this code');

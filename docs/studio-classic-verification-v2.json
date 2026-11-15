@@ -1,0 +1,66 @@
+{
+  "scope": "synthetic-local-NHANES-stub-notebook-submission",
+  "sources": {
+    "cairn": "240b8b9c9f802e759175f6941b34c194f780e84c",
+    "belay": "c5a27073e74b9eeb7ab697190915378b50132883",
+    "waypoint": "d75b90e57eea5c74f6b30b7275f0a5ca50aeceb4",
+    "waypoint_dirty": false
+  },
+  "images": {
+    "grader": "sha256:d8e7745e5644f4e4c4dd49902981a8953485cc188a2263d866ba042aa0e4fab7",
+    "checkout": "sha256:bc9bc6929aafd69d37158bbd273a11818a2b222539242949d5d3c3066d02db8c"
+  },
+  "passed": [
+    "native-notebook-and-tutor-light-dark-system",
+    "missing-checkpoint-refused-before-admission",
+    "NHANES-signed-job-stub-hint",
+    "expired-and-disabled-help-no-extra-attempts",
+    "native-python-NHANES-execution-and-save",
+    "wrong-numeric-output-fails-real-pinned-checker",
+    "appearance-preserved-through-cross-origin-handoff",
+    "studio-320-keyboard-pane-switch",
+    "cairn-320-keyboard-preview-and-committed-receipt",
+    "workspace-save-and-cairn-submit-after-tutor-expiry",
+    "explicit-four-file-native-bridge-and-byte-exact-receipt",
+    "changed-preview-payload-refused-409",
+    "receipt-persists-after-restart"
+  ],
+  "failed": [],
+  "cleanup": true,
+  "model_transports": 0,
+  "elapsed_seconds": 200.51,
+  "observed_output": "NHANES_NATIVE_OK 192",
+  "notebook_save_pending_reads": 0,
+  "cairn_controls": {
+    "scope": "actual-Cairn-loopback-synthetic-fixture",
+    "model_requests": 0,
+    "passed": [
+      "real-detail-response-after-injected-503-and-keyboard-retry",
+      "work-refresh-preserves-focused-expanded-history",
+      "injected-metadata-and-grade-revisions-refresh-open-closed-and-inflight-history",
+      "theme-handoff-consumed-once-preserving-query-and-fragment",
+      "injected-assignment-retry-is-single-flight-and-retains-selected-files",
+      "student-three-modes-reload-and-320-reflow",
+      "built-instructor-console-dark-persistence-and-320-reflow"
+    ],
+    "failed": []
+  },
+  "qualification": "local synthetic instructor testing only",
+  "deployment": false,
+  "student_admission": false,
+  "live_provider_retested_on_this_ui": false,
+  "human_accessibility_acceptance": false,
+  "raw_result_path": "/Users/gregchism/dev/.educloud-worktrees/waypoint-studio-classic-v1/output/nhanes-instructor-20261115T201305Z-212/result.json",
+  "raw_result_sha256": "0b65088d03278a5140693ff5b6dbce0dae296d6bf2d0c5c012630176a34c4541",
+  "retained_failures": [
+    {
+      "path": "/Users/gregchism/dev/.educloud-worktrees/waypoint-studio-classic-v1/output/nhanes-instructor-20261115T201012Z-98370/result.json",
+      "sha256": "284fc6d41913e0421808dfe7870452311fc1b233d5dc5a5443c8dbcdbd18fbec",
+      "failed": [
+        "JSONDecodeError: Expecting value: line 1 column 1 (char 0)"
+      ],
+      "cleanup": true,
+      "model_transports": 0
+    }
+  ]
+}
