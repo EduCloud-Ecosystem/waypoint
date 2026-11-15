@@ -17,7 +17,9 @@ and cached images; it does not install software, pull images or create cloud res
 ```
 
 Use `--stub` instead of `--live` for a no-cost automatic hint and a two-minute
-notebook review. Every invocation creates a fresh private evidence directory.
+notebook-and-tutor review. The completed solution is preserved, a separate
+prepared question is selected, and the restored help page uses the original
+expiry. Every invocation creates a fresh private evidence directory.
 Do not rerun after an uncertain paid outcome until its liability is resolved.
 
 In live mode, the browser first runs execution, grading and receipt controls.

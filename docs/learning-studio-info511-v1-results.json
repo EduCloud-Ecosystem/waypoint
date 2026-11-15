@@ -1,0 +1,208 @@
+{
+  "version": 1,
+  "status": "ready_for_local_instructor_test",
+  "application_source": "329faf7182b2862fb06fe3d33239802019a8c3d6",
+  "sources": {
+    "cairn": "2eb0a0415f791f7d53734d5909a3a3d7454e34f0",
+    "belay": "c5a27073e74b9eeb7ab697190915378b50132883",
+    "waypoint": "329faf7182b2862fb06fe3d33239802019a8c3d6",
+    "waypoint_dirty": false
+  },
+  "images": {
+    "grader": "sha256:d8e7745e5644f4e4c4dd49902981a8953485cc188a2263d866ba042aa0e4fab7",
+    "checkout": "sha256:bc9bc6929aafd69d37158bbd273a11818a2b222539242949d5d3c3066d02db8c"
+  },
+  "kernel": {
+    "python": "3.12.13 (main, May 10 2026, 19:20:41) [Clang 22.1.3 ]",
+    "packages": [
+      [
+        "Pygments",
+        "2.21.0"
+      ],
+      [
+        "appnope",
+        "1.0.0"
+      ],
+      [
+        "asttokens",
+        "3.0.2"
+      ],
+      [
+        "comm",
+        "0.2.3"
+      ],
+      [
+        "debugpy",
+        "1.8.22"
+      ],
+      [
+        "executing",
+        "2.3.0"
+      ],
+      [
+        "ipykernel",
+        "7.4.0"
+      ],
+      [
+        "ipython",
+        "9.18.1"
+      ],
+      [
+        "ipython_pygments_lexers",
+        "1.1.1"
+      ],
+      [
+        "jedi",
+        "0.20.1"
+      ],
+      [
+        "jupyter_client",
+        "8.10.0"
+      ],
+      [
+        "jupyter_core",
+        "5.9.1"
+      ],
+      [
+        "matplotlib-inline",
+        "0.2.2"
+      ],
+      [
+        "nest-asyncio2",
+        "1.7.4"
+      ],
+      [
+        "numpy",
+        "2.5.4"
+      ],
+      [
+        "packaging",
+        "26.3"
+      ],
+      [
+        "pandas",
+        "2.3.3"
+      ],
+      [
+        "parso",
+        "0.8.7"
+      ],
+      [
+        "pexpect",
+        "4.9.0"
+      ],
+      [
+        "platformdirs",
+        "4.14.5"
+      ],
+      [
+        "prompt_toolkit",
+        "3.0.53"
+      ],
+      [
+        "psutil",
+        "7.2.2"
+      ],
+      [
+        "ptyprocess",
+        "0.7.0"
+      ],
+      [
+        "pure_eval",
+        "0.2.4"
+      ],
+      [
+        "python-dateutil",
+        "4.0.0"
+      ],
+      [
+        "pytz",
+        "2026.6"
+      ],
+      [
+        "pyzmq",
+        "27.3.0"
+      ],
+      [
+        "stack-data",
+        "0.6.3"
+      ],
+      [
+        "tornado",
+        "6.6.1"
+      ],
+      [
+        "traitlets",
+        "5.16.1"
+      ],
+      [
+        "typing_extensions",
+        "4.16.0"
+      ],
+      [
+        "tzdata",
+        "2026.6"
+      ],
+      [
+        "wcwidth",
+        "0.9.4"
+      ]
+    ],
+    "lock_sha256": "850c920e279a24048b9c04c1a50925702fe178507cd338d240e6a30b7ebd5676"
+  },
+  "task_sha256": "90ce990e48fda333e5f8c3346e86cb20a66fb5c04976e0cad02011432667d8fa",
+  "checker_binding": {
+    "path_in_belay": "backend/app/packs/datascience/nhanes_check.py",
+    "sha256": "0316e63d9f2ee54a088a5f1ca9b1c24977eb54c5a00a11ceeda06bfd66443f80",
+    "repository": "https://github.com/EduCloud-Ecosystem/belay-classroom",
+    "revision": "bbc45bb3d4b8d135dc531fb130a40abf66d1e008",
+    "status": "SOURCE_BOUND_RUNTIME_PENDING",
+    "function": "check_nhanes(original_demo, original_bpxo, preserved_demo, preserved_bpxo, result)",
+    "no_model": true,
+    "source_files": {
+      "DEMO_L_selected.csv": "4a9c6d40ccbd4cb8a3886b20e2ec506e74c70c8e641347a941b9209f61369587",
+      "BPXO_L_selected.csv": "4ae89d264da5da4020fd6e8fdd0171ae188b7ed9191aeb8b18af20b30c1556a9"
+    },
+    "limitation": "CSV correctness cannot prove notebook method, source-frame immutability, kernel execution or authorship."
+  },
+  "passed": [
+    "missing-checkpoint-refused-before-admission",
+    "NHANES-signed-job-stub-hint",
+    "expired-and-disabled-help-no-extra-attempts",
+    "native-python-NHANES-execution-and-save",
+    "wrong-numeric-output-fails-real-pinned-checker",
+    "explicit-four-file-native-bridge-and-byte-exact-receipt",
+    "changed-preview-payload-refused-409",
+    "receipt-persists-after-restart"
+  ],
+  "failed": [],
+  "cleanup": true,
+  "actual_provider_requests": 0,
+  "manual_review_path_exercised_seconds": 15.0,
+  "human_acceptance": false,
+  "new_live_model_validation": false,
+  "student_deployment": false,
+  "checks": {
+    "python_suite": 764,
+    "javascript_handoff": 5,
+    "nhanes_helpers": 6
+  },
+  "runs": [
+    {
+      "path": "output/learning-studio-v1/stub-001/result.json",
+      "sha256": "4fac54c38c3ded2eba8c136cbc9a7b5c79dfb3c99acf18e2b535cb4ae9c2572d",
+      "passed": 8,
+      "failed": [],
+      "cleanup": true,
+      "elapsed_seconds": 119.88
+    },
+    {
+      "path": "output/learning-studio-v1/stub-002/result.json",
+      "sha256": "df12c59b9cde84689637d368bb421c06200087a62f2579bddcde81126326a541",
+      "passed": 8,
+      "failed": [],
+      "cleanup": true,
+      "elapsed_seconds": 162.62
+    }
+  ]
+}
