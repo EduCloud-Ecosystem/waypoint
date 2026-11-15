@@ -71,3 +71,7 @@ verified. Never omit the Report section.
   hosting/identity/LTI decision record; correctly lives here, not in
   `educloud/`
 - `docs/prompts/CC-W1` — prompt executed so far
+
+## Pilot implementation standard
+
+Follow `AGENTS.md` and `docs/development/PILOT_PROTOCOL_V1.md` in addition to this component guidance. The classroom pilot tutor is `belay-classroom`; original Belay is a separate line. Current integration and release evidence live in the educloud README and `pilot/` records.
