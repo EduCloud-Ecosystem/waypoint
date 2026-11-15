@@ -228,10 +228,19 @@ class NhanesTutoring:
         page.set_viewport_size({'width': 320, 'height': 820})
         try:
             expect(frame).to_be_visible()
-            page.wait_for_function("""() => document.documentElement.scrollWidth === innerWidth &&
-              document.querySelector('#waypoint-cairn-link').getBoundingClientRect().right <= innerWidth &&
-              document.querySelector('#waypoint-belay-link').getBoundingClientRect().right <= innerWidth &&
-              document.querySelector('#waypoint-belay-panel').getBoundingClientRect().width >= 240""")
+            page.wait_for_function("""() => {
+              const rect = selector => document.querySelector(selector).getBoundingClientRect();
+              const onScreen = selector => {
+                const node = document.querySelector(selector);
+                const r = node.getBoundingClientRect();
+                return r.left >= 0 && r.right <= innerWidth && node.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));
+              };
+              const frame = rect('#waypoint-belay-panel iframe');
+              const stack = rect('#jp-right-stack');
+              return document.documentElement.scrollWidth === innerWidth &&
+                onScreen('#waypoint-cairn-link') && onScreen('#waypoint-belay-link button') &&
+                frame.width >= 240 && frame.right <= stack.right && frame.bottom <= stack.bottom;
+            }""", timeout=7000)
             assert help_page.locator('body').evaluate('el => el.scrollWidth <= el.clientWidth')
             page.screenshot(path=str(self.root / 'studio-tutor-320.png'))
             help_page.get_by_role('link', name='Back to notebook').press('Enter')
@@ -253,10 +262,10 @@ class NhanesTutoring:
         expect(help_page.locator('#ask')).to_be_disabled()
         response = page.evaluate("""() => {
             const cookie = document.cookie.split(';').map(value=>value.trim()).find(value=>value.startsWith('_xsrf='));
-            return fetch('/belay/api/classroom/info511-nhanes-wrangling/info511-nhanes-wrangling-v1',
+            return fetch('/belay/api/api/classroom/info511-nhanes-wrangling/info511-nhanes-wrangling-v1',
                 {headers: {'X-XSRFToken':decodeURIComponent(cookie.slice(6))}}).then(r => r.status);
         }""")
-        assert response == 401 and time.time() >= self.expires
+        assert response == 401 and time.time() >= self.expires, f'expected expired tutor request to return 401, got {response}'
         assert (self.root / 'credential.jwt').read_bytes() == token_before
         report['studio_ui'] = {'help_expires_at': self.expires, 'expired_authority_http_status': response,
                                'control_counts_at_expiry': self.counts()}

@@ -18,9 +18,13 @@ body[data-educloud-studio] .educloud-action-error{position:absolute;right:16px;t
     flex-wrap: wrap;
     justify-content: flex-end;
     min-width: 0;
+    min-height: calc(var(--jp-private-menubar-height, 28px) + 32px);
+  }
+  body[data-educloud-studio] #jp-top-panel > #jp-MainLogo {
+    flex: 0 0 33px;
   }
   body[data-educloud-studio] #jp-menu-panel {
-    flex: 0 0 100%;
+    flex: 1 1 calc(100% - 33px);
     min-width: 0;
     overflow-x: auto;
   }
@@ -48,6 +52,11 @@ body[data-educloud-studio] .educloud-action-error{position:absolute;right:16px;t
   body[data-educloud-studio] #waypoint-belay-panel {
     min-width: 0;
   }
+  body[data-educloud-studio] #jp-right-stack:has(> #waypoint-belay-panel:not(.lm-mod-hidden)):not(.lm-mod-hidden) > #waypoint-belay-panel {
+    inset: 0 !important;
+    width: auto !important;
+    height: auto !important;
+  }
   body[data-educloud-studio] #jp-main-split-panel:has(> #jp-right-stack:not(.lm-mod-hidden) > #waypoint-belay-panel:not(.lm-mod-hidden)) > :is(#jp-main-dock-panel, #jp-left-stack, .lm-SplitPanel-handle) {
     visibility: hidden;
   }
@@ -57,5 +66,8 @@ body[data-educloud-studio] .educloud-action-error{position:absolute;right:16px;t
   body[data-educloud-studio] .jp-Notebook .cm-line {
     white-space: pre-wrap;
     overflow-wrap: anywhere;
+  }
+  body[data-educloud-studio] .jp-Notebook .cm-content {
+    min-width: 0;
   }
 }
