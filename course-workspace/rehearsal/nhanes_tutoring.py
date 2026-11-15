@@ -258,6 +258,8 @@ class NhanesTutoring:
         page.set_viewport_size({'width': 320, 'height': 820})
         try:
             expect(frame).to_be_visible()
+            expect(help_page.locator('[data-studio-theme-picker]')).to_be_hidden()
+            expect(page.get_by_label('Appearance', exact=True)).to_be_visible()
             page.wait_for_function("""() => {
               const rect = selector => document.querySelector(selector).getBoundingClientRect();
               const onScreen = selector => {

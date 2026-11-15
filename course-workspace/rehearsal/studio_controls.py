@@ -21,9 +21,9 @@ try:
   expect(page.get_by_role('heading',name='Results and history')).to_be_focused()
   assert attempts[0]==2
   report['passed'].append('real-detail-response-after-injected-503-and-keyboard-retry')
-  summary=page.locator('summary');summary.focus()
+  summary=page.get_by_text('Per-test results & history',exact=True);summary.focus()
   page.evaluate('load()')
-  expect(summary).to_be_focused();assert page.locator('details').evaluate('e=>e.open')
+  expect(summary).to_be_focused();assert summary.evaluate('e=>e.parentElement.open')
   report['passed'].append('work-refresh-preserves-focused-expanded-history')
   # Inject changing API observations to exercise UI refresh, not real grading.
   observed=page.request.get(url+'/me/work').json()
@@ -48,7 +48,7 @@ try:
   expect(page.locator('.work-meta a')).to_have_attribute('href','https://example.org/new-repository')
   expect(page.locator('details tbody tr')).to_have_count(1)
   expect(summary).to_be_focused()
-  summary.click();expect(page.locator('details')).not_to_have_attribute('open','')
+  summary.click();expect(page.locator('details').filter(has=summary)).not_to_have_attribute('open','')
   next_grade(2);page.evaluate('load()')
   expect(page.locator('.row > .score')).to_have_text('2 / 10')
   assert detail_reads==[1],detail_reads
@@ -58,7 +58,7 @@ try:
   page.unroute(url+'/me/work/s')
   page.route(url+'/me/work/s',lambda route:held.append(route))
   next_grade(3);page.evaluate('load()')
-  expect(page.locator('details')).to_contain_text('Loading details')
+  expect(page.locator('details').filter(has=summary)).to_contain_text('Loading details')
   page.wait_for_function('true')
   assert len(held)==1
   next_grade(4);page.evaluate('load()')
@@ -68,6 +68,11 @@ try:
   held[0].fulfill(json={'history':details['history'][:3],'tests':[],'assessments':[]})
   expect(page.locator('details tbody tr')).to_have_count(4)
   report['passed'].append('injected-metadata-and-grade-revisions-refresh-open-closed-and-inflight-history')
+  history=page.get_by_role('table',name='Attempt history')
+  assert '4'*40 not in history.inner_text()
+  history.get_by_text('Technical details',exact=True).last.press('Enter')
+  assert '4'*40 in history.inner_text()
+  report['passed'].append('attempt-history-hides-commits-until-requested')
   page.goto(url+'/me?submission=s&appearance=dark#retained-synthetic-fragment')
   expect(page.get_by_label('Appearance',exact=True)).to_have_value('dark')
   assert 'appearance=' not in page.url and 'submission=s' in page.url and page.url.endswith('#retained-synthetic-fragment')
@@ -95,8 +100,36 @@ try:
   expect(submit.locator('#file-summary')).to_contain_text('response.md')
   expect(submit.locator('#preview')).to_be_enabled()
   assert len(work_reads)==2
-  submit.close()
   report['passed'].append('injected-assignment-retry-is-single-flight-and-retains-selected-files')
+  preview_id='synthetic-preview-reference'
+  receipt={'id':preview_id,'status':'preview','branch':'fixture-branch','base_revision':'a'*40,
+           'created_at':'2026-11-15T12:00:00Z','expires_at':'2030-01-01T12:00:00Z',
+           'changes':[{'path':'response.md','action':'create','bytes':20,'sha256':'b'*64}]}
+  previews=[]
+  def preview_response(route):
+   previews.append(route.request.post_data_json['idempotency_key'])
+   route.fulfill(status=201,json=receipt)
+  submit.unroute(url+'/me/work')
+  submit.route(url+'/me/work',lambda route:route.fulfill(json=observed))
+  submit.route('**/submission-previews',preview_response)
+  submit.route('**/submission-previews/*/confirm',lambda route:route.fulfill(status=401,json={'error':'synthetic sign-in control'}))
+  submit.locator('#preview').press('Enter')
+  submit.locator('#confirm').press('Enter')
+  expect(submit.locator('#status')).to_contain_text('Your Cairn session ended.')
+  submit.locator('#reload').press('Enter')
+  expect(submit.locator('#status')).to_contain_text('Review or retry confirmation for your saved preview.')
+  expect(submit.locator('#file-summary')).to_contain_text('response.md')
+  submit.unroute('**/submission-previews/*/confirm')
+  submit.route('**/submission-previews/*/confirm',lambda route:route.fulfill(status=410,json={'error':'synthetic expiry control'}))
+  submit.locator('#confirm').press('Enter')
+  expect(submit.locator('#status')).to_contain_text('This preview expired.')
+  expect(submit.locator('#preview')).to_be_focused()
+  submit.keyboard.press('Enter')
+  expect(submit.locator('#preview-heading')).to_be_focused()
+  assert len(previews)==2 and previews[0]!=previews[1]
+  assert submit.evaluate('document.documentElement.scrollWidth===innerWidth')
+  submit.close()
+  report['passed'].append('injected-sign-in-and-expired-preview-recover-selected-files-by-keyboard')
   for pref,resolved in [('dark','dark'),('light','light'),('system','dark')]:
    page.emulate_media(color_scheme='dark');page.get_by_label('Appearance',exact=True).select_option(pref)
    expect(page.locator('html')).to_have_attribute('data-studio-theme',resolved)
@@ -115,6 +148,11 @@ try:
   teacher.reload();expect(teacher.get_by_label('Appearance',exact=True)).to_have_value('dark')
   teacher.set_viewport_size({'width':320,'height':820})
   expect(teacher.get_by_role('heading',name='Synthetic assessment course',exact=True)).to_be_visible()
+  assert teacher.evaluate('document.documentElement.scrollWidth===innerWidth')
+  teacher.get_by_role('heading',name='Explain your reasoning',exact=True).wait_for()
+  expect(teacher.get_by_role('button',name='Run automated checks')).to_be_visible()
+  teacher.get_by_role('button',name='Show assignment details').press('Enter')
+  expect(teacher.get_by_text('Assignment reference',exact=False)).to_be_hidden()
   assert teacher.evaluate('document.documentElement.scrollWidth===innerWidth')
   teacher.screenshot(path=str(root/'instructor-320-dark.png'),full_page=True)
   report['passed'].append('built-instructor-console-dark-persistence-and-320-reflow')

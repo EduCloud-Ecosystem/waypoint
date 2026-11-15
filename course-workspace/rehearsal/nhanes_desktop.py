@@ -30,7 +30,7 @@ from playwright.sync_api import sync_playwright, expect
 
 PINS = {'cairn': '240b8b9c9f802e759175f6941b34c194f780e84c',
         'belay': 'c5a27073e74b9eeb7ab697190915378b50132883'}
-STUB_CAIRN_PIN = '1e56f0780cb18cb4208d79217e86863f996938d4'
+STUB_CAIRN_PIN = 'b2b9b6c9f0bcaa985c772ce43f104a98d8644a28'
 
 
 def restart_receipt(course, browser, learner, submission, receipt):
