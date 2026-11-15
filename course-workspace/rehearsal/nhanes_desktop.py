@@ -186,11 +186,21 @@ def main():
                     expect(page.get_by_role('button',name='Python 3 (ipykernel) | Idle',exact=True)).to_be_visible(timeout=60000)
                 page.keyboard.press('ControlOrMeta+s')
                 deadline=time.monotonic()+15
+                codes=[]
+                report['notebook_save_pending_reads']=0
                 while time.monotonic()<deadline:
-                    actual=json.loads((work/NHANES.files[0]).read_text())
+                    # The disk file can be temporarily empty while Jupyter saves it.
+                    # Keep the original finite wait and record every incomplete read.
+                    try:
+                        actual=json.loads((work/NHANES.files[0]).read_text())
+                    except (json.JSONDecodeError, FileNotFoundError):
+                        report['notebook_save_pending_reads']+=1
+                        page.wait_for_timeout(100)
+                        continue
                     codes=[c for c in actual['cells'] if c['cell_type']=='code']
-                    if all(type(c['execution_count']) is int for c in codes):break
+                    if codes and all(type(c['execution_count']) is int and ''.join(c['source'])==authored[c['id']] for c in codes):break
                     page.wait_for_timeout(100)
+                assert codes, 'Notebook save did not complete within 15 seconds'
                 assert all(type(c['execution_count']) is int and not any(o['output_type']=='error' for o in c['outputs']) for c in codes)
                 assert all(''.join(c['source'])==authored[c['id']] for c in codes)
                 assert any('NHANES_NATIVE_OK 192' in ''.join(o.get('text',[])) for c in codes for o in c['outputs'])
