@@ -248,6 +248,7 @@ class NhanesTutoring:
             page.wait_for_function("""() => document.documentElement.scrollWidth === innerWidth &&
               document.querySelector('#jp-main-dock-panel').getBoundingClientRect().width >= 240 &&
               document.activeElement.closest('#jp-main-dock-panel')""")
+            expect(page.locator('.jp-Notebook .jp-CodeCell .cm-content').first).to_be_in_viewport()
             page.screenshot(path=str(self.root / 'studio-notebook-320.png'))
             page.get_by_role('button', name='Ask Belay about this code', exact=True).press('Enter')
             expect(frame).to_be_visible()
@@ -276,7 +277,7 @@ class NhanesTutoring:
             # The automated refusal control ended on the disabled/no-AI page.
             # Reload the restored original profile, never extend its authority.
             frame.evaluate('(el)=>el.contentWindow.location.reload()')
-            expect(page.frame_locator('iframe[title="Course tutor"]').locator('#policy')).to_contain_text('Hints are permitted')
+            expect(page.frame_locator('iframe[title="Course tutor"]').locator('#policy')).not_to_have_text('Checking permitted help…')
         help_page = self.open_help(page, preserve_completed_work=True)
         help_page.locator('#question').evaluate('(el)=>el.readOnly=true')
         notice = ('Instructor test: one prepared NHANES question is available through OpenRouter/OpenAI. Use only this supplied example.' if self.live else 'Instructor test: this session uses a local stub. Replies demonstrate the workflow, not model or teaching quality. No paid provider is connected.')

@@ -60,6 +60,13 @@ def first_submission(course, alice, bob, item, solution, notebook_page=None, *,
     if verify_reflow:
         expect(page.locator('#preview-heading')).to_be_focused()
         page.keyboard.press('Tab')
+        expect(page.locator('#preview-checksums summary')).to_be_focused()
+        page.keyboard.press('Enter')
+        for change in expected:
+            expect(page.locator('#manifest-hashes')).to_contain_text(change['sha256'])
+        assert page.evaluate('document.documentElement.scrollWidth === innerWidth')
+        page.keyboard.press('Enter')
+        page.keyboard.press('Tab')
         expect(page.locator('#confirm')).to_be_focused()
         assert page.evaluate('document.documentElement.scrollWidth === innerWidth')
     audit(page, course.cairn_source)
@@ -67,8 +74,9 @@ def first_submission(course, alice, bob, item, solution, notebook_page=None, *,
     # The server-held preview survives a page refresh without uploading again.
     page.reload()
     page.get_by_role('button', name='Review this preview', exact=True).click()
+    page.locator('#preview-checksums summary').click()
     for change in expected:
-        expect(page.locator('#manifest')).to_contain_text(change['sha256'])
+        expect(page.locator('#manifest-hashes')).to_contain_text(change['sha256'])
     expect(page.get_by_role('button', name='Confirm submission', exact=True)).to_be_visible()
 
     def post(context, path, data, status, origin=None):
