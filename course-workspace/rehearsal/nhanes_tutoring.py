@@ -188,7 +188,7 @@ class NhanesTutoring:
         expect(help_page.get_by_role('button', name='Ask for a hint', exact=True)).to_be_disabled()
         # Retain a direct authenticated negative control: a disabled UI alone
         # cannot establish that the server refuses before admission/accounting.
-        refused = help_page.locator('body').evaluate("""async () => {
+        refused = help_page.locator('body').evaluate(r"""async () => {
           const base = location.origin + location.pathname.replace(/\/$/, '') + '/api';
           try {
             await globalThis.belayAskJobs().ask(base, '/api/sol/jobs', {
@@ -199,7 +199,7 @@ class NhanesTutoring:
             return {accepted:true};
           } catch (e) { return {accepted:false,status:e.status,message:e.message}; }
         }""")
-        assert refused['accepted'] is False and refused['status'] == 403, refused
+        assert refused['accepted'] is False and refused['status'] == 409, refused
         assert 'checkpoint' in refused['message'].lower(), refused
         report['checkpoint_refusal'] = refused
         assert self.counts() == before_checkpoint

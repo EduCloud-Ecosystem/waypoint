@@ -46,7 +46,7 @@
       return r.json();
     }
     el('checkpoint-status').textContent = 'Record your prediction checkpoint to enable a hint.';
-    try { checkpointReady = Boolean((await checkpointRequest()).checkpoint); enabled(); } catch (e) { el('checkpoint-status').textContent = e.message; }
+    checkpointRequest().then(state => { checkpointReady = checkpointReady || Boolean(state.checkpoint); enabled(); }).catch(e => { if (!checkpointReady) el('checkpoint-status').textContent = e.message; });
     el('checkpoint').onclick = async () => {
       if (!el('schema-present').checked || !el('unit-present').checked) {
         el('checkpoint-status').textContent = 'Write both predictions in your notebook and confirm both boxes first.'; return;
