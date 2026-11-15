@@ -231,7 +231,10 @@ def main():
                 restart_receipt(course,browser,alice,item['submission_id'],receipt)
                 report['passed'].append('receipt-persists-after-restart')
                 if args.operator_review_seconds:
-                    page.bring_to_front();report['operator_review']=wait_for_review(browser,page,args.operator_review_seconds)
+                    if tutor:
+                        report['operator_review'] = tutor.review(browser,page,args.operator_review_seconds)
+                    else:
+                        page.bring_to_front();report['operator_review']=wait_for_review(browser,page,args.operator_review_seconds)
                 if args.live_review_seconds:
                     report['live_review'] = tutor.review(browser, page, args.live_review_seconds)
             finally:browser.close()

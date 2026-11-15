@@ -205,17 +205,26 @@ class NhanesTutoring:
         report['tutoring_tested'] = True
 
     def review(self, browser, page, seconds):
+        frame = page.locator('iframe[title="Course tutor"]')
+        if frame.count():
+            # The automated refusal control ended on the disabled/no-AI page.
+            # Reload the restored original profile, never extend its authority.
+            frame.evaluate('(el)=>el.contentWindow.location.reload()')
+            expect(page.frame_locator('iframe[title="Course tutor"]').locator('#policy')).to_contain_text('Hints are permitted')
         help_page = self.open_help(page, preserve_completed_work=True)
         help_page.locator('#question').evaluate('(el)=>el.readOnly=true')
-        help_page.locator('#provider-notice').evaluate("el=>el.textContent='Instructor test: one prepared NHANES question is available through OpenRouter/OpenAI. Use only this supplied example. Saving, submission and grading remain separate.'")
+        notice = ('Instructor test: one prepared NHANES question is available through OpenRouter/OpenAI. Use only this supplied example.' if self.live else 'Instructor test: this session uses a local stub. Replies demonstrate the workflow, not model or teaching quality. No paid provider is connected.')
+        help_page.locator('#provider-notice').evaluate('(el,text)=>el.textContent=text', notice)
         help_page.locator('#context-details').evaluate('(el)=>el.open=false')
         help_page.locator('h1').scroll_into_view_if_needed()
         page.bring_to_front()
+        page.screenshot(path=str(self.root / 'studio-review.png'), full_page=True)
         started = time.monotonic()
         duration = max(0, min(seconds, self.expires - time.time()))
         end = started + duration
         print(json.dumps({'instructor_review': 'open', 'seconds_remaining': round(duration),
-            'max_requests': 7, 'max_reserved_usd': 0.175, 'note': 'Use the opened browser; closing it or the deadline stops this session.'}), flush=True)
+            'mode': self.mode, 'max_requests': 7 if self.live else 0, 'max_reserved_usd': 0.175 if self.live else 0,
+            'note': 'Use the opened browser; closing it or the deadline stops this session.'}), flush=True)
         while time.monotonic() < end and browser.is_connected() and not page.is_closed():
             page.wait_for_timeout(min(250, max(0, end - time.monotonic()) * 1000))
         return {'elapsed_seconds': round(time.monotonic() - started, 2), 'human_acceptance_recorded': False}
