@@ -21,3 +21,9 @@ SonarQube Cloud is already installed and this public project uses automatic anal
 The YAML was validated against CodeRabbit's official V2 schema retrieved on 2026-11-15. Source changes are confined to these two root configuration files and this document. No application runtime changed; no local application suite rerun is claimed. The setup PR should exercise Sonar's automatic PR integration. CodeRabbit is active only after an installed-app record and an actual review are observed. Keep setup, scan completion and issue remediation distinct.
 
 References: [Sonar automatic analysis](https://docs.sonarsource.com/sonarqube-cloud/analyzing-source-code/automatic-analysis), [CodeRabbit configuration](https://docs.coderabbit.ai/reference/configuration), [CodeRabbit GitHub setup](https://docs.coderabbit.ai/platforms/github-com).
+
+## Explicit source and test scope
+
+Both initial roots are the repository root. `sonar.test.inclusions` identifies the actual test directories and file conventions; identical `sonar.exclusions` remove those files only from production classification, not from test analysis. This avoids guessing and duplicate indexing. No blanket evidence or fixture exclusion is added. Runtime, deployment, operator and launcher code remain in the source scope unless explicitly identified as a verification script.
+
+These settings address the SonarPython warning about missing `sonar.tests`; they do not import coverage or establish that every initial finding is valid. Review the next Sonar analysis for accepted scope and warnings.
