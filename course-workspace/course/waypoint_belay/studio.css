@@ -1,0 +1,73 @@
+/* A restrained course skin over native JupyterLab. No new editor or theme engine. */
+body[data-educloud-studio="info511-nhanes-v1"]{--jp-brand-color0:#87051a;--jp-brand-color1:#ab0520;--jp-brand-color2:#c74a61;--jp-brand-color3:#f9e9ec;--jp-accent-color1:#1e5288}
+body[data-educloud-studio] #jp-top-panel{border-top:3px solid #0c234b;border-bottom:1px solid var(--jp-border-color2)}
+body[data-educloud-studio] .educloud-course-actions{gap:10px!important;padding:0 10px!important;flex-wrap:wrap}
+body[data-educloud-studio] .educloud-course{color:var(--jp-ui-font-color1);font-weight:600;font-size:12px;white-space:nowrap}
+body[data-educloud-studio] .educloud-course-actions button{font:inherit;color:#fff;background:#ab0520;border:1px solid #ab0520;border-radius:2px;padding:3px 10px;cursor:pointer;white-space:nowrap}
+body[data-educloud-studio] .educloud-course-actions button:focus-visible{outline:2px solid var(--jp-ui-font-color1);outline-offset:2px}
+body[data-educloud-studio] .educloud-action-status{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+body[data-educloud-studio] #waypoint-cairn-link{padding:0 8px!important;font-weight:500}
+body[data-educloud-studio] #waypoint-belay-panel{min-width:340px}
+body[data-educloud-studio] .educloud-tutor-panel{display:flex;flex-direction:column;background:var(--jp-layout-color0)}
+body[data-educloud-studio] .educloud-tutor-panel iframe{display:block;width:100%;height:100%;flex:1;border:0;background:var(--jp-layout-color0)}
+@media(max-width:900px){body[data-educloud-studio] .educloud-course{display:none}body[data-educloud-studio] #waypoint-belay-panel{min-width:300px}}
+body[data-educloud-studio] .educloud-action-error{position:absolute;right:16px;top:38px;z-index:1000;max-width:340px;background:var(--jp-layout-color0);color:var(--jp-ui-font-color1);border:1px solid #ab0520;padding:8px;font-size:12px}
+
+@media (max-width: 600px) {
+  body[data-educloud-studio] #jp-top-panel {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    min-width: 0;
+    min-height: calc(var(--jp-private-menubar-height, 28px) + 32px);
+  }
+  body[data-educloud-studio] #jp-top-panel > #jp-MainLogo {
+    flex: 0 0 33px;
+  }
+  body[data-educloud-studio] #jp-menu-panel {
+    flex: 1 1 calc(100% - 33px);
+    min-width: 0;
+    overflow-x: auto;
+  }
+  body[data-educloud-studio] #jp-top-panel > :is(#waypoint-cairn-link, #waypoint-belay-link) {
+    min-height: 28px;
+  }
+  body[data-educloud-studio] .educloud-action-error {
+    top: 100%;
+    max-width: calc(100vw - 32px);
+  }
+  body[data-educloud-studio] :is(#jp-main-content-panel, #jp-main-vsplit-panel, #jp-main-split-panel, #jp-main-dock-panel) {
+    min-width: 0 !important;
+  }
+  body[data-educloud-studio] #jp-left-stack {
+    min-width: 0 !important;
+    max-width: 60vw;
+  }
+  body[data-educloud-studio] #jp-right-stack:has(> #waypoint-belay-panel:not(.lm-mod-hidden)):not(.lm-mod-hidden) {
+    inset: 0 !important;
+    width: auto !important;
+    height: auto !important;
+    min-width: 0 !important;
+    z-index: 2;
+  }
+  body[data-educloud-studio] #waypoint-belay-panel {
+    min-width: 0;
+  }
+  body[data-educloud-studio] #jp-right-stack:has(> #waypoint-belay-panel:not(.lm-mod-hidden)):not(.lm-mod-hidden) > #waypoint-belay-panel {
+    inset: 0 !important;
+    width: auto !important;
+    height: auto !important;
+  }
+  body[data-educloud-studio] #jp-main-split-panel:has(> #jp-right-stack:not(.lm-mod-hidden) > #waypoint-belay-panel:not(.lm-mod-hidden)) > :is(#jp-main-dock-panel, #jp-left-stack, .lm-SplitPanel-handle) {
+    visibility: hidden;
+  }
+  body[data-educloud-studio] :is(.jp-Notebook, .jp-Notebook .jp-Cell, .jp-Notebook .jp-Cell-inputWrapper) {
+    min-width: 0;
+  }
+  body[data-educloud-studio] .jp-Notebook .cm-line {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  body[data-educloud-studio] .jp-Notebook .cm-content {
+    min-width: 0;
+  }
+}

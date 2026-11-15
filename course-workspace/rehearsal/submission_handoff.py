@@ -9,7 +9,8 @@ from accessibility import audit, tab_to
 
 
 def first_submission(course, alice, bob, item, solution, notebook_page=None, *,
-                     selected_files=None, learner_username="alice", expected_actions=None):
+                     selected_files=None, learner_username="alice", expected_actions=None,
+                     verify_reflow=False):
     """Use the existing explicit flow for a toy answer or a selected CW1 bundle.
 
     selected_files is a caller-owned {relative_path: saved_bytes} snapshot. It is
@@ -41,6 +42,10 @@ def first_submission(course, alice, bob, item, solution, notebook_page=None, *,
     expect(page.get_by_text(f'Signed in to Cairn as {learner_username}.', exact=False)).to_be_visible()
     for name in files:
         expect(page.locator('#file-summary')).to_contain_text(name)
+    if verify_reflow:
+        page.set_viewport_size({'width':320,'height':820})
+        page.emulate_media(color_scheme='dark')
+        assert page.evaluate('document.documentElement.scrollWidth === innerWidth')
     assert course.request(alice, 'GET', endpoint + '/submission-receipts')['receipts'] == []
     with page.expect_response(lambda response: response.url.endswith('/submission-previews') and response.request.method == 'POST') as response:
         tab_to(page, page.get_by_role('button', name='Preview submission', exact=True))
@@ -52,13 +57,30 @@ def first_submission(course, alice, bob, item, solution, notebook_page=None, *,
     assert preview['status'] == 'preview'
     assert preview['changes'] == expected
     expect(page.get_by_role('button', name='Confirm submission', exact=True)).to_be_visible()
+    if verify_reflow:
+        expect(page.locator('#preview-heading')).to_be_focused()
+        page.keyboard.press('Tab')
+        expect(page.locator('#preview-checksums summary')).to_be_focused()
+        page.keyboard.press('Enter')
+        for change in expected:
+            expect(page.locator('#manifest-hashes')).to_contain_text(change['sha256'])
+        assert page.evaluate('document.documentElement.scrollWidth === innerWidth')
+        page.keyboard.press('Enter')
+        page.keyboard.press('Tab')
+        expect(page.locator('#confirm')).to_be_focused()
+        assert page.evaluate('document.documentElement.scrollWidth === innerWidth')
     audit(page, course.cairn_source)
     page.screenshot(path=str(course.root / (screenshot_prefix + 'submission-preview.png')), full_page=True)
     # The server-held preview survives a page refresh without uploading again.
     page.reload()
     page.get_by_role('button', name='Review this preview', exact=True).click()
+    checksums = page.locator('#manifest')
+    disclosure = page.locator('#preview-checksums summary')
+    if verify_reflow or disclosure.count():
+        disclosure.click()
+        checksums = page.locator('#manifest-hashes')
     for change in expected:
-        expect(page.locator('#manifest')).to_contain_text(change['sha256'])
+        expect(checksums).to_contain_text(change['sha256'])
     expect(page.get_by_role('button', name='Confirm submission', exact=True)).to_be_visible()
 
     def post(context, path, data, status, origin=None):
@@ -85,12 +107,18 @@ def first_submission(course, alice, bob, item, solution, notebook_page=None, *,
         intercepted.append(response.json()['id'])
         route.abort('failed')
     page.route(course.url + confirm, lose_response)
-    page.get_by_role('button', name='Confirm submission', exact=True).click()
+    page.get_by_role('button', name='Confirm submission', exact=True).press('Enter')
     expect(page.locator('#status')).to_contain_text('same preview cannot create a second submission')
     page.unroute(course.url + confirm, lose_response)
     assert intercepted == [preview['id']]
-    page.get_by_role('button', name='Confirm submission', exact=True).click()
+    if verify_reflow:
+        expect(page.locator('#confirm')).to_be_focused()
+    page.get_by_role('button', name='Confirm submission', exact=True).press('Enter')
     expect(page.locator('#preview-section')).to_be_hidden()
+    if verify_reflow:
+        expect(page.locator('#receipts-heading')).to_be_focused()
+        expect(page.locator('#receipt-status')).to_contain_text('Committed — repository receipt verified', timeout=35000)
+        assert page.evaluate('document.documentElement.scrollWidth === innerWidth')
     for _ in range(120):
         receipt = course.request(alice, 'GET', endpoint + '/submission-receipts/' + preview['id'])
         if receipt['status'] == 'committed':
