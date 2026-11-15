@@ -1,6 +1,6 @@
 # Studio Classic local instructor test
 
-Status: actual local synthetic NHANES workflow passed 13 integration controls, with zero provider calls and owned-resource cleanup. Seven supplemental browser controls passed against Cairn's opt-in fixture. See `studio-classic-verification-v2.json` (v1 retained as history) for exact application pins, retained failures and evidence hashes. This is not a student deployment or human accessibility acceptance.
+Status: the Studio readability update passed 13 local synthetic NHANES integration controls with zero provider calls and owned-resource cleanup. Nine supplemental browser controls passed against Cairn’s opt-in fixture. See `studio-classic-readability-verification.json` for exact source revisions, expiry and receipt checks, and evidence hashes. Deployment and learner admission are on hold. Human accessibility acceptance is pending.
 
 Run from this Waypoint worktree:
 
@@ -9,7 +9,7 @@ course-workspace/launch-nhanes-instructor.command --verify-stub
 course-workspace/launch-nhanes-instructor.command --stub
 ```
 
-The first command is automated and provider-disabled. The second opens a finite synthetic instructor review after the controls. `--live` uses the existing private provider configuration and opens the bounded prepared live question for explicit human action; it is not exercised by this verification. Original accounting and expiry limits remain enforced. No credential belongs in source or screenshots.
+The first command is automated and provider-disabled. The second opens a finite synthetic instructor review after the controls. `--live` uses the existing private provider configuration and opens the bounded prepared live question for explicit human action; it is not exercised by this verification. Live mode has its own previously reviewed Cairn source pin. `NHANES_LIVE_CAIRN_CHECKOUT` can point to a clean checkout of that revision when the Studio checkout has advanced. The provider-disabled commands use the readability revision recorded in the evidence. Original accounting and expiry limits remain enforced. No credential belongs in source or screenshots.
 
 The notebook, tutor and saved-file picker use Light/Dark/System. Cairn receives only the appearance enum across its handoff; no course content is stored with that preference. The actual notebook theme follows the choice. Student work, submission confirmation, automated checks and instructor review remain separate.
 
@@ -20,3 +20,13 @@ Supplemental recovery/theme checks use the existing provider-disabled `TestAsses
 Application tests also passed: 764 Waypoint unit tests, Cairn API tests, dashboard build and 25 dashboard tests. The two full-journey failures are retained: early Back navigation before checkpoint handlers (fixed), and a missing cached axe-core dependency in the isolated checkout (restored with the identical lock). Neither incurred provider calls. New worktrees were created with local Git after two app-managed creation attempts stalled without creating a checkout; original worktrees and audit branches were preserved.
 
 The November 15 advisory-review pass adds injected API controls for refreshed assignment metadata, changed grading history while open/closed/in flight, concurrent assignment retries and one-time theme handoff consumption. These validate UI behavior, not actual injected grades. The new full integrated run independently exercises actual grading and receipts. Its initial observer read an incomplete Jupyter disk write and failed; v2 retains that failure. The corrected observer keeps the same 15-second deadline, counts incomplete reads, and requires complete executed authored cells.
+
+## Readability update
+
+The saved-file picker, submission preview, receipt and grading history leave identifiers and checksums in expandable technical details. The receipt says when confirmation arrives, when files are saved, and when a learner should retry or ask for help. Instructor actions distinguish automated checks from publication.
+
+The actual browser journey confirmed 320 px reflow, keyboard focus, preview recovery after reload, and idempotent retry after a deliberately lost confirmation response. Tutor expiry returned HTTP 401 with the original credential unchanged. The browser saved and submitted four files after that expiry and verified them against the repository and the receipt after restart. The supplemental fixture injected assignment loading, sign-in and preview expiry errors to check recovery messages and retained files.
+
+The first dashboard typecheck flagged an unintended prop on the evidence picker. The correction passed the dashboard build and tests. An existing Waypoint browser test expected the old handoff copy. Its assertions now exercise the new recovery instructions and confirm the saved file selection remains available.
+
+The local Waypoint branch started at `9b81504` and Cairn at `240b8b9`, with clean checkouts. The later Studio Classic merges on main have matching application trees at these bases. The test and documentation follow-up retains the application revisions recorded by the browser run. The final local checks passed 764 Waypoint course workspace tests, 352 rehearsal tests (8 skipped), the Cairn Go suite, and the dashboard build and 25 tests. Hosted CI and the manual screen-reader pass are pending.
