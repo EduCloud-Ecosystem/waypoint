@@ -2,6 +2,8 @@
 # Local synthetic instructor workflow; never a student deployment.
 set -eu
 umask 077
+export PATH="/Users/gregchism/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.26.11.darwin-arm64/bin:$PATH"
+export GOTOOLCHAIN=local
 cd -- "${0:A:h:h}"
 mode="${1:---live}"
 if [[ "$mode" != --check && "$mode" != --stub && "$mode" != --verify-stub && "$mode" != --live ]]; then
@@ -9,17 +11,17 @@ if [[ "$mode" != --check && "$mode" != --stub && "$mode" != --verify-stub && "$m
 fi
 driver=/Users/gregchism/.codex/worktrees/classroom-live-notebook/waypoint/.venv/bin/python
 kernel=/Users/gregchism/.codex/worktrees/waypoint-nhanes-qualification/waypoint/output/nhanes-qualification-v1/kernel-env/bin/python
-cairn=/Users/gregchism/.codex/worktrees/cairn-nhanes-handoff/cairn
+cairn=/Users/gregchism/dev/.educloud-worktrees/cairn-studio-classic-v1
 belay=/Users/gregchism/dev/.educloud-worktrees/belay-classroom-system-one-consumer-v1
 portage=/Users/gregchism/.codex/worktrees/classroom-live-tutoring/portage
 keyfile=/Users/gregchism/dev/.educloud-worktrees/portage-system-one-shadow-pilot-v1/.qualification/openrouter/.env
 [[ -x "$driver" && -x "$kernel" && -d "$cairn" && -d "$belay" && -d "$portage" ]] || { print -u2 'A qualified local checkout or environment is missing. See NHANES-LIVE-TESTING.md.'; exit 1; }
 [[ -z "$(git status --porcelain --untracked-files=no)" ]] || { print -u2 'Commit the Waypoint source before starting a qualified window.'; exit 1; }
-cairn_pin=46c963b59feb67324714e308e8243c779cb14a81
+cairn_pin=a6322abfa687a206e659e8e874134ad8effad8b1
 if [[ "$mode" == --live || "$mode" == --check ]]; then
-  cairn_pin=2eb0a0415f791f7d53734d5909a3a3d7454e34f0
+  cairn_pin=a6322abfa687a206e659e8e874134ad8effad8b1
 fi
-[[ "$(git -C "$cairn" rev-parse HEAD)" == "$cairn_pin" && "$(git -C "$belay" rev-parse HEAD)" == c5a27073e74b9eeb7ab697190915378b50132883 && "$(git -C "$portage" rev-parse HEAD)" == b72881f009e61e1311b6e46b92b42841991fd163 ]] || { print -u2 'The component pins for this mode do not match. The revised UI is eligible for --stub and --verify-stub.'; exit 1; }
+[[ "$(git -C "$cairn" rev-parse HEAD)" == "$cairn_pin" && "$(git -C "$belay" rev-parse HEAD)" == c5a27073e74b9eeb7ab697190915378b50132883 && "$(git -C "$portage" rev-parse HEAD)" == b72881f009e61e1311b6e46b92b42841991fd163 ]] || { print -u2 'The component pins for this mode do not match. Restore the reviewed source revisions before retrying.'; exit 1; }
 if [[ "$mode" == --live || "$mode" == --check ]]; then
   [[ -f "$keyfile" && "$(stat -f %Lp "$keyfile")" == 600 ]] || { print -u2 'The existing private provider key file is missing or has incorrect permissions.'; exit 1; }
 fi

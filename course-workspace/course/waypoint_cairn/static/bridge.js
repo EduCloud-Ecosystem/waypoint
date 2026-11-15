@@ -75,7 +75,7 @@
     if (!snapshot || phase !== 'idle') return;
     error(''); nonce = [...crypto.getRandomValues(new Uint8Array(32))].map(value => value.toString(16).padStart(2, '0')).join('');
     const fragment = encodeURIComponent(JSON.stringify({version: 1, origin: location.origin, nonce}));
-    popup = window.open(`${config.origin}/me/submit#waypoint=${fragment}`, '_blank');
+    popup = window.open(`${config.origin}/me/submit?appearance=${encodeURIComponent(window.EduCloudAppearance.get())}#waypoint=${fragment}`, '_blank');
     if (!popup) { stop(); error('Allow popups for this workspace, then click Continue in Cairn again.'); return; }
     phase = 'waiting'; deadline = Date.now() + 10 * 60 * 1000; $('send').disabled = true;
     status('In Cairn, sign in, choose an assignment, and click Receive saved files. Nothing has been submitted.');
@@ -95,5 +95,5 @@
     }
   });
   window.addEventListener('pagehide', () => { stop(); snapshot = null; });
-  try { config = await request('config'); $('course-title').textContent = config.course_title || ''; await browse(''); } catch (e) { error(e.message); status('Cairn handoff is unavailable.'); }
+  try { config = await request('config'); $('course-title').textContent = config.course_title || ''; $('nhanes-declaration').hidden = !config.course_title?.includes('NHANES'); await browse(''); } catch (e) { error(e.message); status('Cairn handoff is unavailable.'); }
 })();

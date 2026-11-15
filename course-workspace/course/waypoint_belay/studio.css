@@ -71,3 +71,13 @@ body[data-educloud-studio] .educloud-action-error{position:absolute;right:16px;t
     min-width: 0;
   }
 }
+
+/* Studio Classic keeps the file tree and native notebook, with one theme control. */
+body[data-educloud-studio] #jp-top-panel{border-top:2px solid #ab0520}
+body[data-educloud-studio] .studio-appearance{margin:0;gap:5px}
+body[data-educloud-studio] .studio-appearance select{padding:3px 5px;min-height:28px;font-size:12px}
+body[data-educloud-studio] .educloud-course-actions{min-width:0;max-width:100vw}
+body[data-educloud-studio] .educloud-course-actions button{background:var(--studio-paper);color:var(--studio-ink);border-color:var(--studio-control);min-height:28px}
+body[data-educloud-studio] .educloud-course-actions button:focus-visible{outline:3px solid var(--studio-focus)}
+body[data-educloud-studio] #waypoint-cairn-link a{color:var(--studio-link);text-underline-offset:3px}
+@media(max-width:600px){body[data-educloud-studio] #jp-top-panel{min-height:calc(var(--jp-private-menubar-height,28px) + 76px)}body[data-educloud-studio] #waypoint-belay-link{flex-basis:100%;justify-content:flex-end}body[data-educloud-studio] .educloud-course-actions{gap:8px!important}}

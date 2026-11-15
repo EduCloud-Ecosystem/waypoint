@@ -28,9 +28,9 @@ from operator_review import wait_for_review, validate
 from nhanes_tutoring import NhanesTutoring, validate_tutoring
 from playwright.sync_api import sync_playwright, expect
 
-PINS = {'cairn': '2eb0a0415f791f7d53734d5909a3a3d7454e34f0',
+PINS = {'cairn': 'a6322abfa687a206e659e8e874134ad8effad8b1',
         'belay': 'c5a27073e74b9eeb7ab697190915378b50132883'}
-STUB_CAIRN_PIN = '46c963b59feb67324714e308e8243c779cb14a81'
+STUB_CAIRN_PIN = 'a6322abfa687a206e659e8e874134ad8effad8b1'
 
 
 def restart_receipt(course, browser, learner, submission, receipt):
@@ -222,6 +222,8 @@ def main():
                 def bridge(context,selected):
                     with page.expect_popup() as opened:page.get_by_role('link',name='Submit saved files to Cairn',exact=True).click()
                     picker=opened.value
+                    if args.verify_studio_ui:
+                        expect(picker.locator('html')).to_have_attribute('data-studio-theme', 'dark')
                     for name in NHANES.files:picker.get_by_role('checkbox',name=name,exact=False).check()
                     picker.screenshot(path=str(root/'saved-file-picker.png'),full_page=True)
                     if args.verify_studio_ui:
@@ -232,7 +234,11 @@ def main():
                         expect(picker.get_by_role('button',name='Continue in Cairn')).to_be_focused()
                         assert picker.evaluate('document.documentElement.scrollWidth === innerWidth')
                     with context.expect_page() as received:picker.get_by_role('button',name='Continue in Cairn',exact=True).click()
-                    receiver=received.value;receiver.get_by_label('Assignment',exact=True).select_option(selected['submission_id'])
+                    receiver=received.value
+                    if args.verify_studio_ui:
+                        expect(receiver.locator('html')).to_have_attribute('data-studio-theme', 'dark')
+                        report['passed'].append('appearance-preserved-through-cross-origin-handoff')
+                    receiver.get_by_label('Assignment',exact=True).select_option(selected['submission_id'])
                     receiver.get_by_role('button',name='Receive saved files from Waypoint',exact=True).click()
                     expect(receiver.locator('#bridge-status')).to_contain_text('Nothing has been submitted yet.')
                     return receiver

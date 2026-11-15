@@ -5,13 +5,13 @@
   const origin = location.origin, basePath = location.pathname.replace(/\/$/, '');
   const base = origin + basePath + '/api';
   window.BELAY_SESSION_PROXY = true; window.BELAY_AUTH_ORIGIN = origin;
-  let profile, captured = false, optedOut = false, busy = false;
+  let profile, captured = false, optedOut = false, busy = false, checkpointRequired = false, checkpointReady = false;
   let notebookWindow = null, nonce = null;
   const tellNotebook = (type, fields = {}) => {
     if (notebookWindow) notebookWindow.postMessage({type, version:1, nonce, ...fields}, origin);
   };
   const jobs = globalThis.belayAskJobs();
-  function enabled() {el('ask').disabled = busy || optedOut || !captured || !profile?.available || profile.assistance !== 'hints' || Date.now() >= profile.expires_at * 1000;}
+  function enabled() {el('ask').disabled = busy || optedOut || (checkpointRequired && !checkpointReady) || !captured || !profile?.available || profile.assistance !== 'hints' || Date.now() >= profile.expires_at * 1000;}
   function notice() {
     const policy = !profile?.available || Date.now() >= profile.expires_at * 1000
       ? 'Help access expired or unavailable. You can still save and submit while your workspace and assignment are open.'
@@ -28,6 +28,7 @@
     const response = await fetch(basePath + '/profile', {headers, credentials:'same-origin',cache:'no-store',redirect:'error'});
     if (!response.ok) throw Error('Course help configuration is unavailable. Your saved work is unchanged.');
     profile = await response.json();
+    checkpointRequired = profile.exercise_id === 'info511-nhanes-wrangling';
     el('assignment').textContent = 'Assignment: ' + profile.title;
     el('notebook').href = profile.notebook; el('submission').href = profile.submission;
     notice(); setInterval(notice, 1000);
@@ -44,6 +45,8 @@
       if (!r.ok) throw Error('Checkpoint could not be confirmed. Your notebook is unchanged. Retry the checkpoint or continue without AI.');
       return r.json();
     }
+    el('checkpoint-status').textContent = 'Record your prediction checkpoint to enable a hint.';
+    try { checkpointReady = Boolean((await checkpointRequest()).checkpoint); enabled(); } catch (e) { el('checkpoint-status').textContent = e.message; }
     el('checkpoint').onclick = async () => {
       if (!el('schema-present').checked || !el('unit-present').checked) {
         el('checkpoint-status').textContent = 'Write both predictions in your notebook and confirm both boxes first.'; return;
@@ -54,6 +57,7 @@
         const saved = await checkpointRequest({request_id:crypto.randomUUID().replaceAll('-', ''), expected_revision:state.revision,
           action:'checkpoint', schema_present:true, unit_present:true});
         if (!saved.checkpoint) throw Error('Checkpoint was not confirmed.');
+        checkpointReady = true; enabled();
         el('checkpoint-status').textContent = 'Prediction checkpoint recorded. You may now request a hint. Optional monitoring remains unchanged.';
       } catch (e) {el('checkpoint-status').textContent = e.message;}
       finally {el('checkpoint').disabled = false;}
