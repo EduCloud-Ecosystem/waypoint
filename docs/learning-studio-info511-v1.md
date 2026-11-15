@@ -20,6 +20,44 @@ Use `course-workspace/launch-nhanes-instructor.command --verify-stub` to rerun
 the narrow keyboard and post-expiry journey on the new Cairn pin. The dedicated
 stub qualification uses a 90-second synthetic tutor credential and no provider.
 
+**Verification checkpoint.** The clean Waypoint pilot revision
+`fc553d10dee6273e258f1604d685262e0476e1ea` used Cairn
+`46c963b59feb67324714e308e8243c779cb14a81` and Belay-classroom
+`c5a27073e74b9eeb7ab697190915378b50132883`. Its final local run passed all
+11 checks in 150.29 seconds with successful cleanup and zero model transports.
+In the same authorized workspace, the client disabled Ask as the original
+synthetic token expired, the tutor proxy returned HTTP 401, and the job and
+attempt counters remained at 1 and 4 through notebook save, four-file
+confirmation and receipt readback. The real checker reported 0/4 for the
+deliberately wrong CSV and 4/4 for the corrected CSV.
+
+Chromium verified keyboard return between the tutor and notebook at 320 CSS
+pixels, keyboard access to the preview checksums and confirmation, and receipt
+heading focus. A separate 320 CSS-pixel receipt transition fixture verified
+that focused, open receipt details survived polling in light and dark. A
+provider-disabled Cairn/SQLite assessment fixture verified 320 CSS-pixel
+instructor review, focus on the approved result, a publication status message
+and the learner's reviewed 7/10. The final Cairn Go suite passed with serial
+package execution, Go vet passed, and the Cairn web build, type check and 25
+tests passed. Waypoint's 764 course unit tests, five snapshot tests and ten
+focused rehearsal tests passed.
+
+The final journey record is
+`/Users/gregchism/.codex/worktrees/waypoint-runtime-release/waypoint/output/nhanes-instructor-20261115T174253Z-50345/result.json`
+with SHA-256 `82eab755434abf10ce1bf6b0a4117c23b7c548a2606f7b7cefd12f44ecf540b0`.
+The evidence directory `/Users/gregchism/.codex/worktrees/waypoint-runtime-release/waypoint/output/studio-release-blockers-v1`
+links the three journey attempts via their launcher logs and retains the browser
+fixture results. The first run caught a clipped tutor pane and a wrong
+verification URL. The second passed the journey and exposed tight preview
+columns and a snapshot taken before notebook paint. The final run verified the
+readable preview and waited for the editor to return to the viewport. The first
+parallel Go run failed two tests. The targeted baseline checks and the final
+serial suite passed.
+
+The handoff is local to the two pilot branches. Remaining release work includes
+human screen-reader and device testing and institutional admission. Any live
+qualification of the updated Cairn pin is a separate decision.
+
 Greg's November 14 direction replaces the busy studio mockup with a restrained reskin of the familiar Jupyter IDE. Keep code, files, outputs and native notebook controls. Add contextual tutoring in a collapsible Jupyter side panel; preserve the explicit saved-file preview, confirmation and receipt workflow. Inquiry is a later educational experience for research-driven courses, final projects and Capstones. Researcher POC/benchmarking is a different product, now in chat 01a1dcd5-6d15-7b82-aa9e-3eabdfb1e376, beginning from talks/education-compute.
 
 ## Ownership and baseline
