@@ -17,7 +17,7 @@ portage=/Users/gregchism/.codex/worktrees/classroom-live-tutoring/portage
 keyfile=/Users/gregchism/dev/.educloud-worktrees/portage-system-one-shadow-pilot-v1/.qualification/openrouter/.env
 [[ -x "$driver" && -x "$kernel" && -d "$cairn" && -d "$belay" && -d "$portage" ]] || { print -u2 'A qualified local checkout or environment is missing. See NHANES-LIVE-TESTING.md.'; exit 1; }
 [[ -z "$(git status --porcelain --untracked-files=no)" ]] || { print -u2 'Commit the Waypoint source before starting a qualified window.'; exit 1; }
-cairn_pin=240b8b9c9f802e759175f6941b34c194f780e84c
+cairn_pin=1e56f0780cb18cb4208d79217e86863f996938d4
 if [[ "$mode" == --live || "$mode" == --check ]]; then
   cairn_pin=240b8b9c9f802e759175f6941b34c194f780e84c
 fi

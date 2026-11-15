@@ -17,7 +17,10 @@
     // This header is sent only to this same-origin server, never to Cairn.
     const response = await fetch(path, {credentials: 'same-origin', cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(15000), ...options,
       headers: {...options.headers, 'X-XSRFToken': csrf()}});
-    if (!response.ok) throw new Error('Saved files unavailable. Check your session, supported filenames, and size limits, then retry.');
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) throw new Error('Your workspace session may have ended. Reload this page and sign in again.');
+      throw new Error('Could not read saved files. Check the file names and size limits, then try again.');
+    }
     return response.json();
   }
   function renderSelection() {
@@ -64,11 +67,13 @@
       const data = await request(`${config.base}/files`, {method: 'POST', headers: {'Content-Type': 'application/json', 'X-XSRFToken': csrf()}, body: JSON.stringify({paths: [...selected.keys()]})});
       if (preparedGeneration !== generation) return;
       snapshot = data.files; $('snapshot').replaceChildren();
+      $('snapshot-hashes').replaceChildren(); $('snapshot-details').open = false;
       for (const file of snapshot) {
         const li = document.createElement('li'); li.textContent = `${file.path} — ${file.size} bytes`;
-        const hash = document.createElement('span'); hash.className = 'hash'; hash.textContent = `SHA-256: ${file.sha256}`; li.append(hash); $('snapshot').append(li);
+        const hash = document.createElement('li'); hash.className = 'hash'; hash.textContent = `${file.path} — SHA-256: ${file.sha256}`;
+        $('snapshot').append(li); $('snapshot-hashes').append(hash);
       }
-      $('review').hidden = false; status('Saved snapshot prepared. Continue in Cairn when ready.'); $('send').focus();
+      $('review').hidden = false; status(snapshot.length + (snapshot.length === 1 ? ' saved file ready. ' : ' saved files ready. ') + 'Continue in Cairn when ready.'); $('send').focus();
     } catch (e) { error(e.message); } finally { $('prepare').disabled = !selected.size; }
   };
   $('send').onclick = () => {
@@ -78,9 +83,14 @@
     popup = window.open(`${config.origin}/me/submit?appearance=${encodeURIComponent(window.EduCloudAppearance.get())}#waypoint=${fragment}`, '_blank');
     if (!popup) { stop(); error('Allow popups for this workspace, then click Continue in Cairn again.'); return; }
     phase = 'waiting'; deadline = Date.now() + 10 * 60 * 1000; $('send').disabled = true;
-    status('In Cairn, sign in, choose an assignment, and click Receive saved files. Nothing has been submitted.');
+    status('Cairn opened in a new tab. Choose your assignment and select Receive saved files from Waypoint.');
     timer = setInterval(() => {
-      if (popup.closed || Date.now() > deadline) { stop(); error('Cairn was closed or the handoff expired. Click Continue in Cairn to retry.'); }
+      if (popup.closed || Date.now() > deadline) {
+        stop();
+        status('Your saved files are still ready.');
+        error('The transfer ended before Cairn confirmed it received the files. Select Continue in Cairn to reconnect.');
+        if (document.activeElement === document.body) $('send').focus();
+      }
     }, 500);
   };
   window.addEventListener('message', event => {
@@ -89,9 +99,9 @@
     if (!data || data.version !== 1 || data.nonce !== nonce) return;
     if (data.type === 'cairn-ready' && phase === 'waiting') {
       phase = 'sent'; popup.postMessage({type: 'waypoint-files', version: 1, nonce, files: snapshot}, config.origin);
-      status('Saved files sent; waiting for Cairn to validate them. Complete submission there.');
+      status('Waiting for Cairn to finish receiving your files.');
     } else if (data.type === 'cairn-received' && phase === 'sent') {
-      stop(); snapshot = null; $('review').hidden = true; status('Cairn received the saved files for review. This is not a submission receipt; finish in Cairn.');
+      stop(); snapshot = null; $('review').hidden = true; status('Cairn received the saved files. Switch to Cairn to review and confirm your submission.');
     }
   });
   window.addEventListener('pagehide', () => { stop(); snapshot = null; });
