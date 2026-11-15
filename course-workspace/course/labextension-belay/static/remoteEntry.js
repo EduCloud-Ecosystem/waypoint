@@ -22,7 +22,7 @@
       Object.keys(data).sort().join(',') === 'nonce,type,version' &&
       data.type === 'belay-notebook-ready' && data.version === 1 && data.nonce === nonce;
   }
-  function panelBridge(app, tracker, Widget, base, status) {
+  function panelBridge(app, tracker, Widget, base, status, narrow) {
     let panel, frame, nonce, pending, loaded = false, busy = false;
     function send() {
       if (!loaded || !pending) return;
@@ -39,12 +39,20 @@
       else if (v.type === 'belay-notebook-state' && keys === 'busy,nonce,type,version' && typeof v.busy === 'boolean') busy = v.busy;
       else if (v.type === 'belay-notebook-captured' && keys === 'accepted,nonce,type,version' && typeof v.accepted === 'boolean')
         status.textContent = v.accepted ? 'Selected cell ready in the tutor panel. Review it before asking.' : 'A hint is still pending. Keep its current context until it finishes.';
-      else if (v.type === 'belay-notebook-return' && keys === 'nonce,type,version' && tracker.currentWidget)
+      else if (v.type === 'belay-notebook-return' && keys === 'nonce,type,version' && tracker.currentWidget) {
+        app.shell.collapseRight();
         app.shell.activateById(tracker.currentWidget.id);
+      }
     };
     window.addEventListener('message', receive);
+    function activatePanel() {
+      if (narrow.matches) app.shell.collapseLeft();
+      app.shell.activateById(panel.id);
+      if (loaded) frame.contentDocument.getElementById('tutor-heading')?.focus();
+      else frame.focus();
+    }
     return snapshot => {
-      if (busy) {status.textContent = 'A hint is still pending. Wait before selecting another cell.'; app.shell.activateById(panel.id); return;}
+      if (busy) {status.textContent = 'A hint is still pending. Wait before selecting another cell.'; activatePanel(); return;}
       pending = snapshot;
       if (!panel) {
         nonce = Array.from(crypto.getRandomValues(new Uint8Array(32)), value => value.toString(16).padStart(2, '0')).join('');
@@ -56,7 +64,7 @@
         panel.title.closable = false;
         app.shell.add(panel, 'right', {rank:100});
       }
-      app.shell.activateById(panel.id); send();
+      activatePanel(); send();
     };
   }
   if (typeof module !== 'undefined') module.exports = {capture, ready, panelBridge};
@@ -104,7 +112,11 @@
             node.prepend(course); node.className = 'educloud-course-actions';
             button.textContent = 'Ask tutor'; button.setAttribute('aria-label', 'Ask Belay about this code');
             status.className = 'educloud-action-status';
-            showPanel = panelBridge(app, tracker, Widget, base, status);
+            const narrow = window.matchMedia('(max-width: 600px)');
+            const collapseFiles = () => { if (narrow.matches) app.shell.collapseLeft(); };
+            narrow.addEventListener('change', collapseFiles);
+            void app.restored.then(collapseFiles);
+            showPanel = panelBridge(app, tracker, Widget, base, status, narrow);
           }
           let cancel = () => {};
           const command = 'waypoint-belay:ask-active-code';

@@ -68,7 +68,9 @@ class NhanesTutoring:
         self.key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
         private(self.root / 'public.pem', self.key.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo))
         self.binding = binding
-        self.expires = min(int(time.time()) + 240, document['authority']['expires_at'])
+        self.verify_studio_ui = args.verify_studio_ui
+        help_seconds = 90 if self.verify_studio_ui else 240
+        self.expires = min(int(time.time()) + help_seconds, document['authority']['expires_at'])
         self.issue()
         self.profile = {'version': 1, 'issuer': binding['issuer'], 'audience': binding['audience'],
             'subject': 'synthetic-alice', 'institution_id': binding['institution_id'], 'class_id': cid,
@@ -150,10 +152,23 @@ class NhanesTutoring:
         return help_page
 
     def verify(self, page, report):
+        if self.verify_studio_ui:
+            private(self.root / 'profile.json', dict(self.profile, assistance='disabled'))
+            disabled = self.open_help(page)
+            expect(disabled.locator('#policy')).to_contain_text('disabled')
+            expect(disabled.locator('#ask')).to_be_disabled()
+            assert self.counts() == {'control_jobs': 0, 'control_attempts': 0}
+            private(self.root / 'profile.json', self.profile)
+            page.locator('iframe[title="Course tutor"]').evaluate('(el)=>el.contentWindow.location.reload()')
+            expect(disabled.locator('#policy')).to_contain_text('Hints are permitted')
+            disabled.get_by_role('link', name='Back to notebook').press('Enter')
+            expect(page.locator('iframe[title="Course tutor"]')).to_be_hidden()
         help_page = self.open_help(page)
         help_page.locator('#context-details').evaluate('(el)=>el.open=false')
         help_page.locator('h1').scroll_into_view_if_needed()
         page.screenshot(path=str(self.root / 'studio-ready.png'), full_page=True)
+        if self.verify_studio_ui:
+            self.verify_narrow(page, help_page)
         before_checkpoint = self.counts()
         help_page.get_by_role('button', name='Ask for a hint', exact=True).click()
         expect(help_page.locator('#status')).to_contain_text('Your saved work is unchanged', timeout=15000)
@@ -175,23 +190,26 @@ class NhanesTutoring:
         page.screenshot(path=str(self.root / 'hint.png'), full_page=True)
         before = self.counts()
         transports = self.live.evidence()['accounting']['dispatch_claims'] if self.live else 0
-        self.issue(expired=True)
-        help_page.get_by_role('button', name='Ask for a hint', exact=True).click()
-        expect(help_page.locator('#status')).to_contain_text('Your saved work is unchanged', timeout=15000)
-        assert self.counts() == before
-        self.issue()  # Restore the original expiration, never renew the authority window.
-        private(self.root / 'profile.json', dict(self.profile, assistance='disabled'))
-        page.locator('iframe[title="Course tutor"]').evaluate('(el)=>el.contentWindow.location.reload()')
-        expect(help_page.locator('#ask')).to_be_disabled()
-        expect(help_page.locator('#policy')).to_contain_text('disabled')
+        if self.verify_studio_ui:
+            self.verify_expiry(page, help_page, report)
+        else:
+            self.issue(expired=True)
+            help_page.get_by_role('button', name='Ask for a hint', exact=True).click()
+            expect(help_page.locator('#status')).to_contain_text('Your saved work is unchanged', timeout=15000)
+            assert self.counts() == before
+            self.issue()  # Restore the original expiration, never renew the authority window.
+            private(self.root / 'profile.json', dict(self.profile, assistance='disabled'))
+            page.locator('iframe[title="Course tutor"]').evaluate('(el)=>el.contentWindow.location.reload()')
+            expect(help_page.locator('#ask')).to_be_disabled()
+            expect(help_page.locator('#policy')).to_contain_text('disabled')
         assert self.counts() == before
         if self.live:
             assert self.live.evidence()['accounting']['dispatch_claims'] == transports
         help_page.get_by_role('button', name='Continue without AI', exact=True).click()
         help_page.get_by_role('link', name='Back to notebook', exact=True).click()
-        # Collapse the native sidebar, preserving its session and request state.
-        page.get_by_role('tab', name='Tutor', exact=True).click()
-        private(self.root / 'profile.json', self.profile)
+        expect(page.locator('iframe[title="Course tutor"]')).to_be_hidden()
+        if not self.verify_studio_ui:
+            private(self.root / 'profile.json', self.profile)
         text = ('Task version: info511-nhanes-wrangling-v1\nDeclaration: ai_assisted\nSummary: Automated synthetic instructor test: requested one ' + ('live' if self.live else 'local-stub') +
                 ' Belay hint about missing readings versus missing BPXO records. '
                 'The supplied operator-authored solution remains a test fixture, not learner authorship. '
@@ -204,7 +222,46 @@ class NhanesTutoring:
         report['passed'] += ['missing-checkpoint-refused-before-admission', 'NHANES-signed-job-' + self.mode + '-hint', 'expired-and-disabled-help-no-extra-attempts']
         report['tutoring_tested'] = True
 
-    def review(self, browser, page, seconds):
+    def verify_narrow(self, page, help_page):
+        viewport = page.viewport_size
+        frame = page.locator('iframe[title="Course tutor"]')
+        page.set_viewport_size({'width': 320, 'height': 820})
+        try:
+            expect(frame).to_be_visible()
+            page.wait_for_function("""() => document.documentElement.scrollWidth === innerWidth &&
+              document.querySelector('#waypoint-cairn-link').getBoundingClientRect().right <= innerWidth &&
+              document.querySelector('#waypoint-belay-link').getBoundingClientRect().right <= innerWidth &&
+              document.querySelector('#waypoint-belay-panel').getBoundingClientRect().width >= 240""")
+            assert help_page.locator('body').evaluate('el => el.scrollWidth <= el.clientWidth')
+            page.screenshot(path=str(self.root / 'studio-tutor-320.png'))
+            help_page.get_by_role('link', name='Back to notebook').press('Enter')
+            expect(frame).to_be_hidden()
+            page.wait_for_function("""() => document.documentElement.scrollWidth === innerWidth &&
+              document.querySelector('#jp-main-dock-panel').getBoundingClientRect().width >= 240 &&
+              document.activeElement.closest('#jp-main-dock-panel')""")
+            page.screenshot(path=str(self.root / 'studio-notebook-320.png'))
+            page.get_by_role('button', name='Ask Belay about this code', exact=True).press('Enter')
+            expect(frame).to_be_visible()
+            expect(help_page.locator('#tutor-heading')).to_be_focused()
+            expect(help_page.locator('#question')).to_have_value(self.inputs['question'])
+        finally:
+            page.set_viewport_size(viewport)
+
+    def verify_expiry(self, page, help_page, report):
+        token_before = (self.root / 'credential.jwt').read_bytes()
+        expect(help_page.locator('#policy')).to_contain_text('Help access expired', timeout=95000)
+        expect(help_page.locator('#ask')).to_be_disabled()
+        response = page.evaluate("""() => {
+            const cookie = document.cookie.split(';').map(value=>value.trim()).find(value=>value.startsWith('_xsrf='));
+            return fetch('/belay/api/classroom/info511-nhanes-wrangling/info511-nhanes-wrangling-v1',
+                {headers: {'X-XSRFToken':decodeURIComponent(cookie.slice(6))}}).then(r => r.status);
+        }""")
+        assert response == 401 and time.time() >= self.expires
+        assert (self.root / 'credential.jwt').read_bytes() == token_before
+        report['studio_ui'] = {'help_expires_at': self.expires, 'expired_authority_http_status': response,
+                               'control_counts_at_expiry': self.counts()}
+
+    def review(self, browser, page, seconds, workspace_deadline):
         frame = page.locator('iframe[title="Course tutor"]')
         if frame.count():
             # The automated refusal control ended on the disabled/no-AI page.
@@ -220,11 +277,12 @@ class NhanesTutoring:
         page.bring_to_front()
         page.screenshot(path=str(self.root / 'studio-review.png'), full_page=True)
         started = time.monotonic()
-        duration = max(0, min(seconds, self.expires - time.time()))
+        duration = max(0, min(seconds, workspace_deadline - started))
         end = started + duration
         print(json.dumps({'instructor_review': 'open', 'seconds_remaining': round(duration),
+            'tutor_seconds_remaining': round(max(0, min(duration, self.expires - time.time()))),
             'mode': self.mode, 'max_requests': 7 if self.live else 0, 'max_reserved_usd': 0.175 if self.live else 0,
-            'note': 'Use the opened browser; closing it or the deadline stops this session.'}), flush=True)
+            'note': 'Save and submit until the workspace closes. Hint access ends on its own timer. Close the browser to finish early.'}), flush=True)
         while time.monotonic() < end and browser.is_connected() and not page.is_closed():
             page.wait_for_timeout(min(250, max(0, end - time.monotonic()) * 1000))
         return {'elapsed_seconds': round(time.monotonic() - started, 2), 'human_acceptance_recorded': False}

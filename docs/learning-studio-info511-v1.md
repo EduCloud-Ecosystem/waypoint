@@ -1,5 +1,25 @@
 # INFO 511 Learning Studio: IDE-first implementation
 
+## November 15 release-blocker fixes
+
+The desktop UI audit reproduced lost focus and silent receipt transitions,
+320 CSS-pixel overflow, and an instructor rehearsal that ended with the tutor
+credential. Waypoint retains the native Jupyter controls and switches the tutor
+to a separate narrow pane. The notebook and tutor state persist when the learner
+returns to the editor. The browser review ends at its own bounded deadline
+inside the original ten-minute maximum. Tutor credentials and the provider
+reservation keep their existing deadlines.
+
+Cairn's pilot branch adds focused preview and result headings, a persistent
+receipt status region and keyed receipt rows. It makes the existing submission
+form and instructor review reflow at 320 CSS pixels. Instructor publication
+reports the saved result and moves focus to it. The assignment, receipt, grading
+and instructor authority contracts are unchanged.
+
+Use `course-workspace/launch-nhanes-instructor.command --verify-stub` to rerun
+the narrow keyboard and post-expiry journey on the new Cairn pin. The dedicated
+stub qualification uses a 90-second synthetic tutor credential and no provider.
+
 Greg's November 14 direction replaces the busy studio mockup with a restrained reskin of the familiar Jupyter IDE. Keep code, files, outputs and native notebook controls. Add contextual tutoring in a collapsible Jupyter side panel; preserve the explicit saved-file preview, confirmation and receipt workflow. Inquiry is a later educational experience for research-driven courses, final projects and Capstones. Researcher POC/benchmarking is a different product, now in chat 01a1dcd5-6d15-7b82-aa9e-3eabdfb1e376, beginning from talks/education-compute.
 
 ## Ownership and baseline

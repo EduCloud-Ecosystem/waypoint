@@ -86,13 +86,16 @@ test('opt-in activation does not open/send/save/Ask; explicit action freezes one
 });
 
 test('native panel reuses one frame, authenticates messages and protects a pending hint', () => {
-  const listeners = new Map(), frames = [], sent = [], added = [], activated = [];
+  const listeners = new Map(), frames = [], sent = [], added = [], activated = [], collapsed = [];
   const origin = 'http://127.0.0.1:5190';
   const {app,tracker} = notebook(); tracker.currentWidget.id = 'my-notebook';
   app.shell.add = (...args) => added.push(args);
   app.shell.activateById = id => activated.push(id);
+  app.shell.collapseLeft = () => collapsed.push('left');
+  app.shell.collapseRight = () => collapsed.push('right');
   const document = {createElement(tag) {
-    const node = {append(){}, addEventListener(){}};
+    const node = {append(){}, addEventListener(){}, focus(){}};
+    node.contentDocument = {getElementById:() => null};
     if (tag === 'iframe') {node.contentWindow = {postMessage:(body,target)=>sent.push({body,target})}; frames.push(node);}
     return node;
   }};
@@ -101,10 +104,11 @@ test('native panel reuses one frame, authenticates messages and protects a pendi
     window:{addEventListener:(name,fn)=>listeners.set(name,fn)},
     crypto:{getRandomValues:b=>b.fill(2)},Uint8Array}).module.exports;
   const status = {};
-  const show = panelBridge(app,tracker,Widget,'/belay/',status);
+  const show = panelBridge(app,tracker,Widget,'/belay/',status,{matches:true});
   assert.equal(frames.length,0); assert.equal(sent.length,0);
   show(Object.freeze({source:'selected code',dirty:true}));
   assert.equal(frames.length,1); assert.equal(added[0][1],'right'); assert.equal(sent.length,0);
+  assert.deepEqual(collapsed,['left']);
   const frame = frames[0], nonce = frame.src.split('=')[1], receive = listeners.get('message');
   const event = (type,fields={}) => ({source:frame.contentWindow,origin,data:{type,version:1,nonce,...fields}});
   for (const bad of [{...event('belay-notebook-ready'),origin:'https://evil.invalid'},
@@ -123,5 +127,6 @@ test('native panel reuses one frame, authenticates messages and protects a pendi
   assert.equal(sent.length,2); assert.equal(frames.length,1); assert.equal(added.length,1);
   assert.deepEqual(Object.keys(sent[1].body).sort(),['dirty','nonce','source','type','version']);
   receive(event('belay-notebook-return')); assert.equal(activated.at(-1),'my-notebook');
+  assert.equal(collapsed.at(-1),'right');
   receive(event('belay-notebook-captured',{accepted:false})); assert.match(status.textContent,/pending/);
 });

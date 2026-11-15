@@ -14,7 +14,7 @@
   function enabled() {el('ask').disabled = busy || optedOut || !captured || !profile?.available || profile.assistance !== 'hints' || Date.now() >= profile.expires_at * 1000;}
   function notice() {
     const policy = !profile?.available || Date.now() >= profile.expires_at * 1000
-      ? 'Help access expired or unavailable. Your saved work is unchanged; you can still submit it.'
+      ? 'Help access expired or unavailable. You can still save and submit while your workspace and assignment are open.'
       : profile.assistance === 'disabled' ? 'Your instructor has disabled AI assistance. Continue in your notebook and submit saved work normally.'
       : 'Hints are permitted. Only the code and question you review here will be sent to the course tutoring service.';
     if (el('policy').textContent !== policy) el('policy').textContent = policy;
@@ -78,6 +78,7 @@
       el('source').value = v.source; captured = true;
       el('capture').textContent = v.dirty ? 'Unsaved code captured. Save in your notebook before submitting.' : 'Code captured for review. Nothing has been sent or submitted.';
       enabled();
+      if (embedded && document.hasFocus() && document.activeElement === document.body) el('tutor-heading').focus();
       if (embedded) tellNotebook('belay-notebook-captured', {accepted:true});
     });
     tellNotebook('belay-notebook-ready');

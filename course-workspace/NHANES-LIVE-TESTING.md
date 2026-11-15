@@ -16,17 +16,28 @@ and cached images; it does not install software, pull images or create cloud res
 /Users/gregchism/.codex/worktrees/waypoint-runtime-release/waypoint/course-workspace/launch-nhanes-instructor.command --live
 ```
 
-Use `--stub` instead of `--live` for a no-cost automatic hint and a two-minute
+The revised pilot checkout supports `--stub` and `--verify-stub`. The live
+launcher retains its previous paid qualification pin.
+
+Use `--stub` for a no-cost automatic hint and a two-minute
 notebook-and-tutor review. The completed solution is preserved, a separate
 prepared question is selected, and the restored help page uses the original
 expiry. Every invocation creates a fresh private evidence directory.
 Do not rerun after an uncertain paid outcome until its liability is resolved.
 
+Use `--verify-stub` for automated keyboard and 320 CSS-pixel checks. The fixture
+issues one shorter-lived tutor credential and waits for it to expire. It then
+saves in Jupyter, verifies a four-file Cairn receipt and confirms the jobs and
+attempts counters stay unchanged after expiry.
+
 In live mode, the browser first runs execution, grading and receipt controls.
 Then a new code cell is added for the prepared question, preserving the completed solution cell, and the **Tutor** sidebar opens inside Jupyter. No model
 request is sent automatically in this mode. The remaining help window is at most
-four minutes and is shortened by the original credential expiry; the terminal
-prints its actual remaining time; the tutor panel also shows a countdown. The whole invocation is limited to ten minutes.
+four minutes and is shortened by the original credential expiry. The terminal
+prints the tutor time and the separate workspace review time. The tutor panel
+shows the hint countdown. After hint access ends, work may still be edited,
+saved and submitted while the workspace and assignment are open. The whole
+invocation is limited to ten minutes.
 
 1. Expand **Selected cell & sharing** to review the exact selected code and provider disclosure, then review the question. The code includes a predicted output
    schema and observational unit. Confirm both boxes and click **Record prediction

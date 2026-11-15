@@ -30,6 +30,7 @@ from playwright.sync_api import sync_playwright, expect
 
 PINS = {'cairn': '2eb0a0415f791f7d53734d5909a3a3d7454e34f0',
         'belay': 'c5a27073e74b9eeb7ab697190915378b50132883'}
+STUB_CAIRN_PIN = 'cc6f45b16b12ba69d5ddab39e3001a86a78300c0'
 
 
 def restart_receipt(course, browser, learner, submission, receipt):
@@ -59,6 +60,8 @@ def main():
     parser.add_argument('--live-review-seconds', type=int, default=0,
                         help='After no-AI controls, open one prepared live hint for at most 240 seconds')
     parser.add_argument('--execute-synthetic', action='store_true')
+    parser.add_argument('--verify-studio-ui', action='store_true',
+                        help='Exercise reflow, keyboard focus and natural credential expiry with the local stub')
     args = parser.parse_args()
     if not args.execute_synthetic: parser.error('explicit synthetic execution required')
     args.kernel_python = args.kernel_python.absolute()  # Preserve the venv symlink path.
@@ -66,6 +69,8 @@ def main():
              env_file=args.env_file, execute_approved=args.execute_approved)
     validate_tutoring(args.tutor_mode, args.live_portage, args.env_file,
                       args.execute_approved, args.live_review_seconds)
+    if args.verify_studio_ui and (args.tutor_mode != 'stub' or args.operator_review_seconds):
+        parser.error('Studio verification requires the local stub without an operator review window')
     for name in ('cairn', 'belay', 'live_portage', 'env_file'):
         if getattr(args, name) is not None: setattr(args, name, getattr(args, name).resolve())
     os.umask(0o077)
@@ -84,11 +89,12 @@ def main():
                                 stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
         processes.append(proc); return proc
     try:
-        for role, pin in PINS.items():
+        pins = PINS if args.tutor_mode == 'live' else dict(PINS, cairn=STUB_CAIRN_PIN)
+        for role, pin in pins.items():
             repo = getattr(args, role).resolve()
             assert command(['git', 'rev-parse', 'HEAD'], cwd=repo) == pin
             assert not command(['git', 'status', '--porcelain'], cwd=repo)
-        report['sources'] = dict(PINS, waypoint=command(['git','rev-parse','HEAD'],cwd=ROOT),
+        report['sources'] = dict(pins, waypoint=command(['git','rev-parse','HEAD'],cwd=ROOT),
             waypoint_dirty=bool(command(['git','status','--porcelain'],cwd=ROOT)))
         for image in (args.grader_image, args.checkout_image):
             assert image.startswith('sha256:') and len(image) == 71
@@ -190,6 +196,10 @@ def main():
                 assert any('NHANES_NATIVE_OK 192' in ''.join(o.get('text',[])) for c in codes for o in c['outputs'])
                 report['observed_output']='NHANES_NATIVE_OK 192'
                 files=saved_files(work,profile=NHANES);report['saved_manifest']=manifest(files)
+                if args.verify_studio_ui:
+                    saved_at = (work / NHANES.files[0]).stat().st_mtime
+                    assert saved_at >= tutor.expires
+                    report['studio_ui']['notebook_saved_after_expiry'] = True
                 report['passed'].append('native-python-NHANES-execution-and-save')
                 page.screenshot(path=str(root/'notebook-saved.png'),full_page=True)
                 # Wrong numeric output must fail the real network-off Cairn checker.
@@ -214,15 +224,28 @@ def main():
                     picker=opened.value
                     for name in NHANES.files:picker.get_by_role('checkbox',name=name,exact=False).check()
                     picker.screenshot(path=str(root/'saved-file-picker.png'),full_page=True)
+                    if args.verify_studio_ui:
+                        picker.set_viewport_size({'width':320,'height':820})
+                        assert picker.evaluate('document.documentElement.scrollWidth === innerWidth')
                     picker.get_by_role('button',name='Prepare saved files',exact=True).click()
+                    if args.verify_studio_ui:
+                        expect(picker.get_by_role('button',name='Continue in Cairn')).to_be_focused()
+                        assert picker.evaluate('document.documentElement.scrollWidth === innerWidth')
                     with context.expect_page() as received:picker.get_by_role('button',name='Continue in Cairn',exact=True).click()
                     receiver=received.value;receiver.get_by_label('Assignment',exact=True).select_option(selected['submission_id'])
                     receiver.get_by_role('button',name='Receive saved files from Waypoint',exact=True).click()
                     expect(receiver.locator('#bridge-status')).to_contain_text('Nothing has been submitted yet.')
                     return receiver
                 receipt=submit_info511_attempt(course,alice,bob,item,work,learner_username='alice',
-                    expected_actions={n:'create' for n in NHANES.files},notebook_page=bridge,profile=NHANES)
+                    expected_actions={n:'create' for n in NHANES.files},notebook_page=bridge,profile=NHANES,
+                    verify_reflow=args.verify_studio_ui)
                 report['receipt']=receipt;report['correctness']=await_grade(course,alice,item['submission_id'],receipt['commit'],profile=NHANES)
+                if args.verify_studio_ui:
+                    assert time.time() >= tutor.expires
+                    assert tutor.counts() == report['studio_ui']['control_counts_at_expiry']
+                    report['passed'] += ['studio-320-keyboard-pane-switch',
+                                         'cairn-320-keyboard-preview-and-committed-receipt',
+                                         'workspace-save-and-cairn-submit-after-tutor-expiry']
                 for name,raw in files.items():
                     repository=item['repo_web_url'].removeprefix(course.forge+'/')
                     saved=course.api('GET','/repos/'+repository+'/contents/'+name+'?ref='+receipt['commit'],user='alice')
@@ -232,11 +255,11 @@ def main():
                 report['passed'].append('receipt-persists-after-restart')
                 if args.operator_review_seconds:
                     if tutor:
-                        report['operator_review'] = tutor.review(browser,page,args.operator_review_seconds)
+                        report['operator_review'] = tutor.review(browser,page,args.operator_review_seconds,started+600)
                     else:
                         page.bring_to_front();report['operator_review']=wait_for_review(browser,page,args.operator_review_seconds)
                 if args.live_review_seconds:
-                    report['live_review'] = tutor.review(browser, page, args.live_review_seconds)
+                    report['live_review'] = tutor.review(browser, page, args.live_review_seconds, started+600)
             finally:browser.close()
     except (Exception, KeyboardInterrupt) as exc:
         report['failed'].append(type(exc).__name__+': '+str(exc)[:500]);private(root/'failure.txt',traceback.format_exc())

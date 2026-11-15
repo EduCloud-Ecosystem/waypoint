@@ -17,7 +17,8 @@ from submission_handoff import first_submission
 
 
 def submit_info511_attempt(course, learner, peer, item, saved_directory, *,
-                           learner_username, expected_actions, notebook_page=None, profile=LEGACY):
+                           learner_username, expected_actions, notebook_page=None, profile=LEGACY,
+                           verify_reflow=False):
     """Exercise actual explicit upload/confirm for one prepared synthetic attempt.
 
     Does not execute the notebook or grade work. Run only after fresh serial
@@ -35,7 +36,7 @@ def submit_info511_attempt(course, learner, peer, item, saved_directory, *,
         raise ValueError('CW1 attempt is incomplete; use local completeness guidance')
     result = first_submission(course, learner, peer, item, '', notebook_page,
                               selected_files=files, learner_username=learner_username,
-                              expected_actions=expected_actions)
+                              expected_actions=expected_actions, verify_reflow=verify_reflow)
     # Read back through the existing session and compare exact saved bytes.
     sid = item['submission_id']
     receipt = course.request(learner, 'GET', f'/me/work/{sid}/submission-receipts/{result["id"]}')
