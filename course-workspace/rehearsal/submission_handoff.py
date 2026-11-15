@@ -74,9 +74,13 @@ def first_submission(course, alice, bob, item, solution, notebook_page=None, *,
     # The server-held preview survives a page refresh without uploading again.
     page.reload()
     page.get_by_role('button', name='Review this preview', exact=True).click()
-    page.locator('#preview-checksums summary').click()
+    checksums = page.locator('#manifest')
+    disclosure = page.locator('#preview-checksums summary')
+    if verify_reflow or disclosure.count():
+        disclosure.click()
+        checksums = page.locator('#manifest-hashes')
     for change in expected:
-        expect(page.locator('#manifest-hashes')).to_contain_text(change['sha256'])
+        expect(checksums).to_contain_text(change['sha256'])
     expect(page.get_by_role('button', name='Confirm submission', exact=True)).to_be_visible()
 
     def post(context, path, data, status, origin=None):
