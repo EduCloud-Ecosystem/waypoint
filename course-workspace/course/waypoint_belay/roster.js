@@ -25,6 +25,33 @@
     el('notebook').href = profile.notebook; el('submission').href = profile.submission;
     notice(); setInterval(notice, 1000);
   } catch (_) {el('policy').textContent = 'Course help is unavailable. Return to your notebook to keep working or submit saved files.'; return;}
+  // Only the registered NHANES task needs this explicit presence checkpoint.
+  // The authenticated server owns the policy, revision and grant checks.
+  if (profile.exercise_id === 'info511-nhanes-wrangling') {
+    el('checkpoint-panel').hidden = false;
+    const path = base + '/api/classroom/' + encodeURIComponent(profile.exercise_id) + '/' + encodeURIComponent(profile.exercise_version);
+    async function checkpointRequest(body) {
+      const headers = await window.BelayAuth.headers(base);
+      if (body) headers['Content-Type'] = 'application/json';
+      const r = await fetch(path, {method:body ? 'POST' : 'GET', headers, credentials:'same-origin', cache:'no-store', redirect:'error', ...(body ? {body:JSON.stringify(body)} : {})});
+      if (!r.ok) throw Error('Checkpoint could not be confirmed. Your notebook is unchanged. Retry the checkpoint or continue without AI.');
+      return r.json();
+    }
+    el('checkpoint').onclick = async () => {
+      if (!el('schema-present').checked || !el('unit-present').checked) {
+        el('checkpoint-status').textContent = 'Write both predictions in your notebook and confirm both boxes first.'; return;
+      }
+      el('checkpoint').disabled = true;
+      try {
+        const state = await checkpointRequest();
+        const saved = await checkpointRequest({request_id:crypto.randomUUID().replaceAll('-', ''), expected_revision:state.revision,
+          action:'checkpoint', schema_present:true, unit_present:true});
+        if (!saved.checkpoint) throw Error('Checkpoint was not confirmed.');
+        el('checkpoint-status').textContent = 'Prediction checkpoint recorded. You may now request a hint. Optional monitoring remains unchanged.';
+      } catch (e) {el('checkpoint-status').textContent = e.message;}
+      finally {el('checkpoint').disabled = false;}
+    };
+  }
   const nonce = /^#belay-notebook=([0-9a-f]{64})$/.exec(location.hash)?.[1];
   if (nonce && window.opener && window.opener !== window) {
     window.addEventListener('message', event => {
