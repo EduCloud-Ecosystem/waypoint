@@ -1,0 +1,53 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+# Advisory pilot: do not require this check or delegate approval/merging.
+language: en-US
+early_access: false
+enable_free_tier: true
+inheritance: false
+tone_instructions: Give concise, evidence-based advisory findings. Prioritize actionable correctness,
+  security and reliability defects. Distinguish a suspected issue from a verified failure; avoid cosmetic
+  churn.
+reviews:
+  profile: chill
+  auto_approvals:
+    enabled: false
+    approve_on_skipped_review: false
+    allow_author_approval: false
+  high_level_summary: true
+  review_status: true
+  commit_status: true
+  fail_commit_status: false
+  poem: false
+  auto_apply_labels: false
+  auto_assign_reviewers: false
+  auto_review:
+    enabled: true
+    auto_incremental_review: true
+    drafts: false
+  finishing_touches:
+    unit_tests:
+      enabled: false
+    simplify:
+      enabled: false
+    autofix:
+      enabled: false
+    fix_ci:
+      enabled: false
+    resolve_merge_conflict:
+      enabled: false
+  post_merge_actions: []
+  path_instructions:
+  - path: '**'
+    instructions: Prioritize current membership and admission authority, worker identity and fencing,
+      notebook authentication/XSRF boundaries, retention and expiry, owned-resource cleanup, and saved-file/tutoring
+      origin boundaries. A receipt or stale observation must not grant admission. Preserve fail-closed
+      controls and credential privacy.
+issue_enrichment:
+  auto_enrich:
+    enabled: false
+  planning:
+    enabled: false
+    auto_planning:
+      enabled: false
+  labeling:
+    auto_apply_labels: false
