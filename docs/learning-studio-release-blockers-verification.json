@@ -1,0 +1,61 @@
+{
+  "scope": "local synthetic INFO 511 NHANES rehearsal with provider disabled",
+  "source": {
+    "cairn": "46c963b59feb67324714e308e8243c779cb14a81",
+    "belay": "c5a27073e74b9eeb7ab697190915378b50132883",
+    "waypoint": "fc553d10dee6273e258f1604d685262e0476e1ea",
+    "waypoint_dirty": false
+  },
+  "elapsed_seconds": 150.29,
+  "passed": [
+    "missing-checkpoint-refused-before-admission",
+    "NHANES-signed-job-stub-hint",
+    "expired-and-disabled-help-no-extra-attempts",
+    "native-python-NHANES-execution-and-save",
+    "wrong-numeric-output-fails-real-pinned-checker",
+    "studio-320-keyboard-pane-switch",
+    "cairn-320-keyboard-preview-and-committed-receipt",
+    "workspace-save-and-cairn-submit-after-tutor-expiry",
+    "explicit-four-file-native-bridge-and-byte-exact-receipt",
+    "changed-preview-payload-refused-409",
+    "receipt-persists-after-restart"
+  ],
+  "failed": [],
+  "actual_provider_requests": 0,
+  "cleanup": true,
+  "tutor_expiry": {
+    "help_expires_at": 1794764684,
+    "expired_authority_http_status": 401,
+    "control_counts_at_expiry": {
+      "control_jobs": 1,
+      "control_attempts": 4
+    },
+    "notebook_saved_after_expiry": true
+  },
+  "submission": {
+    "file_count": 4,
+    "wrong_csv_score_out_of_four": 0,
+    "correct_csv_score_out_of_four": 4
+  },
+  "separate_browser_checks": {
+    "receipt_poll_320_css_pixels": {
+      "light": {
+        "width": 320,
+        "receipt_status_announced": true,
+        "open_receipt_retained_focus_on_poll": true
+      },
+      "dark": {
+        "width": 320,
+        "receipt_status_announced": true,
+        "open_receipt_retained_focus_on_poll": true
+      }
+    },
+    "instructor_review_320_css_pixels": true,
+    "focus_after_publish": "Assessment: approved",
+    "learner_received_review_score_out_of_ten": 7
+  },
+  "private_raw_result_sha256": "82eab755434abf10ce1bf6b0a4117c23b7c548a2606f7b7cefd12f44ecf540b0",
+  "deployment": false,
+  "learner_admission": false,
+  "human_accessibility_acceptance": false
+}
