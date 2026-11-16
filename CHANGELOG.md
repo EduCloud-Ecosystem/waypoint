@@ -1,5 +1,15 @@
 # CHANGELOG.md: Document history for the EduCloud hosting layer repo
 
+## 2026-11-13: Added an isolated mobile project IDE pilot
+
+- Add a pinned code-server image, persistent synthetic Git project, Python
+  debugger and touch-sized controls using the supported VS Code extension API.
+- Preserve the original notebook/download and hosted fallback. The pilot uses
+  its own loopback-only container and does not change institutional routing.
+- Add repeatable editor/debugger/Git/laptop browser checks and focused CI checks.
+  Physical keyboard and screen-reader qualification remains separate.
+
+
 ## 2026-10-21: Prepared CW1 synthetic classroom package
 
 - Add an opt-in INFO511 Q4 synthetic task, starter notebook, explicit assistance

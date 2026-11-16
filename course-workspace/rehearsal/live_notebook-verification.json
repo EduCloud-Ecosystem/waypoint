@@ -1,0 +1,122 @@
+{
+  "version": 1,
+  "status": "PASS_SYNTHETIC_LIVE_NOTEBOOK_TO_SUBMISSION",
+  "live_source": "f6ee6cae926aea8f3a09077fd1e0b301344e99a6",
+  "portage_source": "0653fd94fe86acf235a74f72a1ff4af6aa2fa1b9",
+  "dependency_pins": {
+    "cairn": "0cf3158fdf5bbbecc52d3cc9cd88ef33bdfb63fc",
+    "belay": "c5a27073e74b9eeb7ab697190915378b50132883"
+  },
+  "passed": [
+    "actual-forgejo-oauth-cairn-roster-assignment",
+    "native-notebook-signed-job-live-portage-tutoring",
+    "expired-credential-no-job-or-attempt-preserves-code",
+    "instructor-disabled-refusal-no-ai-human-help",
+    "native-editor-keyboard-save",
+    "no-ai-native-saved-file-submission",
+    "committed-file-reopened-byte-identical",
+    "receipt-survives-restart",
+    "keyboard-and-axe-desktop-mobile",
+    "expired-disabled-and-submission-add-no-provider-transports"
+  ],
+  "failed": [],
+  "transport_requests": 3,
+  "sdk_retries": 0,
+  "tokens": 3276,
+  "provider_reported_usd": 0.0016332,
+  "new_unknown_liability_usd": 0,
+  "historical_unknown_liability_usd": 0.025,
+  "cleanup": true,
+  "instructional_acceptance": "pending_human_review",
+  "student_deployment_ready": false,
+  "images": {
+    "checkout": "sha256:bc9bc6929aafd69d37158bbd273a11818a2b222539242949d5d3c3066d02db8c",
+    "grader": "sha256:726d304906fa5eb468e5531e366548d1903286352f5adb54ef508ac01fbd80c6"
+  },
+  "raw_private_directory": "/Users/gregchism/.codex/worktrees/classroom-live-notebook/waypoint/output/live-notebook-v1/run-1",
+  "evidence": {
+    "result.json": {
+      "bytes": 4475,
+      "sha256": "77ce6b9a5facb858b71ea8b5d53a64761f768a7cb93896fe737e255f4a70d2a5"
+    },
+    "provider/journal.jsonl": {
+      "bytes": 3361,
+      "sha256": "dc1dec2aacbaba8d7da904061bc1fb57c808e23100ea85b2b77c45dcf77c6ab7"
+    },
+    "provider/result.json": {
+      "bytes": 3511,
+      "sha256": "5e1c3652882813eea4725f7b27a3a0e7ef0a503b3303dec0d9d583a1f9c88b81"
+    },
+    "independent-ledger-readback.json": {
+      "bytes": 1776,
+      "sha256": "a2add8ad4bfdda778f5d92a29ebbf573bd6edbdc93fbc0658b1005337842e5d9"
+    },
+    "help-desktop.png": {
+      "bytes": 136716,
+      "sha256": "3494396c82d3a3724d050dce71cfb76f21838bc315dc5c41ed5c13675e409bf5"
+    },
+    "help-mobile.png": {
+      "bytes": 129503,
+      "sha256": "1e2f71b234187760e82d197c70574b65fbdfce165562a25e069312a0adc82220"
+    },
+    "course/submission-receipt.png": {
+      "bytes": 152225,
+      "sha256": "3a4b116c53be440fb8e035fa4bc2ce7cd232cf60252567f2f2b0b23ecb55f36d"
+    }
+  },
+  "historical_ci_failure": "https://github.com/EduCloud-Ecosystem/waypoint/actions/runs/42911189219",
+  "candidate_ci": {
+    "source": "6b2aad6fe56dfb757f9dba358d038de14edd627a",
+    "status": "failed",
+    "course_run": 43528577222,
+    "worker_channel_run": 43528577360,
+    "authenticated_runtime_run": 43528577074,
+    "authenticated_runtime_status": "PASS_BOTH_REPORTS_INDEPENDENTLY_INSPECTED",
+    "follow_up": "peer image reuse correction awaiting CI; see docs/classroom-live-notebook-checkpoint.md for final snapshot"
+  },
+  "stub_regression": {
+    "status": "PASS",
+    "source": "6b2aad6fe56dfb757f9dba358d038de14edd627a",
+    "result_sha256": "c2e394ce5de4d684b681a456d6da44dae75b5e39f77c069ca0bc7057809c7f90",
+    "provider_requests": 0,
+    "cleanup": true,
+    "includes": "fresh instructor login and protected submission repository read after Cairn restart"
+  },
+  "limitations": [
+    "fixed echo example, no notebook kernel execution",
+    "no campus SSO or real learners",
+    "no grading or scientific acceptance",
+    "checkout image acquisition not byte reproducible",
+    "no second-operator reproduction"
+  ],
+  "retained_failures": [
+    {
+      "run": "stub-regression-1",
+      "error": "401 instructor session invalidated by Cairn restart",
+      "provider_requests": 0,
+      "cleanup": true,
+      "resolution": "fresh instructor OAuth login, validated by stub-regression-2"
+    },
+    {
+      "run": "43528577222",
+      "error": "three independent fixture rebuilds fail exact image equality; course retirement probe timed out",
+      "provider_requests": 0,
+      "resolution": "image pin reuse correction prepared; retirement timeout unresolved"
+    },
+    {
+      "run": "43528577360",
+      "error": "peer Python kernel POST ConnectionError after source Python/R success",
+      "provider_requests": 0,
+      "cleanup": true,
+      "resolution": "unresolved; no blind retries or weakened acceptance"
+    },
+    {
+      "run": "local_rehearsal_suite_after_image_fix",
+      "error": "pending-reconciliation concurrent race loser returned an unexpected refusal code at verify_pending_reconciliation.py:299; code not retained by existing assertion",
+      "checks": 328,
+      "failed": 1,
+      "skipped": 8,
+      "resolution": "unresolved; no code broadening or automatic retry; focused changed-path checks62 passed"
+    }
+  ]
+}

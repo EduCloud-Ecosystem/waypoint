@@ -1,11 +1,14 @@
 """Local process/backend unit evidence, never clean-source/provider acceptance."""
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
 from copy import deepcopy
 import fcntl
 import json
 import os
 from pathlib import Path
 import tempfile
+import sqlite3
+import threading
 import unittest
 from unittest.mock import patch
 import uuid
@@ -41,6 +44,65 @@ class ReconciliationBackendTests(unittest.TestCase):
             try:
                 with self.assertRaises(BlockingIOError):fcntl.flock(descriptor,fcntl.LOCK_EX|fcntl.LOCK_NB)
             finally:os.close(descriptor)
+
+    def test_write_lock_timeout_has_one_winner_no_loser_effect_and_stale_replay(self):
+        original=self.pending(); original_plan=r.read_private(original)
+        original_row=r.row(self.authority,original_plan['transaction_id'])
+        paths=[self.recovery('worker-two'),self.recovery('worker-two')]
+        before={worker:(self.backend.home('course',worker)/'saved.txt').read_bytes()
+                for worker in ('worker-one','worker-two')}
+        ready=threading.Barrier(2); loser_done=threading.Event(); database_errors=[]
+        def contender(path):
+            client=contract.Authority.open(self.authority.directory,self.authority.authority_id,self.backend)
+            observe=client._observe; event=client._event; connection=client._connection; first=[True]
+            def together(*args):
+                observed=observe(*args)
+                if first[0]: first[0]=False; ready.wait(timeout=5)
+                return observed
+            def hold_winner(conn,kind,tx):
+                event(conn,kind,tx)
+                if kind=='reconciliation_prepared':
+                    # Keep the real writer lock until the other contender reaches
+                    # its unchanged busy deadline; no sleep or synthetic error.
+                    if not loser_done.wait(timeout=5): raise AssertionError('loser did not reach database deadline')
+            @contextmanager
+            def record_database_error():
+                try:
+                    with connection() as conn: yield conn
+                except sqlite3.OperationalError as error:
+                    database_errors.append(error.sqlite_errorcode)
+                    raise
+            with patch.object(client,'_observe',side_effect=together), \
+                    patch.object(client,'_event',side_effect=hold_winner), \
+                    patch.object(client,'_connection',side_effect=record_database_error):
+                try: return path,client.reconcile_apply(path)
+                except contract.OwnershipError as error:
+                    loser_done.set(); return path,error.code
+        with ThreadPoolExecutor(max_workers=2) as pool: outcomes=list(pool.map(contender,paths))
+        winners=[(path,value) for path,value in outcomes if isinstance(value,dict)]
+        losers=[(path,value) for path,value in outcomes if isinstance(value,str)]
+        self.assertEqual(database_errors,[sqlite3.SQLITE_BUSY])
+        self.assertEqual(len(winners),1); self.assertEqual(len(losers),1)
+        loser,code=losers[0]
+        self.assertEqual(code,'authority_database_busy')
+        self.assertEqual(winners[0][1]['epoch'],2)
+        self.assertEqual(r.verify_concurrent_result(self.authority,contract,paths,[value for _,value in outcomes]),
+                         winners[0])
+        for invalid in ([winners[0][1],'ownership_contract_refused_or_incomplete'],
+                        [winners[0][1],winners[0][1]],['authority_database_busy','authority_database_busy'],
+                        [dict(winners[0][1],status='PREPARED'),'authority_database_busy'],
+                        [dict(winners[0][1],services_started=True),'authority_database_busy']):
+            with self.subTest(outcomes=invalid),self.assertRaises(AssertionError):
+                r.verify_concurrent_result(self.authority,contract,paths,invalid)
+        self.assertEqual(r.row(self.authority,original_plan['transaction_id']),original_row)
+        with self.authority._connection() as conn:
+            self.assertIsNone(conn.execute('SELECT * FROM transfers WHERE transaction_id=?',
+                                           (r.read_private(loser)['transaction_id'],)).fetchone())
+        with self.assertRaises(contract.OwnershipError) as refusal:self.authority.reconcile_apply(loser)
+        self.assertEqual(refusal.exception.code,'stale_reconciliation_approval')
+        r.endpoints_preserved(self.backend,'course',before)
+        self.assertEqual(self.authority.inventory()['pending_transfers'],0)
+        for worker in before:self.assertEqual(self.backend.processes.running_count(worker,'course'),0)
 
     def test_both_backend_contexts_authorize_under_dual_locks_before_barrier_or_process_effects(self):
         self.pending();target=self.recovery();plan=json.loads(target.read_text())

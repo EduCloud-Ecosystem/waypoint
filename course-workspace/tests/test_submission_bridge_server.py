@@ -9,6 +9,7 @@ import json
 import os
 from pathlib import Path
 import secrets
+import shutil
 import socket
 import subprocess
 import sys
@@ -45,7 +46,9 @@ window.addEventListener('message',event=>{if(event.origin===setup.origin && even
             root = Path(temp).resolve(); work = root / 'work'; work.mkdir()
             extension_root = root / 'labextensions'
             (extension_root / '@educloud').mkdir(parents=True)
-            (extension_root / '@educloud/waypoint-cairn').symlink_to(ROOT / 'course/labextension', target_is_directory=True)
+            # Match the packaged course image. Jupyter's static-file boundary
+            # correctly refuses a symlink escaping this extension directory.
+            shutil.copytree(ROOT / 'course/labextension', extension_root / '@educloud/waypoint-cairn')
             saved = b'print("saved synthetic work")\n'
             (work / 'solution.py').write_bytes(saved)
             token = secrets.token_hex(32)

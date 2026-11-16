@@ -161,8 +161,9 @@ def _load_jupyter_server_extension(serverapp):
         @authenticated
         def get(self, resource=''):
             if resource == 'config':
-                return self.finish({'version': 1, 'origin': origin, 'base': base})
-            if resource in ('bridge.js', 'bridge.css'):
+                return self.finish({'version': 1, 'origin': origin, 'base': base,
+                    'course_title': 'INFO 511 · NHANES' if os.environ.get('WORKSPACE_STUDIO_PROFILE') == 'info511-nhanes-v1' else None})
+            if resource in ('bridge.js', 'bridge.css', 'studio-theme.js', 'studio-theme.css'):
                 return self.finish((STATIC / resource).read_bytes(), set_content_type='text/javascript' if resource.endswith('.js') else 'text/css')
             if resource == 'list':
                 try:

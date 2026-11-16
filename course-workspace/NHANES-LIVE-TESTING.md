@@ -1,0 +1,105 @@
+# Test NHANES with notebook tutoring
+
+This is a local instructor test using synthetic identities and a small public
+NHANES extract. It uses native Jupyter, Belay-classroom hints through Portage,
+and Cairn's explicit saved-file preview, confirmation, receipt and checker.
+The notebook includes an operator-authored solution fixture. It is not a learner
+template, an AWS deployment, or approval to admit students.
+
+## Start on this Mac
+
+Docker must already be running. The launcher uses the qualified local environments
+and cached images; it does not install software, pull images or create cloud resources.
+
+```sh
+/Users/gregchism/.codex/worktrees/waypoint-runtime-release/waypoint/course-workspace/launch-nhanes-instructor.command --check
+/Users/gregchism/.codex/worktrees/waypoint-runtime-release/waypoint/course-workspace/launch-nhanes-instructor.command --live
+```
+
+The revised pilot checkout supports `--stub` and `--verify-stub`. The live
+launcher retains its previous paid qualification pin.
+
+Use `--stub` for a no-cost automatic hint and a two-minute
+notebook-and-tutor review. The completed solution is preserved, a separate
+prepared question is selected, and the restored help page uses the original
+expiry. Every invocation creates a fresh private evidence directory.
+Do not rerun after an uncertain paid outcome until its liability is resolved.
+
+Use `--verify-stub` for automated keyboard and 320 CSS-pixel checks. The fixture
+issues one shorter-lived tutor credential and waits for it to expire. It then
+saves in Jupyter, verifies a four-file Cairn receipt and confirms the jobs and
+attempts counters stay unchanged after expiry.
+
+In live mode, the browser first runs execution, grading and receipt controls.
+Then a new code cell is added for the prepared question, preserving the completed solution cell, and the **Tutor** sidebar opens inside Jupyter. No model
+request is sent automatically in this mode. The remaining help window is at most
+four minutes and is shortened by the original credential expiry. The terminal
+prints the tutor time and the separate workspace review time. The tutor panel
+shows the hint countdown. After hint access ends, work may still be edited,
+saved and submitted while the workspace and assignment are open. The whole
+invocation is limited to ten minutes.
+
+1. Expand **Selected cell & sharing** to review the exact selected code and provider disclosure, then review the question. The code includes a predicted output
+   schema and observational unit. Confirm both boxes and click **Record prediction
+   checkpoint**. This records presence only, not the notebook contents, consent or a grade.
+2. Click **Ask for a hint**. Only the supplied example is accepted by the provider
+   guard. Do not enter personal, student or private research information. The route
+   uses OpenRouter/OpenAI `gpt-4.1-mini`, with a maximum of seven transport requests,
+   800 output tokens each, USD0.025 reservation each and USD0.175 total. SDK/HTTP
+   retries are disabled. A hint can require several planner/reasoner/evaluator calls.
+3. Use **Back to notebook** to inspect/edit/run and explicitly save. Help does
+   not save the notebook. If submitting after AI use, edit `assistance.md` to
+   `Declaration: ai_assisted` with a brief summary; omit the private conversation.
+   The test's previously saved no-AI submission remains a separate historical receipt.
+4. Use **Submit work** to review the four selected files, preview
+   their changes, then explicitly confirm. Inspect the exact repository receipt
+   and the separate correctness result. Four CSV correctness points are not a full
+   course grade or an LMS publication.
+5. Close the browser or press Ctrl-C to stop. Cleanup also runs at the deadline.
+   Retained output includes result/cleanup/accounting, local screenshots and failures;
+   it must remain private. No persistent service is left for students.
+
+Review hint accuracy yourself, especially missing measurements versus unmatched
+participants, joins and unsupported population/causal claims. The model's own
+self-evaluation is not instructional acceptance. No-AI completion remains available.
+
+## Reproduction and limits
+
+`NHANES-DESKTOP-TESTING.md` records the fixed Cairn/Belay sources, driver and
+hash-locked kernel environment, grader/checkout images, dataset/checker binding,
+and prior failed no-AI attempts. The live launcher additionally checks Portage
+`b72881f009e61e1311b6e46b92b42841991fd163`. Runtime records the exact Waypoint source,
+images, actual kernel packages and file hashes. The provider catalog is rechecked
+before live admission, so a changed price/endpoint can refuse a fresh window.
+
+The existing private key file is used in place; its contents never enter source
+or reports. An older USD0.025 unknown liability remains recorded separately; a
+new successful run does not resolve it. The earlier automated live qualification is historical evidence. This interface
+revision uses a local stub for automated verification; no new automated paid run
+is authorized by it. Human use requires deliberately invoking this launcher and
+clicking Ask. Nothing resumes a stopped paid window automatically.
+
+The Cairn export remains preserved separately from the explicit operator-owned
+NHANES teaching-policy overlay. Membership, original deadlines, submission and
+grading authority are unchanged. The isolated presence-checkpoint database is
+synthetic only; optional monitoring is not enabled. Retain it privately with the
+failure packet, and do not treat its test retention policy as a student policy.
+
+Hosted sign-in, student data destinations, free-form tutoring acceptance, actual
+course enrollment, host capacity/backup recovery and instructor approval remain
+student-release gates. Mobile is deferred. Outfitter is not needed to provision
+this local test; its native cloud acceptance is a separate gate.
+
+## Learning Studio interface
+
+The INFO 511 skin retains native Jupyter menus, file browser, cells, execution and
+save controls. **Ask tutor** captures only the currently selected code cell; it
+does not send a model request. The optional, resizable Tutor sidebar stays open
+while you work and can be collapsed using Jupyter's right sidebar tab. The
+question and selected-cell review precede a separate **Ask for a hint** action.
+
+**Submit work** opens the existing saved-file picker. Check the four required
+files, choose **Prepare saved files**, then **Continue in Cairn** to inspect
+changes and explicitly confirm. A hint, saved notebook, repository receipt and
+correctness result are distinct. There is no new course dashboard or AI chat
+landing page. Inquiry and researcher benchmarking are separate development lines.

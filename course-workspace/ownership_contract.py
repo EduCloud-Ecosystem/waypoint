@@ -41,6 +41,14 @@ def guarded(fn):
     def run(*args,**kwargs):
         try:return fn(*args,**kwargs)
         except OwnershipError:raise
+        except sqlite3.OperationalError as error:
+            # Preserve the finite lock deadline. Contention is distinguishable
+            # from corruption/IO failure, but never authorizes an automatic
+            # retry: callers must recheck the durable operation/ownership state.
+            code=getattr(error,'sqlite_errorcode',None)
+            if type(code) is int and code & 0xff == sqlite3.SQLITE_BUSY:
+                raise OwnershipError('authority_database_busy') from None
+            raise OwnershipError('ownership_contract_refused_or_incomplete') from None
         except Exception:
             raise OwnershipError('ownership_contract_refused_or_incomplete') from None
     return run

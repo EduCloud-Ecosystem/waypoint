@@ -1,0 +1,29 @@
+{
+  "observed_at": "2026-11-14T17:28:47.350873+00:00",
+  "candidate": "docker.io/rocker/r-ver:4.6.2",
+  "upstream_commit": "aabd57a293d4f740113bacfd2ecc431f53641ae3",
+  "upstream_commit_date": "2026-11-13T10:17:50Z",
+  "images": [
+    {
+      "platform": {
+        "architecture": "amd64",
+        "os": "linux"
+      },
+      "digest": "sha256:3adf31fa5c953bdee2709023366d1bfba306e6dcbe8eb34bf8a668119e37d2ca",
+      "compressed_layer_bytes": 416223091
+    },
+    {
+      "platform": {
+        "architecture": "arm64",
+        "os": "linux"
+      },
+      "digest": "sha256:5b933012e9409f551bb75760bf20c7e23dbaff0bf015f9302be0fe436ded3224",
+      "compressed_layer_bytes": 395971309
+    }
+  ],
+  "manifest_sha256": "953ae248a2bb6f91f900badb59167d44e0b3c977f7f26f7dd716b0e2eea9d915",
+  "image_pulled": false,
+  "runtime_conformance": "NOT_RUN",
+  "preferred_platform": "linux/amd64",
+  "arm64": "experimental according to official Rocker docs; not accepted for classroom"
+}

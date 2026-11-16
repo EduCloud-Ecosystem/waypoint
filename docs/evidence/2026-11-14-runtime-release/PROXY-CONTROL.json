@@ -1,0 +1,59 @@
+{
+  "version": "waypoint-websocket-diagnostics-v1",
+  "status": "PASS",
+  "scope": "synthetic-loopback-tls-proxy-only",
+  "kernel_execution": false,
+  "historical_503_cause_proven": false,
+  "student_release": false,
+  "checks": [
+    {
+      "case": "good",
+      "status": 101,
+      "tls_verified": true,
+      "cumulative_transport_counts": {
+        "ECONNREFUSED": 0,
+        "ECONNRESET": 0,
+        "EHOSTUNREACH": 0,
+        "ETIMEDOUT": 0,
+        "unknown": 0
+      }
+    },
+    {
+      "case": "refused",
+      "status": 503,
+      "cumulative_transport_counts": {
+        "ECONNREFUSED": 1,
+        "ECONNRESET": 0,
+        "EHOSTUNREACH": 0,
+        "ETIMEDOUT": 0,
+        "unknown": 0
+      }
+    },
+    {
+      "case": "upstream",
+      "status": 503,
+      "cumulative_transport_counts": {
+        "ECONNREFUSED": 1,
+        "ECONNRESET": 0,
+        "EHOSTUNREACH": 0,
+        "ETIMEDOUT": 0,
+        "unknown": 0
+      }
+    }
+  ],
+  "cleanup_verified": true,
+  "source": "946f11bf0e64b7230b92631607e88e7c2dc4d4db",
+  "source_dirty": true,
+  "code_sha256": {
+    "smoke.py": "69e17ef4c2e0b30ba4da890f1d23bce60ac8adbc7d3638859154b1caaf5bab99",
+    "rehearsal/verify_websocket_diagnostics.py": "1b5cbbe8dccabc5cb84779cc8fee2cc95af0fad705d112d1ab68f5c6a94eb6ee",
+    "rehearsal/websocket_proxy_fixture.mjs": "7028abbb8ae471a7f28104f20d1e30e624d11452abdae5754a7d95e29f2af0ce",
+    "rehearsal/verify_remote_notebooks.py": "9cd5e0c544bd1a98b2aa092720b5ead61ea9d20faf52d6f093fb76224802b13f"
+  },
+  "runtime": {
+    "node": "v26.7.0",
+    "proxy": "5.1.0"
+  },
+  "proxy_source_sha256": "316fc3b4b97a616b76d764818b8b856289a31feac42312dc0b08044acb8024b4",
+  "elapsed_seconds": 0.354
+}

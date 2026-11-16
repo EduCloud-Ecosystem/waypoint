@@ -44,7 +44,7 @@ CHECKS=frozenset({
     'second-endpoint-prewrite-failure-exact-resume','backend-barrier-index-write-gap-stays-closed',
     'exact-recovery-retry-idempotent','completed-recovery-never-started-services',
     'selected-future-epoch-real-process-and-retained-bytes','nonselected-endpoint-admission-refused',
-    'concurrent-reviewed-recovery-one-winner','stale-competing-plan-refused',
+    'concurrent-reviewed-recovery-one-winner','concurrent-loser-no-durable-effects','stale-competing-plan-refused',
     'paused-ordinary-controller-preserved-new-source-pid-and-barriers',
     'paused-typed-controller-preserved-new-selected-pid-and-barriers',
     'post-reconciliation-ordinary-transfer-kept-barrier-identity','old-recovery-replay-after-later-epoch-refused',
@@ -279,6 +279,26 @@ def preview_negatives(authority,backend,contract,course,selected,root,completed)
     return path,value
 
 
+def verify_concurrent_result(authority,contract,paths,outcomes):
+    wins=[value for value in outcomes if isinstance(value,dict)]; losses=[value for value in outcomes if isinstance(value,str)]
+    assert len(outcomes)==2 and len(wins)==len(losses)==1
+    assert losses[0] in ('stale_reconciliation_approval','reconciliation_pending_history_changed','authority_database_busy'), \
+        'concurrent_reconciliation_loser:' + losses[0]
+    result=wins[0]
+    assert result['status']=='COMPLETE' and result['services_started'] is False
+    winners=[path for path in paths if read_private(path)['digest']==result['plan_sha256']]
+    assert len(paths)==2 and len(set(paths))==2 and len(winners)==1
+    path=winners[0]; loser=next(candidate for candidate in paths if candidate!=path)
+    # A finite busy refusal is not success or permission to resume. Require
+    # one completed winner, no loser transaction/effects, and a fresh stale
+    # refusal after completion. Unknown generic errors still fail acceptance.
+    with authority._connection() as conn:
+        assert conn.execute('SELECT * FROM transfers WHERE transaction_id=?',
+            (read_private(loser)['transaction_id'],)).fetchone() is None
+    refuse(lambda:authority.reconcile_apply(loser),contract,{'stale_reconciliation_approval'})
+    return path,result
+
+
 def recover(authority,backend,contract,course,selected,path,plan,root,completed,*,partial_second=False,race=False):
     if race:
         competing=root/(course+'-competing.json'); authority.reconcile_preview(course,selected,competing)
@@ -294,14 +314,8 @@ def recover(authority,backend,contract,course,selected,path,plan,root,completed,
                 try: return client.reconcile_apply(candidate)
                 except contract.OwnershipError as error: return error.code
         with ThreadPoolExecutor(max_workers=2) as pool: outcomes=list(pool.map(contender,(path,competing)))
-        wins=[value for value in outcomes if isinstance(value,dict)]; losses=[value for value in outcomes if isinstance(value,str)]
-        assert len(wins)==len(losses)==1
-        assert losses[0] in ('stale_reconciliation_approval','reconciliation_pending_history_changed')
-        result=wins[0]
-        if read_private(path)['digest']!=result['plan_sha256']: path=competing; plan=result
-        loser=competing if path!=competing else root/(course+'-review.json')
-        refuse(lambda:authority.reconcile_apply(loser),contract,{'stale_reconciliation_approval'})
-        completed.update(('concurrent-reviewed-recovery-one-winner','stale-competing-plan-refused'))
+        path,result=verify_concurrent_result(authority,contract,(path,competing),outcomes)
+        completed.update(('concurrent-reviewed-recovery-one-winner','concurrent-loser-no-durable-effects','stale-competing-plan-refused'))
     else:
         interrupted_call(authority,contract,path,'reconciliation_prepared'); assert_accounting(authority,pending=1)
         completed.add('reconciliation-prepared-kept-both-reservations')

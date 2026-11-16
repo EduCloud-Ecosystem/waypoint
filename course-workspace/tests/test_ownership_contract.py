@@ -664,6 +664,19 @@ def test_nested_complete_chain_allows_subsequent_ordinary_transfer_and_blocks_al
     with a.admission('course','three'):pass
 
 
+def test_only_sqlite_busy_is_classified_as_contention():
+    @oc.guarded
+    def fail(error): raise error
+    for code,expected in [(sqlite3.SQLITE_BUSY,'authority_database_busy'),
+                          (sqlite3.SQLITE_BUSY | (1 << 8),'authority_database_busy'),
+                          (sqlite3.SQLITE_LOCKED,'ownership_contract_refused_or_incomplete'),
+                          (sqlite3.SQLITE_IOERR,'ownership_contract_refused_or_incomplete'),
+                          (None,'ownership_contract_refused_or_incomplete')]:
+        error=sqlite3.OperationalError('synthetic failure')
+        if code is not None:error.sqlite_errorcode=code
+        refused(expected,lambda:fail(error))
+
+
 class OwnershipContractTests(unittest.TestCase):
     pass
 

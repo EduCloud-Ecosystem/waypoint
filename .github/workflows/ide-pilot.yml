@@ -1,0 +1,25 @@
+name: IDE pilot
+on:
+  pull_request:
+    paths: ['ide-pilot/**', '.github/workflows/ide-pilot.yml']
+  push:
+    branches: [main]
+    paths: ['ide-pilot/**', '.github/workflows/ide-pilot.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  isolated-controls:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: node --test ide-pilot/extension/*.cjs
+      - run: node --check ide-pilot/verify-browser.cjs
+      - run: python -m unittest discover -s ide-pilot -p 'test_prepare.py' -v
+      - run: sh -n ide-pilot/start.sh

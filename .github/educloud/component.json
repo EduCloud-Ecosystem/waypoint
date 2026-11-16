@@ -1,0 +1,19 @@
+{
+  "protocol_version": "educloud-pilot-v1",
+  "protocol_sha256": "099b676f0763440c7979657971260ed417750c73dd2954960ff8cb81bf9c6ce6",
+  "repository": "waypoint",
+  "authority": "Workspace admission, identity, isolation, fencing and retention",
+  "pilot_role": "Required for notebook workspace",
+  "required_workflows": [
+    "course-workspace.yml",
+    "course-rehearsal.yml",
+    "authenticated-runtime.yml",
+    "institutional-recovery.yml",
+    "remote-notebooks.yml",
+    "worker-operations.yml",
+    "workspace-quotas.yml",
+    "workspace-recovery.yml"
+  ],
+  "local_verification": "Use course-workspace/VALIDATION.md and the matching workflow; run unittest controls with the pinned environment.",
+  "integration_verification": "Run the pinned NHANES notebook/tutor/save/submission journey and actual recovery/expiry controls."
+}
