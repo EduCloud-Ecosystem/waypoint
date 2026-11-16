@@ -19,6 +19,8 @@ The example version is for local verification. The builder creates a fresh
 `operator-release` directory under the working directory and refuses an
 existing entry with that name, including a symbolic link.
 The builder refuses dirty changes to its own file or to the packaged files.
+Its Git commands use the script's checkout and ignore inherited Git environment
+overrides.
 It produces four files:
 
 - The operator ZIP, reproducible for a given commit with the same Git archive
@@ -56,6 +58,11 @@ inventory and require their own qualification evidence.
 
 This change uses the fixed rc.1 file list and the existing catalog on a clean
 checkout from Waypoint main `f60c9489b843d68a42288ee4d9cf01cfa16686f8`.
+The review fixes were integrated with main at
+`2112a380c99580b4aa250d4096bf6254d77c1f10` on
+`codex/waypoint-operator-spdx`. They fix the output directory name, restrict
+validator installation to wheels, and isolate Git commands from inherited
+repository settings.
 The release tests compare every ZIP file against Git, the manifest, and the
 SPDX inventory. They also exercise dirty source, a mismatched catalog,
 a committed symlink, and output refusal. The course-workspace workflow builds

@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 import hashlib
 import io
 import json
+import os
 from pathlib import Path
 import re
 import stat
@@ -43,7 +44,9 @@ BUILDER = CLASSROOM + 'release_browser_bundle.py'
 
 
 def git(root, *args):
-    return subprocess.check_output(['git', *args], cwd=root)
+    # Use the selected checkout's discovery, index and objects for offline builds.
+    env = {name: value for name, value in os.environ.items() if not name.startswith('GIT_')}
+    return subprocess.check_output(['git', *args], cwd=root, env=env)
 
 
 def sha256(raw):

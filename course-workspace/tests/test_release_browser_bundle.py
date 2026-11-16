@@ -3,11 +3,13 @@ import hashlib
 import importlib.util
 import io
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 import zipfile
 
 SCRIPT = Path(__file__).resolve().parents[1] / 'classroom/release_browser_bundle.py'
@@ -52,7 +54,7 @@ class OperatorReleaseTests(unittest.TestCase):
         self.commit()
 
     def git(self, *args):
-        return subprocess.check_output(['git', *args], cwd=self.root)
+        return release.git(self.root, *args)
 
     def write(self, path, raw):
         target = self.root / path
@@ -139,6 +141,22 @@ class OperatorReleaseTests(unittest.TestCase):
         self.commit()
         with self.assertRaisesRegex(ValueError, 'allowlist'):
             release.build(self.root, VERSION, CREATED)
+
+    def test_build_and_cli_ignore_external_git_state(self):
+        workdir = self.root.parent
+        revision = self.git('rev-parse', 'HEAD').decode().strip()
+        with patch.dict(os.environ, {
+            'GIT_DIR': str(workdir / 'another.git'),
+            'GIT_WORK_TREE': str(workdir / 'another-checkout'),
+            'GIT_INDEX_FILE': str(workdir / 'another-index'),
+            'GIT_OBJECT_DIRECTORY': str(workdir / 'another-objects'),
+        }):
+            artifacts = release.build(self.root, VERSION, CREATED)
+            subprocess.run([sys.executable, str(self.root / release.BUILDER), '--version', VERSION],
+                           cwd=workdir, check=True)
+        for raw in (artifacts['SOURCE-MANIFEST.json'],
+                    (workdir / 'operator-release/SOURCE-MANIFEST.json').read_bytes()):
+            self.assertEqual(json.loads(raw)['source_revision'], revision)
 
     def test_cli_refuses_invalid_version_and_existing_output(self):
         workdir = self.root.parent
