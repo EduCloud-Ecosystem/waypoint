@@ -283,7 +283,7 @@ def main():
             help_page.screenshot(path=str(root / 'help-before-request.png'), full_page=True)
             tab_to(help_page, help_page.get_by_role('button', name='Ask for a hint', exact=True))
             help_page.keyboard.press('Enter')
-            expect(help_page.locator('#status')).to_contain_text('It is not a grade', timeout=180000)
+            expect(help_page.locator('#status')).to_contain_text('Hint ready.', timeout=180000)
             if live:
                 expect(help_page.locator('#reply')).not_to_be_empty()
                 expect(help_page.locator('#reply')).not_to_contain_text('Local model stub')
