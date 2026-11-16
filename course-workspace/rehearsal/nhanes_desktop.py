@@ -18,7 +18,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT / 'classroom'), str(ROOT / 'course')]
 from assignment_profiles import NHANES
 from info511_policy import template_files
-from cairn_journey import Course, port, wait_http
+from cairn_journey import FORGEJO_IMAGE, Course, port, wait_http
 from info511_demo import req, active_work, await_grade
 from info511_notebook import contents, manifest, saved_files
 from classroom_transfer import submit_info511_attempt
@@ -105,6 +105,11 @@ def main():
             assert image.startswith('sha256:') and len(image) == 71
             assert command(['docker','image','inspect',image,'--format','{{.Id}}']) == image
         report['images'] = {'grader':args.grader_image,'checkout':args.checkout_image}
+        # Fail before creating a network/volume when the pinned identity fixture
+        # has been removed from the local image cache.
+        forgejo_id = command(['docker','image','inspect',FORGEJO_IMAGE,'--format','{{.Id}}'])
+        assert forgejo_id.startswith('sha256:') and len(forgejo_id) == 71
+        report['images'].update(forgejo_reference=FORGEJO_IMAGE, forgejo_id=forgejo_id)
         report['kernel'] = json.loads(command([args.kernel_python,'-c',
             'import sys,importlib.metadata,json; print(json.dumps({"python":sys.version,"packages":sorted((d.metadata["Name"],d.version) for d in importlib.metadata.distributions())}))']))
         report['kernel']['lock_sha256'] = hashlib.sha256(args.kernel_lock.read_bytes()).hexdigest()
