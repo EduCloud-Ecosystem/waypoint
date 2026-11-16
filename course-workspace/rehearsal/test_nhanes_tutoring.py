@@ -10,6 +10,17 @@ from nhanes_tutoring import NhanesTutoring, validate_tutoring
 
 
 class NhanesTutoringControls(unittest.TestCase):
+    def test_openbao_requires_live_approval_complete_binding_and_no_fallback(self):
+        config = ('https://127.0.0.1:8200', Path('/ca'), Path('/token'))
+        validate_tutoring('live', Path('/portage'), None, True, 0, openbao=config)
+        for mode, keyfile, approved, binding in [
+            ('stub', None, True, config), ('none', None, True, config),
+            ('live', Path('/fallback'), True, config), ('live', None, False, config),
+            ('live', None, True, (config[0], None, config[2])),
+        ]:
+            with self.assertRaises(ValueError):
+                validate_tutoring(mode, Path('/portage'), keyfile, approved, 0, openbao=binding)
+
     def test_echo_unchanged_and_nhanes_source_authored(self):
         self.assertEqual(notebook_inputs(), {'pack':'_skeleton','exercise':'echo-1','source':SOURCE,'question':QUESTION})
         package = Path(__file__).resolve().parents[1] / 'classroom/info511-nhanes-v1'

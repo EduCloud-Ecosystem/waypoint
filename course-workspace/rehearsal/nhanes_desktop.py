@@ -56,6 +56,9 @@ def main():
     parser.add_argument('--tutor-mode', choices=('none', 'stub', 'live'), default='none')
     parser.add_argument('--live-portage', type=Path)
     parser.add_argument('--env-file', type=Path)
+    parser.add_argument('--openbao-address')
+    parser.add_argument('--openbao-ca', type=Path)
+    parser.add_argument('--openbao-token-file', type=Path)
     parser.add_argument('--execute-approved', action='store_true')
     parser.add_argument('--live-review-seconds', type=int, default=0,
                         help='After no-AI controls, open one prepared live hint for at most 240 seconds')
@@ -63,12 +66,14 @@ def main():
     parser.add_argument('--verify-studio-ui', action='store_true',
                         help='Exercise reflow, keyboard focus and natural credential expiry with the local stub')
     args = parser.parse_args()
+    values = (args.openbao_address, args.openbao_ca, args.openbao_token_file)
+    args.openbao = values if any(values) else None
     if not args.execute_synthetic: parser.error('explicit synthetic execution required')
     args.kernel_python = args.kernel_python.absolute()  # Preserve the venv symlink path.
     validate(args.operator_review_seconds, live_portage=args.live_portage,
              env_file=args.env_file, execute_approved=args.execute_approved)
     validate_tutoring(args.tutor_mode, args.live_portage, args.env_file,
-                      args.execute_approved, args.live_review_seconds)
+                      args.execute_approved, args.live_review_seconds, openbao=args.openbao)
     if args.verify_studio_ui and (args.tutor_mode != 'stub' or args.operator_review_seconds):
         parser.error('Studio verification requires the local stub without an operator review window')
     for name in ('cairn', 'belay', 'live_portage', 'env_file'):
