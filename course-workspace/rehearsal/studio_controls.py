@@ -160,6 +160,7 @@ try:
   browser.close()
 except Exception as e:
  report['failed'].append(str(e));(root/'browser-failure.txt').write_text(traceback.format_exc())
+ raise
 finally:
  (root/'browser-result.json').write_text(json.dumps(report,indent=2));(root/'stop').touch()
 print(json.dumps(report,indent=2));raise SystemExit(bool(report['failed']))
