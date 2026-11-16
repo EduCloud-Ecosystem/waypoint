@@ -209,7 +209,7 @@ class NhanesTutoring:
         help_page.get_by_role('button', name='Record prediction checkpoint', exact=True).click()
         expect(help_page.locator('#checkpoint-status')).to_contain_text('Prediction checkpoint recorded', timeout=15000)
         help_page.get_by_role('button', name='Ask for a hint', exact=True).click()
-        expect(help_page.locator('#status')).to_contain_text('It is not a grade', timeout=120000)
+        expect(help_page.locator('#status')).to_contain_text('Hint ready.', timeout=120000)
         expect(help_page.locator('#reply')).not_to_be_empty()
         if self.live:
             expect(help_page.locator('#reply')).not_to_contain_text('Local model stub')
@@ -258,6 +258,8 @@ class NhanesTutoring:
         page.set_viewport_size({'width': 320, 'height': 820})
         try:
             expect(frame).to_be_visible()
+            expect(help_page.locator('[data-studio-theme-picker]')).to_be_hidden()
+            expect(page.get_by_label('Appearance', exact=True)).to_be_visible()
             page.wait_for_function("""() => {
               const rect = selector => document.querySelector(selector).getBoundingClientRect();
               const onScreen = selector => {
@@ -289,7 +291,7 @@ class NhanesTutoring:
 
     def verify_expiry(self, page, help_page, report):
         token_before = (self.root / 'credential.jwt').read_bytes()
-        expect(help_page.locator('#policy')).to_contain_text('Help access expired', timeout=95000)
+        expect(help_page.locator('#policy')).to_contain_text('Tutor access ended. You can still save and submit', timeout=95000)
         expect(help_page.locator('#ask')).to_be_disabled()
         response = page.evaluate("""() => {
             const cookie = document.cookie.split(';').map(value=>value.trim()).find(value=>value.startsWith('_xsrf='));

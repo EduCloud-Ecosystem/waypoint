@@ -1,6 +1,7 @@
 """Real Cairn/Forgejo selected-file receipt acceptance, with browser confirmation."""
 import base64
 import hashlib
+import re
 import time
 
 from playwright.sync_api import expect
@@ -47,8 +48,11 @@ def first_submission(course, alice, bob, item, solution, notebook_page=None, *,
         page.emulate_media(color_scheme='dark')
         assert page.evaluate('document.documentElement.scrollWidth === innerWidth')
     assert course.request(alice, 'GET', endpoint + '/submission-receipts')['receipts'] == []
+    if verify_reflow:
+        expect(page.get_by_role('button', name='Review saved files', exact=True)).to_be_enabled()
+        expect(page.locator('#source-origin')).to_be_hidden()
     with page.expect_response(lambda response: response.url.endswith('/submission-previews') and response.request.method == 'POST') as response:
-        tab_to(page, page.get_by_role('button', name='Preview submission', exact=True))
+        tab_to(page, page.locator('#preview'))
         page.keyboard.press('Enter')
     result = response.value
     assert result.status == 201, f'preview failed: {result.status}'
@@ -59,6 +63,7 @@ def first_submission(course, alice, bob, item, solution, notebook_page=None, *,
     expect(page.get_by_role('button', name='Confirm submission', exact=True)).to_be_visible()
     if verify_reflow:
         expect(page.locator('#preview-heading')).to_be_focused()
+        expect(page.locator('#preview-base')).to_be_hidden()
         page.keyboard.press('Tab')
         expect(page.locator('#preview-checksums summary')).to_be_focused()
         page.keyboard.press('Enter')
@@ -108,7 +113,7 @@ def first_submission(course, alice, bob, item, solution, notebook_page=None, *,
         route.abort('failed')
     page.route(course.url + confirm, lose_response)
     page.get_by_role('button', name='Confirm submission', exact=True).press('Enter')
-    expect(page.locator('#status')).to_contain_text('same preview cannot create a second submission')
+    expect(page.locator('#status')).to_contain_text(re.compile('cannot create|will not create'))
     page.unroute(course.url + confirm, lose_response)
     assert intercepted == [preview['id']]
     if verify_reflow:
@@ -117,7 +122,7 @@ def first_submission(course, alice, bob, item, solution, notebook_page=None, *,
     expect(page.locator('#preview-section')).to_be_hidden()
     if verify_reflow:
         expect(page.locator('#receipts-heading')).to_be_focused()
-        expect(page.locator('#receipt-status')).to_contain_text('Committed — repository receipt verified', timeout=35000)
+        expect(page.locator('#receipt-status')).to_contain_text('Submission received for ' + item['assignment_title'], timeout=35000)
         assert page.evaluate('document.documentElement.scrollWidth === innerWidth')
     for _ in range(120):
         receipt = course.request(alice, 'GET', endpoint + '/submission-receipts/' + preview['id'])
@@ -135,7 +140,24 @@ def first_submission(course, alice, bob, item, solution, notebook_page=None, *,
     receipts = course.request(alice, 'GET', endpoint + '/submission-receipts')['receipts']
     assert len(receipts) == 1 and receipts[0]['id'] == preview['id']
     page.get_by_role('button', name='Refresh receipts', exact=True).click()
-    expect(page.get_by_role('heading', name='Committed — repository receipt verified')).to_be_visible()
+    heading = page.get_by_role('heading', name=re.compile('^Submission received$|^Committed — repository receipt verified$'))
+    expect(heading).to_be_visible()
+    if verify_reflow:
+        expect(heading).to_have_text('Submission received')
+        row = page.locator('#receipts article').filter(has=heading)
+        assert preview['id'] not in row.inner_text() and receipt['commit_revision'] not in row.inner_text()
+        for name in files:
+            expect(row).to_contain_text(name)
+        technical = row.locator('summary')
+        expect(row.locator('pre')).to_be_hidden()
+        tab_to(page, technical)
+        page.keyboard.press('Enter')
+        expect(row.locator('pre')).to_be_visible()
+        expect(row.locator('pre')).to_contain_text(preview['id'])
+        expect(row.locator('pre')).to_contain_text(receipt['commit_revision'])
+        assert page.evaluate('document.documentElement.scrollWidth === innerWidth')
+        page.keyboard.press('Enter')
+        expect(row.locator('pre')).to_be_hidden()
     audit(page, course.cairn_source)
     page.screenshot(path=str(course.root / (screenshot_prefix + 'submission-receipt.png')), full_page=True)
     return {'id': preview['id'], 'commit': receipt['commit_revision'], 'changes': receipt['changes'],

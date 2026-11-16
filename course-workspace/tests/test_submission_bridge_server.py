@@ -160,7 +160,8 @@ window.addEventListener('message',event=>{if(event.origin===setup.origin && even
                             bridge.wait_for_timeout(150)
                             self.assertIsNone(popup.evaluate('window.received'))
                             popup.close()
-                            bridge.get_by_text('Cairn was closed or the handoff expired.', exact=False).wait_for()
+                            bridge.get_by_text('Select Continue in Cairn to reconnect.', exact=False).wait_for()
+                            self.assertEqual(bridge.locator('#status').inner_text(), 'Your saved files are still ready.')
                             with bridge.expect_popup() as retry_opened:
                                 bridge.get_by_role('button', name='Continue in Cairn').click()
                             popup = retry_opened.value
@@ -171,7 +172,7 @@ window.addEventListener('message',event=>{if(event.origin===setup.origin && even
                             self.assertEqual(set(data), {'type','version','nonce','files'})
                             self.assertEqual(base64.b64decode(data['files'][0]['content_base64']), saved)
                             self.assertEqual(data['files'][0]['path'], 'solution.py')
-                            bridge.get_by_text('Cairn received the saved files for review.', exact=False).wait_for()
+                            bridge.get_by_text('Switch to Cairn to review and confirm your submission.', exact=False).wait_for()
                             output = ROOT.parent / 'output/playwright'; output.mkdir(parents=True, exist_ok=True)
                             page.screenshot(path=str(output / 'jupyter-cairn-launcher.png'))
                             bridge.screenshot(path=str(output / 'jupyter-cairn-saved-files.png'), full_page=True)

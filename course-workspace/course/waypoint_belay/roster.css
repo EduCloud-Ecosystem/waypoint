@@ -3,3 +3,8 @@
 /* Studio Classic: explicit appearance overrides OS-only legacy rules. */
 :root,:root[data-studio-theme]{--paper:var(--studio-paper);--ink:var(--studio-ink);--muted:var(--studio-muted);--line:var(--studio-line);--soft:var(--studio-soft)}
 body{font-size:14px}a,summary{color:var(--studio-link)}button.secondary,#checkpoint,button:not(#ask):not(#prepare):not(#send){border-color:var(--studio-control)}textarea{border-color:var(--studio-control)}:is(button,a,summary,textarea,input,select):focus-visible{outline:3px solid var(--studio-focus);outline-offset:3px}#ask,#prepare,#send{border-color:var(--studio-mark)}#error{color:var(--studio-mark)}#source{font-size:13px}.eyebrow,#assignment,#time-remaining,#capture,#provider-notice,fieldset p,fieldset details,.hash{font-size:12px}#provider-notice{color:var(--studio-muted);margin-top:16px}main{min-width:0}header{border-top-width:2px}button{min-height:36px}select{max-width:100%}@media(pointer:coarse){button,nav a,summary{min-height:44px}textarea{font-size:16px}}
+
+/* The notebook toolbar owns appearance while the tutor is embedded. */
+body.embedded main > .studio-appearance {
+  display: none;
+}

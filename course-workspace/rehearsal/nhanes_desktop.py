@@ -28,9 +28,9 @@ from operator_review import wait_for_review, validate
 from nhanes_tutoring import NhanesTutoring, validate_tutoring
 from playwright.sync_api import sync_playwright, expect
 
-PINS = {'cairn': '240b8b9c9f802e759175f6941b34c194f780e84c',
+PINS = {'cairn': '533c16a414b9fef1979d0de783b3436f31dd03a7',
         'belay': 'c5a27073e74b9eeb7ab697190915378b50132883'}
-STUB_CAIRN_PIN = '240b8b9c9f802e759175f6941b34c194f780e84c'
+STUB_CAIRN_PIN = '533c16a414b9fef1979d0de783b3436f31dd03a7'
 
 
 def restart_receipt(course, browser, learner, submission, receipt):
@@ -242,6 +242,9 @@ def main():
                     picker.get_by_role('button',name='Prepare saved files',exact=True).click()
                     if args.verify_studio_ui:
                         expect(picker.get_by_role('button',name='Continue in Cairn')).to_be_focused()
+                        expect(picker.locator('#status')).to_contain_text('4 saved files ready.')
+                        expect(picker.locator('#snapshot-hashes')).to_be_hidden()
+                        expect(picker.locator('#snapshot')).not_to_contain_text('SHA-256')
                         assert picker.evaluate('document.documentElement.scrollWidth === innerWidth')
                     with context.expect_page() as received:picker.get_by_role('button',name='Continue in Cairn',exact=True).click()
                     receiver=received.value

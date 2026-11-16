@@ -13,13 +13,16 @@
   const jobs = globalThis.belayAskJobs();
   function enabled() {el('ask').disabled = busy || optedOut || (checkpointRequired && !checkpointReady) || !captured || !profile?.available || profile.assistance !== 'hints' || Date.now() >= profile.expires_at * 1000;}
   function notice() {
-    const policy = !profile?.available || Date.now() >= profile.expires_at * 1000
-      ? 'Help access expired or unavailable. You can still save and submit while your workspace and assignment are open.'
+    const expired = profile?.expires_at > 0 && Date.now() >= profile.expires_at * 1000;
+    const policy = expired
+      ? 'Tutor access ended. You can still save and submit while your workspace and assignment are open.'
+      : !profile?.available ? 'Tutor access is unavailable. You can still save and submit while your workspace and assignment are open.'
       : profile.assistance === 'disabled' ? 'Your instructor has disabled AI assistance. Continue in your notebook and submit saved work normally.'
-      : 'Hints are permitted. Only the code and question you review here will be sent to the course tutoring service.';
+      : 'Hints are permitted. Review the selected code and your question before sending them to the course tutor.';
     if (el('policy').textContent !== policy) el('policy').textContent = policy;
-    const remaining = Math.max(0, Math.floor((profile?.expires_at || 0) - Date.now() / 1000));
-    el('time-remaining').textContent = remaining ? `Hint access: ${Math.floor(remaining / 60)}:${String(remaining % 60).padStart(2, '0')} remaining` : 'Hint access ended · save and continue without AI';
+    const remaining = Math.max(0, Math.ceil((profile?.expires_at || 0) - Date.now() / 1000));
+    el('time-remaining').textContent = profile?.available && profile.assistance === 'hints' && remaining
+      ? `Tutor time remaining: ${Math.floor(remaining / 60)}:${String(remaining % 60).padStart(2, '0')}` : '';
     enabled();
   }
   el('no-ai').onclick = () => {optedOut = true; el('status').textContent = 'AI help is off for this page. Return to your notebook or submit selected saved files.'; enabled();};
@@ -58,7 +61,7 @@
           action:'checkpoint', schema_present:true, unit_present:true});
         if (!saved.checkpoint) throw Error('Checkpoint was not confirmed.');
         checkpointReady = true; enabled();
-        el('checkpoint-status').textContent = 'Prediction checkpoint recorded. You may now request a hint. Optional monitoring remains unchanged.';
+        el('checkpoint-status').textContent = 'Prediction checkpoint recorded. You can now request a hint.';
       } catch (e) {el('checkpoint-status').textContent = e.message;}
       finally {el('checkpoint').disabled = false;}
     };
@@ -90,18 +93,18 @@
   el('ask').onclick = async () => {
     enabled(); if (el('ask').disabled) return;
     if (!el('question').value.trim()) {el('status').textContent = 'Add your prediction and question first.'; el('question').focus(); return;}
-    busy = true; enabled(); el('status').textContent = 'Checking permitted help…';
+    busy = true; enabled(); el('status').textContent = 'Waiting for a hint…';
     if (embedded) tellNotebook('belay-notebook-state', {busy:true});
     el('capture').textContent = 'Code selected for this help request. Saving and submission are separate.';
     try {
       const turn = await jobs.ask(base, '/api/sol/jobs', {exercise_id:profile.exercise_id,
         event:'chat',mode:'study',stance:'peer',source:el('source').value,
-        recent:[{who:'student',text:el('question').value}]}, state => {el('status').textContent = 'Help request: ' + state + '. Your saved work is unchanged.';});
+        recent:[{who:'student',text:el('question').value}]});
       el('reply').textContent = turn.message || 'No feedback available.';
-      jobs.acknowledge(turn); el('status').textContent = 'Review this hint yourself. It is not a grade or submission.';
+      jobs.acknowledge(turn); el('status').textContent = 'Hint ready. Review it before using it in your notebook.';
     } catch (e) {
       if (e.status === 401 || e.status === 403) {profile.available = false; notice();}
-      el('status').textContent = e.message + ' Your saved work is unchanged. Use the notebook, submission, or human help links.';
+      el('status').textContent = 'Could not get a hint. Your saved work is unchanged. Return to your notebook or ask your instructor for help.';
     }
     finally {busy = false; enabled(); if (embedded) tellNotebook('belay-notebook-state', {busy:false});}
   };

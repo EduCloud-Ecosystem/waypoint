@@ -1,0 +1,91 @@
+{
+  "scope": "synthetic-local-NHANES-stub-notebook-submission",
+  "sources": {
+    "cairn": "b2b9b6c9f0bcaa985c772ce43f104a98d8644a28",
+    "belay": "c5a27073e74b9eeb7ab697190915378b50132883",
+    "waypoint": "c19c6654bfa0b1e248982237616382d0458947e8",
+    "waypoint_dirty": false
+  },
+  "passed": [
+    "native-notebook-and-tutor-light-dark-system",
+    "missing-checkpoint-refused-before-admission",
+    "NHANES-signed-job-stub-hint",
+    "expired-and-disabled-help-no-extra-attempts",
+    "native-python-NHANES-execution-and-save",
+    "wrong-numeric-output-fails-real-pinned-checker",
+    "appearance-preserved-through-cross-origin-handoff",
+    "studio-320-keyboard-pane-switch",
+    "cairn-320-keyboard-preview-and-committed-receipt",
+    "workspace-save-and-cairn-submit-after-tutor-expiry",
+    "explicit-four-file-native-bridge-and-byte-exact-receipt",
+    "changed-preview-payload-refused-409",
+    "receipt-persists-after-restart"
+  ],
+  "failed": [],
+  "model_transports": 0,
+  "cleanup": true,
+  "observed_output": "NHANES_NATIVE_OK 192",
+  "elapsed_seconds": 174.42,
+  "human_acceptance": false,
+  "expired_tutor_http_status": 401,
+  "notebook_saved_after_expiry": true,
+  "receipt_preview_recovery_and_idempotency": [
+    "explicit-saved-file-preview",
+    "exact-file-digest-receipt",
+    "separate-confirmation-required",
+    "submission-csrf-denied",
+    "submission-peer-denied",
+    "submission-unsafe-path-denied",
+    "idempotency-payload-conflict",
+    "lost-confirmation-response-retry",
+    "one-commit-receipt",
+    "submission-ui-keyboard-axe",
+    "submission-receipt-after-restart"
+  ],
+  "rendered_readability_checks": [
+    "embedded tutor shares the notebook appearance control",
+    "saved-file checksums, workspace address, base revision and receipt IDs are collapsed by default",
+    "receipt announcement names the assignment and submission outcome",
+    "receipt reference and revision remain accessible by keyboard in Technical details"
+  ],
+  "supplemental_browser": {
+    "scope": "actual-Cairn-loopback-synthetic-fixture",
+    "model_requests": 0,
+    "passed": [
+      "real-detail-response-after-injected-503-and-keyboard-retry",
+      "work-refresh-preserves-focused-expanded-history",
+      "injected-metadata-and-grade-revisions-refresh-open-closed-and-inflight-history",
+      "attempt-history-hides-commits-until-requested",
+      "theme-handoff-consumed-once-preserving-query-and-fragment",
+      "injected-assignment-retry-is-single-flight-and-retains-selected-files",
+      "injected-sign-in-and-expired-preview-recover-selected-files-by-keyboard",
+      "student-three-modes-reload-and-320-reflow",
+      "built-instructor-console-dark-persistence-and-320-reflow"
+    ],
+    "failed": []
+  },
+  "local_evidence": {
+    "output/nhanes-instructor-20261115T203214Z-9591/result.json": "864522d222e1bc875d981c5420ff9572ad4c7dbd7e2b9b99d1ba5ce02453b5bd",
+    "output/readability-fixture.OHREvlvQ/browser-result.json": "7c4d70f5d41f33633d1766ea7816a4e911ce1242df1beb879deed5f9613acc57"
+  },
+  "deployment": false,
+  "student_admission": false,
+  "local_test_suites": {
+    "waypoint_course_workspace": {
+      "passed": 764,
+      "failed": 0
+    },
+    "waypoint_rehearsal": {
+      "total": 352,
+      "skipped": 8,
+      "failed": 0
+    },
+    "cairn_go": "passed",
+    "cairn_dashboard_build": "passed",
+    "cairn_dashboard_tests": {
+      "passed": 25,
+      "failed": 0
+    }
+  },
+  "hosted_ci": "pending review and PRs for the local readability follow-up"
+}
