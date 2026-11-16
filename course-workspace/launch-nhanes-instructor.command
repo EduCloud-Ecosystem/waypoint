@@ -15,10 +15,10 @@ cairn=/Users/gregchism/dev/.educloud-worktrees/cairn-studio-classic-v1
 belay=/Users/gregchism/dev/.educloud-worktrees/belay-classroom-system-one-consumer-v1
 portage=/Users/gregchism/.codex/worktrees/classroom-live-tutoring/portage
 keyfile=/Users/gregchism/dev/.educloud-worktrees/portage-system-one-shadow-pilot-v1/.qualification/openrouter/.env
-cairn_pin=b2b9b6c9f0bcaa985c772ce43f104a98d8644a28
+cairn_pin=533c16a414b9fef1979d0de783b3436f31dd03a7
 if [[ "$mode" == --live || "$mode" == --check ]]; then
   cairn="${NHANES_LIVE_CAIRN_CHECKOUT:-$cairn}"
-  cairn_pin=240b8b9c9f802e759175f6941b34c194f780e84c
+  cairn_pin=533c16a414b9fef1979d0de783b3436f31dd03a7
 fi
 [[ -x "$driver" && -x "$kernel" && -d "$cairn" && -d "$belay" && -d "$portage" ]] || { print -u2 'A qualified local checkout or environment is missing. See NHANES-LIVE-TESTING.md.'; exit 1; }
 [[ -z "$(git status --porcelain --untracked-files=no)" ]] || { print -u2 'Commit the Waypoint source before starting a qualified window.'; exit 1; }
