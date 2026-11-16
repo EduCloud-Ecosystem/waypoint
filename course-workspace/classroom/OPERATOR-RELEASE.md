@@ -7,14 +7,17 @@ files against the existing reviewed digest catalog. The
 [learner bundle guide](BROWSER-BUNDLE.md) documents the separate command that
 builds and verifies a starter ZIP for a selected assignment profile.
 
-From a checkout of the intended source commit, using Git and Python 3.12+:
+Use Git and Python 3.12+ and run the builder from a trusted output parent.
 
 ```sh
-python3 course-workspace/classroom/release_browser_bundle.py \
-  --version v0.0.0-rc.1 --out /absolute/existing-parent/operator-release
+cd /absolute/existing-parent
+python3 /absolute/waypoint-checkout/course-workspace/classroom/release_browser_bundle.py \
+  --version v0.0.0-rc.1
 ```
 
-The example version is for local verification. Use a new output directory.
+The example version is for local verification. The builder creates a fresh
+`operator-release` directory under the working directory and refuses an
+existing entry with that name, including a symbolic link.
 The builder refuses dirty changes to its own file or to the packaged files.
 It produces four files:
 
@@ -35,7 +38,7 @@ learner bundle tests from the extracted operator tool:
 ```sh
 shasum -a 256 -c SHA256SUMS
 python3 -m venv /absolute/path/to/spdx-validator
-/absolute/path/to/spdx-validator/bin/python -m pip install spdx-tools==0.8.5
+/absolute/path/to/spdx-validator/bin/python -m pip install --only-binary=:all: spdx-tools==0.8.5
 /absolute/path/to/spdx-validator/bin/pyspdxtools -i waypoint-browser-bundle-v0.0.0-rc.1.spdx.json
 unzip waypoint-browser-bundle-v0.0.0-rc.1.zip
 python3 -m unittest discover \

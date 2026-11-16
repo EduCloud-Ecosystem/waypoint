@@ -29,20 +29,21 @@ jobs:
         with:
           python-version: '3.12'
       - name: Build the operator source release
+        working-directory: ${{ runner.temp }}
         run: |
-          python course-workspace/classroom/release_browser_bundle.py \
-            --version v0.0.0-rc.1 --out "$RUNNER_TEMP/waypoint-operator-release"
+          python "$GITHUB_WORKSPACE/course-workspace/classroom/release_browser_bundle.py" \
+            --version v0.0.0-rc.1
       - name: Verify the artifacts and test the extracted tool
-        working-directory: ${{ runner.temp }}/waypoint-operator-release
+        working-directory: ${{ runner.temp }}/operator-release
         run: |
           sha256sum --check SHA256SUMS
           unzip -q waypoint-browser-bundle-v0.0.0-rc.1.zip
           python -m unittest discover \
             -s waypoint-browser-bundle/course-workspace/tests -p test_browser_bundle.py -v
       - name: Validate SPDX 2.3
-        working-directory: ${{ runner.temp }}/waypoint-operator-release
+        working-directory: ${{ runner.temp }}/operator-release
         run: |
-          python -m pip install spdx-tools==0.8.5
+          python -m pip install --only-binary=:all: spdx-tools==0.8.5
           pyspdxtools -i waypoint-browser-bundle-v0.0.0-rc.1.spdx.json
   https-configuration:
     runs-on: ubuntu-latest

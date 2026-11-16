@@ -141,15 +141,26 @@ class OperatorReleaseTests(unittest.TestCase):
             release.build(self.root, VERSION, CREATED)
 
     def test_cli_refuses_invalid_version_and_existing_output(self):
-        out = self.root.parent / 'release'
-        command = [sys.executable, str(self.root / release.BUILDER), '--out', str(out)]
-        invalid = subprocess.run([*command, '--version', '../unsafe'], capture_output=True)
+        workdir = self.root.parent
+        out = workdir / 'operator-release'
+        command = [sys.executable, str(self.root / release.BUILDER)]
+        invalid = subprocess.run([*command, '--version', '../unsafe'], cwd=workdir, capture_output=True)
         self.assertEqual(invalid.returncode, 2)
         self.assertFalse(out.exists())
-        subprocess.run([*command, '--version', VERSION], check=True)
+        injected = subprocess.run([*command, '--version', VERSION, '--out', '../unsafe'],
+                                  cwd=workdir, capture_output=True)
+        self.assertEqual(injected.returncode, 2)
+        self.assertFalse(out.exists())
+        subprocess.run([*command, '--version', VERSION], cwd=workdir, check=True)
         original = {p.name: p.read_bytes() for p in out.iterdir()}
-        refused = subprocess.run([*command, '--version', VERSION], capture_output=True)
+        refused = subprocess.run([*command, '--version', VERSION], cwd=workdir, capture_output=True)
         self.assertEqual(refused.returncode, 2)
+        self.assertEqual(original, {p.name: p.read_bytes() for p in out.iterdir()})
+        out.rename(workdir / 'previous-release')
+        out.symlink_to('previous-release', target_is_directory=True)
+        refused = subprocess.run([*command, '--version', VERSION], cwd=workdir, capture_output=True)
+        self.assertEqual(refused.returncode, 2)
+        self.assertTrue(out.is_symlink())
         self.assertEqual(original, {p.name: p.read_bytes() for p in out.iterdir()})
 
 

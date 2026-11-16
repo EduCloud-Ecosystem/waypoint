@@ -175,23 +175,23 @@ def build(root, version, created):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--version', required=True)
-    parser.add_argument('--out', required=True, type=Path, help='Fresh output directory')
     args = parser.parse_args()
+    output = Path('operator-release')
     try:
         created = datetime.now(UTC).strftime('%Y-%m-%dT%H:%M:%SZ')
         artifacts = build(ROOT, args.version, created)
-        args.out.mkdir()
+        output.mkdir(mode=0o700)
         written = []
         try:
             for name, payload in artifacts.items():
-                path = args.out / name
+                path = output / name
                 with path.open('xb') as stream:
                     written.append(path)
                     stream.write(payload)
         except OSError:
             for path in written:
                 path.unlink()
-            args.out.rmdir()
+            output.rmdir()
             raise
     except (OSError, ValueError, KeyError, subprocess.CalledProcessError, zipfile.BadZipFile) as exc:
         parser.exit(2, 'Release refused: ' + str(exc) + '\n')
