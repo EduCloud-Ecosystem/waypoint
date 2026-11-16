@@ -1,0 +1,92 @@
+{
+  "scope": "synthetic-local-NHANES-stub-notebook-submission",
+  "sources": {
+    "cairn": "533c16a414b9fef1979d0de783b3436f31dd03a7",
+    "belay": "c5a27073e74b9eeb7ab697190915378b50132883",
+    "waypoint": "3fd02fff7d72ee33774fb04704b0308dce443039",
+    "waypoint_dirty": false
+  },
+  "images": {
+    "grader": "sha256:d8e7745e5644f4e4c4dd49902981a8953485cc188a2263d866ba042aa0e4fab7",
+    "checkout": "sha256:bc9bc6929aafd69d37158bbd273a11818a2b222539242949d5d3c3066d02db8c"
+  },
+  "passed": [
+    "native-notebook-and-tutor-light-dark-system",
+    "missing-checkpoint-refused-before-admission",
+    "NHANES-signed-job-stub-hint",
+    "expired-and-disabled-help-no-extra-attempts",
+    "native-python-NHANES-execution-and-save",
+    "wrong-numeric-output-fails-real-pinned-checker",
+    "appearance-preserved-through-cross-origin-handoff",
+    "studio-320-keyboard-pane-switch",
+    "cairn-320-keyboard-preview-and-committed-receipt",
+    "workspace-save-and-cairn-submit-after-tutor-expiry",
+    "explicit-four-file-native-bridge-and-byte-exact-receipt",
+    "changed-preview-payload-refused-409",
+    "receipt-persists-after-restart"
+  ],
+  "failed": [],
+  "cleanup": true,
+  "model_transports": 0,
+  "elapsed_seconds": 232.48,
+  "observed_output": "NHANES_NATIVE_OK 192",
+  "notebook_save_pending_reads": 0,
+  "studio_ui": {
+    "help_expires_at": 1794797601,
+    "expired_authority_http_status": 401,
+    "control_counts_at_expiry": {
+      "control_jobs": 1,
+      "control_attempts": 4
+    },
+    "notebook_saved_after_expiry": true
+  },
+  "cairn_controls": {
+    "scope": "actual-Cairn-loopback-synthetic-fixture",
+    "model_requests": 0,
+    "passed": [
+      "real-detail-response-after-injected-503-and-keyboard-retry",
+      "work-refresh-preserves-focused-expanded-history",
+      "injected-metadata-and-grade-revisions-refresh-open-closed-and-inflight-history",
+      "attempt-history-hides-commits-until-requested",
+      "theme-handoff-consumed-once-preserving-query-and-fragment",
+      "injected-assignment-retry-is-single-flight-and-retains-selected-files",
+      "injected-sign-in-and-expired-preview-recover-selected-files-by-keyboard",
+      "student-three-modes-reload-and-320-reflow",
+      "built-instructor-console-dark-persistence-and-320-reflow"
+    ],
+    "failed": []
+  },
+  "qualification": "local synthetic instructor testing only",
+  "deployment": false,
+  "student_admission": false,
+  "live_provider_retested_on_this_ui": false,
+  "human_accessibility_acceptance": false,
+  "raw_result_path": "/Users/gregchism/dev/.educloud-worktrees/waypoint-studio-classic-v1/output/nhanes-instructor-20261116T025056Z-99366/result.json",
+  "raw_result_sha256": "2534af838416bd03d8f60bc801c22c9ce5d42e155dcdec8f15c4a471c8e0c7f7",
+  "cairn_controls_path": "/Users/gregchism/dev/.educloud-worktrees/cairn-studio-classic-v1/output/readable-integration-fixture/browser-result.json",
+  "cairn_controls_sha256": "7c4d70f5d41f33633d1766ea7816a4e911ce1242df1beb879deed5f9613acc57",
+  "local_tests": {
+    "waypoint_course": {
+      "total": 764,
+      "failed": 0
+    },
+    "waypoint_rehearsal": {
+      "total": 352,
+      "skipped": 8,
+      "failed": 0
+    },
+    "cairn_go": "passed",
+    "cairn_dashboard_build": "passed",
+    "cairn_dashboard_tests": 25
+  },
+  "retained_failures": [
+    {
+      "kind": "operator_invocation",
+      "command": "python -m pytest course-workspace/tests course-workspace/rehearsal/tests -q",
+      "outcome": "No module named pytest; used the repository unittest commands without installing dependencies"
+    }
+  ],
+  "advisory_review": {
+    "sonar": "S5779 flags assertions inside evaluator failure-capture. The except appends failure and writes traceback; finally preserves evidence; final SystemExit(bool(failed)) fails the process. No success masking; retained as advisory."
+  }
+}
