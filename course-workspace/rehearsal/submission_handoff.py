@@ -152,10 +152,12 @@ def first_submission(course, alice, bob, item, solution, notebook_page=None, *,
         expect(row.locator('pre')).to_be_hidden()
         tab_to(page, technical)
         page.keyboard.press('Enter')
+        expect(row.locator('pre')).to_be_visible()
         expect(row.locator('pre')).to_contain_text(preview['id'])
         expect(row.locator('pre')).to_contain_text(receipt['commit_revision'])
         assert page.evaluate('document.documentElement.scrollWidth === innerWidth')
         page.keyboard.press('Enter')
+        expect(row.locator('pre')).to_be_hidden()
     audit(page, course.cairn_source)
     page.screenshot(path=str(course.root / (screenshot_prefix + 'submission-receipt.png')), full_page=True)
     return {'id': preview['id'], 'commit': receipt['commit_revision'], 'changes': receipt['changes'],
