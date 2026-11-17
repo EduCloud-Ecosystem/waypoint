@@ -1,0 +1,510 @@
+{
+  "scope": "Local synthetic learner NHANES workflow; optional OpenBao AppRole integration; not persistent/default adoption",
+  "tested_portage": "124da40b12e6422a0106181c14a60c622ec53927",
+  "tested_waypoint": "3c8232c405b5190dc554bea31f9d631accb077fd",
+  "sources": {
+    "cairn": "533c16a414b9fef1979d0de783b3436f31dd03a7",
+    "belay": "c5a27073e74b9eeb7ab697190915378b50132883",
+    "waypoint": "3c8232c405b5190dc554bea31f9d631accb077fd",
+    "waypoint_dirty": false
+  },
+  "images": {
+    "grader": "sha256:d8e7745e5644f4e4c4dd49902981a8953485cc188a2263d866ba042aa0e4fab7",
+    "checkout": "sha256:6c6e6991e810c2ef88147fb47e9d98493095b8d2ad17e51e22f157fd87aae065",
+    "forgejo_reference": "codeberg.org/forgejo/forgejo:16.0.5@sha256:cf5f5ae6acf2ababca0ee3d255705b83a47f35b25e07fc931d694d60664053fe",
+    "forgejo_id": "sha256:cf5f5ae6acf2ababca0ee3d255705b83a47f35b25e07fc931d694d60664053fe"
+  },
+  "environment": {
+    "portage": {
+      "python": "3.12.13 (main, May 10 2026, 19:20:41) [Clang 22.1.3 ]",
+      "packages": {
+        "rpds-py": "2026.6.3",
+        "iniconfig": "2.3.0",
+        "jsonschema-specifications": "2025.9.1",
+        "jsonschema": "4.26.0",
+        "packaging": "26.2",
+        "pytest": "9.1.1",
+        "Pygments": "2.20.0",
+        "PyYAML": "6.0.3",
+        "ruff": "0.15.22",
+        "referencing": "0.37.0",
+        "pluggy": "1.6.0",
+        "attrs": "26.1.0",
+        "typing_extensions": "4.16.0"
+      }
+    },
+    "driver": {
+      "python": "3.12.13 (main, May 10 2026, 19:20:41) [Clang 22.1.3 ]",
+      "packages": {
+        "oauthenticator": "17.4.0",
+        "ruamel.yaml": "0.19.1",
+        "uri-template": "1.3.0",
+        "certipy": "0.2.3",
+        "rfc3339-validator": "0.1.4",
+        "pexpect": "4.9.0",
+        "setuptools": "84.2.1",
+        "platformdirs": "4.14.5",
+        "greenlet": "3.5.6",
+        "ptyprocess": "0.7.0",
+        "SQLAlchemy": "2.1.8",
+        "packaging": "26.3",
+        "lark": "1.3.1",
+        "isoduration": "20.11.0",
+        "jupyterlab": "4.5.6",
+        "cryptography": "48.0.1",
+        "nbformat": "5.11.1",
+        "async-lru": "2.4.0",
+        "Pygments": "2.21.0",
+        "prompt_toolkit": "3.0.53",
+        "jsonschema-specifications": "2025.9.1",
+        "ipykernel": "7.4.0",
+        "requests": "2.34.2",
+        "fqdn": "1.6.0",
+        "defusedxml": "0.7.1",
+        "jsonpointer": "3.11",
+        "tornado": "6.5.10",
+        "certifi": "2026.10.23",
+        "yarl": "1.25.1",
+        "PyJWT": "2.13.0",
+        "jsonschema": "4.26.0",
+        "babel": "2.18.0",
+        "python-json-logger": "4.2.0",
+        "oauthlib": "4.0.1",
+        "matplotlib-inline": "0.2.2",
+        "wcwidth": "0.9.4",
+        "pydantic": "2.14.3",
+        "webencodings": "0.6.1",
+        "traitlets": "5.16.1",
+        "jedi": "0.20.1",
+        "pandocfilters": "1.5.1",
+        "propcache": "0.5.4",
+        "soupsieve": "4.1",
+        "mistune": "3.4.0",
+        "ipython_pygments_lexers": "1.1.1",
+        "Send2Trash": "2.1.0",
+        "pamela": "1.2.0",
+        "httpcore": "1.0.9",
+        "aiohappyeyeballs": "2.7.1",
+        "playwright": "1.63.0",
+        "webcolors": "25.10.0",
+        "pycparser": "3.12",
+        "pydantic_core": "2.50.4",
+        "stack-data": "0.6.3",
+        "jupyterlab_server": "2.28.1",
+        "typing-inspection": "0.4.5",
+        "pyzmq": "27.2.0",
+        "argon2-cffi-bindings": "26.1.0",
+        "urllib3": "2.8.0",
+        "h11": "0.16.0",
+        "jupyter_server_terminals": "0.5.4",
+        "appnope": "1.0.0",
+        "jupyter-lsp": "2.3.1",
+        "fastjsonschema": "2.22.3",
+        "python-dateutil": "2.9.0.post0",
+        "jupyterlab_pygments": "0.3.0",
+        "PyYAML": "6.0.3",
+        "json5": "0.17.3",
+        "rfc3987-syntax": "1.1.0",
+        "nbconvert": "7.17.2",
+        "jupyter_client": "8.10.0",
+        "frozenlist": "1.8.0",
+        "cffi": "2.1.1",
+        "ipython": "9.18.1",
+        "prometheus_client": "0.26.0",
+        "bleach": "6.4.0",
+        "aiosignal": "1.4.0",
+        "Mako": "1.4.3",
+        "jupyter_core": "5.9.1",
+        "jupyterhub": "6.0.1",
+        "pure_eval": "0.2.4",
+        "argon2-cffi": "25.1.0",
+        "jupyter_server": "2.17.0",
+        "pycares": "5.2.1",
+        "Jinja2": "3.1.6",
+        "annotated-types": "0.8.0",
+        "referencing": "0.37.0",
+        "tzdata": "2026.6",
+        "nbclient": "0.11.0",
+        "rpds-py": "2026.9.1",
+        "alembic": "1.20.1",
+        "anyio": "4.16.0",
+        "rfc3986-validator": "0.1.1",
+        "aiohttp": "3.14.5",
+        "attrs": "26.1.0",
+        "terminado": "0.18.1",
+        "aiodns": "4.0.4",
+        "multidict": "7.2.1",
+        "websocket-client": "1.9.2",
+        "executing": "2.3.0",
+        "nest-asyncio2": "1.7.4",
+        "debugpy": "1.8.22",
+        "tinycss2": "1.5.1",
+        "httpx": "0.28.1",
+        "typing_extensions": "4.16.0",
+        "MarkupSafe": "3.0.4",
+        "asttokens": "3.0.2",
+        "beautifulsoup4": "4.15.0",
+        "psutil": "7.2.2",
+        "jupyter-events": "0.12.1",
+        "pyee": "13.0.1",
+        "parso": "0.8.7",
+        "charset-normalizer": "3.5.2",
+        "arrow": "1.4.0",
+        "six": "1.17.0",
+        "notebook_shim": "0.2.4",
+        "idna": "3.20",
+        "comm": "0.2.3"
+      }
+    },
+    "belay": {
+      "python": "3.12.13 (main, May 10 2026, 19:20:41) [Clang 22.1.3 ]",
+      "packages": {
+        "uvicorn": "0.54.0",
+        "watchfiles": "1.3.0",
+        "starlette": "1.10.0",
+        "pandas": "3.1.1",
+        "SQLAlchemy": "2.1.8",
+        "packaging": "26.3",
+        "uvloop": "0.23.0",
+        "websockets": "17.4",
+        "Pygments": "2.21.0",
+        "jsonschema-specifications": "2025.9.1",
+        "httptools": "0.9.0",
+        "certifi": "2026.10.23",
+        "jsonschema": "4.26.0",
+        "PyJWT": "2.15.1",
+        "pydantic": "2.14.3",
+        "click": "8.5.1",
+        "docstring_parser": "0.18.0",
+        "iniconfig": "2.3.1",
+        "pandas-stubs": "3.0.3.260530",
+        "httpcore": "1.0.9",
+        "numpy": "2.5.4",
+        "cryptography": "50.0.2",
+        "pycparser": "3.12",
+        "pydantic_core": "2.50.4",
+        "pluggy": "1.7.0",
+        "opentelemetry-api": "1.45.2",
+        "typing-inspection": "0.4.5",
+        "openai": "3.46.0",
+        "mypy_extensions": "1.2.0",
+        "h11": "0.16.0",
+        "sniffio": "1.3.1",
+        "anthropic": "2.6.0",
+        "PyYAML": "6.0.3",
+        "httpcore2": "2.16.0",
+        "truststore": "0.10.5",
+        "python-dotenv": "1.2.4",
+        "cffi": "2.1.1",
+        "ruff": "0.8.6",
+        "httpx2": "2.16.0",
+        "psycopg": "3.3.8",
+        "pytest": "9.2.0",
+        "annotated-types": "0.8.0",
+        "referencing": "0.37.0",
+        "tzdata": "2026.6",
+        "annotated-doc": "0.0.5",
+        "mypy": "1.14.1",
+        "rpds-py": "2026.9.1",
+        "fastapi": "0.162.0",
+        "anyio": "4.16.0",
+        "attrs": "26.1.0",
+        "httpx": "0.28.1",
+        "typing_extensions": "4.16.0",
+        "jiter": "0.19.0",
+        "python-dateutil": "4.0.0",
+        "psycopg-binary": "3.3.8",
+        "idna": "3.20"
+      }
+    },
+    "kernel": {
+      "python": "3.12.13 (main, May 10 2026, 19:20:41) [Clang 22.1.3 ]",
+      "packages": {
+        "pexpect": "4.9.0",
+        "platformdirs": "4.14.5",
+        "ptyprocess": "0.7.0",
+        "packaging": "26.3",
+        "Pygments": "2.21.0",
+        "prompt_toolkit": "3.0.53",
+        "pyzmq": "27.3.0",
+        "ipykernel": "7.4.0",
+        "matplotlib-inline": "0.2.2",
+        "wcwidth": "0.9.4",
+        "traitlets": "5.16.1",
+        "jedi": "0.20.1",
+        "ipython_pygments_lexers": "1.1.1",
+        "numpy": "2.5.4",
+        "stack-data": "0.6.3",
+        "appnope": "1.0.0",
+        "jupyter_client": "8.10.0",
+        "ipython": "9.18.1",
+        "jupyter_core": "5.9.1",
+        "pure_eval": "0.2.4",
+        "pandas": "2.3.3",
+        "tzdata": "2026.6",
+        "tornado": "6.6.1",
+        "executing": "2.3.0",
+        "nest-asyncio2": "1.7.4",
+        "debugpy": "1.8.22",
+        "typing_extensions": "4.16.0",
+        "asttokens": "3.0.2",
+        "python-dateutil": "4.0.0",
+        "psutil": "7.2.2",
+        "parso": "0.8.7",
+        "comm": "0.2.3",
+        "pytz": "2026.6"
+      }
+    },
+    "locks": {
+      "/Users/gregchism/.codex/worktrees/portage-openbao-trial/portage/uv.lock": "434732cdb329e541abed8dd64d54899640216bfbb00f463f33faf4e69c9ebef4",
+      "/Users/gregchism/dev/.educloud-worktrees/waypoint-openbao-local-trial/course-workspace/rehearsal/nhanes-kernel-requirements.lock": "850c920e279a24048b9c04c1a50925702fe178507cd338d240e6a30b7ebd5676",
+      "/Users/gregchism/dev/.educloud-worktrees/waypoint-openbao-local-trial/course-workspace/rehearsal/roster_presenter-requirements.lock": "c392cad086ca7cbbc8fef16570e8f2211b03298ea4e179384c007f556e59a3f2"
+    },
+    "docker_server": "29.8.2"
+  },
+  "identity_controls": {
+    "passed": [
+      "bootstrap-root-revoked-and-unseal-forgotten",
+      "custody-cannot-target-different-ca",
+      "wrapped-approle-login-and-delivery-removal",
+      "wrapping-token-replay-refused",
+      "service-cannot-write-key",
+      "service-cannot-read-other-component",
+      "service-cannot-enumerate-secrets",
+      "service-cannot-mint-identity",
+      "service-cannot-change-policy",
+      "service-cannot-renew-itself",
+      "operator-cannot-change-policy",
+      "operator-rotation-observed-without-gateway-restart",
+      "secret-id-single-use-enforced-by-server",
+      "wrong-wrapping-origin-refused",
+      "expired-wrapping-token-refused",
+      "restored-server-stays-sealed-before-operator-recovery",
+      "restored-service-token-revoked-before-reenrollment",
+      "restored-unused-secret-id-destroyed",
+      "fresh-process-custody-recovery-preserves-independent-ledger",
+      "no-operator-recovery-material-in-runtime-or-backup"
+    ],
+    "failed": [],
+    "paid_requests": 0,
+    "cleanup": true,
+    "custody_import_confirmed": false,
+    "identity": {
+      "identity": "portage-classroom",
+      "ttl_seconds": 1200,
+      "policies": [
+        "portage-reader"
+      ],
+      "wrapped_delivery": true
+    }
+  },
+  "stub_workflow": {
+    "passed": [
+      "native-notebook-and-tutor-light-dark-system",
+      "missing-checkpoint-refused-before-admission",
+      "NHANES-signed-job-stub-hint",
+      "expired-and-disabled-help-no-extra-attempts",
+      "native-python-NHANES-execution-and-save",
+      "wrong-numeric-output-fails-real-pinned-checker",
+      "appearance-preserved-through-cross-origin-handoff",
+      "studio-320-keyboard-pane-switch",
+      "cairn-320-keyboard-preview-and-committed-receipt",
+      "workspace-save-and-cairn-submit-after-tutor-expiry",
+      "explicit-four-file-native-bridge-and-byte-exact-receipt",
+      "changed-preview-payload-refused-409",
+      "receipt-persists-after-restart"
+    ],
+    "failed": [],
+    "cleanup": true,
+    "model_transports": 0
+  },
+  "live_workflow": {
+    "passed": [
+      "missing-checkpoint-refused-before-admission",
+      "NHANES-signed-job-live-hint",
+      "expired-and-disabled-help-no-extra-attempts",
+      "native-python-NHANES-execution-and-save",
+      "wrong-numeric-output-fails-real-pinned-checker",
+      "explicit-four-file-native-bridge-and-byte-exact-receipt",
+      "changed-preview-payload-refused-409",
+      "receipt-persists-after-restart"
+    ],
+    "failed": [],
+    "cleanup": true,
+    "model_transports": 3,
+    "real_students": false,
+    "institutional_sso": false,
+    "human_acceptance": false,
+    "task_sha256": "90ce990e48fda333e5f8c3346e86cb20a66fb5c04976e0cad02011432667d8fa",
+    "correctness": {
+      "grade": {
+        "submission_revision": "4c90a3f93d26a5eb6214d7bd80108e15b24e37a2",
+        "score": 4,
+        "max_score": 4,
+        "graded_at": "2026-11-17T00:14:30.472567Z"
+      },
+      "tests": [
+        {
+          "name": "nhanes-join-cell-preservation-only",
+          "passed": true,
+          "points": 4,
+          "max_points": 4
+        }
+      ]
+    }
+  },
+  "openbao": {
+    "cleanup": true,
+    "secret_leak_scan": "passed",
+    "service_identity": {
+      "identity": "portage-classroom",
+      "ttl_seconds": 1200,
+      "policies": [
+        "portage-reader"
+      ],
+      "wrapped_delivery": true
+    },
+    "bootstrap_root_revoked": true,
+    "custody": {
+      "destination": "institutional-password-manager-plus-separate-backup",
+      "import_confirmed": false,
+      "staging_outside_runtime": true
+    },
+    "bao_credential_reads": 3,
+    "openbao_binary_sha256": "3e274a55364efb3f1f6af98f560b8b44e2b75a7d7c88527f564f827ae80c7e5a",
+    "post_workflow_recovery": {
+      "fresh_operator_process": true,
+      "restored_token_refused": true,
+      "provider_credential_verified_without_inference": true,
+      "independent_ledger_sha256": "70b957798fbf8732e25513f4571526c40c86cc7754c5f21248a91f238d3de560",
+      "extra_model_transports": 0,
+      "credential_reads": {
+        "denied_retired_token": 1,
+        "successful_recovery": 1
+      }
+    },
+    "audit_sha256": "02a87d0643ef8a241694666276fb25e3e1328dae84de64b7774d75d0f68097f9"
+  },
+  "accounting": {
+    "prior_reserved_usd": 0,
+    "prior_consumed_cases": [],
+    "dispatch_claims": 3,
+    "sdk_retries": 0,
+    "provider_internal_retries": "unobservable",
+    "unknown_liability_usd": 0,
+    "reported_cost_usd": 0.0035944
+  },
+  "ledger": {
+    "committed": 8023,
+    "active": 0,
+    "unresolved": 0
+  },
+  "historical_unknown_liability_usd": 0.025,
+  "regressions": {
+    "portage_passed": 599,
+    "portage_skipped": 9,
+    "waypoint_focused_passed": 5,
+    "ruff": "passed"
+  },
+  "failures_retained": [
+    "identity-01: generic wrapping correctly denied; negative control changed to permitted wrong-origin read",
+    "identity-02: old revocation endpoint returned 404; corrected to sys/leases/revoke-prefix",
+    "adoption-stub-01: Docker service became unavailable before any model calls; cleanup separately recovered and verified"
+  ],
+  "release": {
+    "merged": false,
+    "default_pilot_changed": false,
+    "vault_import_confirmed": false,
+    "separate_backup_confirmed": false,
+    "student_admission": false,
+    "hosted_deployment": false
+  },
+  "raw_evidence": [
+    {
+      "path": "/Users/gregchism/.codex/worktrees/portage-openbao-trial/portage/.qualification/openbao-classroom-adoption-01/result.json",
+      "sha256": "17987498d265daf892411dcf7384a23863f54c98b5cca23c191a04135a82ea5d"
+    },
+    {
+      "path": "/Users/gregchism/.codex/worktrees/portage-openbao-trial/portage/.qualification/openbao-classroom-adoption-01/workflow/result.json",
+      "sha256": "4c84d2684916ada81e725e7fe5e75d9654627d67836607713cc438fcc4909d3b"
+    },
+    {
+      "path": "/Users/gregchism/.codex/worktrees/portage-openbao-trial/portage/.qualification/openbao-classroom-adoption-01/workflow/tutoring/provider/result.json",
+      "sha256": "a616501c2e5e04d35cb082f19aab4b4f4c139fa3911fd6d7ab9ca30baf76320a"
+    },
+    {
+      "path": "/Users/gregchism/.codex/worktrees/portage-openbao-trial/portage/.qualification/openbao-identity-03/result.json",
+      "sha256": "20db21f585ed212199b9504cbf850e003a3d1ad61cd03b2b6a37001ca9e16d40"
+    },
+    {
+      "path": "/Users/gregchism/.codex/worktrees/portage-openbao-trial/portage/.qualification/openbao-identity-01/result.json",
+      "sha256": "bc62236e93fb47670088687bd8d0c741a17f2545a389163456a2a4b0b090218b"
+    },
+    {
+      "path": "/Users/gregchism/.codex/worktrees/portage-openbao-trial/portage/.qualification/openbao-identity-02/result.json",
+      "sha256": "22d66d791a42901cfd30dfe3791d0c0bed4558adeb8b4524a11dde4d55559909"
+    },
+    {
+      "path": "/Users/gregchism/.codex/worktrees/portage-openbao-trial/portage/.qualification/openbao-adoption-pytest.log",
+      "sha256": "48ff0b76e64c90bbe4fe072f6124e4fa2ea25c4248a1ad4881f9a3e19fc412d7"
+    },
+    {
+      "path": "/Users/gregchism/dev/.educloud-worktrees/waypoint-openbao-local-trial/output/openbao-trial/adoption-nhanes-tests.log",
+      "sha256": "0f7e4b97443e54aca647179972594d13bb587afcbf151fab8228148587ea844a"
+    },
+    {
+      "path": "/Users/gregchism/dev/.educloud-worktrees/waypoint-openbao-local-trial/output/openbao-trial/adoption-stub-01/result.json",
+      "sha256": "932811788f60e049dbe71bb4231279890de2e751b39d1e805bc840073a9dd758"
+    },
+    {
+      "path": "/Users/gregchism/dev/.educloud-worktrees/waypoint-openbao-local-trial/output/openbao-trial/adoption-stub-01/cleanup-recovery.json",
+      "sha256": "836d1f76b4909faceebb8b059f1321134b54d8d870a433f4e75581c6a001e2a0"
+    },
+    {
+      "path": "/Users/gregchism/dev/.educloud-worktrees/waypoint-openbao-local-trial/output/openbao-trial/adoption-stub-02/result.json",
+      "sha256": "2fd9c4aa1e83f30c1126123cf95906f4ba98c77992ce5240da3b3f45385b1c74"
+    },
+    {
+      "path": "/Users/gregchism/dev/.educloud-worktrees/waypoint-openbao-local-trial/output/openbao-trial/adoption-live-command.sh",
+      "sha256": "95e003e45604436967b57c148e1b5262babe087100fa2ea7b5f434ea68258479"
+    },
+    {
+      "path": "/Users/gregchism/.codex/worktrees/portage-openbao-trial/portage/.qualification/openbao-adoption-cleanup.json",
+      "sha256": "4f3e7c30a7d4fe78a5d36a83911d4ef08e462cc474680f07f5ff18ab201323a4"
+    }
+  ],
+  "independent_cleanup_inventory": {
+    "owned_resources": {
+      "rehearsal-f429543912": {
+        "container": [],
+        "volume": [],
+        "network": []
+      },
+      "rehearsal-c082922888": {
+        "container": [],
+        "volume": [],
+        "network": []
+      }
+    },
+    "bao_processes": 0,
+    "runtime_token_removed": true,
+    "working_sources": {
+      "/Users/gregchism/.codex/worktrees/classroom-live-tutoring/portage": {
+        "head": "b72881f009e61e1311b6e46b92b42841991fd163",
+        "dirty": ""
+      },
+      "/Users/gregchism/dev/.educloud-worktrees/waypoint-studio-classic-v1": {
+        "head": "de701887e06c3ae19292b05639a6c9e83ba53d3c",
+        "dirty": ""
+      },
+      "/Users/gregchism/dev/.educloud-worktrees/cairn-studio-classic-v1": {
+        "head": "533c16a414b9fef1979d0de783b3436f31dd03a7",
+        "dirty": ""
+      },
+      "/Users/gregchism/dev/.educloud-worktrees/belay-classroom-system-one-consumer-v1": {
+        "head": "c5a27073e74b9eeb7ab697190915378b50132883",
+        "dirty": ""
+      }
+    }
+  }
+}

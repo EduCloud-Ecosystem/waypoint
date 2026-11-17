@@ -28,5 +28,46 @@ finite (seven model requests/$0.175 reserved ceiling), retains failed work, test
 actual post-workflow cold recovery without additional inference, and stops its
 owned services. A run result does not authorize automatic repeated paid calls.
 
-Earlier evidence: `OPENBAO-LOCAL-TRIAL.md`. New results will be recorded here after
-verification. No deployment, production secret import or student admission occurs.
+Earlier evidence: `OPENBAO-LOCAL-TRIAL.md`. Results are recorded below. No deployment, production secret import or student admission occurs.
+
+
+## Verified local results
+
+The optional integration passed at the application pins above: 20 actual OpenBao
+identity/custody controls, 13 unpaid browser controls and eight live classroom
+controls. Portage regressions: 599 passed, nine skipped (six missing sibling
+verifier integrations and three optional Belay-environment tests); five focused
+Waypoint tests passed. Earlier broad Waypoint suites remain historical evidence,
+not a claim of rerunning all of them for this pin-only companion change.
+
+The live run made three actual model requests with zero SDK retries and
+$0.0035944 provider-reported cost. Provider-internal retries are unobservable.
+No new unknown usage remained; the historical $0.025 liability is still retained.
+The NHANES fixture scored 4/4 and the deliberate wrong-output control failed.
+Four saved files matched the repository receipt, which survived restart. The
+receipt screenshot was also visually inspected.
+
+After the classroom workflow, the actual Bao store was cold-restored. A fresh
+operator process recovered it, invalidated the retired service token and verified
+the provider credential without further inference. The independent accounting
+file stayed byte-identical. Three classroom credential reads are recorded
+separately from one denied retired-token read and one successful recovery read.
+The credential/recovery-material leak scan passed; all owned services closed.
+
+An initial unpaid browser run failed because Docker stopped during repository
+preparation; cleanup could not finish then. Docker was started again, only the
+failed fixture's labeled resources were removed, and Cairn's recovery inventory
+verified zero remaining resources. The original failure remains unchanged beside
+a separate successful cleanup-recovery record. No paid work was replayed.
+
+Full sanitized evidence, source/environment/image pins and raw-result hashes are
+in the verification JSON. Reproduction uses the same entrypoint/arguments as the
+prior run plus `--custody-export`; the exact successful command is retained at
+`output/openbao-trial/adoption-live-command.sh` in the Waypoint worktree. It is a
+record, not standing permission for another paid run.
+
+See [the exact invocation](OPENBAO-PILOT-REPRODUCTION.md) and
+[verification record](openbao-pilot-adoption-verification.json). The private
+operator handoff is at
+`/Users/gregchism/Library/Application Support/EduCloud/OpenBao Recovery/classroom-adoption-01/HANDOFF.md`.
+It belongs to this local rehearsal; a future hosted instance needs its own escrow.
