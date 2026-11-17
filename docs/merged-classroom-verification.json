@@ -1,0 +1,711 @@
+{
+  "version": 1,
+  "reviewed_date_pacific": "2026-11-16",
+  "scope": "merged-components-local-synthetic-instructor-workflow",
+  "source_waypoint_base": "73c77271094e5b07c72e277c8fdbf9ef84b5e4ef",
+  "source_waypoint_tested": "00928cec7265a5aada7e57094299e83dc84847b9",
+  "source_portage": "4f7ac0d3e839012664d4b8272c8446376efc8f1b",
+  "openbao_activation": false,
+  "custody_import_confirmed": false,
+  "approved_custody_recovery_verified": false,
+  "deployment": false,
+  "student_admission": false,
+  "human_acceptance": false,
+  "runs": {
+    "synthetic_ui": {
+      "raw_result": "/Users/gregchism/dev/.educloud-worktrees/waypoint-openbao-local-trial/output/nhanes-instructor-20261117T040507Z-25442/result.json",
+      "raw_sha256": "84584146054e11801f6a1053750db431274caaadb4d75002391e1c7d79b340c3",
+      "sources": {
+        "cairn": "533c16a414b9fef1979d0de783b3436f31dd03a7",
+        "belay": "c5a27073e74b9eeb7ab697190915378b50132883",
+        "waypoint": "00928cec7265a5aada7e57094299e83dc84847b9",
+        "waypoint_dirty": false
+      },
+      "images": {
+        "grader": "sha256:d8e7745e5644f4e4c4dd49902981a8953485cc188a2263d866ba042aa0e4fab7",
+        "checkout": "sha256:6c6e6991e810c2ef88147fb47e9d98493095b8d2ad17e51e22f157fd87aae065",
+        "forgejo_reference": "codeberg.org/forgejo/forgejo:16.0.5@sha256:cf5f5ae6acf2ababca0ee3d255705b83a47f35b25e07fc931d694d60664053fe",
+        "forgejo_id": "sha256:cf5f5ae6acf2ababca0ee3d255705b83a47f35b25e07fc931d694d60664053fe"
+      },
+      "kernel": {
+        "python": "3.12.13 (main, May 10 2026, 19:20:41) [Clang 22.1.3 ]",
+        "packages": [
+          [
+            "Pygments",
+            "2.21.0"
+          ],
+          [
+            "appnope",
+            "1.0.0"
+          ],
+          [
+            "asttokens",
+            "3.0.2"
+          ],
+          [
+            "comm",
+            "0.2.3"
+          ],
+          [
+            "debugpy",
+            "1.8.22"
+          ],
+          [
+            "executing",
+            "2.3.0"
+          ],
+          [
+            "ipykernel",
+            "7.4.0"
+          ],
+          [
+            "ipython",
+            "9.18.1"
+          ],
+          [
+            "ipython_pygments_lexers",
+            "1.1.1"
+          ],
+          [
+            "jedi",
+            "0.20.1"
+          ],
+          [
+            "jupyter_client",
+            "8.10.0"
+          ],
+          [
+            "jupyter_core",
+            "5.9.1"
+          ],
+          [
+            "matplotlib-inline",
+            "0.2.2"
+          ],
+          [
+            "nest-asyncio2",
+            "1.7.4"
+          ],
+          [
+            "numpy",
+            "2.5.4"
+          ],
+          [
+            "packaging",
+            "26.3"
+          ],
+          [
+            "pandas",
+            "2.3.3"
+          ],
+          [
+            "parso",
+            "0.8.7"
+          ],
+          [
+            "pexpect",
+            "4.9.0"
+          ],
+          [
+            "platformdirs",
+            "4.14.5"
+          ],
+          [
+            "prompt_toolkit",
+            "3.0.53"
+          ],
+          [
+            "psutil",
+            "7.2.2"
+          ],
+          [
+            "ptyprocess",
+            "0.7.0"
+          ],
+          [
+            "pure_eval",
+            "0.2.4"
+          ],
+          [
+            "python-dateutil",
+            "4.0.0"
+          ],
+          [
+            "pytz",
+            "2026.6"
+          ],
+          [
+            "pyzmq",
+            "27.3.0"
+          ],
+          [
+            "stack-data",
+            "0.6.3"
+          ],
+          [
+            "tornado",
+            "6.6.1"
+          ],
+          [
+            "traitlets",
+            "5.16.1"
+          ],
+          [
+            "typing_extensions",
+            "4.16.0"
+          ],
+          [
+            "tzdata",
+            "2026.6"
+          ],
+          [
+            "wcwidth",
+            "0.9.4"
+          ]
+        ],
+        "lock_sha256": "850c920e279a24048b9c04c1a50925702fe178507cd338d240e6a30b7ebd5676"
+      },
+      "task_sha256": "90ce990e48fda333e5f8c3346e86cb20a66fb5c04976e0cad02011432667d8fa",
+      "checker_binding": {
+        "path_in_belay": "backend/app/packs/datascience/nhanes_check.py",
+        "sha256": "0316e63d9f2ee54a088a5f1ca9b1c24977eb54c5a00a11ceeda06bfd66443f80",
+        "repository": "https://github.com/EduCloud-Ecosystem/belay-classroom",
+        "revision": "bbc45bb3d4b8d135dc531fb130a40abf66d1e008",
+        "status": "SOURCE_BOUND_RUNTIME_PENDING",
+        "function": "check_nhanes(original_demo, original_bpxo, preserved_demo, preserved_bpxo, result)",
+        "no_model": true,
+        "source_files": {
+          "DEMO_L_selected.csv": "4a9c6d40ccbd4cb8a3886b20e2ec506e74c70c8e641347a941b9209f61369587",
+          "BPXO_L_selected.csv": "4ae89d264da5da4020fd6e8fdd0171ae188b7ed9191aeb8b18af20b30c1556a9"
+        },
+        "limitation": "CSV correctness cannot prove notebook method, source-frame immutability, kernel execution or authorship."
+      },
+      "cairn_binary_sha256": "26bbc544c3bdc6f0f7b4c50e22de376f755beaa28fd7d10ad5341591fd102978",
+      "passed": [
+        "native-notebook-and-tutor-light-dark-system",
+        "missing-checkpoint-refused-before-admission",
+        "NHANES-signed-job-stub-hint",
+        "expired-and-disabled-help-no-extra-attempts",
+        "native-python-NHANES-execution-and-save",
+        "wrong-numeric-output-fails-real-pinned-checker",
+        "appearance-preserved-through-cross-origin-handoff",
+        "studio-320-keyboard-pane-switch",
+        "cairn-320-keyboard-preview-and-committed-receipt",
+        "workspace-save-and-cairn-submit-after-tutor-expiry",
+        "explicit-four-file-native-bridge-and-byte-exact-receipt",
+        "changed-preview-payload-refused-409",
+        "receipt-persists-after-restart"
+      ],
+      "failed": [],
+      "cleanup": true,
+      "model_transports": 0,
+      "observed_output": "NHANES_NATIVE_OK 192",
+      "correctness": {
+        "grade": {
+          "submission_revision": "8b4cf9b46ddb4b825301be7ec896cb7f7001aa51",
+          "score": 4,
+          "max_score": 4,
+          "graded_at": "2026-11-17T04:07:34.584929Z"
+        },
+        "tests": [
+          {
+            "name": "nhanes-join-cell-preservation-only",
+            "passed": true,
+            "points": 4,
+            "max_points": 4
+          }
+        ]
+      },
+      "wrong_output": {
+        "grade": {
+          "submission_revision": "a34b24baff822775454c36b7ad9285b0b11e4866",
+          "score": 0,
+          "max_score": 4,
+          "graded_at": "2026-11-17T04:07:22.321188Z"
+        },
+        "tests": [
+          {
+            "name": "nhanes-join-cell-preservation-only",
+            "passed": false,
+            "points": 0,
+            "max_points": 4,
+            "detail": "command exited non-zero: source_value: at least one reading differs from its source value.\n"
+          }
+        ]
+      },
+      "receipt": {
+        "id": "530eedae8fc6283adf9c24ea2523767c",
+        "commit": "8b4cf9b46ddb4b825301be7ec896cb7f7001aa51",
+        "changes": [
+          {
+            "path": "assistance.md",
+            "sha256": "c735b4f4820b4edb3fa1fd22db53f74d7a5de82a614b8eb2bda6bec37c6b4b83",
+            "bytes": 395,
+            "action": "create"
+          },
+          {
+            "path": "explanation.md",
+            "sha256": "357d2ae3e7d189ab1048327d15b61bde4765d82bc53d0a3016c088cac60e7cc7",
+            "bytes": 521,
+            "action": "create"
+          },
+          {
+            "path": "nhanes-wrangling.ipynb",
+            "sha256": "a721f269c71ac0f28c42792d5d3d6523c590ef64fcbde502838b5376177bf732",
+            "bytes": 8394,
+            "action": "create"
+          },
+          {
+            "path": "tidy-nhanes.csv",
+            "sha256": "0f15ad84fbf6441dbe3c6a3c7d850dcae080410d92d392c07754a3ef1ad1e8b8",
+            "bytes": 4910,
+            "action": "create"
+          }
+        ],
+        "checks": [
+          "explicit-saved-file-preview",
+          "exact-file-digest-receipt",
+          "separate-confirmation-required",
+          "submission-csrf-denied",
+          "submission-peer-denied",
+          "submission-unsafe-path-denied",
+          "idempotency-payload-conflict",
+          "lost-confirmation-response-retry",
+          "one-commit-receipt",
+          "submission-ui-keyboard-axe",
+          "submission-receipt-after-restart"
+        ]
+      },
+      "saved_manifest": {
+        "assistance.md": {
+          "bytes": 395,
+          "sha256": "c735b4f4820b4edb3fa1fd22db53f74d7a5de82a614b8eb2bda6bec37c6b4b83"
+        },
+        "explanation.md": {
+          "bytes": 521,
+          "sha256": "357d2ae3e7d189ab1048327d15b61bde4765d82bc53d0a3016c088cac60e7cc7"
+        },
+        "nhanes-wrangling.ipynb": {
+          "bytes": 8394,
+          "sha256": "a721f269c71ac0f28c42792d5d3d6523c590ef64fcbde502838b5376177bf732"
+        },
+        "tidy-nhanes.csv": {
+          "bytes": 4910,
+          "sha256": "0f15ad84fbf6441dbe3c6a3c7d850dcae080410d92d392c07754a3ef1ad1e8b8"
+        }
+      },
+      "elapsed_seconds": 150.67
+    },
+    "live_tutoring": {
+      "raw_result": "/Users/gregchism/dev/.educloud-worktrees/waypoint-openbao-local-trial/output/merged-classroom/live-01/result.json",
+      "raw_sha256": "6e9ba686805b1ce6b15857bd050e34d0930a99e99f99462eefe6e9c8d699ba09",
+      "sources": {
+        "cairn": "533c16a414b9fef1979d0de783b3436f31dd03a7",
+        "belay": "c5a27073e74b9eeb7ab697190915378b50132883",
+        "waypoint": "00928cec7265a5aada7e57094299e83dc84847b9",
+        "waypoint_dirty": false
+      },
+      "images": {
+        "grader": "sha256:d8e7745e5644f4e4c4dd49902981a8953485cc188a2263d866ba042aa0e4fab7",
+        "checkout": "sha256:6c6e6991e810c2ef88147fb47e9d98493095b8d2ad17e51e22f157fd87aae065",
+        "forgejo_reference": "codeberg.org/forgejo/forgejo:16.0.5@sha256:cf5f5ae6acf2ababca0ee3d255705b83a47f35b25e07fc931d694d60664053fe",
+        "forgejo_id": "sha256:cf5f5ae6acf2ababca0ee3d255705b83a47f35b25e07fc931d694d60664053fe"
+      },
+      "kernel": {
+        "python": "3.12.13 (main, May 10 2026, 19:20:41) [Clang 22.1.3 ]",
+        "packages": [
+          [
+            "Pygments",
+            "2.21.0"
+          ],
+          [
+            "appnope",
+            "1.0.0"
+          ],
+          [
+            "asttokens",
+            "3.0.2"
+          ],
+          [
+            "comm",
+            "0.2.3"
+          ],
+          [
+            "debugpy",
+            "1.8.22"
+          ],
+          [
+            "executing",
+            "2.3.0"
+          ],
+          [
+            "ipykernel",
+            "7.4.0"
+          ],
+          [
+            "ipython",
+            "9.18.1"
+          ],
+          [
+            "ipython_pygments_lexers",
+            "1.1.1"
+          ],
+          [
+            "jedi",
+            "0.20.1"
+          ],
+          [
+            "jupyter_client",
+            "8.10.0"
+          ],
+          [
+            "jupyter_core",
+            "5.9.1"
+          ],
+          [
+            "matplotlib-inline",
+            "0.2.2"
+          ],
+          [
+            "nest-asyncio2",
+            "1.7.4"
+          ],
+          [
+            "numpy",
+            "2.5.4"
+          ],
+          [
+            "packaging",
+            "26.3"
+          ],
+          [
+            "pandas",
+            "2.3.3"
+          ],
+          [
+            "parso",
+            "0.8.7"
+          ],
+          [
+            "pexpect",
+            "4.9.0"
+          ],
+          [
+            "platformdirs",
+            "4.14.5"
+          ],
+          [
+            "prompt_toolkit",
+            "3.0.53"
+          ],
+          [
+            "psutil",
+            "7.2.2"
+          ],
+          [
+            "ptyprocess",
+            "0.7.0"
+          ],
+          [
+            "pure_eval",
+            "0.2.4"
+          ],
+          [
+            "python-dateutil",
+            "4.0.0"
+          ],
+          [
+            "pytz",
+            "2026.6"
+          ],
+          [
+            "pyzmq",
+            "27.3.0"
+          ],
+          [
+            "stack-data",
+            "0.6.3"
+          ],
+          [
+            "tornado",
+            "6.6.1"
+          ],
+          [
+            "traitlets",
+            "5.16.1"
+          ],
+          [
+            "typing_extensions",
+            "4.16.0"
+          ],
+          [
+            "tzdata",
+            "2026.6"
+          ],
+          [
+            "wcwidth",
+            "0.9.4"
+          ]
+        ],
+        "lock_sha256": "850c920e279a24048b9c04c1a50925702fe178507cd338d240e6a30b7ebd5676"
+      },
+      "task_sha256": "90ce990e48fda333e5f8c3346e86cb20a66fb5c04976e0cad02011432667d8fa",
+      "checker_binding": {
+        "path_in_belay": "backend/app/packs/datascience/nhanes_check.py",
+        "sha256": "0316e63d9f2ee54a088a5f1ca9b1c24977eb54c5a00a11ceeda06bfd66443f80",
+        "repository": "https://github.com/EduCloud-Ecosystem/belay-classroom",
+        "revision": "bbc45bb3d4b8d135dc531fb130a40abf66d1e008",
+        "status": "SOURCE_BOUND_RUNTIME_PENDING",
+        "function": "check_nhanes(original_demo, original_bpxo, preserved_demo, preserved_bpxo, result)",
+        "no_model": true,
+        "source_files": {
+          "DEMO_L_selected.csv": "4a9c6d40ccbd4cb8a3886b20e2ec506e74c70c8e641347a941b9209f61369587",
+          "BPXO_L_selected.csv": "4ae89d264da5da4020fd6e8fdd0171ae188b7ed9191aeb8b18af20b30c1556a9"
+        },
+        "limitation": "CSV correctness cannot prove notebook method, source-frame immutability, kernel execution or authorship."
+      },
+      "cairn_binary_sha256": "26bbc544c3bdc6f0f7b4c50e22de376f755beaa28fd7d10ad5341591fd102978",
+      "passed": [
+        "missing-checkpoint-refused-before-admission",
+        "NHANES-signed-job-live-hint",
+        "expired-and-disabled-help-no-extra-attempts",
+        "native-python-NHANES-execution-and-save",
+        "wrong-numeric-output-fails-real-pinned-checker",
+        "explicit-four-file-native-bridge-and-byte-exact-receipt",
+        "changed-preview-payload-refused-409",
+        "receipt-persists-after-restart"
+      ],
+      "failed": [],
+      "cleanup": true,
+      "model_transports": 3,
+      "observed_output": "NHANES_NATIVE_OK 192",
+      "correctness": {
+        "grade": {
+          "submission_revision": "fb8686ecf6aed436207e6e210a46a305d1377b66",
+          "score": 4,
+          "max_score": 4,
+          "graded_at": "2026-11-17T04:09:04.599167Z"
+        },
+        "tests": [
+          {
+            "name": "nhanes-join-cell-preservation-only",
+            "passed": true,
+            "points": 4,
+            "max_points": 4
+          }
+        ]
+      },
+      "wrong_output": {
+        "grade": {
+          "submission_revision": "2609c6289c9cb6f1cc4f17d37f5a46f250b5fc4d",
+          "score": 0,
+          "max_score": 4,
+          "graded_at": "2026-11-17T04:08:52.731686Z"
+        },
+        "tests": [
+          {
+            "name": "nhanes-join-cell-preservation-only",
+            "passed": false,
+            "points": 0,
+            "max_points": 4,
+            "detail": "command exited non-zero: source_value: at least one reading differs from its source value.\n"
+          }
+        ]
+      },
+      "receipt": {
+        "id": "8b7652190bd27e4dd7299e5ae9657957",
+        "commit": "fb8686ecf6aed436207e6e210a46a305d1377b66",
+        "changes": [
+          {
+            "path": "assistance.md",
+            "sha256": "77f1184977b8ab248fc681165c70ac871b68583a656e5205f8f3eb6640b609c4",
+            "bytes": 389,
+            "action": "create"
+          },
+          {
+            "path": "explanation.md",
+            "sha256": "357d2ae3e7d189ab1048327d15b61bde4765d82bc53d0a3016c088cac60e7cc7",
+            "bytes": 521,
+            "action": "create"
+          },
+          {
+            "path": "nhanes-wrangling.ipynb",
+            "sha256": "a721f269c71ac0f28c42792d5d3d6523c590ef64fcbde502838b5376177bf732",
+            "bytes": 8394,
+            "action": "create"
+          },
+          {
+            "path": "tidy-nhanes.csv",
+            "sha256": "0f15ad84fbf6441dbe3c6a3c7d850dcae080410d92d392c07754a3ef1ad1e8b8",
+            "bytes": 4910,
+            "action": "create"
+          }
+        ],
+        "checks": [
+          "explicit-saved-file-preview",
+          "exact-file-digest-receipt",
+          "separate-confirmation-required",
+          "submission-csrf-denied",
+          "submission-peer-denied",
+          "submission-unsafe-path-denied",
+          "idempotency-payload-conflict",
+          "lost-confirmation-response-retry",
+          "one-commit-receipt",
+          "submission-ui-keyboard-axe",
+          "submission-receipt-after-restart"
+        ]
+      },
+      "saved_manifest": {
+        "assistance.md": {
+          "bytes": 389,
+          "sha256": "77f1184977b8ab248fc681165c70ac871b68583a656e5205f8f3eb6640b609c4"
+        },
+        "explanation.md": {
+          "bytes": 521,
+          "sha256": "357d2ae3e7d189ab1048327d15b61bde4765d82bc53d0a3016c088cac60e7cc7"
+        },
+        "nhanes-wrangling.ipynb": {
+          "bytes": 8394,
+          "sha256": "a721f269c71ac0f28c42792d5d3d6523c590ef64fcbde502838b5376177bf732"
+        },
+        "tidy-nhanes.csv": {
+          "bytes": 4910,
+          "sha256": "0f15ad84fbf6441dbe3c6a3c7d850dcae080410d92d392c07754a3ef1ad1e8b8"
+        }
+      },
+      "elapsed_seconds": 66.65,
+      "tutoring": {
+        "accounting": {
+          "prior_reserved_usd": 0,
+          "prior_consumed_cases": [],
+          "attempts": [
+            {
+              "case": "01-planner",
+              "request_id": "8e63b62302dba7787159d4479803217e",
+              "state": "complete",
+              "reserved_usd": 0.024999999999999998,
+              "dispatches": 1,
+              "provider": "OpenAI",
+              "model": "openai/gpt-4.1-mini",
+              "usage": {
+                "prompt_tokens": 3053,
+                "completion_tokens": 97,
+                "total_tokens": 3150,
+                "cost": 0.0013764,
+                "is_byok": false,
+                "prompt_tokens_details": {
+                  "cached_tokens": 0,
+                  "cache_write_tokens": 0,
+                  "audio_tokens": 0,
+                  "video_tokens": 0
+                },
+                "cost_details": {
+                  "upstream_inference_cost": 0.0013764,
+                  "upstream_inference_prompt_cost": 0.0012212,
+                  "upstream_inference_completions_cost": 0.0001552
+                },
+                "completion_tokens_details": {
+                  "reasoning_tokens": 0,
+                  "image_tokens": 0,
+                  "audio_tokens": 0
+                }
+              }
+            },
+            {
+              "case": "02-reasoner",
+              "request_id": "bc19d36eb52ac480c05ca02ab4563004",
+              "state": "complete",
+              "reserved_usd": 0.024999999999999998,
+              "dispatches": 1,
+              "provider": "OpenAI",
+              "model": "openai/gpt-4.1-mini",
+              "usage": {
+                "prompt_tokens": 3589,
+                "completion_tokens": 129,
+                "total_tokens": 3718,
+                "cost": 0.001642,
+                "is_byok": false,
+                "prompt_tokens_details": {
+                  "cached_tokens": 0,
+                  "cache_write_tokens": 0,
+                  "audio_tokens": 0,
+                  "video_tokens": 0
+                },
+                "cost_details": {
+                  "upstream_inference_cost": 0.001642,
+                  "upstream_inference_prompt_cost": 0.0014356,
+                  "upstream_inference_completions_cost": 0.0002064
+                },
+                "completion_tokens_details": {
+                  "reasoning_tokens": 0,
+                  "image_tokens": 0,
+                  "audio_tokens": 0
+                }
+              }
+            },
+            {
+              "case": "03-self_eval",
+              "request_id": "c039d7df043df545a3fc8f0d17d13805",
+              "state": "complete",
+              "reserved_usd": 0.024999999999999998,
+              "dispatches": 1,
+              "provider": "OpenAI",
+              "model": "openai/gpt-4.1-mini",
+              "usage": {
+                "prompt_tokens": 1020,
+                "completion_tokens": 110,
+                "total_tokens": 1130,
+                "cost": 0.000584,
+                "is_byok": false,
+                "prompt_tokens_details": {
+                  "cached_tokens": 0,
+                  "cache_write_tokens": 0,
+                  "audio_tokens": 0,
+                  "video_tokens": 0
+                },
+                "cost_details": {
+                  "upstream_inference_cost": 0.000584,
+                  "upstream_inference_prompt_cost": 0.000408,
+                  "upstream_inference_completions_cost": 0.000176
+                },
+                "completion_tokens_details": {
+                  "reasoning_tokens": 0,
+                  "image_tokens": 0,
+                  "audio_tokens": 0
+                }
+              }
+            }
+          ],
+          "dispatch_claims": 3,
+          "sdk_retries": 0,
+          "provider_internal_retries": "unobservable",
+          "unknown_liability_usd": 0,
+          "reported_cost_usd": 0.0036024
+        },
+        "portage_ledger": {
+          "committed": 7998,
+          "active": 0,
+          "unresolved": 0
+        },
+        "owned_servers_closed": true,
+        "historical_unknown_liability_usd": 0.025,
+        "instructional_acceptance": "pending_human_review",
+        "synthetic_only": true
+      }
+    }
+  },
+  "visual_inspection": {
+    "light_notebook_and_tutor": "inspected",
+    "dark_notebook_and_stub_hint": "inspected",
+    "narrow_dark_submission_receipt": "inspected",
+    "live_hint": "inspected",
+    "early_dark_capture": "theme transition splash visible; later dark hint screenshot inspected after rendering; initial capture retained"
+  },
+  "limitations": [
+    "Only the supplied public NHANES question/source is qualified for paid tutoring.",
+    "Hosted identity, student data policy, capacity/restore and human acceptance remain open.",
+    "Historical USD 0.025 unknown liability remains; no new unknown liability.",
+    "Provider-internal retries are unobservable.",
+    "Previous fixtures, outputs and original checkout branches remain preserved."
+  ]
+}

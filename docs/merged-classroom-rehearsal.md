@@ -30,3 +30,21 @@ workspace limit. The supplied hint requires a deliberate click. Each invocation
 has its own seven-request/USD 0.175 ceiling. This is a local synthetic instructor
 test, not student admission or hosted deployment. Free-form tutoring is not
 qualified by the source-fixed example. Historical USD 0.025 liability remains.
+
+## Verified result
+
+At Waypoint `00928cec7265a5aada7e57094299e83dc84847b9`, all 13 synthetic UI
+controls and eight live controls passed. Both runs cleaned up. The live run made
+three actual requests, zero SDK retries, USD 0.0036024 provider-reported cost and
+no new unknown usage. Provider-internal retries remain unobservable. Correct
+output scored 4/4; a deliberately changed source value scored 0/4. Four saved
+files matched the receipt, which survived restart. The live fixture explicitly
+declared its AI assistance. Light/dark and narrow receipt views were inspected;
+one early dark capture includes the transient theme splash and remains preserved.
+
+[Verification record](merged-classroom-verification.json) contains source, image,
+actual kernel package identities, raw hashes, acceptance results and limitations.
+Subsequent documentation commits do not change the tested application tree.
+Use [the instructor guide](../course-workspace/NHANES-LIVE-TESTING.md) to launch a
+fresh finite manual window. OpenBao stays inactive. No custody or recovery gate
+has been promoted by this workflow verification.

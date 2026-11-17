@@ -12,12 +12,13 @@ Docker must already be running. The launcher uses the qualified local environmen
 and cached images; it does not install software, pull images or create cloud resources.
 
 ```sh
-/Users/gregchism/.codex/worktrees/waypoint-runtime-release/waypoint/course-workspace/launch-nhanes-instructor.command --check
-/Users/gregchism/.codex/worktrees/waypoint-runtime-release/waypoint/course-workspace/launch-nhanes-instructor.command --live
+/Users/gregchism/dev/.educloud-worktrees/waypoint-openbao-local-trial/course-workspace/launch-nhanes-instructor.command --check
+/Users/gregchism/dev/.educloud-worktrees/waypoint-openbao-local-trial/course-workspace/launch-nhanes-instructor.command --live
 ```
 
-The revised pilot checkout supports `--stub` and `--verify-stub`. The live
-launcher retains its previous paid qualification pin.
+The current launcher uses merged Portage `4f7ac0d` through the existing private
+key file. OpenBao is inactive: no address, CA or service token is supplied.
+It also supports `--stub` and `--verify-stub`.
 
 Use `--stub` for a no-cost automatic hint and a two-minute
 notebook-and-tutor review. The completed solution is preserved, a separate
@@ -68,16 +69,17 @@ self-evaluation is not instructional acceptance. No-AI completion remains availa
 `NHANES-DESKTOP-TESTING.md` records the fixed Cairn/Belay sources, driver and
 hash-locked kernel environment, grader/checkout images, dataset/checker binding,
 and prior failed no-AI attempts. The live launcher additionally checks Portage
-`b72881f009e61e1311b6e46b92b42841991fd163`. Runtime records the exact Waypoint source,
+`4f7ac0d3e839012664d4b8272c8446376efc8f1b`. Runtime records the exact Waypoint source,
 images, actual kernel packages and file hashes. The provider catalog is rechecked
 before live admission, so a changed price/endpoint can refuse a fresh window.
 
 The existing private key file is used in place; its contents never enter source
 or reports. An older USD0.025 unknown liability remains recorded separately; a
-new successful run does not resolve it. The earlier automated live qualification is historical evidence. This interface
-revision uses a local stub for automated verification; no new automated paid run
-is authorized by it. Human use requires deliberately invoking this launcher and
-clicking Ask. Nothing resumes a stopped paid window automatically.
+new successful run does not resolve it. The owner-authorized merged-source rerun passed 13 synthetic UI controls and
+eight live controls, with three requests and USD 0.0036024 provider-reported cost.
+See [the exact verification record](../docs/merged-classroom-verification.json).
+This record does not authorize repeating automated paid work. Human use requires
+deliberately invoking this launcher and clicking Ask. Nothing resumes a stopped paid window automatically.
 
 The Cairn export remains preserved separately from the explicit operator-owned
 NHANES teaching-policy overlay. Membership, original deadlines, submission and
