@@ -7,6 +7,16 @@ the descendant adds current-main protocol files, formatting fixes and synthetic 
 This companion PR remains dependent on that Portage source being available.
 Default activation is still gated on actual-instance custody; no launcher is changed.
 
+CI review found that the identity-image preflight used an assertion. It now
+raises an explicit validation error before creating resources. Eight focused
+NHANES tests pass, including a regression checking the nonzero exit, retained
+failure record, no resource creation and zero model requests for an invalid image.
+An additional optimized-Python test attempt stopped during import because the
+existing shared runner explicitly rejects disabled assertions. That guard is
+preserved; optimized execution is unsupported, not a passing test. The historical
+live run below predates this preflight-only hardening; it is not a new live run at
+the merge-preparation head.
+
 
 Greg authorized service identity, operator custody, integration when ready and a
 fresh classroom verification on 2026-11-16. Companion Portage application pin:

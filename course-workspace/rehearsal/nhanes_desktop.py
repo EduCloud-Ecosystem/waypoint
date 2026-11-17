@@ -108,7 +108,8 @@ def main():
         # Fail before creating a network/volume when the pinned identity fixture
         # has been removed from the local image cache.
         forgejo_id = command(['docker','image','inspect',FORGEJO_IMAGE,'--format','{{.Id}}'])
-        assert forgejo_id.startswith('sha256:') and len(forgejo_id) == 71
+        if not (forgejo_id.startswith('sha256:') and len(forgejo_id) == 71):
+            raise ValueError('pinned identity fixture has no valid local image ID')
         report['images'].update(forgejo_reference=FORGEJO_IMAGE, forgejo_id=forgejo_id)
         report['kernel'] = json.loads(command([args.kernel_python,'-c',
             'import sys,importlib.metadata,json; print(json.dumps({"python":sys.version,"packages":sorted((d.metadata["Name"],d.version) for d in importlib.metadata.distributions())}))']))
