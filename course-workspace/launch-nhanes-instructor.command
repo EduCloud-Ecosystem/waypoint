@@ -13,7 +13,7 @@ driver=/Users/gregchism/.codex/worktrees/classroom-live-notebook/waypoint/.venv/
 kernel=/Users/gregchism/.codex/worktrees/waypoint-nhanes-qualification/waypoint/output/nhanes-qualification-v1/kernel-env/bin/python
 cairn=/Users/gregchism/dev/.educloud-worktrees/cairn-studio-classic-v1
 belay=/Users/gregchism/dev/.educloud-worktrees/belay-classroom-system-one-consumer-v1
-portage=/Users/gregchism/.codex/worktrees/classroom-live-tutoring/portage
+portage=/Users/gregchism/.codex/worktrees/portage-openbao-trial/portage
 keyfile=/Users/gregchism/dev/.educloud-worktrees/portage-system-one-shadow-pilot-v1/.qualification/openrouter/.env
 cairn_pin=533c16a414b9fef1979d0de783b3436f31dd03a7
 if [[ "$mode" == --live || "$mode" == --check ]]; then
@@ -22,7 +22,7 @@ if [[ "$mode" == --live || "$mode" == --check ]]; then
 fi
 [[ -x "$driver" && -x "$kernel" && -d "$cairn" && -d "$belay" && -d "$portage" ]] || { print -u2 'A qualified local checkout or environment is missing. See NHANES-LIVE-TESTING.md.'; exit 1; }
 [[ -z "$(git status --porcelain --untracked-files=no)" ]] || { print -u2 'Commit the Waypoint source before starting a qualified window.'; exit 1; }
-[[ "$(git -C "$cairn" rev-parse HEAD)" == "$cairn_pin" && "$(git -C "$belay" rev-parse HEAD)" == c5a27073e74b9eeb7ab697190915378b50132883 && "$(git -C "$portage" rev-parse HEAD)" == b72881f009e61e1311b6e46b92b42841991fd163 ]] || { print -u2 'The component pins for this mode do not match. Restore the reviewed source revisions before retrying.'; exit 1; }
+[[ "$(git -C "$cairn" rev-parse HEAD)" == "$cairn_pin" && "$(git -C "$belay" rev-parse HEAD)" == c5a27073e74b9eeb7ab697190915378b50132883 && "$(git -C "$portage" rev-parse HEAD)" == 4f7ac0d3e839012664d4b8272c8446376efc8f1b ]] || { print -u2 'The component pins for this mode do not match. Restore the reviewed source revisions before retrying.'; exit 1; }
 if [[ "$mode" == --live || "$mode" == --check ]]; then
   [[ -f "$keyfile" && "$(stat -f %Lp "$keyfile")" == 600 ]] || { print -u2 'The existing private provider key file is missing or has incorrect permissions.'; exit 1; }
 fi
@@ -47,5 +47,5 @@ print 'Keep this terminal open. Press Ctrl-C to stop. The workspace and tutor ha
   --cairn "$cairn" --belay "$belay" --kernel-python "$kernel" \
   --kernel-lock course-workspace/rehearsal/nhanes-kernel-requirements.lock \
   --grader-image sha256:d8e7745e5644f4e4c4dd49902981a8953485cc188a2263d866ba042aa0e4fab7 \
-  --checkout-image sha256:bc9bc6929aafd69d37158bbd273a11818a2b222539242949d5d3c3066d02db8c \
+  --checkout-image sha256:6c6e6991e810c2ef88147fb47e9d98493095b8d2ad17e51e22f157fd87aae065 \
   --output "$out" --execute-synthetic "${args[@]}"

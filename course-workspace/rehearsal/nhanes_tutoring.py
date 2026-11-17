@@ -15,7 +15,7 @@ from cairn_journey import port, wait_http
 from live_notebook import LiveNotebook, notebook_inputs
 from roster_presenter import private, command
 
-PORTAGE_PIN = 'b72881f009e61e1311b6e46b92b42841991fd163'
+PORTAGE_PIN = '4f7ac0d3e839012664d4b8272c8446376efc8f1b'
 OPENBAO_PILOT_PORTAGE_PIN = '4e6eb8b14a230ddcfe8abf81d419d2ebbd4e28b1'
 
 
