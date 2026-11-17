@@ -1,5 +1,13 @@
 # OpenBao local instructor adoption
 
+Merge-preparation pin: `4e6eb8b14a230ddcfe8abf81d419d2ebbd4e28b1`
+([Portage PR #22](https://github.com/EduCloud-Ecosystem/portage/pull/22)).
+The application behavior is unchanged from the tested `124da40` pin below;
+the descendant adds current-main protocol files, formatting fixes and synthetic CI.
+This companion PR remains dependent on that Portage source being available.
+Default activation is still gated on actual-instance custody; no launcher is changed.
+
+
 Greg authorized service identity, operator custody, integration when ready and a
 fresh classroom verification on 2026-11-16. Companion Portage application pin:
 `124da40b12e6422a0106181c14a60c622ec53927` (`codex/openbao-local-trial`).

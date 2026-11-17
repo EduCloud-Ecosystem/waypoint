@@ -16,7 +16,7 @@ from live_notebook import LiveNotebook, notebook_inputs
 from roster_presenter import private, command
 
 PORTAGE_PIN = 'b72881f009e61e1311b6e46b92b42841991fd163'
-OPENBAO_PILOT_PORTAGE_PIN = '124da40b12e6422a0106181c14a60c622ec53927'
+OPENBAO_PILOT_PORTAGE_PIN = '4e6eb8b14a230ddcfe8abf81d419d2ebbd4e28b1'
 
 
 def validate_tutoring(mode, portage, env_file, approved, review_seconds, *, openbao=None):
