@@ -16,17 +16,20 @@ from live_notebook import LiveNotebook, notebook_inputs
 from roster_presenter import private, command
 
 PORTAGE_PIN = 'b72881f009e61e1311b6e46b92b42841991fd163'
+OPENBAO_PILOT_PORTAGE_PIN = '4e6eb8b14a230ddcfe8abf81d419d2ebbd4e28b1'
 
 
-def validate_tutoring(mode, portage, env_file, approved, review_seconds):
+def validate_tutoring(mode, portage, env_file, approved, review_seconds, *, openbao=None):
     if mode not in ('none', 'stub', 'live'):
         raise ValueError('unknown tutoring mode')
     if type(review_seconds) is not int or not 0 <= review_seconds <= 240:
         raise ValueError('live review must be between 0 and 240 seconds')
+    if openbao is not None and (len(openbao) != 3 or not all(openbao) or env_file):
+        raise ValueError('OpenBao trial needs address, CA and token file, without fallback')
     if mode == 'live':
-        if not (portage and env_file and approved):
+        if not (portage and (env_file or openbao) and approved):
             raise ValueError('live tutoring requires explicit approval, pinned Portage and private key file')
-    elif portage or env_file or approved or review_seconds:
+    elif portage or env_file or approved or review_seconds or openbao:
         raise ValueError('provider options require explicit live tutoring mode')
 
 
@@ -91,12 +94,15 @@ class NhanesTutoring:
             AUTH_AUTHORIZATION_FILE=str(snapshot), AUTH_AUTHORITY_STATE_FILE=str(self.root / 'watermark.db'))
         try:
             if args.tutor_mode == 'live':
-                if command(['git', 'rev-parse', 'HEAD'], cwd=args.live_portage) != PORTAGE_PIN:
+                openbao = getattr(args, 'openbao', None)
+                expected_pin = OPENBAO_PILOT_PORTAGE_PIN if openbao else PORTAGE_PIN
+                if command(['git', 'rev-parse', 'HEAD'], cwd=args.live_portage) != expected_pin:
                     raise ValueError('NHANES Portage source pin mismatch')
                 if command(['git', 'status', '--porcelain', '--untracked-files=no'], cwd=args.live_portage):
                     raise ValueError('NHANES Portage tracked source must be committed')
+                extra = {'openbao': openbao} if openbao else {}
                 self.live = LiveNotebook(args.live_portage, args.belay, args.env_file, self.root,
-                    snapshot, document, member, env, profile='nhanes-v1')
+                    snapshot, document, member, env, profile='nhanes-v1', **extra)
                 env.update(self.live.environment)
             limits = dict(tokens=172032, microunits=175000, runs=10, wall_ms=180000)
             private(self.root / 'policy.json', dict(version='nhanes-v1', price_version='synthetic-v1', currency='USD',

@@ -18,7 +18,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT / 'classroom'), str(ROOT / 'course')]
 from assignment_profiles import NHANES
 from info511_policy import template_files
-from cairn_journey import Course, port, wait_http
+from cairn_journey import FORGEJO_IMAGE, Course, port, wait_http
 from info511_demo import req, active_work, await_grade
 from info511_notebook import contents, manifest, saved_files
 from classroom_transfer import submit_info511_attempt
@@ -56,6 +56,9 @@ def main():
     parser.add_argument('--tutor-mode', choices=('none', 'stub', 'live'), default='none')
     parser.add_argument('--live-portage', type=Path)
     parser.add_argument('--env-file', type=Path)
+    parser.add_argument('--openbao-address')
+    parser.add_argument('--openbao-ca', type=Path)
+    parser.add_argument('--openbao-token-file', type=Path)
     parser.add_argument('--execute-approved', action='store_true')
     parser.add_argument('--live-review-seconds', type=int, default=0,
                         help='After no-AI controls, open one prepared live hint for at most 240 seconds')
@@ -63,12 +66,14 @@ def main():
     parser.add_argument('--verify-studio-ui', action='store_true',
                         help='Exercise reflow, keyboard focus and natural credential expiry with the local stub')
     args = parser.parse_args()
+    values = (args.openbao_address, args.openbao_ca, args.openbao_token_file)
+    args.openbao = values if any(values) else None
     if not args.execute_synthetic: parser.error('explicit synthetic execution required')
     args.kernel_python = args.kernel_python.absolute()  # Preserve the venv symlink path.
     validate(args.operator_review_seconds, live_portage=args.live_portage,
              env_file=args.env_file, execute_approved=args.execute_approved)
     validate_tutoring(args.tutor_mode, args.live_portage, args.env_file,
-                      args.execute_approved, args.live_review_seconds)
+                      args.execute_approved, args.live_review_seconds, openbao=args.openbao)
     if args.verify_studio_ui and (args.tutor_mode != 'stub' or args.operator_review_seconds):
         parser.error('Studio verification requires the local stub without an operator review window')
     for name in ('cairn', 'belay', 'live_portage', 'env_file'):
@@ -100,6 +105,12 @@ def main():
             assert image.startswith('sha256:') and len(image) == 71
             assert command(['docker','image','inspect',image,'--format','{{.Id}}']) == image
         report['images'] = {'grader':args.grader_image,'checkout':args.checkout_image}
+        # Fail before creating a network/volume when the pinned identity fixture
+        # has been removed from the local image cache.
+        forgejo_id = command(['docker','image','inspect',FORGEJO_IMAGE,'--format','{{.Id}}'])
+        if not (forgejo_id.startswith('sha256:') and len(forgejo_id) == 71):
+            raise ValueError('pinned identity fixture has no valid local image ID')
+        report['images'].update(forgejo_reference=FORGEJO_IMAGE, forgejo_id=forgejo_id)
         report['kernel'] = json.loads(command([args.kernel_python,'-c',
             'import sys,importlib.metadata,json; print(json.dumps({"python":sys.version,"packages":sorted((d.metadata["Name"],d.version) for d in importlib.metadata.distributions())}))']))
         report['kernel']['lock_sha256'] = hashlib.sha256(args.kernel_lock.read_bytes()).hexdigest()

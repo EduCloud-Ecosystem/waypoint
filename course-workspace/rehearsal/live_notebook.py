@@ -57,7 +57,7 @@ print(json.dumps({'context': ctx, 'systems': {'planner': planner_system(p.person
 
 class LiveNotebook:
     def __init__(self, portage, belay, env_file, root, snapshot, document, member, env,
-                 *, profile='echo'):
+                 *, profile='echo', openbao=None):
         sys.path.insert(0, str(portage / 'integrations/ai_pilot'))
         from gateway import Gateway, Ledger
         from notebook_adapter import NotebookGuard, notebook_manifest
@@ -79,7 +79,15 @@ class LiveNotebook:
             else:
                 raise ValueError('unsupported notebook tutoring profile')
             self.project = manifest['project']
-            key = load_key(env_file)
+            if openbao is not None:
+                from openbao_credentials import OpenBaoCredential
+                if env_file is not None:
+                    raise ValueError('OpenBao trial cannot have a fallback key file')
+                credential_source = OpenBaoCredential(*openbao)
+                key = ''
+            else:
+                credential_source = None
+                key = load_key(env_file)
             expected = expected_request(belay, env, profile)
             raw = metadata('models/openai/gpt-4.1-mini/endpoints')
             self.guard = guard_type(root / 'provider', validate_catalog(raw),
@@ -117,8 +125,9 @@ class LiveNotebook:
             self.ledger.project(project, manifest['project_allowance'], 1)
             self.ledger.member(project, learner, manifest['participant_allowance'])
             token = self.ledger.issue(project, subject=learner)
+            extra = {'credential_source': credential_source} if openbao is not None else {}
             gateway = Gateway(('127.0.0.1', 0), self.ledger, manifest,
-                secrets.token_urlsafe(), key, authority, secret, external_guard=guard)
+                secrets.token_urlsafe(), key, authority, secret, external_guard=guard, **extra)
             origin = serve(self.stack, gateway)
             self.environment = dict(PROVIDER='portage', LLM_BILLING_MODE='metered',
                 PORTAGE_DEPLOYMENT='presenter', PORTAGE_INSTITUTION=member['institution_id'],
