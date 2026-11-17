@@ -1,5 +1,9 @@
 # Isolated OpenBao classroom bridge
 
+Adoption follow-up: `OPENBAO-PILOT-ADOPTION.md`. The v1 results below remain
+historical evidence at their stated pins. Current optional OpenBao execution
+requires the new AppRole/recovery Portage pin; the ordinary key-file path is unchanged.
+
 This branch adds an explicit credential option to the existing finite synthetic
 NHANES evaluator. It is not enabled in the instructor launcher or working pilot.
 Base: `de701887e06c3ae19292b05639a6c9e83ba53d3c`; branch:

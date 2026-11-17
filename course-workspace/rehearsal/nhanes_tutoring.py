@@ -16,7 +16,7 @@ from live_notebook import LiveNotebook, notebook_inputs
 from roster_presenter import private, command
 
 PORTAGE_PIN = 'b72881f009e61e1311b6e46b92b42841991fd163'
-OPENBAO_TRIAL_PORTAGE_PIN = '2ac908615a6d306f7862622cf5fd8ff1eed0c1a1'
+OPENBAO_PILOT_PORTAGE_PIN = '124da40b12e6422a0106181c14a60c622ec53927'
 
 
 def validate_tutoring(mode, portage, env_file, approved, review_seconds, *, openbao=None):
@@ -95,7 +95,7 @@ class NhanesTutoring:
         try:
             if args.tutor_mode == 'live':
                 openbao = getattr(args, 'openbao', None)
-                expected_pin = OPENBAO_TRIAL_PORTAGE_PIN if openbao else PORTAGE_PIN
+                expected_pin = OPENBAO_PILOT_PORTAGE_PIN if openbao else PORTAGE_PIN
                 if command(['git', 'rev-parse', 'HEAD'], cwd=args.live_portage) != expected_pin:
                     raise ValueError('NHANES Portage source pin mismatch')
                 if command(['git', 'status', '--porcelain', '--untracked-files=no'], cwd=args.live_portage):
