@@ -24,13 +24,13 @@ Docker must already be running. The launcher uses the qualified local environmen
 and cached images; it does not install software, pull images or create cloud resources.
 
 ```sh
-/Users/gregchism/dev/.educloud-worktrees/waypoint-openbao-local-trial/course-workspace/launch-nhanes-instructor.command --check
-/Users/gregchism/dev/.educloud-worktrees/waypoint-openbao-local-trial/course-workspace/launch-nhanes-instructor.command --live
+./course-workspace/launch-nhanes-instructor.command --check
+./course-workspace/launch-nhanes-instructor.command --live
 ```
 
 The current launcher uses merged Portage `4f7ac0d` through the existing private
 key file. OpenBao is inactive: no address, CA or service token is supplied.
-It also supports `--stub` and `--verify-stub`.
+Use `--verify-live` to run one paid, automated walkthrough of the supplied question and four-file submission. The live modes use Belay `0b960df`, which asks for one participant lookup in the original BPXO table. The offline modes retain their original source pins.
 
 Use `--stub` for a no-cost automatic hint and a two-minute
 notebook-and-tutor review. The completed solution is preserved, a separate
