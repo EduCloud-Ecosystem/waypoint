@@ -195,21 +195,23 @@ class Course:
                 if request.method == 'POST' and request.url.split('?', 1)[0] == login_url:
                     submitted = True
             page.on('request', observe_login)
-        page.goto(login_url)
-        page.locator('input[name="user_name"]').fill(user)
-        page.locator('input[name="password"]').fill(self.password_for(user))
-        if manual_sign_in:
-            page.bring_to_front()
-            print('Click Sign in in the local Forgejo window within three minutes. Your test account is prefilled.', flush=True)
-        else:
-            page.locator('button').filter(has_text='Sign in').click()
+        waiting_for_sign_in = False
         try:
+            page.goto(login_url)
+            page.locator('input[name="user_name"]').fill(user)
+            page.locator('input[name="password"]').fill(self.password_for(user))
+            if manual_sign_in:
+                page.bring_to_front()
+                print('Click Sign in in the local Forgejo window within three minutes. Your test account is prefilled.', flush=True)
+            else:
+                page.locator('button').filter(has_text='Sign in').click()
+            waiting_for_sign_in = True
             page.wait_for_url(lambda u: '/user/login' not in u, timeout=180000 if manual_sign_in else 30000)
         except BrowserError as exc:
             if manual_sign_in and not submitted:
                 if page.is_closed() or not browser.is_connected():
                     raise SignInNotStarted('window_closed') from exc
-                if isinstance(exc, BrowserTimeout) and page.url == login_url:
+                if waiting_for_sign_in and isinstance(exc, BrowserTimeout) and page.url == login_url:
                     raise SignInNotStarted('deadline') from exc
             raise
         page.goto(self.url + entry)
