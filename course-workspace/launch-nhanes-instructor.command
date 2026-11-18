@@ -19,7 +19,7 @@ belay_pin=c5a27073e74b9eeb7ab697190915378b50132883
 cairn_pin=533c16a414b9fef1979d0de783b3436f31dd03a7
 if [[ "$mode" == --live || "$mode" == --verify-live || "$mode" == --check ]]; then
   belay=/Users/gregchism/dev/.educloud-worktrees/belay-nhanes-source-check
-  belay_pin=0b960dffb779fd5745b45f351fe9c7145c88d055
+  belay_pin=4e185a9b37947a56395f26046f3106d2c42ea54b
   cairn="${NHANES_LIVE_CAIRN_CHECKOUT:-$cairn}"
   cairn_pin=533c16a414b9fef1979d0de783b3436f31dd03a7
 fi

@@ -30,7 +30,7 @@ from playwright.sync_api import sync_playwright, expect
 
 PINS = {'cairn': '533c16a414b9fef1979d0de783b3436f31dd03a7',
         'belay': 'c5a27073e74b9eeb7ab697190915378b50132883'}
-LIVE_BELAY_PIN = '0b960dffb779fd5745b45f351fe9c7145c88d055'
+LIVE_BELAY_PIN = '4e185a9b37947a56395f26046f3106d2c42ea54b'
 STUB_CAIRN_PIN = '533c16a414b9fef1979d0de783b3436f31dd03a7'
 
 
