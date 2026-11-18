@@ -30,7 +30,7 @@ from playwright.sync_api import sync_playwright, expect
 
 PINS = {'cairn': '533c16a414b9fef1979d0de783b3436f31dd03a7',
         'belay': 'c5a27073e74b9eeb7ab697190915378b50132883'}
-LIVE_BELAY_PIN = '4e185a9b37947a56395f26046f3106d2c42ea54b'
+LIVE_BELAY_PIN = 'd12e3d606af79d2222cfbc87a9dc01bdc9542d9e'
 STUB_CAIRN_PIN = '533c16a414b9fef1979d0de783b3436f31dd03a7'
 
 
@@ -265,6 +265,14 @@ def main():
                     report['passed'].append('fresh-learner-starter-opened-before-synthetic-' + learner_mode + '-completion')
                 if tutor and not args.live_review_seconds:
                     tutor.verify(page, report)
+                    if args.tutor_mode == 'live' and not args.openbao:
+                        expected_hint = ("Course hint: Pick one blank reading in your merged table. "
+                                         "Look for its SEQN in the original BPXO table. What do you see?")
+                        reply = (tutor.root / 'reply.txt').read_text().strip()
+                        if reply == expected_hint:
+                            report['passed'].append('course-hint-one-source-check')
+                        else:
+                            report['failed'].append('Prepared question did not display the single course hint.')
                 for index,cell in enumerate(notebook['cells']):
                     if cell['cell_type']!='code':continue
                     widget=widgets.nth(index);editor=widget.locator('.cm-content')
