@@ -15,7 +15,7 @@ from datetime import datetime, timezone
 import uuid
 
 import requests
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import Error as BrowserError, TimeoutError as BrowserTimeout, sync_playwright
 from webhook_relay import WebhookRelay
 
 FORGEJO_IMAGE = 'codeberg.org/forgejo/forgejo:16.0.5@sha256:cf5f5ae6acf2ababca0ee3d255705b83a47f35b25e07fc931d694d60664053fe'
@@ -47,6 +47,10 @@ def wait_http(url):
             pass
         time.sleep(1)
     raise RuntimeError('local fixture did not become ready')
+
+
+class SignInNotStarted(Exception):
+    """The local review ended before the learner submitted a sign-in request."""
 
 
 class Course:
@@ -183,7 +187,15 @@ class Course:
             raise ValueError('manual sign-in requires an individual disposable learner password')
         context = browser.new_context(ignore_https_errors=True)
         page = context.new_page()
-        page.goto(self.forge + '/user/login')
+        login_url = self.forge + '/user/login'
+        submitted = False
+        if manual_sign_in:
+            def observe_login(request):
+                nonlocal submitted
+                if request.method == 'POST' and request.url.split('?', 1)[0] == login_url:
+                    submitted = True
+            page.on('request', observe_login)
+        page.goto(login_url)
         page.locator('input[name="user_name"]').fill(user)
         page.locator('input[name="password"]').fill(self.password_for(user))
         if manual_sign_in:
@@ -191,7 +203,15 @@ class Course:
             print('Click Sign in in the local Forgejo window within three minutes. Your test account is prefilled.', flush=True)
         else:
             page.locator('button').filter(has_text='Sign in').click()
-        page.wait_for_url(lambda u: '/user/login' not in u, timeout=180000 if manual_sign_in else 30000)
+        try:
+            page.wait_for_url(lambda u: '/user/login' not in u, timeout=180000 if manual_sign_in else 30000)
+        except BrowserError as exc:
+            if manual_sign_in and not submitted:
+                if page.is_closed() or not browser.is_connected():
+                    raise SignInNotStarted('window_closed') from exc
+                if isinstance(exc, BrowserTimeout) and page.url == login_url:
+                    raise SignInNotStarted('deadline') from exc
+            raise
         page.goto(self.url + entry)
         if '/login/oauth/authorize' in page.url:
             page.get_by_role('button', name='Authorize Application').click()

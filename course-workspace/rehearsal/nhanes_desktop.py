@@ -18,7 +18,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT / 'classroom'), str(ROOT / 'course')]
 from assignment_profiles import NHANES
 from info511_policy import template_files
-from cairn_journey import FORGEJO_IMAGE, Course, port, wait_http
+from cairn_journey import FORGEJO_IMAGE, Course, SignInNotStarted, port, wait_http
 from info511_demo import req, active_work, await_grade
 from info511_notebook import contents, manifest, saved_files
 from classroom_transfer import submit_info511_attempt
@@ -63,10 +63,10 @@ def main():
     parser.add_argument('--live-review-seconds', type=int, default=0,
                         help='After no-AI controls, open one prepared live hint for at most 240 seconds')
     parser.add_argument('--learner-review-seconds', type=int,
-                        help='Open the blank no-AI workspace for an instructor walkthrough (1–540 seconds)')
+                        help='Open the blank learner workspace for an instructor walkthrough (1–540 seconds)')
     parser.add_argument('--manual-sign-in', action='store_true', help='Wait for the tester to sign in with a prefilled local learner account')
     parser.add_argument('--verify-learner-starter', action='store_true',
-                        help='Exercise the distributed blank learner package with an automated no-AI completion')
+                        help='Exercise the distributed blank learner package with an automated synthetic completion')
     parser.add_argument('--execute-synthetic', action='store_true')
     parser.add_argument('--verify-studio-ui', action='store_true',
                         help='Exercise reflow, keyboard focus and natural credential expiry with the local stub')
@@ -75,10 +75,10 @@ def main():
         parser.error('manual sign-in requires a learner review window')
     if args.learner_review_seconds is not None and not 1 <= args.learner_review_seconds <= 540:
         parser.error('learner review must be between 1 and 540 seconds')
-    if args.learner_review_seconds and (args.verify_learner_starter or args.tutor_mode != 'none' or args.operator_review_seconds or args.live_review_seconds):
-        parser.error('manual learner review requires a separate no-AI session')
-    if args.verify_learner_starter and (args.tutor_mode != 'none' or args.operator_review_seconds):
-        parser.error('learner verification requires the automated no-AI journey')
+    if args.learner_review_seconds and (args.verify_learner_starter or args.tutor_mode == 'live' or args.operator_review_seconds or args.live_review_seconds):
+        parser.error('manual learner review supports a separate no-AI or local hint session')
+    if args.verify_learner_starter and (args.tutor_mode == 'live' or args.operator_review_seconds):
+        parser.error('learner verification requires an automated no-AI or local hint journey')
     values = (args.openbao_address, args.openbao_ca, args.openbao_token_file)
     args.openbao = values if any(values) else None
     if not args.execute_synthetic: parser.error('explicit synthetic execution required')
@@ -147,7 +147,8 @@ def main():
             if staged != set(task['learner_files']):
                 raise ValueError('staged files differ from the learner package manifest')
             notebook = json.loads((work/NHANES.files[0]).read_text())
-            report['scope'] = 'synthetic-local-NHANES-learner-starter-no-AI'
+            learner_mode = 'local-stub' if args.tutor_mode == 'stub' else 'no-AI'
+            report['scope'] = 'synthetic-local-NHANES-learner-starter-' + learner_mode
         else:
             shutil.copytree(fixture, work)
             shutil.copytree(NHANES.package/'learner/data',work/'data')
@@ -229,7 +230,7 @@ def main():
                     page.bring_to_front()
                     end = min(time.monotonic() + args.learner_review_seconds, started + 590)
                     print('Blank learner workspace open. Save your work before closing. Submit work opens Cairn.', flush=True)
-                    report['scope'] = 'manual-local-NHANES-learner-starter-no-AI'
+                    report['scope'] = 'manual-local-NHANES-learner-starter-' + learner_mode
                     report['learner_review'] = wait_until_closed(browser, page, end)
                     return
                 if args.verify_learner_starter:
@@ -246,7 +247,7 @@ def main():
                             page.keyboard.press('Shift+Enter')
                     for name in ('explanation.md', 'assistance.md'):
                         shutil.copyfile(fixture/name, work/name)
-                    report['passed'].append('fresh-learner-starter-opened-before-synthetic-no-AI-completion')
+                    report['passed'].append('fresh-learner-starter-opened-before-synthetic-' + learner_mode + '-completion')
                 if tutor and not args.live_review_seconds:
                     tutor.verify(page, report)
                 for index,cell in enumerate(notebook['cells']):
@@ -360,6 +361,10 @@ def main():
                 run_session()
             finally:
                 browser.close()
+    except SignInNotStarted as exc:
+        report['scope'] = 'manual-local-NHANES-sign-in'
+        report['learner_review'] = {'status': 'not_started', 'ended_by': str(exc), 'human_acceptance_recorded': False}
+        print('Sign-in was not submitted. Reopen the launcher when ready.', flush=True)
     except (Exception, KeyboardInterrupt) as exc:
         report['failed'].append(type(exc).__name__+': '+str(exc)[:500]);private(root/'failure.txt',traceback.format_exc())
     finally:
@@ -385,7 +390,9 @@ def main():
         except Exception as exc:report['failed'].append('cleanup: '+type(exc).__name__)
         report['elapsed_seconds']=round(time.monotonic()-started,2)
         private(root/'result.json',report);print(json.dumps(report,indent=2))
-    return int(bool(report['failed']) or not report['cleanup'])
+    if report['failed'] or not report['cleanup']:
+        return 1
+    return 2 if report.get('learner_review', {}).get('status') == 'not_started' else 0
 
 
 if __name__=='__main__':raise SystemExit(main())
