@@ -31,6 +31,10 @@
     const response = await fetch(basePath + '/profile', {headers, credentials:'same-origin',cache:'no-store',redirect:'error'});
     if (!response.ok) throw Error('Course help configuration is unavailable. Your saved work is unchanged.');
     profile = await response.json();
+    if (profile.local_hint_demo === true) {
+      el('provider-notice').textContent = 'This practice session returns a simulated hint. Your selected code and question stay on this computer.';
+      el('question').placeholder = 'For example, how can I check whether a participant has a matching blood pressure record?';
+    }
     checkpointRequired = profile.exercise_id === 'info511-nhanes-wrangling';
     el('assignment').textContent = 'Assignment: ' + profile.title;
     el('notebook').href = profile.notebook; el('submission').href = profile.submission;

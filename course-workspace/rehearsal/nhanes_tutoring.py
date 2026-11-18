@@ -119,7 +119,7 @@ class NhanesTutoring:
         except BaseException:
             self.close()
             raise
-        self.environment = dict(WORKSPACE_BELAY_LOCAL_TEST='1', WORKSPACE_STUDIO_PROFILE='info511-nhanes-v1',
+        self.environment = dict(WORKSPACE_BELAY_LOCAL_TEST='1', WORKSPACE_BELAY_HINT_MODE=self.mode, WORKSPACE_STUDIO_PROFILE='info511-nhanes-v1',
             WORKSPACE_BELAY_HOST_ORIGIN='http://127.0.0.1:' + str(port()),
             WORKSPACE_BELAY_API_ORIGIN=self.api, WORKSPACE_BELAY_WORKSPACE_ORIGIN=notebook_url,
             WORKSPACE_BELAY_ASSET_ROOT=str(args.belay / 'frontend'), WORKSPACE_BELAY_LEARNER_ID=member['learner_id'],
@@ -171,6 +171,7 @@ class NhanesTutoring:
             disabled.get_by_role('link', name='Back to notebook').press('Enter')
             expect(page.locator('iframe[title="Course tutor"]')).to_be_hidden()
         help_page = self.open_help(page)
+        expect(help_page.locator('#provider-notice')).to_contain_text('OpenRouter' if self.live else 'simulated hint')
         help_page.locator('#context-details').evaluate('(el)=>el.open=false')
         help_page.locator('h1').scroll_into_view_if_needed()
         page.screenshot(path=str(self.root / 'studio-ready.png'), full_page=True)
@@ -319,8 +320,6 @@ class NhanesTutoring:
             expect(page.frame_locator('iframe[title="Course tutor"]').locator('#policy')).not_to_have_text('Checking permitted help…')
         help_page = self.open_help(page, preserve_completed_work=True)
         help_page.locator('#question').evaluate('(el)=>el.readOnly=true')
-        notice = ('Instructor test: one prepared NHANES question is available through OpenRouter/OpenAI. Use only this supplied example.' if self.live else 'Instructor test: this session uses a local stub. Replies demonstrate the workflow, not model or teaching quality. No paid provider is connected.')
-        help_page.locator('#provider-notice').evaluate('(el,text)=>el.textContent=text', notice)
         help_page.locator('#context-details').evaluate('(el)=>el.open=false')
         help_page.locator('h1').scroll_into_view_if_needed()
         page.bring_to_front()

@@ -290,6 +290,7 @@ def _load_jupyter_server_extension(serverapp):
                 return self.finish({'exercise_id':exercise, 'exercise_version':version, 'expires_at':expiry,
                     'available':available, 'assistance':p['assistance'], 'title':p['assignment_title'], 'base':base,
                     'notebook_panel':studio,
+                    'local_hint_demo':studio and os.environ.get('WORKSPACE_BELAY_HINT_MODE') == 'stub',
                     'notebook':serverapp.web_app.settings['base_url'] + 'lab',
                     'submission':serverapp.web_app.settings['base_url'] + 'cairn/'})
             if resource == 'bootstrap.js':

@@ -45,7 +45,12 @@ and write the CSV without a row index. Explain the units, join choice, missingne
 and independent checks in at most 150 words. Declare `no_ai` or `ai_assisted` with
 a brief summary; omit private hints, coaching conversations and monitoring records.
 
-In Studio choose **Submit work**, select the four saved files, then **Prepare saved files**. Choose **Continue in Cairn**, review the changes and confirm. Look for the receipt with your submitted revision. If no receipt appears, check your submission history before retrying. If the tutor expires, keep working in the notebook. For help with access or submission, contact your instructor through the course support channel and describe the step that stopped.
+1. Save your notebook and both Markdown files. Check that your code has written rows to `tidy-nhanes.csv`; the starter contains only the header.
+2. Choose **Submit work** in the notebook toolbar. Select the four files listed above, choose **Prepare saved files**, then **Continue in Cairn**.
+3. In the new tab, choose your NHANES assignment. Click **Receive saved files from Waypoint**, then **Review saved files**. Check the filenames before choosing **Confirm submission**.
+4. Look under **Submission receipts** for **Submission received** and the four filenames. This confirms which files you turned in. Choose **My work** for checks and feedback. If confirmation was interrupted, use **Refresh receipts** before submitting again.
+
+You can still save and submit after tutor access expires. For help with access or submission, tell your instructor which step stopped.
 
 ## How your work is reviewed (10 points, proposed for instructor review)
 

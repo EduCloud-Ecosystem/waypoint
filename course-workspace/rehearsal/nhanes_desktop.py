@@ -235,6 +235,16 @@ def main():
                     return
                 if args.verify_learner_starter:
                     expect(page.get_by_role('heading', name='Pause and recall', level=2)).to_be_visible()
+                    inputs = next(c for c in notebook['cells'] if c['id'] == 'load-input')
+                    authored['load-input'] = ''.join(inputs['source'])
+                    input_widget = widgets.nth(notebook['cells'].index(inputs))
+                    input_widget.locator('.cm-content').click()
+                    page.keyboard.press('Shift+Enter')
+                    tables = input_widget.locator('.jp-OutputArea table')
+                    expect(tables).to_have_count(2, timeout=60000)
+                    expect(tables.nth(0)).to_contain_text('RIDAGEYR')
+                    expect(tables.nth(1)).to_contain_text('BPXOSY3')
+                    report['passed'].append('starter-input-cell-displays-both-tables-before-predictions')
                     # Enter the synthetic learner's answers only after opening the blank starter.
                     predictions = {c['id']: ''.join(c['source']) for c in reference['cells']}
                     for index, cell in enumerate(notebook['cells']):
