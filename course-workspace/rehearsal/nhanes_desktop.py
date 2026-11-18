@@ -202,14 +202,15 @@ def main():
                 select_python_kernel(page,root,'nhanes')
                 widgets=page.locator('.jp-Notebook .jp-Cell');expect(widgets).to_have_count(len(notebook['cells']),timeout=60000)
                 if args.verify_learner_starter:
-                    expect(page.get_by_text('Pause and recall', exact=True)).to_be_visible()
+                    expect(page.locator('.jp-Notebook').get_by_text('Pause and recall', exact=True)).to_be_visible()
                     # Enter the synthetic learner's answers only after opening the blank starter.
                     predictions = {c['id']: ''.join(c['source']) for c in reference['cells']}
                     for index, cell in enumerate(notebook['cells']):
                         if cell['id'] in ('schema-prediction', 'unit-prediction'):
                             widget = widgets.nth(index)
                             expect(widget).to_contain_text('REPLACE_ME')
-                            widget.dblclick()
+                            widget.click()
+                            page.keyboard.press('Enter')
                             widget.locator('.cm-content').fill(predictions[cell['id']])
                             page.keyboard.press('Shift+Enter')
                     for name in ('explanation.md', 'assistance.md'):
@@ -240,6 +241,10 @@ def main():
                     codes=[c for c in actual['cells'] if c['cell_type']=='code']
                     if codes and all(type(c['execution_count']) is int and ''.join(c['source'])==authored[c['id']] for c in codes):break
                     page.wait_for_timeout(100)
+                if args.verify_learner_starter:
+                    saved = {c['id']: ''.join(c['source']) for c in actual['cells']}
+                    for key in ('schema-prediction', 'unit-prediction'):
+                        assert saved[key].strip() == predictions[key].strip(), 'prediction was not saved'
                 assert codes, 'Notebook save did not complete within 15 seconds'
                 assert all(type(c['execution_count']) is int and not any(o['output_type']=='error' for o in c['outputs']) for c in codes)
                 assert all(''.join(c['source'])==authored[c['id']] for c in codes)
