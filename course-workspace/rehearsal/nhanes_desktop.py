@@ -62,10 +62,14 @@ def main():
     parser.add_argument('--execute-approved', action='store_true')
     parser.add_argument('--live-review-seconds', type=int, default=0,
                         help='After no-AI controls, open one prepared live hint for at most 240 seconds')
+    parser.add_argument('--verify-learner-starter', action='store_true',
+                        help='Exercise the distributed blank learner package with an automated no-AI completion')
     parser.add_argument('--execute-synthetic', action='store_true')
     parser.add_argument('--verify-studio-ui', action='store_true',
                         help='Exercise reflow, keyboard focus and natural credential expiry with the local stub')
     args = parser.parse_args()
+    if args.verify_learner_starter and (args.tutor_mode != 'none' or args.operator_review_seconds):
+        parser.error('learner verification requires the automated no-AI journey')
     values = (args.openbao_address, args.openbao_ca, args.openbao_token_file)
     args.openbao = values if any(values) else None
     if not args.execute_synthetic: parser.error('explicit synthetic execution required')
@@ -120,17 +124,28 @@ def main():
         policy = template_files(args.belay, args.grader_image, profile=NHANES)
         report['task_sha256'] = hashlib.sha256((NHANES.package/'task.json').read_bytes()).hexdigest()
         report['checker_binding'] = json.loads((NHANES.package/'operator/checker-binding.json').read_text())
-        work = root/'saved-work'; shutil.copytree(NHANES.package/'operator/attempts/alice',work)
-        shutil.copytree(NHANES.package/'learner/data',work/'data')
-        notebook = json.loads((work/NHANES.files[0]).read_text())
-        authored = {c['id']:''.join(c['source']) for c in notebook['cells'] if c['cell_type']=='code'}
+        work = root/'saved-work'
+        fixture = NHANES.package/'operator/attempts/alice'
+        reference = json.loads((fixture/NHANES.files[0]).read_text())
+        authored = {c['id']: ''.join(c['source']) for c in reference['cells'] if c['cell_type']=='code'}
         authored['learner-work'] += "\nprint('NHANES_NATIVE_OK', len(tidy_nhanes))\n"
-        for cell in notebook['cells']:
-            if cell['cell_type']=='code':
-                cell.update(execution_count=None,outputs=[])
-                if cell['id']=='learner-work': cell['source']='# Enter the operator-authored synthetic solution here.\n'
-        (work/NHANES.files[0]).write_text(json.dumps(notebook))
-        (work/NHANES.files[1]).unlink()  # The actual kernel must create the CSV.
+        if args.verify_learner_starter:
+            learner = NHANES.package/'learner'
+            shutil.copytree(learner, work)
+            task = json.loads((NHANES.package/'task.json').read_text())
+            assert sorted(str(p.relative_to(work)) for p in work.rglob('*') if p.is_file()) == sorted(task['learner_files'])
+            notebook = json.loads((work/NHANES.files[0]).read_text())
+            report['scope'] = 'synthetic-local-NHANES-learner-starter-no-AI'
+        else:
+            shutil.copytree(fixture, work)
+            shutil.copytree(NHANES.package/'learner/data',work/'data')
+            notebook = reference
+            for cell in notebook['cells']:
+                if cell['cell_type']=='code':
+                    cell.update(execution_count=None,outputs=[])
+                    if cell['id']=='learner-work': cell['source']='# Enter the operator-authored synthetic solution here.\n'
+            (work/NHANES.files[0]).write_text(json.dumps(notebook))
+            (work/NHANES.files[1]).unlink()  # The actual kernel must create the CSV.
         notebook_url = 'http://127.0.0.1:'+str(port())
         course_dir=root/'course';course_dir.mkdir()
         binary=root/'cairn'
@@ -186,6 +201,20 @@ def main():
                 expect(page.get_by_role('link',name='Submit saved files to Cairn',exact=True)).to_be_visible(timeout=60000)
                 select_python_kernel(page,root,'nhanes')
                 widgets=page.locator('.jp-Notebook .jp-Cell');expect(widgets).to_have_count(len(notebook['cells']),timeout=60000)
+                if args.verify_learner_starter:
+                    expect(page.get_by_text('Pause and recall', exact=True)).to_be_visible()
+                    # Enter the synthetic learner's answers only after opening the blank starter.
+                    predictions = {c['id']: ''.join(c['source']) for c in reference['cells']}
+                    for index, cell in enumerate(notebook['cells']):
+                        if cell['id'] in ('schema-prediction', 'unit-prediction'):
+                            widget = widgets.nth(index)
+                            expect(widget).to_contain_text('REPLACE_ME')
+                            widget.dblclick()
+                            widget.locator('.cm-content').fill(predictions[cell['id']])
+                            page.keyboard.press('Shift+Enter')
+                    for name in ('explanation.md', 'assistance.md'):
+                        shutil.copyfile(fixture/name, work/name)
+                    report['passed'].append('fresh-learner-starter-opened-before-synthetic-no-AI-completion')
                 if tutor and not args.live_review_seconds:
                     tutor.verify(page, report)
                 for index,cell in enumerate(notebook['cells']):
