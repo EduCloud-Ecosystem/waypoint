@@ -14,6 +14,8 @@ Open the [learner instructions](classroom/info511-nhanes-v1/learner/README.md) a
 git archive --format=zip --prefix=INFO511-NHANES/ --output=INFO511-NHANES-starter.zip HEAD:course-workspace/classroom/info511-nhanes-v1/learner
 ```
 
+For a hands-on review on the prepared Mac, run `course-workspace/launch-nhanes-instructor.command --learner`. It opens the untouched starter in Jupyter as a synthetic learner, with the Cairn submission button available. You have up to nine minutes to inspect, edit, save and optionally submit. The terminal shows the private output folder. Your saved files remain in its `saved-work/` subfolder after the disposable services close. A timed or closed window records no human acceptance. For a longer content review, open the portable copy in your own Jupyter environment.
+
 On the prepared Mac, run `course-workspace/launch-nhanes-instructor.command --verify-learner` to verify the blank package through receipt recovery. The rehearsal opens the actual starter, then supplies authored test answers using synthetic accounts. It leaves the original learner files untouched. At application revision `169fed8` all six controls passed with zero model requests and cleanup confirmed. The correct CSV earned 4/4 and the changed value earned 0/4. The private result SHA-256 is `f3103e41094756791335d125b89179b039acfa1ffdcd525f9d3263abd292bb41`. Two earlier checks selected ambiguous or hidden text in Jupyter. The passing check selects the rendered recall heading by its accessible role. Instructor approval of the rubric and human usability review are pending.
 
 ## Start on this Mac

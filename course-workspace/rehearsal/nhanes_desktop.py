@@ -62,7 +62,7 @@ def main():
     parser.add_argument('--execute-approved', action='store_true')
     parser.add_argument('--live-review-seconds', type=int, default=0,
                         help='After no-AI controls, open one prepared live hint for at most 240 seconds')
-    parser.add_argument('--learner-review-seconds', type=int, default=0,
+    parser.add_argument('--learner-review-seconds', type=int,
                         help='Open the blank no-AI workspace for an instructor walkthrough (1–540 seconds)')
     parser.add_argument('--verify-learner-starter', action='store_true',
                         help='Exercise the distributed blank learner package with an automated no-AI completion')
@@ -70,8 +70,8 @@ def main():
     parser.add_argument('--verify-studio-ui', action='store_true',
                         help='Exercise reflow, keyboard focus and natural credential expiry with the local stub')
     args = parser.parse_args()
-    if not 0 <= args.learner_review_seconds <= 540:
-        parser.error('learner review must be between 0 and 540 seconds')
+    if args.learner_review_seconds is not None and not 1 <= args.learner_review_seconds <= 540:
+        parser.error('learner review must be between 1 and 540 seconds')
     if args.learner_review_seconds and (args.verify_learner_starter or args.tutor_mode != 'none' or args.operator_review_seconds or args.live_review_seconds):
         parser.error('manual learner review requires a separate no-AI session')
     if args.verify_learner_starter and (args.tutor_mode != 'none' or args.operator_review_seconds):
