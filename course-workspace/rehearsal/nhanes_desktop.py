@@ -167,6 +167,7 @@ def main():
             browser=pw.chromium.launch(headless=not bool(args.operator_review_seconds or args.live_review_seconds or args.learner_review_seconds))
 
             def run_session():
+                nonlocal tutor  # The outer cleanup records usage and closes its services.
                 revision=course.start();teacher,_=course.login(browser,'teacher','/auth/login')
                 cid=req(course,teacher,'POST','/classrooms',{'name':'Disposable NHANES synthetic qualification',
                     'host':'forgejo','host_namespace':'course-test','join_policy':'roster'},201)['id']
