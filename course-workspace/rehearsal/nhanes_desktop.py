@@ -18,18 +18,19 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT / 'classroom'), str(ROOT / 'course')]
 from assignment_profiles import NHANES
 from info511_policy import template_files
-from cairn_journey import FORGEJO_IMAGE, Course, port, wait_http
+from cairn_journey import FORGEJO_IMAGE, Course, SignInNotStarted, port, wait_http
 from info511_demo import req, active_work, await_grade
 from info511_notebook import contents, manifest, saved_files
 from classroom_transfer import submit_info511_attempt
 from roster_presenter import select_python_kernel, private, command
 from submission_handoff import verify_receipt_after_restart
-from operator_review import wait_for_review, validate
+from operator_review import wait_for_review, wait_until_closed, validate
 from nhanes_tutoring import NhanesTutoring, validate_tutoring
 from playwright.sync_api import sync_playwright, expect
 
 PINS = {'cairn': '533c16a414b9fef1979d0de783b3436f31dd03a7',
         'belay': 'c5a27073e74b9eeb7ab697190915378b50132883'}
+LIVE_BELAY_PIN = 'fc3e0cc7fe04137c8ff9fe57d194aa2b9a9acc81'
 STUB_CAIRN_PIN = '533c16a414b9fef1979d0de783b3436f31dd03a7'
 
 
@@ -62,10 +63,23 @@ def main():
     parser.add_argument('--execute-approved', action='store_true')
     parser.add_argument('--live-review-seconds', type=int, default=0,
                         help='After no-AI controls, open one prepared live hint for at most 240 seconds')
+    parser.add_argument('--learner-review-seconds', type=int,
+                        help='Open the blank learner workspace for an instructor walkthrough (1–540 seconds)')
+    parser.add_argument('--manual-sign-in', action='store_true', help='Wait for the tester to sign in with a prefilled local learner account')
+    parser.add_argument('--verify-learner-starter', action='store_true',
+                        help='Exercise the distributed blank learner package with an automated synthetic completion')
     parser.add_argument('--execute-synthetic', action='store_true')
     parser.add_argument('--verify-studio-ui', action='store_true',
                         help='Exercise reflow, keyboard focus and natural credential expiry with the local stub')
     args = parser.parse_args()
+    if args.manual_sign_in and not args.learner_review_seconds:
+        parser.error('manual sign-in requires a learner review window')
+    if args.learner_review_seconds is not None and not 1 <= args.learner_review_seconds <= 540:
+        parser.error('learner review must be between 1 and 540 seconds')
+    if args.learner_review_seconds and (args.verify_learner_starter or args.tutor_mode == 'live' or args.operator_review_seconds or args.live_review_seconds):
+        parser.error('manual learner review supports a separate no-AI or local hint session')
+    if args.verify_learner_starter and (args.tutor_mode == 'live' or args.operator_review_seconds):
+        parser.error('learner verification requires an automated no-AI or local hint journey')
     values = (args.openbao_address, args.openbao_ca, args.openbao_token_file)
     args.openbao = values if any(values) else None
     if not args.execute_synthetic: parser.error('explicit synthetic execution required')
@@ -94,7 +108,11 @@ def main():
                                 stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
         processes.append(proc); return proc
     try:
-        pins = PINS if args.tutor_mode == 'live' else dict(PINS, cairn=STUB_CAIRN_PIN)
+        pins = dict(PINS, cairn=STUB_CAIRN_PIN)
+        if args.tutor_mode == 'live' and not args.openbao:
+            pins = dict(PINS, belay=LIVE_BELAY_PIN)
+        elif args.tutor_mode == 'live':
+            pins = PINS  # Retain the independently pinned OpenBao rehearsal.
         for role, pin in pins.items():
             repo = getattr(args, role).resolve()
             assert command(['git', 'rev-parse', 'HEAD'], cwd=repo) == pin
@@ -120,28 +138,46 @@ def main():
         policy = template_files(args.belay, args.grader_image, profile=NHANES)
         report['task_sha256'] = hashlib.sha256((NHANES.package/'task.json').read_bytes()).hexdigest()
         report['checker_binding'] = json.loads((NHANES.package/'operator/checker-binding.json').read_text())
-        work = root/'saved-work'; shutil.copytree(NHANES.package/'operator/attempts/alice',work)
-        shutil.copytree(NHANES.package/'learner/data',work/'data')
-        notebook = json.loads((work/NHANES.files[0]).read_text())
-        authored = {c['id']:''.join(c['source']) for c in notebook['cells'] if c['cell_type']=='code'}
-        authored['learner-work'] += "\nprint('NHANES_NATIVE_OK', len(tidy_nhanes))\n"
-        for cell in notebook['cells']:
-            if cell['cell_type']=='code':
-                cell.update(execution_count=None,outputs=[])
-                if cell['id']=='learner-work': cell['source']='# Enter the operator-authored synthetic solution here.\n'
-        (work/NHANES.files[0]).write_text(json.dumps(notebook))
-        (work/NHANES.files[1]).unlink()  # The actual kernel must create the CSV.
+        work = root/'saved-work'
+        fixture = NHANES.package/'operator/attempts/alice'
+        if not args.learner_review_seconds:
+            reference = json.loads((fixture/NHANES.files[0]).read_text())
+            authored = {c['id']: ''.join(c['source']) for c in reference['cells'] if c['cell_type']=='code'}
+            authored['learner-work'] += "\nprint('NHANES_NATIVE_OK', len(tidy_nhanes))\n"
+        if args.verify_learner_starter or args.learner_review_seconds:
+            learner = NHANES.package/'learner'
+            shutil.copytree(learner, work)
+            task = json.loads((NHANES.package/'task.json').read_text())
+            staged = {str(p.relative_to(work)) for p in work.rglob('*') if p.is_file()}
+            if staged != set(task['learner_files']):
+                raise ValueError('staged files differ from the learner package manifest')
+            notebook = json.loads((work/NHANES.files[0]).read_text())
+            learner_mode = 'local-stub' if args.tutor_mode == 'stub' else 'no-AI'
+            report['scope'] = 'synthetic-local-NHANES-learner-starter-' + learner_mode
+        else:
+            shutil.copytree(fixture, work)
+            shutil.copytree(NHANES.package/'learner/data',work/'data')
+            notebook = reference
+            for cell in notebook['cells']:
+                if cell['cell_type']=='code':
+                    cell.update(execution_count=None,outputs=[])
+                    if cell['id']=='learner-work': cell['source']='# Enter the operator-authored synthetic solution here.\n'
+            (work/NHANES.files[0]).write_text(json.dumps(notebook))
+            (work/NHANES.files[1]).unlink()  # The actual kernel must create the CSV.
         notebook_url = 'http://127.0.0.1:'+str(port())
         course_dir=root/'course';course_dir.mkdir()
         binary=root/'cairn'
         private(root/'build.log',command(['go','build','-o',binary,'./cmd/cairn'],cwd=args.cairn))
         report['cairn_binary_sha256']=hashlib.sha256(binary.read_bytes()).hexdigest()
         course=Course(course_dir,binary,notebook_url,args.grader_image,args.cairn,
-                      template_files=policy,checkout_image=args.checkout_image)
+                      template_files=policy, checkout_image=args.checkout_image,
+                      distinct_learner_passwords=bool(args.learner_review_seconds or args.verify_learner_starter))
         clean={k:os.environ[k] for k in ('PATH','HOME','LANG','DOCKER_HOST','DOCKER_CONTEXT') if k in os.environ}
         with sync_playwright() as pw:
-            browser=pw.chromium.launch(headless=not bool(args.operator_review_seconds or args.live_review_seconds))
-            try:
+            browser=pw.chromium.launch(headless=not bool(args.operator_review_seconds or args.live_review_seconds or args.learner_review_seconds))
+
+            def run_session():
+                nonlocal tutor  # The outer cleanup records usage and closes its services.
                 revision=course.start();teacher,_=course.login(browser,'teacher','/auth/login')
                 cid=req(course,teacher,'POST','/classrooms',{'name':'Disposable NHANES synthetic qualification',
                     'host':'forgejo','host_namespace':'course-test','join_policy':'roster'},201)['id']
@@ -151,9 +187,17 @@ def main():
                 req(course,teacher,'PATCH',f'/assignments/{aid}/grading-policy',{'template_commit':revision,'grading_spec':'grading.json'})
                 course.env.update(CAIRN_SUBMISSIONS='true',CAIRN_SUBMISSION_CLASSROOMS=cid,
                     CAIRN_WORKSPACE_URLS=json.dumps({cid:notebook_url}));course.restart()
-                alice,_=course.login(browser,'alice',f'/assignments/{aid}/accept')
+                teacher.close()
                 bob,_=course.login(browser,'bob',f'/assignments/{aid}/accept')
+                alice,_=course.login(browser,'alice',f'/assignments/{aid}/accept', manual_sign_in=args.manual_sign_in)
                 item=active_work(course,alice,profile=NHANES);peer=active_work(course,bob,profile=NHANES)
+                if args.learner_review_seconds or args.verify_learner_starter:
+                    for session, own, other in [(alice, item, peer), (bob, peer, item)]:
+                        req(course, session, 'GET', '/me/work/' + own['submission_id'])
+                        req(course, session, 'GET', '/me/work/' + other['submission_id'], status=404)
+                    report['passed'].append('two-local-forgejo-learners-own-work-allowed-peer-work-denied')
+                    if args.learner_review_seconds:
+                        bob.close()
                 report['binding']={'assignment_id':aid,'classroom_id':cid,'template_commit':revision,
                                    'kind':'disposable-synthetic-only','profile':'nhanes-v1'}
                 if args.tutor_mode != 'none':
@@ -186,8 +230,49 @@ def main():
                 expect(page.get_by_role('link',name='Submit saved files to Cairn',exact=True)).to_be_visible(timeout=60000)
                 select_python_kernel(page,root,'nhanes')
                 widgets=page.locator('.jp-Notebook .jp-Cell');expect(widgets).to_have_count(len(notebook['cells']),timeout=60000)
+                if args.learner_review_seconds:
+                    expect(page.get_by_role('heading', name='Pause and recall', level=2)).to_be_visible()
+                    page.bring_to_front()
+                    end = min(time.monotonic() + args.learner_review_seconds, started + 590)
+                    print('Blank learner workspace open. Save your work before closing. Submit work opens Cairn.', flush=True)
+                    report['scope'] = 'manual-local-NHANES-learner-starter-' + learner_mode
+                    report['learner_review'] = wait_until_closed(browser, page, end)
+                    return
+                if args.verify_learner_starter:
+                    expect(page.get_by_role('heading', name='Pause and recall', level=2)).to_be_visible()
+                    inputs = next(c for c in notebook['cells'] if c['id'] == 'load-input')
+                    authored['load-input'] = ''.join(inputs['source'])
+                    input_widget = widgets.nth(notebook['cells'].index(inputs))
+                    input_widget.locator('.cm-content').click()
+                    page.keyboard.press('Shift+Enter')
+                    tables = input_widget.locator('.jp-OutputArea table')
+                    expect(tables).to_have_count(2, timeout=60000)
+                    expect(tables.nth(0)).to_contain_text('RIDAGEYR')
+                    expect(tables.nth(1)).to_contain_text('BPXOSY3')
+                    report['passed'].append('starter-input-cell-displays-both-tables-before-predictions')
+                    # Enter the synthetic learner's answers only after opening the blank starter.
+                    predictions = {c['id']: ''.join(c['source']) for c in reference['cells']}
+                    for index, cell in enumerate(notebook['cells']):
+                        if cell['id'] in ('schema-prediction', 'unit-prediction'):
+                            widget = widgets.nth(index)
+                            expect(widget).to_contain_text('REPLACE_ME')
+                            widget.click()
+                            page.keyboard.press('Enter')
+                            widget.locator('.cm-content').fill(predictions[cell['id']])
+                            page.keyboard.press('Shift+Enter')
+                    for name in ('explanation.md', 'assistance.md'):
+                        shutil.copyfile(fixture/name, work/name)
+                    report['passed'].append('fresh-learner-starter-opened-before-synthetic-' + learner_mode + '-completion')
                 if tutor and not args.live_review_seconds:
                     tutor.verify(page, report)
+                    if args.tutor_mode == 'live' and not args.openbao:
+                        expected_hint = ("Course hint: Pick one blank reading in your merged table. "
+                                         "Look for its SEQN in the original BPXO table. What do you see?")
+                        reply = (tutor.root / 'reply.txt').read_text().strip()
+                        if reply == expected_hint:
+                            report['passed'].append('course-hint-one-source-check')
+                        else:
+                            report['failed'].append('Prepared question did not display the single course hint.')
                 for index,cell in enumerate(notebook['cells']):
                     if cell['cell_type']!='code':continue
                     widget=widgets.nth(index);editor=widget.locator('.cm-content')
@@ -211,6 +296,11 @@ def main():
                     codes=[c for c in actual['cells'] if c['cell_type']=='code']
                     if codes and all(type(c['execution_count']) is int and ''.join(c['source'])==authored[c['id']] for c in codes):break
                     page.wait_for_timeout(100)
+                if args.verify_learner_starter:
+                    saved = {c['id']: ''.join(c['source']) for c in actual['cells']}
+                    for key in ('schema-prediction', 'unit-prediction'):
+                        if saved[key].strip() != predictions[key].strip():
+                            raise ValueError(f'{key} was not saved')
                 assert codes, 'Notebook save did not complete within 15 seconds'
                 assert all(type(c['execution_count']) is int and not any(o['output_type']=='error' for o in c['outputs']) for c in codes)
                 assert all(''.join(c['source'])==authored[c['id']] for c in codes)
@@ -290,7 +380,14 @@ def main():
                         page.bring_to_front();report['operator_review']=wait_for_review(browser,page,args.operator_review_seconds)
                 if args.live_review_seconds:
                     report['live_review'] = tutor.review(browser, page, args.live_review_seconds, started+600)
-            finally:browser.close()
+            try:
+                run_session()
+            finally:
+                browser.close()
+    except SignInNotStarted as exc:
+        report['scope'] = 'manual-local-NHANES-sign-in'
+        report['learner_review'] = {'status': 'not_started', 'ended_by': str(exc), 'human_acceptance_recorded': False}
+        print('Sign-in was not submitted. Reopen the launcher when ready.', flush=True)
     except (Exception, KeyboardInterrupt) as exc:
         report['failed'].append(type(exc).__name__+': '+str(exc)[:500]);private(root/'failure.txt',traceback.format_exc())
     finally:
@@ -316,7 +413,9 @@ def main():
         except Exception as exc:report['failed'].append('cleanup: '+type(exc).__name__)
         report['elapsed_seconds']=round(time.monotonic()-started,2)
         private(root/'result.json',report);print(json.dumps(report,indent=2))
-    return int(bool(report['failed']) or not report['cleanup'])
+    if report['failed'] or not report['cleanup']:
+        return 1
+    return 2 if report.get('learner_review', {}).get('status') == 'not_started' else 0
 
 
 if __name__=='__main__':raise SystemExit(main())

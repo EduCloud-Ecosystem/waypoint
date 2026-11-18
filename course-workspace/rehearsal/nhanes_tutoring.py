@@ -12,6 +12,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from playwright.sync_api import expect
 
 from cairn_journey import port, wait_http
+from operator_review import wait_until_closed
 from live_notebook import LiveNotebook, notebook_inputs
 from roster_presenter import private, command
 
@@ -118,7 +119,7 @@ class NhanesTutoring:
         except BaseException:
             self.close()
             raise
-        self.environment = dict(WORKSPACE_BELAY_LOCAL_TEST='1', WORKSPACE_STUDIO_PROFILE='info511-nhanes-v1',
+        self.environment = dict(WORKSPACE_BELAY_LOCAL_TEST='1', WORKSPACE_BELAY_HINT_MODE=self.mode, WORKSPACE_STUDIO_PROFILE='info511-nhanes-v1',
             WORKSPACE_BELAY_HOST_ORIGIN='http://127.0.0.1:' + str(port()),
             WORKSPACE_BELAY_API_ORIGIN=self.api, WORKSPACE_BELAY_WORKSPACE_ORIGIN=notebook_url,
             WORKSPACE_BELAY_ASSET_ROOT=str(args.belay / 'frontend'), WORKSPACE_BELAY_LEARNER_ID=member['learner_id'],
@@ -170,6 +171,7 @@ class NhanesTutoring:
             disabled.get_by_role('link', name='Back to notebook').press('Enter')
             expect(page.locator('iframe[title="Course tutor"]')).to_be_hidden()
         help_page = self.open_help(page)
+        expect(help_page.locator('#provider-notice')).to_contain_text('OpenRouter' if self.live else 'simulated hint')
         help_page.locator('#context-details').evaluate('(el)=>el.open=false')
         help_page.locator('h1').scroll_into_view_if_needed()
         page.screenshot(path=str(self.root / 'studio-ready.png'), full_page=True)
@@ -318,8 +320,6 @@ class NhanesTutoring:
             expect(page.frame_locator('iframe[title="Course tutor"]').locator('#policy')).not_to_have_text('Checking permitted help…')
         help_page = self.open_help(page, preserve_completed_work=True)
         help_page.locator('#question').evaluate('(el)=>el.readOnly=true')
-        notice = ('Instructor test: one prepared NHANES question is available through OpenRouter/OpenAI. Use only this supplied example.' if self.live else 'Instructor test: this session uses a local stub. Replies demonstrate the workflow, not model or teaching quality. No paid provider is connected.')
-        help_page.locator('#provider-notice').evaluate('(el,text)=>el.textContent=text', notice)
         help_page.locator('#context-details').evaluate('(el)=>el.open=false')
         help_page.locator('h1').scroll_into_view_if_needed()
         page.bring_to_front()
@@ -331,9 +331,7 @@ class NhanesTutoring:
             'tutor_seconds_remaining': round(max(0, min(duration, self.expires - time.time()))),
             'mode': self.mode, 'max_requests': 7 if self.live else 0, 'max_reserved_usd': 0.175 if self.live else 0,
             'note': 'Save and submit until the workspace closes. Hint access ends on its own timer. Close the browser to finish early.'}), flush=True)
-        while time.monotonic() < end and browser.is_connected() and not page.is_closed():
-            page.wait_for_timeout(min(250, max(0, end - time.monotonic()) * 1000))
-        return {'elapsed_seconds': round(time.monotonic() - started, 2), 'human_acceptance_recorded': False}
+        return wait_until_closed(browser, page, end)
 
     def evidence(self):
         return self.live.evidence() if self.live else {'mode': 'stub', 'actual_provider_requests': 0}

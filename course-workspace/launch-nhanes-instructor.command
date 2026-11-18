@@ -6,8 +6,8 @@ export PATH="/Users/gregchism/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.26.11.d
 export GOTOOLCHAIN=local
 cd -- "${0:A:h:h}"
 mode="${1:---live}"
-if [[ "$mode" != --check && "$mode" != --stub && "$mode" != --verify-stub && "$mode" != --live ]]; then
-  print -u2 'Use --check, --stub, --verify-stub, or --live.'; exit 2
+if [[ "$mode" != --check && "$mode" != --stub && "$mode" != --verify-stub && "$mode" != --learner && "$mode" != --sign-in && "$mode" != --sign-in-hints && "$mode" != --verify-learner-hints && "$mode" != --verify-learner && "$mode" != --verify-live && "$mode" != --live ]]; then
+  print -u2 'Use --check, --stub, --verify-stub, --learner, --sign-in, --sign-in-hints, --verify-learner, --verify-learner-hints, --verify-live, or --live.'; exit 2
 fi
 driver=/Users/gregchism/.codex/worktrees/classroom-live-notebook/waypoint/.venv/bin/python
 kernel=/Users/gregchism/.codex/worktrees/waypoint-nhanes-qualification/waypoint/output/nhanes-qualification-v1/kernel-env/bin/python
@@ -15,15 +15,19 @@ cairn=/Users/gregchism/dev/.educloud-worktrees/cairn-studio-classic-v1
 belay=/Users/gregchism/dev/.educloud-worktrees/belay-classroom-system-one-consumer-v1
 portage=/Users/gregchism/.codex/worktrees/portage-openbao-trial/portage
 keyfile=/Users/gregchism/dev/.educloud-worktrees/portage-system-one-shadow-pilot-v1/.qualification/openrouter/.env
+belay_pin=c5a27073e74b9eeb7ab697190915378b50132883
 cairn_pin=533c16a414b9fef1979d0de783b3436f31dd03a7
-if [[ "$mode" == --live || "$mode" == --check ]]; then
+if [[ "$mode" == --live || "$mode" == --verify-live || "$mode" == --check ]]; then
+  belay=/Users/gregchism/dev/.educloud-worktrees/belay-nhanes-source-check
+  belay_pin=fc3e0cc7fe04137c8ff9fe57d194aa2b9a9acc81
   cairn="${NHANES_LIVE_CAIRN_CHECKOUT:-$cairn}"
   cairn_pin=533c16a414b9fef1979d0de783b3436f31dd03a7
 fi
-[[ -x "$driver" && -x "$kernel" && -d "$cairn" && -d "$belay" && -d "$portage" ]] || { print -u2 'A qualified local checkout or environment is missing. See NHANES-LIVE-TESTING.md.'; exit 1; }
+[[ -x "$driver" && -x "$kernel" && -d "$cairn" && -d "$belay" ]] || { print -u2 'A qualified local checkout or environment is missing. See NHANES-LIVE-TESTING.md.'; exit 1; }
 [[ -z "$(git status --porcelain --untracked-files=no)" ]] || { print -u2 'Commit the Waypoint source before starting a qualified window.'; exit 1; }
-[[ "$(git -C "$cairn" rev-parse HEAD)" == "$cairn_pin" && "$(git -C "$belay" rev-parse HEAD)" == c5a27073e74b9eeb7ab697190915378b50132883 && "$(git -C "$portage" rev-parse HEAD)" == 4f7ac0d3e839012664d4b8272c8446376efc8f1b ]] || { print -u2 'The component pins for this mode do not match. Restore the reviewed source revisions before retrying.'; exit 1; }
-if [[ "$mode" == --live || "$mode" == --check ]]; then
+[[ "$(git -C "$cairn" rev-parse HEAD)" == "$cairn_pin" && "$(git -C "$belay" rev-parse HEAD)" == "$belay_pin" ]] || { print -u2 'The component pins for this mode do not match. Restore the reviewed source revisions before retrying.'; exit 1; }
+if [[ "$mode" == --live || "$mode" == --verify-live || "$mode" == --check ]]; then
+  [[ -d "$portage" && "$(git -C "$portage" rev-parse HEAD)" == 4f7ac0d3e839012664d4b8272c8446376efc8f1b ]] || { print -u2 'The live Portage checkout must match the reviewed revision.'; exit 1; }
   [[ -f "$keyfile" && "$(stat -f %Lp "$keyfile")" == 600 ]] || { print -u2 'The existing private provider key file is missing or has incorrect permissions.'; exit 1; }
 fi
 if [[ "$mode" == --check ]]; then
@@ -35,6 +39,19 @@ mkdir -p output
 args=(--tutor-mode stub --operator-review-seconds 120)
 if [[ "$mode" == --live ]]; then
   args=(--tutor-mode live --live-portage "$portage" --env-file "$keyfile" --execute-approved --live-review-seconds 240)
+elif [[ "$mode" == --verify-live ]]; then
+  args=(--tutor-mode live --live-portage "$portage" --env-file "$keyfile" --execute-approved)
+  print 'Verifying one live hint with the supplied question. Maximum 7 requests and $0.175 reserved.'
+elif [[ "$mode" == --sign-in-hints ]]; then
+  args=(--manual-sign-in --learner-review-seconds "${2:-540}" --tutor-mode stub)
+elif [[ "$mode" == --verify-learner-hints ]]; then
+  args=(--verify-learner-starter --tutor-mode stub)
+elif [[ "$mode" == --sign-in ]]; then
+  args=(--manual-sign-in --learner-review-seconds "${2:-540}")
+elif [[ "$mode" == --learner ]]; then
+  args=(--learner-review-seconds "${2:-540}")
+elif [[ "$mode" == --verify-learner ]]; then
+  args=(--verify-learner-starter)
 elif [[ "$mode" == --verify-stub ]]; then
   args=(--tutor-mode stub --verify-studio-ui)
 fi

@@ -27,6 +27,19 @@ class OperatorReviewTests(unittest.TestCase):
         result = wait_for_review(SimpleNamespace(is_connected=lambda: False), page, 120)
         self.assertEqual(result['ended_by'], 'operator_closed')
 
+    def test_close_during_browser_wait_is_reported_without_acceptance(self):
+        page = SimpleNamespace(closed=False)
+        page.is_closed = lambda: page.closed
+
+        def close_during_wait(_):
+            page.closed = True
+            raise RuntimeError('page closed during wait')
+
+        page.wait_for_timeout = close_during_wait
+        result = wait_for_review(SimpleNamespace(is_connected=lambda: True), page, 2)
+        self.assertEqual(result['ended_by'], 'operator_closed')
+        self.assertFalse(result['human_acceptance_recorded'])
+
     def test_unrelated_browser_failure_is_not_accepted_as_operator_close(self):
         def fail(_): raise RuntimeError('browser failure')
         page = SimpleNamespace(is_closed=lambda: False, wait_for_timeout=fail)

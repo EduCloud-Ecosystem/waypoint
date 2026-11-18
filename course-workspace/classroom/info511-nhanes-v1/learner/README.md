@@ -1,8 +1,7 @@
 # INFO511: NHANES joining and tidy readings
 
 This assignment uses selected public CDC NHANES August 2021–August 2023 data.
-The demonstration accounts Alice and Bob are synthetic; the supplied measurements
-are public data, not invented measurements. The deliberately selected 64-person
+Open `nhanes-wrangling.ipynb` in Jupyter and run the first code cell to load the two tables. The deliberately selected 64-person
 subset is not representative. Make no population, causal or medical claim.
 
 Predict the input/joined/output schemas and observational units in the labeled
@@ -46,11 +45,23 @@ and write the CSV without a row index. Explain the units, join choice, missingne
 and independent checks in at most 150 words. Declare `no_ai` or `ai_assisted` with
 a brief summary; omit private hints, coaching conversations and monitoring records.
 
-Belay's selected-code capture does not save, execute, Ask or submit. Review the
-capture and explicitly request permitted hints if desired. Use Waypoint's explicit
-saved-file selection, Cairn preview and confirmation; only the committed receipt
-establishes a submitted revision. Local completeness guidance establishes none of
-correctness, receipt authenticity or submission.
+1. Save your notebook and both Markdown files. Check that your code has written rows to `tidy-nhanes.csv`; the starter contains only the header.
+2. Choose **Submit work** in the notebook toolbar. Select the four files listed above, choose **Prepare saved files**, then **Continue in Cairn**.
+3. In the new tab, choose your NHANES assignment. Click **Receive saved files from Waypoint**, then **Review saved files**. Check the filenames before choosing **Confirm submission**.
+4. Look under **Submission receipts** for **Submission received** and the four filenames. This confirms which files you turned in. Choose **My work** for checks and feedback. If confirmation was interrupted, use **Refresh receipts** before submitting again.
+
+You can still save and submit after tutor access expires. For help with access or submission, tell your instructor which step stopped.
+
+## How your work is reviewed (10 points, proposed for instructor review)
+
+| Points | Evidence |
+|---|---|
+| 4 | The CSV preserves participant IDs, ages, readings, missing positions and file membership. |
+| 3 | Your notebook independently checks the join, keys, missing values, roundtrip and unchanged source tables. |
+| 2 | Your saved code reproduces the CSV. Your short explanation identifies the units, join choice, and limits of interpreting missing data. |
+| 1 | Your assistance declaration describes how you worked. Choosing no AI earns the same credit. |
+
+The automated CSV result covers the first four points. Your instructor reviews the remaining evidence.
 
 Source documentation: [CDC demographics](https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/2021/DataFiles/DEMO_L.htm),
 [CDC oscillometric blood pressure](https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/2021/DataFiles/BPXO_L.htm).
