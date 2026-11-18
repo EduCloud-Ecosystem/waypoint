@@ -202,7 +202,7 @@ def main():
                 select_python_kernel(page,root,'nhanes')
                 widgets=page.locator('.jp-Notebook .jp-Cell');expect(widgets).to_have_count(len(notebook['cells']),timeout=60000)
                 if args.verify_learner_starter:
-                    expect(page.locator('.jp-Notebook').get_by_text('Pause and recall', exact=True)).to_be_visible()
+                    expect(page.get_by_role('heading', name='Pause and recall', level=2)).to_be_visible()
                     # Enter the synthetic learner's answers only after opening the blank starter.
                     predictions = {c['id']: ''.join(c['source']) for c in reference['cells']}
                     for index, cell in enumerate(notebook['cells']):
