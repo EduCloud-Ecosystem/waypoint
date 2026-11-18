@@ -24,7 +24,7 @@ from info511_notebook import contents, manifest, saved_files
 from classroom_transfer import submit_info511_attempt
 from roster_presenter import select_python_kernel, private, command
 from submission_handoff import verify_receipt_after_restart
-from operator_review import wait_for_review, validate
+from operator_review import wait_for_review, wait_until_closed, validate
 from nhanes_tutoring import NhanesTutoring, validate_tutoring
 from playwright.sync_api import sync_playwright, expect
 
@@ -62,12 +62,18 @@ def main():
     parser.add_argument('--execute-approved', action='store_true')
     parser.add_argument('--live-review-seconds', type=int, default=0,
                         help='After no-AI controls, open one prepared live hint for at most 240 seconds')
+    parser.add_argument('--learner-review-seconds', type=int, default=0,
+                        help='Open the blank no-AI workspace for an instructor walkthrough (1–540 seconds)')
     parser.add_argument('--verify-learner-starter', action='store_true',
                         help='Exercise the distributed blank learner package with an automated no-AI completion')
     parser.add_argument('--execute-synthetic', action='store_true')
     parser.add_argument('--verify-studio-ui', action='store_true',
                         help='Exercise reflow, keyboard focus and natural credential expiry with the local stub')
     args = parser.parse_args()
+    if not 0 <= args.learner_review_seconds <= 540:
+        parser.error('learner review must be between 0 and 540 seconds')
+    if args.learner_review_seconds and (args.verify_learner_starter or args.tutor_mode != 'none' or args.operator_review_seconds or args.live_review_seconds):
+        parser.error('manual learner review requires a separate no-AI session')
     if args.verify_learner_starter and (args.tutor_mode != 'none' or args.operator_review_seconds):
         parser.error('learner verification requires the automated no-AI journey')
     values = (args.openbao_address, args.openbao_ca, args.openbao_token_file)
@@ -126,14 +132,17 @@ def main():
         report['checker_binding'] = json.loads((NHANES.package/'operator/checker-binding.json').read_text())
         work = root/'saved-work'
         fixture = NHANES.package/'operator/attempts/alice'
-        reference = json.loads((fixture/NHANES.files[0]).read_text())
-        authored = {c['id']: ''.join(c['source']) for c in reference['cells'] if c['cell_type']=='code'}
-        authored['learner-work'] += "\nprint('NHANES_NATIVE_OK', len(tidy_nhanes))\n"
-        if args.verify_learner_starter:
+        if not args.learner_review_seconds:
+            reference = json.loads((fixture/NHANES.files[0]).read_text())
+            authored = {c['id']: ''.join(c['source']) for c in reference['cells'] if c['cell_type']=='code'}
+            authored['learner-work'] += "\nprint('NHANES_NATIVE_OK', len(tidy_nhanes))\n"
+        if args.verify_learner_starter or args.learner_review_seconds:
             learner = NHANES.package/'learner'
             shutil.copytree(learner, work)
             task = json.loads((NHANES.package/'task.json').read_text())
-            assert sorted(str(p.relative_to(work)) for p in work.rglob('*') if p.is_file()) == sorted(task['learner_files'])
+            staged = {str(p.relative_to(work)) for p in work.rglob('*') if p.is_file()}
+            if staged != set(task['learner_files']):
+                raise ValueError('staged files differ from the learner package manifest')
             notebook = json.loads((work/NHANES.files[0]).read_text())
             report['scope'] = 'synthetic-local-NHANES-learner-starter-no-AI'
         else:
@@ -155,8 +164,9 @@ def main():
                       template_files=policy,checkout_image=args.checkout_image)
         clean={k:os.environ[k] for k in ('PATH','HOME','LANG','DOCKER_HOST','DOCKER_CONTEXT') if k in os.environ}
         with sync_playwright() as pw:
-            browser=pw.chromium.launch(headless=not bool(args.operator_review_seconds or args.live_review_seconds))
-            try:
+            browser=pw.chromium.launch(headless=not bool(args.operator_review_seconds or args.live_review_seconds or args.learner_review_seconds))
+
+            def run_session():
                 revision=course.start();teacher,_=course.login(browser,'teacher','/auth/login')
                 cid=req(course,teacher,'POST','/classrooms',{'name':'Disposable NHANES synthetic qualification',
                     'host':'forgejo','host_namespace':'course-test','join_policy':'roster'},201)['id']
@@ -201,6 +211,14 @@ def main():
                 expect(page.get_by_role('link',name='Submit saved files to Cairn',exact=True)).to_be_visible(timeout=60000)
                 select_python_kernel(page,root,'nhanes')
                 widgets=page.locator('.jp-Notebook .jp-Cell');expect(widgets).to_have_count(len(notebook['cells']),timeout=60000)
+                if args.learner_review_seconds:
+                    expect(page.get_by_role('heading', name='Pause and recall', level=2)).to_be_visible()
+                    page.bring_to_front()
+                    end = min(time.monotonic() + args.learner_review_seconds, started + 590)
+                    print('Blank learner workspace open. Save your work before closing. Submit work opens Cairn.', flush=True)
+                    report['scope'] = 'manual-local-NHANES-learner-starter-no-AI'
+                    report['learner_review'] = wait_until_closed(browser, page, end)
+                    return
                 if args.verify_learner_starter:
                     expect(page.get_by_role('heading', name='Pause and recall', level=2)).to_be_visible()
                     # Enter the synthetic learner's answers only after opening the blank starter.
@@ -244,7 +262,8 @@ def main():
                 if args.verify_learner_starter:
                     saved = {c['id']: ''.join(c['source']) for c in actual['cells']}
                     for key in ('schema-prediction', 'unit-prediction'):
-                        assert saved[key].strip() == predictions[key].strip(), 'prediction was not saved'
+                        if saved[key].strip() != predictions[key].strip():
+                            raise ValueError(f'{key} was not saved')
                 assert codes, 'Notebook save did not complete within 15 seconds'
                 assert all(type(c['execution_count']) is int and not any(o['output_type']=='error' for o in c['outputs']) for c in codes)
                 assert all(''.join(c['source'])==authored[c['id']] for c in codes)
@@ -324,7 +343,10 @@ def main():
                         page.bring_to_front();report['operator_review']=wait_for_review(browser,page,args.operator_review_seconds)
                 if args.live_review_seconds:
                     report['live_review'] = tutor.review(browser, page, args.live_review_seconds, started+600)
-            finally:browser.close()
+            try:
+                run_session()
+            finally:
+                browser.close()
     except (Exception, KeyboardInterrupt) as exc:
         report['failed'].append(type(exc).__name__+': '+str(exc)[:500]);private(root/'failure.txt',traceback.format_exc())
     finally:

@@ -11,7 +11,11 @@ def validate(seconds, *, live_portage=None, env_file=None, execute_approved=Fals
 
 def wait_for_review(browser, page, seconds, *, monotonic=time.monotonic):
     validate(seconds)
-    started = monotonic(); deadline = started + seconds
+    return wait_until_closed(browser, page, monotonic() + seconds, monotonic=monotonic, requested_seconds=seconds)
+
+
+def wait_until_closed(browser, page, deadline, *, monotonic=time.monotonic, requested_seconds=None):
+    started = monotonic()
     reason = 'deadline'
     while monotonic() < deadline:
         if not browser.is_connected() or page.is_closed():
@@ -22,5 +26,5 @@ def wait_for_review(browser, page, seconds, *, monotonic=time.monotonic):
             if not browser.is_connected() or page.is_closed():
                 reason = 'operator_closed'; break
             raise
-    return {'requested_seconds': seconds, 'elapsed_seconds': round(monotonic() - started, 3),
+    return {'requested_seconds': requested_seconds if requested_seconds is not None else round(max(0, deadline - started)), 'elapsed_seconds': round(monotonic() - started, 3),
             'ended_by': reason, 'human_acceptance_recorded': False}

@@ -12,6 +12,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from playwright.sync_api import expect
 
 from cairn_journey import port, wait_http
+from operator_review import wait_until_closed
 from live_notebook import LiveNotebook, notebook_inputs
 from roster_presenter import private, command
 
@@ -331,9 +332,7 @@ class NhanesTutoring:
             'tutor_seconds_remaining': round(max(0, min(duration, self.expires - time.time()))),
             'mode': self.mode, 'max_requests': 7 if self.live else 0, 'max_reserved_usd': 0.175 if self.live else 0,
             'note': 'Save and submit until the workspace closes. Hint access ends on its own timer. Close the browser to finish early.'}), flush=True)
-        while time.monotonic() < end and browser.is_connected() and not page.is_closed():
-            page.wait_for_timeout(min(250, max(0, end - time.monotonic()) * 1000))
-        return {'elapsed_seconds': round(time.monotonic() - started, 2), 'human_acceptance_recorded': False}
+        return wait_until_closed(browser, page, end)
 
     def evidence(self):
         return self.live.evidence() if self.live else {'mode': 'stub', 'actual_provider_requests': 0}
