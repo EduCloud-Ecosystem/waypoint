@@ -30,6 +30,7 @@ from playwright.sync_api import sync_playwright, expect
 
 PINS = {'cairn': '533c16a414b9fef1979d0de783b3436f31dd03a7',
         'belay': 'c5a27073e74b9eeb7ab697190915378b50132883'}
+LIVE_BELAY_PIN = 'f6fcd17ffc9fd7fb582d10ef83b1e08103f40f0c'
 STUB_CAIRN_PIN = '533c16a414b9fef1979d0de783b3436f31dd03a7'
 
 
@@ -107,7 +108,11 @@ def main():
                                 stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
         processes.append(proc); return proc
     try:
-        pins = PINS if args.tutor_mode == 'live' else dict(PINS, cairn=STUB_CAIRN_PIN)
+        pins = dict(PINS, cairn=STUB_CAIRN_PIN)
+        if args.tutor_mode == 'live' and not args.openbao:
+            pins = dict(PINS, belay=LIVE_BELAY_PIN)
+        elif args.tutor_mode == 'live':
+            pins = PINS  # Retain the independently pinned OpenBao rehearsal.
         for role, pin in pins.items():
             repo = getattr(args, role).resolve()
             assert command(['git', 'rev-parse', 'HEAD'], cwd=repo) == pin
