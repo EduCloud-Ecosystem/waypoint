@@ -6,8 +6,8 @@ export PATH="/Users/gregchism/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.26.11.d
 export GOTOOLCHAIN=local
 cd -- "${0:A:h:h}"
 mode="${1:---live}"
-if [[ "$mode" != --check && "$mode" != --stub && "$mode" != --verify-stub && "$mode" != --learner && "$mode" != --verify-learner && "$mode" != --live ]]; then
-  print -u2 'Use --check, --stub, --verify-stub, --learner, --verify-learner, or --live.'; exit 2
+if [[ "$mode" != --check && "$mode" != --stub && "$mode" != --verify-stub && "$mode" != --learner && "$mode" != --sign-in && "$mode" != --verify-learner && "$mode" != --live ]]; then
+  print -u2 'Use --check, --stub, --verify-stub, --learner, --sign-in, --verify-learner, or --live.'; exit 2
 fi
 driver=/Users/gregchism/.codex/worktrees/classroom-live-notebook/waypoint/.venv/bin/python
 kernel=/Users/gregchism/.codex/worktrees/waypoint-nhanes-qualification/waypoint/output/nhanes-qualification-v1/kernel-env/bin/python
@@ -35,6 +35,8 @@ mkdir -p output
 args=(--tutor-mode stub --operator-review-seconds 120)
 if [[ "$mode" == --live ]]; then
   args=(--tutor-mode live --live-portage "$portage" --env-file "$keyfile" --execute-approved --live-review-seconds 240)
+elif [[ "$mode" == --sign-in ]]; then
+  args=(--manual-sign-in --learner-review-seconds "${2:-540}")
 elif [[ "$mode" == --learner ]]; then
   args=(--learner-review-seconds "${2:-540}")
 elif [[ "$mode" == --verify-learner ]]; then

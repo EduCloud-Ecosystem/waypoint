@@ -12,6 +12,21 @@ contains clearly labeled operator-authored answers for synthetic testing only.
 Do not distribute this solution workspace as a learner template. CSV correctness
 is four points only, not a full-rubric grade or an LMS publication.
 
+## Try the INFO 511 learner sign-in on this Mac
+
+Open [Try INFO 511 sign-in](try-info511-sign-in.command) in Finder, or run
+`course-workspace/try-info511-sign-in.command` from this checkout. Wait for the
+local Forgejo login page with **alice** and a generated password already filled.
+Click **Sign in** within three minutes. Cairn checks course membership and the
+launcher opens the blank NHANES notebook. Run and save your work, then choose
+**Submit saved files to Cairn** to preview and confirm the four files.
+
+The launcher creates a fresh local course and individual disposable learner
+credentials every time. The entire session lasts at most ten minutes, including
+setup. The notebook uses a separate local session token. Tutoring is off in this
+walkthrough. To repeat it, reopen the launcher. Closing the notebook ends the
+review. Keep the terminal open for cleanup.
+
 ## Fixed sources and environment
 
 - Waypoint base: `96cc2b8c1922f06bb28933908d426a2efa849599`;

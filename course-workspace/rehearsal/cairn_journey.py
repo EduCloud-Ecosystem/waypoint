@@ -51,7 +51,7 @@ def wait_http(url):
 
 class Course:
     def __init__(self, root, binary, workspace, image, cairn_source, cairn_origin=None, *, template_files=None,
-                 forgejo_image=FORGEJO_IMAGE, checkout_image='cairn-checkout:local'):
+                 forgejo_image=FORGEJO_IMAGE, checkout_image='cairn-checkout:local', distinct_learner_passwords=False):
         self.root, self.binary, self.workspace, self.image = root, binary, workspace, image
         self.cairn_source = cairn_source
         self.template_files = template_files
@@ -61,6 +61,7 @@ class Course:
         self.forge = 'http://127.0.0.1:' + str(port())
         self.url = cairn_origin or 'http://127.0.0.1:' + str(port())
         self.password = secrets.token_urlsafe(32)
+        self.learner_passwords = {user: secrets.token_urlsafe(32) for user in ('alice', 'bob', 'mallory')} if distinct_learner_passwords else {}
         self.relay = None
         self.network = self.name + "-webhook"
         self.process = None
@@ -70,9 +71,12 @@ class Course:
         self.admin.trust_env = False
         self.admin.auth = ('teacher', self.password)
 
+    def password_for(self, user):
+        return self.learner_passwords.get(user, self.password)
+
     def api(self, method, path, data=None, user=None):
         response = self.admin.request(method, self.forge + '/api/v1' + path, json=data,
-                                    auth=(user or 'teacher', self.password), timeout=30)
+                                    auth=(user or 'teacher', self.password_for(user)), timeout=30)
         if not response.ok:
             raise RuntimeError(f'Forgejo {method} {path} returned {response.status_code}')
         return response.json() if response.content else None
@@ -98,7 +102,7 @@ class Course:
         wait_http(self.forge + '/api/healthz')
         for user in ('teacher', 'alice', 'bob', 'mallory'):
             args = ['docker', 'exec', '--user', 'git', self.name, 'forgejo', '--config', '/data/gitea/conf/app.ini',
-                    'admin', 'user', 'create', '--username', user, '--password', self.password,
+                    'admin', 'user', 'create', '--username', user, '--password', self.password_for(user),
                     '--email', user + '@synthetic.invalid', '--must-change-password=false']
             if user == 'teacher':
                 args += ['--admin']
@@ -168,20 +172,26 @@ class Course:
 
     def put(self, repo, name, content, user='teacher'):
         path = '/repos/' + repo + '/contents/' + name
-        existing = self.admin.get(self.forge + '/api/v1' + path, auth=(user, self.password), timeout=30)
+        existing = self.admin.get(self.forge + '/api/v1' + path, auth=(user, self.password_for(user)), timeout=30)
         data = {'content': base64.b64encode(content.encode()).decode(), 'message': 'Synthetic coursework'}
         if existing.status_code == 200:
             data['sha'] = existing.json()['sha']
         return self.api('PUT' if 'sha' in data else 'POST', path, data, user)
 
-    def login(self, browser, user, entry):
+    def login(self, browser, user, entry, *, manual_sign_in=False):
+        if manual_sign_in and user not in self.learner_passwords:
+            raise ValueError('manual sign-in requires an individual disposable learner password')
         context = browser.new_context(ignore_https_errors=True)
         page = context.new_page()
         page.goto(self.forge + '/user/login')
         page.locator('input[name="user_name"]').fill(user)
-        page.locator('input[name="password"]').fill(self.password)
-        page.locator('button').filter(has_text='Sign in').click()
-        page.wait_for_url(lambda u: '/user/login' not in u)
+        page.locator('input[name="password"]').fill(self.password_for(user))
+        if manual_sign_in:
+            page.bring_to_front()
+            print('Click Sign in in the local Forgejo window within three minutes. Your test account is prefilled.', flush=True)
+        else:
+            page.locator('button').filter(has_text='Sign in').click()
+        page.wait_for_url(lambda u: '/user/login' not in u, timeout=180000 if manual_sign_in else 30000)
         page.goto(self.url + entry)
         if '/login/oauth/authorize' in page.url:
             page.get_by_role('button', name='Authorize Application').click()

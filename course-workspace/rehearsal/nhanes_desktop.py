@@ -64,12 +64,15 @@ def main():
                         help='After no-AI controls, open one prepared live hint for at most 240 seconds')
     parser.add_argument('--learner-review-seconds', type=int,
                         help='Open the blank no-AI workspace for an instructor walkthrough (1–540 seconds)')
+    parser.add_argument('--manual-sign-in', action='store_true', help='Wait for the tester to sign in with a prefilled local learner account')
     parser.add_argument('--verify-learner-starter', action='store_true',
                         help='Exercise the distributed blank learner package with an automated no-AI completion')
     parser.add_argument('--execute-synthetic', action='store_true')
     parser.add_argument('--verify-studio-ui', action='store_true',
                         help='Exercise reflow, keyboard focus and natural credential expiry with the local stub')
     args = parser.parse_args()
+    if args.manual_sign_in and not args.learner_review_seconds:
+        parser.error('manual sign-in requires a learner review window')
     if args.learner_review_seconds is not None and not 1 <= args.learner_review_seconds <= 540:
         parser.error('learner review must be between 1 and 540 seconds')
     if args.learner_review_seconds and (args.verify_learner_starter or args.tutor_mode != 'none' or args.operator_review_seconds or args.live_review_seconds):
@@ -161,7 +164,8 @@ def main():
         private(root/'build.log',command(['go','build','-o',binary,'./cmd/cairn'],cwd=args.cairn))
         report['cairn_binary_sha256']=hashlib.sha256(binary.read_bytes()).hexdigest()
         course=Course(course_dir,binary,notebook_url,args.grader_image,args.cairn,
-                      template_files=policy,checkout_image=args.checkout_image)
+                      template_files=policy, checkout_image=args.checkout_image,
+                      distinct_learner_passwords=bool(args.learner_review_seconds or args.verify_learner_starter))
         clean={k:os.environ[k] for k in ('PATH','HOME','LANG','DOCKER_HOST','DOCKER_CONTEXT') if k in os.environ}
         with sync_playwright() as pw:
             browser=pw.chromium.launch(headless=not bool(args.operator_review_seconds or args.live_review_seconds or args.learner_review_seconds))
@@ -177,9 +181,17 @@ def main():
                 req(course,teacher,'PATCH',f'/assignments/{aid}/grading-policy',{'template_commit':revision,'grading_spec':'grading.json'})
                 course.env.update(CAIRN_SUBMISSIONS='true',CAIRN_SUBMISSION_CLASSROOMS=cid,
                     CAIRN_WORKSPACE_URLS=json.dumps({cid:notebook_url}));course.restart()
-                alice,_=course.login(browser,'alice',f'/assignments/{aid}/accept')
+                teacher.close()
                 bob,_=course.login(browser,'bob',f'/assignments/{aid}/accept')
+                alice,_=course.login(browser,'alice',f'/assignments/{aid}/accept', manual_sign_in=args.manual_sign_in)
                 item=active_work(course,alice,profile=NHANES);peer=active_work(course,bob,profile=NHANES)
+                if args.learner_review_seconds or args.verify_learner_starter:
+                    for session, own, other in [(alice, item, peer), (bob, peer, item)]:
+                        req(course, session, 'GET', '/me/work/' + own['submission_id'])
+                        req(course, session, 'GET', '/me/work/' + other['submission_id'], status=404)
+                    report['passed'].append('two-local-forgejo-learners-own-work-allowed-peer-work-denied')
+                    if args.learner_review_seconds:
+                        bob.close()
                 report['binding']={'assignment_id':aid,'classroom_id':cid,'template_commit':revision,
                                    'kind':'disposable-synthetic-only','profile':'nhanes-v1'}
                 if args.tutor_mode != 'none':
