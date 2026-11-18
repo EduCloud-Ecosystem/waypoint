@@ -30,7 +30,7 @@ and cached images; it does not install software, pull images or create cloud res
 
 The current launcher uses merged Portage `4f7ac0d` through the existing private
 key file. OpenBao is inactive: no address, CA or service token is supplied.
-Use `--verify-live` to run one paid, automated walkthrough of the supplied question and four-file submission. The live modes use Belay `d12e3d6`, which asks for one participant lookup in the original BPXO table. The offline modes retain their original source pins.
+Use `--verify-live` to run one paid, automated walkthrough of the supplied question and four-file submission. The live modes use Belay `fc3e0cc`, which asks for one participant lookup in the original BPXO table. The offline modes retain their original source pins.
 
 Use `--stub` for a no-cost automatic hint and a two-minute
 notebook-and-tutor review. The completed solution is preserved, a separate
