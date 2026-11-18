@@ -28,11 +28,11 @@ closes or times out before submission, the report records an unstarted review
 (exit 2). Errors after a submitted sign-in or during cleanup remain failures.
 
 **To try hints with the blank starter**, open [Try INFO 511 with local hints](try-info511-local-hints.command)
-instead. Select a code cell and choose **Ask Belay about this code**. Review
+instead. Select a code cell and choose **Ask tutor**. Review
 the selected text and record the requested predictions before asking for a hint.
 Belay returns a simulated hint locally. Tutor access lasts at most four minutes
-from setup. **Continue without AI** returns to the notebook, where you can still
-save and submit after help expires. The original launcher keeps tutoring off.
+from setup. Choose **Back to notebook** to resume editing. **Continue without AI**
+turns off hints for that page. You can still save and submit after help expires. The original launcher keeps tutoring off.
 The automated counterpart is `launch-nhanes-instructor.command --verify-learner-hints`.
 To repeat it, reopen the launcher. Closing the notebook ends the
 review. Keep the terminal open for cleanup.
