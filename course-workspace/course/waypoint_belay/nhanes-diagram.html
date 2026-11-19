@@ -1,0 +1,58 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: Apache-2.0
+     Explanatory text/diagram: CC-BY-4.0, EduCloud contributors, 2026.
+     Authored for the owner's explicitly requested synthetic NHANES prototype. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NHANES: from people to readings</title>
+  <link rel="stylesheet" href="studio-theme.css">
+  <link rel="stylesheet" href="lecture.css">
+</head>
+<body>
+  <header><p class="eyebrow">INFO 511 · Static teaching diagram</p>
+    <h1>From people to readings</h1>
+    <p>Keep the unit of observation and the meaning of missingness visible as you work.</p>
+  </header>
+  <main>
+    <svg role="img" aria-labelledby="diagram-title diagram-description" viewBox="0 0 320 450" width="100%">
+      <title id="diagram-title">Participant and measurement tables become a participant-by-reading result</title>
+      <desc id="diagram-description">Start with one row per participant. Match measurement records by participant identifier. Reshape repeated readings while preserving missing values. The teaching result has one row per participant and reading. A missing value is different from no matching measurement record.</desc>
+      <g fill="var(--studio-soft)" stroke="var(--studio-control)" stroke-width="2">
+        <rect x="6" y="8" width="308" height="92" rx="6"/>
+        <rect x="6" y="175" width="308" height="92" rx="6"/>
+        <rect x="6" y="342" width="308" height="92" rx="6"/>
+      </g>
+      <g fill="var(--studio-ink)" font-family="system-ui, sans-serif" text-anchor="middle">
+        <text x="160" y="45" font-size="21" font-weight="600">Participant table</text>
+        <text x="160" y="77" font-size="16">One row per person</text>
+        <text x="160" y="140" font-size="15">Match by participant identifier</text>
+        <text x="160" y="212" font-size="21" font-weight="600">Measurement records</text>
+        <text x="160" y="244" font-size="16">Several readings per person</text>
+        <text x="160" y="307" font-size="15">Reshape; preserve missingness</text>
+        <text x="160" y="379" font-size="21" font-weight="600">Teaching result</text>
+        <text x="160" y="411" font-size="16">Participant × reading</text>
+      </g>
+      <g stroke="var(--studio-focus)" fill="var(--studio-focus)" stroke-width="2">
+        <path d="M160 105 V121 M155 116 L160 123 L165 116" fill="none"/>
+        <path d="M160 148 V164 M155 159 L160 166 L165 159" fill="none"/>
+        <path d="M160 272 V288 M155 283 L160 290 L165 283" fill="none"/>
+        <path d="M160 315 V331 M155 326 L160 333 L165 326" fill="none"/>
+      </g>
+    </svg>
+    <h2>Read the diagram</h2>
+    <ol>
+      <li>Identify what a row represents in the participant table.</li>
+      <li>Match measurement records using the participant identifier.</li>
+      <li>Describe the result as participant-by-reading observations.</li>
+    </ol>
+    <h2>Keep two cases distinct</h2>
+    <p><strong>Missing reading:</strong> the participant has a matching record, but a value is absent.</p>
+    <p><strong>No matching record:</strong> the participant has no row in the measurement table.</p>
+    <p class="prompt">Recall: Which evidence would distinguish these two cases in your result?</p>
+  </main>
+  <footer><p>Synthetic explanatory diagram, with no participant data or model-generated content.
+    EduCloud contributors · CC BY 4.0. Saving, submission and assessment remain separate.</p></footer>
+</body>
+</html>

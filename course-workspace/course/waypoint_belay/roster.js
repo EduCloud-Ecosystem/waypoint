@@ -35,6 +35,14 @@
       el('provider-notice').textContent = 'This practice session returns a simulated hint. Your selected code and question stay on this computer.';
       el('question').placeholder = 'For example, how can I check whether a participant has a matching blood pressure record?';
     }
+    if (profile.course_question) {
+      el('question').value = profile.course_question;
+      el('question').readOnly = true;
+      document.querySelector('label[for="question"]').textContent = 'Course question';
+      el('context-details').querySelector('summary').textContent = 'Course example and sharing';
+      el('capture').textContent = 'Choose Review course example to see the code supplied with this question.';
+      if (!profile.local_hint_demo) el('provider-notice').textContent = 'Ask for a hint sends the supplied example and question through OpenRouter to OpenAI. Your notebook and predictions stay here.';
+    }
     checkpointRequired = profile.exercise_id === 'info511-nhanes-wrangling';
     el('assignment').textContent = 'Assignment: ' + profile.title;
     el('notebook').href = profile.notebook; el('submission').href = profile.submission;
@@ -88,6 +96,10 @@
       if (busy) {tellNotebook('belay-notebook-captured', {accepted:false}); return;}
       el('source').value = v.source; captured = true;
       el('capture').textContent = v.dirty ? 'Unsaved code captured. Save in your notebook before submitting.' : 'Code captured for review. Nothing has been sent or submitted.';
+      if (profile.course_question) {
+        el('capture').textContent = 'Course example ready. Your notebook has not been shared.';
+        el('context-details').open = true;
+      }
       enabled();
       if (embedded && document.hasFocus() && document.activeElement === document.body) el('tutor-heading').focus();
       if (embedded) tellNotebook('belay-notebook-captured', {accepted:true});
@@ -99,7 +111,9 @@
     if (!el('question').value.trim()) {el('status').textContent = 'Add your prediction and question first.'; el('question').focus(); return;}
     busy = true; enabled(); el('status').textContent = 'Waiting for a hint…';
     if (embedded) tellNotebook('belay-notebook-state', {busy:true});
-    el('capture').textContent = 'Code selected for this help request. Saving and submission are separate.';
+    el('capture').textContent = profile.course_question
+      ? 'The course example is selected for this request.'
+      : 'Code selected for this help request. Saving and submission are separate.';
     try {
       const turn = await jobs.ask(base, '/api/sol/jobs', {exercise_id:profile.exercise_id,
         event:'chat',mode:'study',stance:'peer',source:el('source').value,

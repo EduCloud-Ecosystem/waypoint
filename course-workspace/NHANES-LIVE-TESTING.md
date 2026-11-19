@@ -6,6 +6,16 @@ and Cairn's explicit saved-file preview, confirmation, receipt and checker.
 The notebook includes an operator-authored solution fixture. It is not a learner
 template, an AWS deployment, or approval to admit students.
 
+## Start as a first-time learner
+
+On the prepared Mac, open `course-workspace/start-info511.command` and click **Sign in** in the prefilled disposable learner account. To work entirely offline with hints disabled, run the same launcher with `--offline`. Both modes open the distributed blank starter.
+
+Dismiss the welcome or take the quick tour. Open **Lecture notes** on the right for a reading companion based on the assignment README. **Guide → Workspace tour** replays the introduction. Run the first cell and write both predictions. For optional live help, open **Tutor → Review course example**, confirm your predictions, and choose **Ask for a hint**. Only the prepared code and question are used. Opening the notes, tour or tutor never dispatches a model request. The tutor has its own shorter deadline.
+
+Save the notebook, CSV, explanation and assistance declaration. Choose **Submit work**, preview those four files and explicitly confirm in Cairn. Keep the receipt. The local workspace closes after at most nine minutes of review within a ten-minute total session. Reopening starts a fresh disposable workspace. The reading companion has no recording or time links.
+
+To reproduce the automated browser journeys on the same prepared host, use `course-workspace/launch-nhanes-instructor.command --verify-first-use-offline` or `--verify-first-use`. The second command requests one live hint with the usual seven-transport and USD 0.175 ceiling. Both write a private result under `output/`.
+
 ## Review the learner assignment
 
 Open the [learner instructions](classroom/info511-nhanes-v1/learner/README.md) and the notebook beside them. Copy the entire `learner/` folder into a fresh workspace to keep the two relative data paths intact. For a portable review copy, run this from the Waypoint repository root:

@@ -65,6 +65,7 @@ def main():
                         help='After no-AI controls, open one prepared live hint for at most 240 seconds')
     parser.add_argument('--learner-review-seconds', type=int,
                         help='Open the blank learner workspace for an instructor walkthrough (1–540 seconds)')
+    parser.add_argument('--first-use', action='store_true', help='Open the guided INFO 511 starter with assignment notes')
     parser.add_argument('--manual-sign-in', action='store_true', help='Wait for the tester to sign in with a prefilled local learner account')
     parser.add_argument('--verify-learner-starter', action='store_true',
                         help='Exercise the distributed blank learner package with an automated synthetic completion')
@@ -72,13 +73,17 @@ def main():
     parser.add_argument('--verify-studio-ui', action='store_true',
                         help='Exercise reflow, keyboard focus and natural credential expiry with the local stub')
     args = parser.parse_args()
+    if args.first_use and (not (args.verify_learner_starter or args.learner_review_seconds)
+                           or args.tutor_mode == 'none' or args.verify_studio_ui
+                           or args.live_review_seconds or args.operator_review_seconds):
+        parser.error('first-use needs a blank learner session with optional live or disabled hints')
     if args.manual_sign_in and not args.learner_review_seconds:
         parser.error('manual sign-in requires a learner review window')
     if args.learner_review_seconds is not None and not 1 <= args.learner_review_seconds <= 540:
         parser.error('learner review must be between 1 and 540 seconds')
-    if args.learner_review_seconds and (args.verify_learner_starter or args.tutor_mode == 'live' or args.operator_review_seconds or args.live_review_seconds):
+    if args.learner_review_seconds and (args.verify_learner_starter or (args.tutor_mode == 'live' and not args.first_use) or args.operator_review_seconds or args.live_review_seconds):
         parser.error('manual learner review supports a separate no-AI or local hint session')
-    if args.verify_learner_starter and (args.tutor_mode == 'live' or args.operator_review_seconds):
+    if args.verify_learner_starter and ((args.tutor_mode == 'live' and not args.first_use) or args.operator_review_seconds):
         parser.error('learner verification requires an automated no-AI or local hint journey')
     values = (args.openbao_address, args.openbao_ca, args.openbao_token_file)
     args.openbao = values if any(values) else None
@@ -152,7 +157,8 @@ def main():
             if staged != set(task['learner_files']):
                 raise ValueError('staged files differ from the learner package manifest')
             notebook = json.loads((work/NHANES.files[0]).read_text())
-            learner_mode = 'local-stub' if args.tutor_mode == 'stub' else 'no-AI'
+            learner_mode = {'stub':'local-stub', 'none':'no-AI', 'live':'prepared-live-hint'}[args.tutor_mode]
+            if args.first_use and args.tutor_mode == 'stub': learner_mode = 'no-AI'
             report['scope'] = 'synthetic-local-NHANES-learner-starter-' + learner_mode
         else:
             shutil.copytree(fixture, work)
@@ -230,6 +236,15 @@ def main():
                 expect(page.get_by_role('link',name='Submit saved files to Cairn',exact=True)).to_be_visible(timeout=60000)
                 select_python_kernel(page,root,'nhanes')
                 widgets=page.locator('.jp-Notebook .jp-Cell');expect(widgets).to_have_count(len(notebook['cells']),timeout=60000)
+                if args.first_use and args.verify_learner_starter:
+                    from studio_navigation import verify_studio_navigation
+                    before = tutor.counts()
+                    starter_bytes = (work / NHANES.files[0]).read_bytes()
+                    report['first_use'] = verify_studio_navigation(page, root)
+                    assert tutor.counts() == before == {'control_jobs': 0, 'control_attempts': 0}
+                    if tutor.live: assert tutor.live.evidence()['accounting']['dispatch_claims'] == 0
+                    assert (work / NHANES.files[0]).read_bytes() == starter_bytes
+                    report['passed'].append('tour-and-notes-without-tutor-requests-or-notebook-edits')
                 if args.learner_review_seconds:
                     expect(page.get_by_role('heading', name='Pause and recall', level=2)).to_be_visible()
                     page.bring_to_front()
@@ -263,7 +278,8 @@ def main():
                     for name in ('explanation.md', 'assistance.md'):
                         shutil.copyfile(fixture/name, work/name)
                     report['passed'].append('fresh-learner-starter-opened-before-synthetic-' + learner_mode + '-completion')
-                if tutor and not args.live_review_seconds:
+                offline_studio = args.first_use and args.tutor_mode == 'stub'
+                if tutor and not args.live_review_seconds and not offline_studio:
                     tutor.verify(page, report)
                     if args.tutor_mode == 'live' and not args.openbao:
                         expected_hint = ("Course hint: Pick one blank reading in your merged table. "
@@ -373,6 +389,9 @@ def main():
                 report['passed']+=['explicit-four-file-native-bridge-and-byte-exact-receipt','changed-preview-payload-refused-409']
                 restart_receipt(course,browser,alice,item['submission_id'],receipt)
                 report['passed'].append('receipt-persists-after-restart')
+                if offline_studio:
+                    assert tutor.counts() == {'control_jobs': 0, 'control_attempts': 0}
+                    report['passed'].append('guided-starter-completed-without-requesting-a-hint')
                 if args.operator_review_seconds:
                     if tutor:
                         report['operator_review'] = tutor.review(browser,page,args.operator_review_seconds,started+600)
