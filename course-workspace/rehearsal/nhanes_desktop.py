@@ -278,10 +278,8 @@ def main():
                     for name in ('explanation.md', 'assistance.md'):
                         shutil.copyfile(fixture/name, work/name)
                     report['passed'].append('fresh-learner-starter-opened-before-synthetic-' + learner_mode + '-completion')
-                if args.first_use and args.tutor_mode == 'stub':
-                    assert tutor.counts() == {'control_jobs': 0, 'control_attempts': 0}
-                    report['passed'].append('guided-starter-completed-without-requesting-a-hint')
-                elif tutor and not args.live_review_seconds:
+                offline_studio = args.first_use and args.tutor_mode == 'stub'
+                if tutor and not args.live_review_seconds and not offline_studio:
                     tutor.verify(page, report)
                     if args.tutor_mode == 'live' and not args.openbao:
                         expected_hint = ("Course hint: Pick one blank reading in your merged table. "
@@ -391,6 +389,9 @@ def main():
                 report['passed']+=['explicit-four-file-native-bridge-and-byte-exact-receipt','changed-preview-payload-refused-409']
                 restart_receipt(course,browser,alice,item['submission_id'],receipt)
                 report['passed'].append('receipt-persists-after-restart')
+                if offline_studio:
+                    assert tutor.counts() == {'control_jobs': 0, 'control_attempts': 0}
+                    report['passed'].append('guided-starter-completed-without-requesting-a-hint')
                 if args.operator_review_seconds:
                     if tutor:
                         report['operator_review'] = tutor.review(browser,page,args.operator_review_seconds,started+600)

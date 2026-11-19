@@ -1,6 +1,7 @@
 """SPDX-License-Identifier: Apache-2.0
 Native side-tab navigation and local first-use introduction controls.
 """
+import json
 import re
 
 from playwright.sync_api import expect
@@ -8,11 +9,6 @@ from playwright.sync_api import expect
 
 def side_tab(page, panel):
     return page.locator('.jp-SideBar.jp-mod-right [data-id="waypoint-' + panel + '-panel"]')
-
-
-def notes_opener(page):
-    tab = side_tab(page, 'lecture')
-    return tab if page.locator('body[data-educloud-navigation="side-tabs"]').count() else page.get_by_role('button', name='Lecture notes', exact=True)
 
 
 def lecture_action(page, name):
@@ -23,21 +19,11 @@ def lecture_action(page, name):
     return panel.get_by_role('button', name=name, exact=True)
 
 
-def review_selected_cell(page):
-    if page.locator('body[data-educloud-navigation="side-tabs"]').count():
-        frame = page.locator('iframe[title="Course tutor"]')
-        if not frame.is_visible():
-            side_tab(page, 'belay').click()
-        page.get_by_role('button', name='Review course example', exact=True).click()
-    else:
-        page.get_by_role('button', name='Ask Belay about this code', exact=True).click()
-
-
 def verify_studio_navigation(page, root):
     welcome = page.locator('#waypoint-studio-welcome')
     expect(welcome.get_by_role('heading', name='Your side tabs', exact=True)).to_be_visible()
     assert page.evaluate("localStorage.getItem('educloud-studio-welcome-v1')") is None
-    (root/'studio-native-tabs.json').write_text(__import__('json').dumps(page.evaluate("""() => ({
+    (root/'studio-native-tabs.json').write_text(json.dumps(page.evaluate("""() => ({
       tabs:[...document.querySelectorAll('[role=tab]')].map(e=>({id:e.id,owner:e.dataset.id,label:e.textContent})),
       bars:[...document.querySelectorAll('.jp-SideBar')].map(e=>({id:e.id,classes:e.className}))
     })""")))
@@ -82,7 +68,7 @@ def verify_studio_navigation(page, root):
         page.get_by_label('Appearance',exact=True).select_option(theme)
         expect(page.locator('body')).to_have_attribute('data-jp-theme-name','JupyterLab '+theme.title())
         page.locator('.jp-SplashScreen').wait_for(state='hidden')
-        notes_opener(page).click()
+        side_tab(page, 'lecture').click()
         panel = page.locator('#waypoint-lecture-panel')
         toggle = panel.get_by_role('button',name='Lecture guide',exact=True)
         expect(toggle).to_have_attribute('aria-expanded','false')

@@ -82,7 +82,7 @@ class NhanesTutoring:
             'learner_id': member['learner_id'], 'grant_generation': member['grant_generation'],
             'authority_id': authority, 'authorization_file': str(snapshot),
             'credential_file': str(self.root / 'credential.jwt'), 'expires_at': self.expires,
-            'assistance': 'disabled' if self.first_use and not self.mode == 'live' else 'hints', 'exercise_id': profile.exercise, 'exercise_version': profile.task,
+            'assistance': 'disabled' if self.first_use and self.mode != 'live' else 'hints', 'exercise_id': profile.exercise, 'exercise_version': profile.task,
             'assignment_title': 'INFO 511 NHANES — synthetic instructor test'}
         private(self.root / 'profile.json', self.profile)
         private(self.root / 'execution.key', Fernet.generate_key())

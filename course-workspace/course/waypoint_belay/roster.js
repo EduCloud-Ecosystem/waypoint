@@ -38,6 +38,7 @@
     if (profile.course_question) {
       el('question').value = profile.course_question;
       el('question').readOnly = true;
+      document.querySelector('label[for="question"]').textContent = 'Course question';
       el('context-details').querySelector('summary').textContent = 'Course example and sharing';
       el('capture').textContent = 'Choose Review course example to see the code supplied with this question.';
       if (!profile.local_hint_demo) el('provider-notice').textContent = 'Ask for a hint sends the supplied example and question through OpenRouter to OpenAI. Your notebook and predictions stay here.';
@@ -110,7 +111,9 @@
     if (!el('question').value.trim()) {el('status').textContent = 'Add your prediction and question first.'; el('question').focus(); return;}
     busy = true; enabled(); el('status').textContent = 'Waiting for a hint…';
     if (embedded) tellNotebook('belay-notebook-state', {busy:true});
-    el('capture').textContent = 'Code selected for this help request. Saving and submission are separate.';
+    el('capture').textContent = profile.course_question
+      ? 'The course example is selected for this request.'
+      : 'Code selected for this help request. Saving and submission are separate.';
     try {
       const turn = await jobs.ask(base, '/api/sol/jobs', {exercise_id:profile.exercise_id,
         event:'chat',mode:'study',stance:'peer',source:el('source').value,

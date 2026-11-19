@@ -65,7 +65,7 @@
       frame = document.createElement('iframe'); frame.title = 'Course tutor';
       frame.src = base + '#belay-notebook=' + nonce;
       node.append(frame); panel = new Widget({node}); panel.id = 'waypoint-belay-panel';
-      panel.title.label = 'Tutor'; panel.title.caption = 'Tutor: review a selected cell, then ask for help';
+      panel.title.label = 'Tutor'; panel.title.caption = 'Tutor: review your question and request a hint';
       panel.title.closable = false;
       if (action) panel.onActivateRequest = () => {
         if (narrow.matches) app.shell.collapseLeft();
@@ -178,8 +178,8 @@
       ['Run and Save', 'Run executes the selected cell. Save writes your notebook to your workspace. Saving and submitting are separate actions.', () => tracker.currentWidget?.toolbar?.node],
       ['Your files', 'Use the file-browser tab on the left to open your notebook, data and saved results. Return to the notebook tab to keep working.', () => document.querySelector('.jp-SideBar.jp-mod-left [data-id="filebrowser"]')],
       ['Lecture notes and the guide', 'Use the Lecture notes tab on the right for the lesson. Its ☰ Guide menu holds the reading notes, NHANES diagram and Show me highlights.', () => sideTab('waypoint-lecture-panel')],
-      ['Optional tutoring', 'Use the Tutor tab on the right, then Review course example. Review the supplied code and question. Confirm your predictions, then choose Ask for a hint if you want help.', () => sideTab('waypoint-belay-panel')],
-      ['Submit when ready', 'Save first, then use Submit saved files to Cairn at the top. Preview the files, confirm and keep your receipt. Appearance at the top switches light and dark themes.', () => document.querySelector('#waypoint-cairn-link')]
+      ['Optional tutoring', 'When hints are enabled, open Tutor and choose Review course example. Confirm your predictions, then choose Ask for a hint. You can also finish without AI.', () => sideTab('waypoint-belay-panel')],
+      ['Submit when ready', 'Save first, then choose Submit work at the top. Preview the files, confirm and keep your receipt. Appearance at the top switches light and dark themes.', () => document.querySelector('#waypoint-cairn-link')]
     ];
     function position() {
       if (!card) return;
