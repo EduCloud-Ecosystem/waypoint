@@ -25,7 +25,7 @@ from backup import docker
 from homes import provision, inspect, run as xfs_run
 from public_course import render
 from deployment import read_environment, preflight
-from course_manifest import render_manifest, validate_manifest
+from course_manifest import discovery_issues, render_manifest, validate_manifest
 from smoke import change
 from cairn_journey import run, port, SOLUTION
 
@@ -263,7 +263,9 @@ class Notebook:
                     hub = self.session.get(self.origin+'/hub/login',timeout=timeout)
                     last_status['hub'] = hub.status_code
                     if hub.status_code == 200:
-                        assert discovery.json()['issuer'] == self.auth+'/realms/course'
+                        issues = discovery_issues(self.auth+'/realms/course', discovery.json())
+                        if issues:
+                            raise AssertionError('OIDC discovery mismatch: ' + ', '.join(i['field'] for i in issues))
                         return
             except requests.RequestException:
                 pass

@@ -7,6 +7,50 @@ These tools prepare a dedicated Linux worker. The current release is tested with
 synthetic accounts and disposable storage. It does not provision a paid host,
 install institutional credentials or enable a public service.
 
+## Where to set up INFO 511 campus sign-in
+
+1. **College IT or the pilot host operator** selects an approved Linux worker and
+   workspace name. DNS must send both the workspace name and its wildcard learner
+   subdomains to the HTTPS proxy. The certificate must cover both. AWS is one
+   possible host. DNS and certificates belong with the operator of that domain.
+2. **The identity operator** selects or operates a Keycloak realm, registers the
+   confidential Waypoint client, and supplies its public issuer and client ID.
+   Register exactly `https://<workspace-host>/hub/oauth_callback` as the redirect.
+   To connect NetID, have the realm operator register the Keycloak SAML broker
+   with campus IAM. The SAML reply address comes from that broker's metadata.
+   The JupyterHub callback is for the OIDC client. See the
+   [University of Arizona Shibboleth registration guide](https://shib-support.iam.arizona.edu/)
+   and [Keycloak realm discovery documentation](https://www.keycloak.org/securing-apps/oidc-layers).
+3. **The instructor and course operator** agree on two synthetic test accounts,
+   their stable realm subjects and their approved course roster bindings. Keep
+   roster values and credentials in private operator configuration. Repeat the
+   own-work, peer denial and active-removal checks against the selected host and
+   verify notebook, tutor and submission access individually.
+
+Before installing the client secret, the operator can check the public realm
+description against the private course manifest from this directory. Substitute
+the approved issuer and use absolute paths to the manifest and discovery file.
+
+```sh
+(
+set -eu
+umask 077
+issuer=https://auth.example.edu/realms/educloud
+manifest=/etc/educloud/course-manifest.json
+discovery=$(mktemp "$PWD/discovery.XXXXXXXX")
+trap 'rm -f -- "$discovery"' EXIT
+curl --fail --silent --show-error --proto '=https' --max-time 10 --max-filesize 262144 \
+  "$issuer/.well-known/openid-configuration" --output "$discovery"
+python3 course_manifest.py check --manifest "$manifest" --discovery "$discovery"
+)
+```
+
+The check compares the realm, the three Hub endpoint URLs, authorization-code
+support and advertised S256 PKCE. Missing metadata leaves the configuration
+unverified. Live client registration, learner login, roster enforcement and
+revocation still require the hosted rehearsal. The local instructor walkthrough
+uses disposable Forgejo identities and can run before either campus owner is named.
+
 ## Hard home quotas
 
 An administrator must supply an **empty, dedicated XFS filesystem mounted with
