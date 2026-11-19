@@ -39,6 +39,7 @@ class NhanesTutoring:
         self.root = root / 'tutoring'; self.root.mkdir(mode=0o700)
         self.live = None
         self.inputs = notebook_inputs('nhanes-v1')
+        self.first_use = args.first_use
         self.mode = args.tutor_mode
         self.course_profile = profile
         self.api = 'http://127.0.0.1:' + str(port())
@@ -81,7 +82,7 @@ class NhanesTutoring:
             'learner_id': member['learner_id'], 'grant_generation': member['grant_generation'],
             'authority_id': authority, 'authorization_file': str(snapshot),
             'credential_file': str(self.root / 'credential.jwt'), 'expires_at': self.expires,
-            'assistance': 'hints', 'exercise_id': profile.exercise, 'exercise_version': profile.task,
+            'assistance': 'disabled' if self.first_use and not self.mode == 'live' else 'hints', 'exercise_id': profile.exercise, 'exercise_version': profile.task,
             'assignment_title': 'INFO 511 NHANES — synthetic instructor test'}
         private(self.root / 'profile.json', self.profile)
         private(self.root / 'execution.key', Fernet.generate_key())
@@ -125,6 +126,10 @@ class NhanesTutoring:
             WORKSPACE_BELAY_ASSET_ROOT=str(args.belay / 'frontend'), WORKSPACE_BELAY_LEARNER_ID=member['learner_id'],
             WORKSPACE_BELAY_ROSTER_PROFILE=str(self.root / 'profile.json'))
 
+        if self.first_use:
+            self.environment.update(WORKSPACE_INFO511_FIRST_USE='1', WORKSPACE_INFO511_EXAMPLE=json.dumps({
+                'source': self.inputs['source'], 'question': self.inputs['question']}))
+
     def issue(self, expired=False):
         now = int(time.time())
         private(self.root / 'credential.jwt', jwt.encode({'sub': 'synthetic-alice',
@@ -138,6 +143,15 @@ class NhanesTutoring:
                     for name in ('control_jobs', 'control_attempts')}
 
     def open_help(self, page, preserve_completed_work=False):
+        if self.first_use:
+            from studio_navigation import side_tab
+            side_tab(page, 'belay').click()
+            page.get_by_role('button', name='Review course example', exact=True).click()
+            help_page = page.frame_locator('iframe[title="Course tutor"]')
+            expect(help_page.locator('#source')).to_have_value(self.inputs['source'])
+            expect(help_page.locator('#question')).to_have_value(self.inputs['question'])
+            assert help_page.locator('#question').get_attribute('readonly') is not None
+            return help_page
         cell = page.locator('.jp-Notebook .jp-CodeCell').first.locator('.cm-content')
         original = None
         if preserve_completed_work:

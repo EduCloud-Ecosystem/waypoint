@@ -217,6 +217,8 @@ def _load_jupyter_server_extension(serverapp):
         return
     base = url_path_join(serverapp.web_app.settings['base_url'], 'belay')
     studio = studio_enabled(config, os.environ)
+    first_use = studio and os.environ.get('WORKSPACE_INFO511_FIRST_USE') == '1'
+    example = json.loads(os.environ['WORKSPACE_INFO511_EXAMPLE']) if first_use else None
 
     class BelayHandler(APIHandler):
         def set_default_headers(self):
@@ -262,7 +264,15 @@ def _load_jupyter_server_extension(serverapp):
             if resource == 'config':
                 self.local(api=True)
                 return self.finish({'version': 1, 'base': base, 'max_source_bytes': 8192,
-                                    'notebook_panel': studio})
+                                    'notebook_panel': studio, 'lecture_navigation': first_use,
+                                    'visual_guidance': first_use, 'course_example_source': example['source'] if first_use else None})
+            if resource in ('lecture.html', 'lecture.css', 'nhanes-diagram.html'):
+                if not first_use:
+                    raise HTTPError(404)
+                self.set_header('Content-Type', 'text/html; charset=utf-8' if resource.endswith('.html') else 'text/css')
+                self.set_header('Content-Security-Policy', "default-src 'none'; style-src 'self'; base-uri 'none'; frame-ancestors 'self'; form-action 'none'")
+                self.set_header('X-Frame-Options', 'SAMEORIGIN')
+                return RequestHandler.finish(self, (Path(__file__).parent / resource).read_bytes())
             if config.roster_profile and resource in ('studio.css', 'studio-theme.css', 'studio-theme.js'):
                 self.set_header('Content-Type', 'text/javascript' if resource.endswith('.js') else 'text/css')
                 return RequestHandler.finish(self, (Path(__file__).parent / resource).read_bytes())
@@ -290,6 +300,7 @@ def _load_jupyter_server_extension(serverapp):
                 return self.finish({'exercise_id':exercise, 'exercise_version':version, 'expires_at':expiry,
                     'available':available, 'assistance':p['assistance'], 'title':p['assignment_title'], 'base':base,
                     'notebook_panel':studio,
+                    'course_question':example['question'] if first_use else None,
                     'local_hint_demo':studio and os.environ.get('WORKSPACE_BELAY_HINT_MODE') == 'stub',
                     'notebook':serverapp.web_app.settings['base_url'] + 'lab',
                     'submission':serverapp.web_app.settings['base_url'] + 'cairn/'})

@@ -6,9 +6,12 @@ export PATH="/Users/gregchism/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.26.11.d
 export GOTOOLCHAIN=local
 cd -- "${0:A:h:h}"
 mode="${1:---live}"
-if [[ "$mode" != --check && "$mode" != --stub && "$mode" != --verify-stub && "$mode" != --learner && "$mode" != --sign-in && "$mode" != --sign-in-hints && "$mode" != --verify-learner-hints && "$mode" != --verify-learner && "$mode" != --verify-live && "$mode" != --live ]]; then
-  print -u2 'Use --check, --stub, --verify-stub, --learner, --sign-in, --sign-in-hints, --verify-learner, --verify-learner-hints, --verify-live, or --live.'; exit 2
-fi
+live_mode=false
+case "$mode" in
+  --live|--verify-live|--check|--first-use|--verify-first-use) live_mode=true ;;
+  --stub|--verify-stub|--learner|--sign-in|--sign-in-hints|--verify-learner-hints|--verify-learner|--first-use-offline|--verify-first-use-offline) ;;
+  *) print -u2 'Unknown INFO 511 launcher mode. See NHANES-LIVE-TESTING.md.'; exit 2 ;;
+esac
 driver=/Users/gregchism/.codex/worktrees/classroom-live-notebook/waypoint/.venv/bin/python
 kernel=/Users/gregchism/.codex/worktrees/waypoint-nhanes-qualification/waypoint/output/nhanes-qualification-v1/kernel-env/bin/python
 cairn=/Users/gregchism/dev/.educloud-worktrees/cairn-studio-classic-v1
@@ -17,7 +20,7 @@ portage=/Users/gregchism/.codex/worktrees/portage-openbao-trial/portage
 keyfile=/Users/gregchism/dev/.educloud-worktrees/portage-system-one-shadow-pilot-v1/.qualification/openrouter/.env
 belay_pin=c5a27073e74b9eeb7ab697190915378b50132883
 cairn_pin=533c16a414b9fef1979d0de783b3436f31dd03a7
-if [[ "$mode" == --live || "$mode" == --verify-live || "$mode" == --check ]]; then
+if [[ "$live_mode" == true ]]; then
   belay=/Users/gregchism/dev/.educloud-worktrees/belay-nhanes-source-check
   belay_pin=fc3e0cc7fe04137c8ff9fe57d194aa2b9a9acc81
   cairn="${NHANES_LIVE_CAIRN_CHECKOUT:-$cairn}"
@@ -26,7 +29,7 @@ fi
 [[ -x "$driver" && -x "$kernel" && -d "$cairn" && -d "$belay" ]] || { print -u2 'A qualified local checkout or environment is missing. See NHANES-LIVE-TESTING.md.'; exit 1; }
 [[ -z "$(git status --porcelain --untracked-files=no)" ]] || { print -u2 'Commit the Waypoint source before starting a qualified window.'; exit 1; }
 [[ "$(git -C "$cairn" rev-parse HEAD)" == "$cairn_pin" && "$(git -C "$belay" rev-parse HEAD)" == "$belay_pin" ]] || { print -u2 'The component pins for this mode do not match. Restore the reviewed source revisions before retrying.'; exit 1; }
-if [[ "$mode" == --live || "$mode" == --verify-live || "$mode" == --check ]]; then
+if [[ "$live_mode" == true ]]; then
   [[ -d "$portage" && "$(git -C "$portage" rev-parse HEAD)" == 4f7ac0d3e839012664d4b8272c8446376efc8f1b ]] || { print -u2 'The live Portage checkout must match the reviewed revision.'; exit 1; }
   [[ -f "$keyfile" && "$(stat -f %Lp "$keyfile")" == 600 ]] || { print -u2 'The existing private provider key file is missing or has incorrect permissions.'; exit 1; }
 fi
@@ -37,7 +40,21 @@ stamp=$(date -u +%Y%m%dT%H%M%SZ)
 out="output/nhanes-instructor-$stamp-$$"
 mkdir -p output
 args=(--tutor-mode stub --operator-review-seconds 120)
-if [[ "$mode" == --live ]]; then
+if [[ "$mode" == --first-use* || "$mode" == --verify-first-use* ]]; then
+  args=(--first-use)
+  if [[ "$mode" == --verify-* ]]; then
+    args+=(--verify-learner-starter)
+  else
+    args+=(--manual-sign-in --learner-review-seconds 540)
+  fi
+  if [[ "$live_mode" == true ]]; then
+    args+=(--tutor-mode live --live-portage "$portage" --env-file "$keyfile" --execute-approved)
+    print 'Live hints use the prepared example only. Limit: 7 requests and $0.175 per session.'
+  else
+    args+=(--tutor-mode stub)
+    print 'Offline session: reading notes, tour and submission are available. AI hints are disabled.'
+  fi
+elif [[ "$mode" == --live ]]; then
   args=(--tutor-mode live --live-portage "$portage" --env-file "$keyfile" --execute-approved --live-review-seconds 240)
 elif [[ "$mode" == --verify-live ]]; then
   args=(--tutor-mode live --live-portage "$portage" --env-file "$keyfile" --execute-approved)

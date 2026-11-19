@@ -9,7 +9,20 @@ body[data-educloud-studio] .educloud-action-status{position:absolute;width:1px;h
 body[data-educloud-studio] #waypoint-cairn-link{padding:0 8px!important;font-weight:500}
 body[data-educloud-studio] #waypoint-belay-panel{min-width:340px}
 body[data-educloud-studio] .educloud-tutor-panel{display:flex;flex-direction:column;background:var(--jp-layout-color0)}
-body[data-educloud-studio] .educloud-tutor-panel iframe{display:block;width:100%;height:100%;flex:1;border:0;background:var(--jp-layout-color0)}
+body[data-educloud-studio] .educloud-tutor-panel iframe{display:block;width:100%;min-height:0;flex:1;border:0;background:var(--jp-layout-color0)}
+body[data-educloud-studio] #waypoint-lecture-panel{min-width:300px}
+body[data-educloud-studio] .educloud-lecture-panel{display:flex;flex-direction:column;background:var(--jp-layout-color0)}
+body[data-educloud-studio] .educloud-lecture-panel iframe{display:block;width:100%;min-height:0;flex:1;border:0}
+body[data-educloud-studio] .educloud-lecture-controls{display:flex;flex-wrap:wrap;gap:8px;padding:8px;border-bottom:1px solid var(--jp-border-color2)}
+body[data-educloud-studio] .educloud-lecture-controls button{font:inherit;min-height:36px;padding:4px 8px;color:var(--studio-ink);background:var(--studio-paper);border:1px solid var(--studio-control);border-radius:3px;cursor:pointer}
+body[data-educloud-studio] .educloud-lecture-controls button:focus-visible{outline:3px solid var(--studio-focus);outline-offset:2px}
+@media(max-width:600px){
+  body[data-educloud-studio] #jp-top-panel:has(#waypoint-lecture-open){min-height:calc(var(--jp-private-menubar-height,28px) + 112px)}
+  body[data-educloud-studio] #waypoint-lecture-panel{min-width:0}
+  body[data-educloud-studio] #jp-right-stack:has(> #waypoint-lecture-panel:not(.lm-mod-hidden)):not(.lm-mod-hidden),
+  body[data-educloud-studio] #jp-right-stack:has(> #waypoint-lecture-panel:not(.lm-mod-hidden)):not(.lm-mod-hidden) > #waypoint-lecture-panel{inset:0!important;width:auto!important;height:auto!important;min-width:0!important;z-index:2}
+  body[data-educloud-studio] #jp-main-split-panel:has(> #jp-right-stack:not(.lm-mod-hidden) > #waypoint-lecture-panel:not(.lm-mod-hidden)) > :is(#jp-main-dock-panel,#jp-left-stack,.lm-SplitPanel-handle){visibility:hidden}
+}
 @media(max-width:900px){body[data-educloud-studio] .educloud-course{display:none}body[data-educloud-studio] #waypoint-belay-panel{min-width:300px}}
 body[data-educloud-studio] .educloud-action-error{position:absolute;right:16px;top:38px;z-index:1000;max-width:340px;background:var(--jp-layout-color0);color:var(--jp-ui-font-color1);border:1px solid #ab0520;padding:8px;font-size:12px}
 
@@ -73,6 +86,27 @@ body[data-educloud-studio] .educloud-action-error{position:absolute;right:16px;t
 }
 
 /* Studio Classic keeps the file tree and native notebook, with one theme control. */
+.educloud-guide{padding:10px;color:var(--studio-ink);font:13px/1.5 system-ui,sans-serif;display:flex;flex-wrap:wrap;gap:6px;border-bottom:1px solid var(--studio-line)}
+.educloud-guide strong,.educloud-guide p{flex-basis:100%;margin:0}
+.educloud-lecture-menu[hidden]{display:none}
+.educloud-lecture-menu{position:absolute;top:53px;left:8px;right:8px;max-height:calc(100% - 64px);overflow:auto;z-index:5;background:var(--studio-paper);color:var(--studio-ink);border:1px solid var(--studio-control);box-shadow:0 4px 14px #0003}
+.educloud-tutor-controls{display:flex;flex-direction:column;gap:6px;padding:8px;border-bottom:1px solid var(--studio-line)}
+body[data-educloud-studio] .educloud-tutor-controls :is(.educloud-action-status,.educloud-action-error){position:static;width:auto;height:auto;clip-path:none;white-space:normal;font:12px/1.4 system-ui,sans-serif}
+.educloud-tutor-controls button,#waypoint-studio-welcome button{font:inherit;padding:5px 8px;min-height:36px;border:1px solid var(--studio-control);border-radius:3px;background:var(--studio-paper);color:var(--studio-ink);cursor:pointer}
+.educloud-tutor-controls button:focus-visible,#waypoint-studio-welcome button:focus-visible{outline:3px solid var(--studio-focus);outline-offset:2px}
+#waypoint-studio-welcome{position:fixed;top:100px;right:48px;width:340px;max-width:calc(100vw - 64px);max-height:calc(100vh - 132px);overflow:auto;box-sizing:border-box;padding:16px;border:2px solid var(--studio-focus);border-radius:6px;background:var(--studio-paper);color:var(--studio-ink);z-index:10004;box-shadow:0 4px 18px #0003;font:14px/1.5 system-ui,sans-serif}
+#waypoint-studio-welcome h2{font-size:16px;margin:0 0 8px}
+#waypoint-studio-welcome p{margin:0 0 12px}
+#waypoint-studio-welcome button{margin:4px 6px 0 0}
+.educloud-tour-ring{position:fixed;box-sizing:border-box;border:3px solid var(--studio-focus);pointer-events:none;z-index:10003;border-radius:3px}
+@media(max-width:600px){#waypoint-studio-welcome{top:150px;max-height:calc(100vh - 182px)}}
+.educloud-guide button,#waypoint-guide-tip button{font:inherit;padding:5px 8px;min-height:36px;border:1px solid var(--studio-control);border-radius:3px;background:var(--studio-paper);color:var(--studio-ink);cursor:pointer}
+.educloud-guide button:focus-visible,#waypoint-guide-tip button:focus-visible{outline:3px solid var(--studio-focus);outline-offset:2px}
+#waypoint-guide-ring{position:fixed;box-sizing:border-box;border:3px solid var(--studio-focus);outline:2px solid var(--studio-paper);outline-offset:1px;pointer-events:none;z-index:10001;border-radius:3px}
+#waypoint-guide-tip{position:fixed;bottom:32px;right:16px;box-sizing:border-box;width:340px;max-width:calc(100vw - 32px);padding:12px;border:2px solid var(--studio-focus);border-radius:4px;background:var(--studio-paper);color:var(--studio-ink);z-index:10002;font:14px/1.5 system-ui,sans-serif}
+#waypoint-guide-tip p{margin:0 0 10px}
+#waypoint-guide-tip button{margin-right:8px}
+@media(forced-colors:active){#waypoint-guide-ring{border-color:Highlight;outline-color:Canvas}#waypoint-guide-tip{border-color:Highlight}}
 body[data-educloud-studio] #jp-top-panel{border-top:2px solid #ab0520}
 body[data-educloud-studio] .studio-appearance{margin:0;gap:5px}
 body[data-educloud-studio] .studio-appearance select{padding:3px 5px;min-height:28px;font-size:12px}
