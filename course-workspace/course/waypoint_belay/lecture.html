@@ -1,0 +1,28 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: Apache-2.0
+     Lesson text: CC-BY-4.0, EduCloud contributors, 2026.
+     Reading companion based on the distributed assignment README. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>NHANES: reading a joined dataset</title>
+  <link rel="stylesheet" href="studio-theme.css">
+  <link rel="stylesheet" href="lecture.css">
+</head>
+<body>
+  <a class="skip" href="#notes">Skip to reading notes</a>
+  <header><p class="eyebrow">INFO 511 · NHANES</p><h1>Reading a joined dataset</h1>
+    <p>Assignment notes for working with the demographics and blood pressure tables.</p></header>
+  <nav aria-label="Reading topics"><a href="#unit">One row</a><a href="#missing">Missing readings</a><a href="#claims">Interpreting results</a></nav>
+  <main id="notes" tabindex="-1">
+    <section><h2 id="unit" tabindex="-1">What does one row represent?</h2>
+      <p>Run the first code cell and inspect both tables. Find the participant identifier, SEQN, in each. Before joining, write down the columns you expect and what one row of your result will represent.</p></section>
+    <section><h2 id="missing" tabindex="-1">Missing readings</h2>
+      <p>A blank measurement and a participant absent from the BPXO table are different cases. What evidence in the original tables would let you tell them apart?</p></section>
+    <section><h2 id="claims" tabindex="-1">What the extract can tell you</h2>
+      <p>These 64 participants were selected for this exercise. Describe what you observe in the extract. National estimates need a different sampling and analysis plan.</p>
+      <p>After checking your work, write your explanation and assistance declaration. Save the notebook and both Markdown files before previewing the four files in Cairn.</p></section>
+  </main><footer>Adapted from the INFO 511 NHANES assignment. Full instructions are in README.md in your workspace.</footer>
+</body></html>

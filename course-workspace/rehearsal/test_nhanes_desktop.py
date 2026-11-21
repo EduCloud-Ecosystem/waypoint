@@ -1,9 +1,55 @@
-"""No runtime: a receipt after restart must use a fresh authenticated session."""
+"""Offline controls for NHANES first use, manual sign-in and receipt recovery."""
+from pathlib import Path
+from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import Mock, patch
 from types import SimpleNamespace
 from cairn_journey import BrowserError, BrowserTimeout, Course, SignInNotStarted
 import nhanes_desktop as desktop
+
+
+class FirstUseControls(unittest.TestCase):
+    def setUp(self):
+        self.quiet = {'control_jobs': 0, 'control_attempts': 0}
+        self.tutor = Mock(live=None)
+        self.tutor.counts.return_value = self.quiet.copy()
+        workspace = TemporaryDirectory()
+        self.addCleanup(workspace.cleanup)
+        self.notebook = Path(workspace.name) / 'starter.ipynb'
+        self.original = b'{"cells": []}\n'
+        self.notebook.write_bytes(self.original)
+
+    def verify_navigation(self):
+        desktop.verify_passive_navigation(self.tutor, self.quiet, self.notebook, self.original)
+
+    def test_navigation_rejects_nonzero_counts_even_when_unchanged(self):
+        for key in self.quiet:
+            with self.subTest(key=key):
+                self.quiet[key] = 1
+                self.tutor.counts.return_value = self.quiet.copy()
+                with self.assertRaisesRegex(ValueError, 'zero tutor jobs and attempts'):
+                    self.verify_navigation()
+                self.quiet[key] = 0
+                with self.assertRaisesRegex(ValueError, 'zero tutor jobs and attempts'):
+                    self.verify_navigation()
+
+    def test_navigation_rejects_dispatch_with_zero_control_jobs(self):
+        self.tutor.live = Mock()
+        self.tutor.live.evidence.return_value = {'accounting': {'dispatch_claims': 1}}
+        with self.assertRaisesRegex(ValueError, 'zero provider dispatches'):
+            self.verify_navigation()
+
+    def test_navigation_rejects_changed_saved_bytes(self):
+        self.notebook.write_bytes(self.original + b'\n')
+        with self.assertRaisesRegex(ValueError, 'changed the saved starter notebook'):
+            self.verify_navigation()
+
+    def test_offline_completion_rejects_jobs_and_attempts_independently(self):
+        for key in self.quiet:
+            with self.subTest(key=key):
+                self.tutor.counts.return_value = dict(self.quiet, **{key: 1})
+                with self.assertRaisesRegex(ValueError, 'offline completion'):
+                    desktop.verify_offline_completion(self.tutor)
 
 
 class ManualSignInTests(unittest.TestCase):
