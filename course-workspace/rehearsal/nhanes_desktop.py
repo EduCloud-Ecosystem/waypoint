@@ -34,6 +34,20 @@ LIVE_BELAY_PIN = 'fc3e0cc7fe04137c8ff9fe57d194aa2b9a9acc81'
 STUB_CAIRN_PIN = '533c16a414b9fef1979d0de783b3436f31dd03a7'
 
 
+def verify_passive_navigation(tutor, initial_counts, notebook_path, initial_bytes):
+    if not (tutor.counts() == initial_counts == {'control_jobs': 0, 'control_attempts': 0}):
+        raise ValueError('tour and notes require zero tutor jobs and attempts before and after navigation')
+    if tutor.live and tutor.live.evidence()['accounting']['dispatch_claims'] != 0:
+        raise ValueError('tour and notes require zero provider dispatches')
+    if notebook_path.read_bytes() != initial_bytes:
+        raise ValueError('tour or notes changed the saved starter notebook')
+
+
+def verify_offline_completion(tutor):
+    if tutor.counts() != {'control_jobs': 0, 'control_attempts': 0}:
+        raise ValueError('offline completion recorded a tutor job or attempt')
+
+
 def restart_receipt(course, browser, learner, submission, receipt):
     """Restart invalidates Cairn sessions: authenticate again before readback."""
     course.restart()
@@ -239,11 +253,10 @@ def main():
                 if args.first_use and args.verify_learner_starter:
                     from studio_navigation import verify_studio_navigation
                     before = tutor.counts()
-                    starter_bytes = (work / NHANES.files[0]).read_bytes()
+                    starter_path = work / NHANES.files[0]
+                    starter_bytes = starter_path.read_bytes()
                     report['first_use'] = verify_studio_navigation(page, root)
-                    assert tutor.counts() == before == {'control_jobs': 0, 'control_attempts': 0}
-                    if tutor.live: assert tutor.live.evidence()['accounting']['dispatch_claims'] == 0
-                    assert (work / NHANES.files[0]).read_bytes() == starter_bytes
+                    verify_passive_navigation(tutor, before, starter_path, starter_bytes)
                     report['passed'].append('tour-and-notes-without-tutor-requests-or-notebook-edits')
                 if args.learner_review_seconds:
                     expect(page.get_by_role('heading', name='Pause and recall', level=2)).to_be_visible()
@@ -390,7 +403,7 @@ def main():
                 restart_receipt(course,browser,alice,item['submission_id'],receipt)
                 report['passed'].append('receipt-persists-after-restart')
                 if offline_studio:
-                    assert tutor.counts() == {'control_jobs': 0, 'control_attempts': 0}
+                    verify_offline_completion(tutor)
                     report['passed'].append('guided-starter-completed-without-requesting-a-hint')
                 if args.operator_review_seconds:
                     if tutor:
