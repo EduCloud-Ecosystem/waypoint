@@ -47,7 +47,9 @@ def allocation_for_host(cpu, memory, *, profile_cpus=None):
     elif cpu == 5:
         name, minimum, hub, learner, central, worker = 'five-cpu-remote', 5, .75, .2, .5, .5
     else:
-        name, minimum, hub, learner, central, worker = 'four-cpu-remote', 4, .5, .1, .5, .5
+        # Keep two CPUs for the five control processes. A cold Python/R
+        # notebook must also be able to start within the Hub's HTTP deadline.
+        name, minimum, hub, learner, central, worker = 'four-cpu-remote', 4, .4, .25, .5, .5
     guardian = .25
     controls = round(central + 2 * worker + 2 * guardian, 6)
     total = round(3 * (hub + learner) + controls, 6)

@@ -130,17 +130,17 @@ service itself has neither a Docker socket nor course-home mounts. Synthetic
 coursework is copied once to an empty stopped receiver using the existing archive
 validation helper; this is local staging, not a network backup transport.
 
-The v4 rehearsal selects a fixed fixture profile from the verified daemon CPU
+The v5 rehearsal selects a fixed fixture profile from the verified daemon CPU
 count. The total below counts all three Hub/learner pairs and all five control
 services, including the stopped replacement endpoint's full allowance.
 An optional `--profile-cpus 4` (also 5, 6 or 8) exercises a smaller supported
 profile on a larger daemon. The requested profile must fit the actual daemon;
-the v4 report records `profile_cpus` separately from actual host CPU/memory.
+the v5 report records `profile_cpus` separately from actual host CPU/memory.
 This tests the service caps, not isolation on a physically smaller machine.
 
 | Daemon CPUs | Profile | Each Hub | Each learner | Central | Each worker | Each Guardian | Total caps |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 4 | four-cpu-remote | 0.5 | 0.1 | 0.5 | 0.5 | 0.25 | 3.8 |
+| 4 | four-cpu-remote | 0.4 | 0.25 | 0.5 | 0.5 | 0.25 | 3.95 |
 | 5 | five-cpu-remote | 0.75 | 0.2 | 0.5 | 0.5 | 0.25 | 4.85 |
 | 6–7 | six-cpu-remote | 1 | 0.25 | 0.5 | 0.5 | 0.25 | 5.75 |
 | 8+ | eight-cpu-remote | 1 | 0.25 | 1 | 0.75 | 0.25 | 6.75 |
@@ -154,15 +154,18 @@ service and Guardian plus half the central service (one CPU per worker), while
 the fixture checks the complete actual cap total against the daemon before
 bootstrap. These local views must not be added together and presented as a
 shared-host ownership capacity proof: for example, four-CPU logical course
-reservations plus the global controls would total 5.3 CPUs, despite actual caps
-totaling 3.8. At eight CPUs and above, the existing per-worker conservative
+reservations plus the global controls would total 5.75 CPUs, despite actual caps
+totaling 3.95. At eight CPUs and above, the existing per-worker conservative
 control reserve and actual caps remain unchanged.
 
 This bounded one-daemon experiment changes neither production allocation nor
 heartbeat, RPC, or failure-detection deadlines. It tests a control-service
 resource hypothesis; it does not establish the cause of earlier kernel 403s or
-claim that the prior failures are resolved. Older v2/v3 reports retain their
-historical profiles and are not relabeled as v4 evidence. Other rehearsals keep
+claim that the prior failures are resolved. The first hosted four-CPU v4 attempt timed out waiting for notebook contents. Its
+unchanged retry passed. The v5 four-CPU profile gives learners 0.25 CPU during
+cold startup, budgets 0.4 CPU per Hub, and retains two CPUs for control services.
+The 120-second Hub HTTP deadline, 180-second contents check, and all 17 phases
+are unchanged. Validate historical reports with their recorded source revision. Other rehearsals keep
 their existing presets. A passing run does not establish capacity for another
 profile or for a classroom. Cleanup verifies immutable
 container identities and removes control processes before learners, so active
