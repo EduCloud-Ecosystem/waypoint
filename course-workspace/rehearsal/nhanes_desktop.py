@@ -306,7 +306,7 @@ def main():
                     if cell['cell_type']!='code':continue
                     widget=widgets.nth(index);editor=widget.locator('.cm-content')
                     editor.fill(authored[cell['id']]);editor.click()
-                    page.get_by_role('button',name='Run this cell and advance (⇧ ⏎)',exact=True).click()
+                    page.get_by_role('button', name='Run this cell and advance').click()
                     expect(widget.locator('.jp-InputPrompt')).to_have_text(__import__('re').compile(r'\[\s*\d+\s*\]\s*:'),timeout=60000)
                     expect(page.get_by_role('button',name='Python 3 (ipykernel) | Idle',exact=True)).to_be_visible(timeout=60000)
                 page.keyboard.press('ControlOrMeta+s')
