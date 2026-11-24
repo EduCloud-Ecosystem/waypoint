@@ -10,7 +10,11 @@ from notebook import Notebook
 
 
 def response(status, issuer=None):
-    return SimpleNamespace(status_code=status,json=lambda:{'issuer':issuer})
+    prefix = (issuer or '') + '/protocol/openid-connect/'
+    document = {'issuer': issuer, 'authorization_endpoint': prefix + 'auth', 'token_endpoint': prefix + 'token',
+                'userinfo_endpoint': prefix + 'userinfo', 'response_types_supported': ['code'],
+                'code_challenge_methods_supported': ['S256']}
+    return SimpleNamespace(status_code=status, json=lambda:document)
 
 
 class NotebookReadinessTests(unittest.TestCase):

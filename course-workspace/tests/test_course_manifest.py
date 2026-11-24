@@ -47,6 +47,36 @@ class CourseManifestTests(unittest.TestCase):
             'owners': {'support': 'Synthetic support', 'restore': 'Synthetic restore'},
         }
 
+    def test_cli_checks_only_advertised_hub_settings_without_echoing_metadata(self):
+        issuer = self.manifest['identity']['issuer']
+        prefix = issuer + '/protocol/openid-connect/'
+        document = {'issuer': issuer, 'authorization_endpoint': prefix + 'auth', 'token_endpoint': prefix + 'token',
+                    'userinfo_endpoint': prefix + 'userinfo', 'response_types_supported': ['code'],
+                    'code_challenge_methods_supported': ['plain', 'S256']}
+        manifest = self.root / 'manifest.json'
+        manifest.write_text(json.dumps(self.manifest))
+        discovery = self.root / 'discovery.json'
+
+        def check(raw):
+            discovery.write_text(raw)
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                status = main(['check', '--manifest', str(manifest), '--discovery', str(discovery)])
+            self.assertNotIn('private-sentinel', output.getvalue())
+            result = json.loads(output.getvalue())
+            self.assertEqual(result['scope'], 'offline-configuration-and-discovery-check')
+            return status, [i['field'] for i in result['issues']]
+
+        self.assertEqual(check(json.dumps(document)), (0, []))
+        for key, value in [('issuer', issuer + '/other'), ('authorization_endpoint', prefix + 'private-sentinel'),
+                           ('token_endpoint', None), ('userinfo_endpoint', prefix + 'wrong'),
+                           ('response_types_supported', ['token']), ('code_challenge_methods_supported', 'S256')]:
+            with self.subTest(key=key):
+                self.assertEqual(check(json.dumps(dict(document, **{key:value}))), (1, ['discovery.' + key]))
+        del document['code_challenge_methods_supported']
+        self.assertEqual(check(json.dumps(document)), (1, ['discovery.code_challenge_methods_supported']))
+        self.assertEqual(check('{"issuer":1,"issuer":2}'), (1, ['discovery']))
+
     def tearDown(self):
         self.temporary.cleanup()
 

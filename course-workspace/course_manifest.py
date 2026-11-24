@@ -52,6 +52,8 @@ GUIDANCE = {
     'secret': 'Use an owner-only regular secret file with a bounded literal value.',
     'output': 'Use a new canonical output directory under an existing owner-controlled parent.',
     'parse': 'Supply a bounded regular UTF-8 JSON object with unique fields.',
+    'endpoint': 'The supplied discovery field must match the endpoint configured on the Hub.',
+    'capability': 'The supplied discovery document must advertise the required sign-in capability.',
     'render': 'Inspect private local configuration; rendering failed without accepted output.',
 }
 
@@ -304,7 +306,7 @@ def _unique_object(pairs):
     return value
 
 
-def load_manifest(path):
+def load_manifest(path, *, field='$'):
     try:
         value = json.loads(_read_regular(Path(path), MAX_MANIFEST_BYTES), object_pairs_hook=_unique_object,
                            parse_constant=lambda _: (_ for _ in ()).throw(ValueError('invalid_constant')))
@@ -312,7 +314,23 @@ def load_manifest(path):
             raise ValueError('invalid_object')
         return value
     except (OSError, ValueError, UnicodeError, RecursionError):
-        raise ManifestError([issue('$', 'parse')]) from None
+        raise ManifestError([issue(field, 'parse')]) from None
+
+
+def discovery_issues(issuer, document):
+    """Compare operator-supplied realm metadata with the Hub's actual OIDC settings."""
+    if not isinstance(document, dict):
+        return [issue('discovery', 'parse')]
+    prefix = issuer + '/protocol/openid-connect/'
+    endpoints = {'issuer': issuer, 'authorization_endpoint': prefix + 'auth',
+                 'token_endpoint': prefix + 'token', 'userinfo_endpoint': prefix + 'userinfo'}
+    issues = [issue('discovery.' + key, 'endpoint') for key, url in endpoints.items()
+              if document.get(key) != url]
+    for key, required in [('response_types_supported', 'code'), ('code_challenge_methods_supported', 'S256')]:
+        values = document.get(key)
+        if not isinstance(values, list) or not all(isinstance(v, str) for v in values) or required not in values:
+            issues.append(issue('discovery.' + key, 'capability'))
+    return issues
 
 
 def validation_record(manifest, problems=None):
@@ -463,7 +481,11 @@ def main(argv=None):
     parser.add_argument('operation', choices=('check', 'render'))
     parser.add_argument('--manifest', type=Path, required=True)
     parser.add_argument('--output', type=Path)
+    parser.add_argument('--discovery', type=Path, help='check a saved public Keycloak realm discovery document')
     args = parser.parse_args(argv)
+    if args.discovery and args.operation != 'check':
+        parser.error('--discovery is supported with check only')
+    scope = 'offline-configuration-and-discovery-check' if args.discovery else 'offline-configuration-check'
     try:
         manifest = load_manifest(args.manifest)
         if args.operation == 'render':
@@ -477,11 +499,16 @@ def main(argv=None):
                     problems.append(issue('output', 'output'))
                 elif manifest['backup']['staging_dir'] != str(args.output):
                     problems.append(issue('backup.staging_dir', 'binding'))
+            if args.discovery and not problems:
+                document = load_manifest(args.discovery, field='discovery')
+                problems.extend(discovery_issues(manifest['identity']['issuer'], document))
             record = validation_record(manifest, problems)
+            if args.discovery:
+                record.update(scope=scope, limits=['Saved metadata only. TLS, client registration, login and roster enforcement require live checks.'])
         print(json.dumps(record, indent=2))
         return 1 if record['issues'] else 0
     except ManifestError as exc:
-        print(json.dumps({'version': 1, 'status': 'refused', 'scope': 'offline-configuration-check', 'issues': exc.issues}))
+        print(json.dumps({'version': 1, 'status': 'refused', 'scope': scope, 'issues': exc.issues}))
         return 1
 
 
