@@ -1,4 +1,5 @@
 """Credential replacement must refuse scope/candidate drift before Docker effects."""
+from contextlib import contextmanager
 from copy import deepcopy
 import json
 from pathlib import Path
@@ -138,6 +139,39 @@ class EnrollmentInstallTests(unittest.TestCase):
                 self.assertEqual(ready['release_at'], started + seconds)
                 self.assertEqual(ready['checked_at'], f.now)
                 self.assertEqual(ready['heartbeat_sha256'], fixture.digest(fixture._heartbeat(f.backend, 'course-main')))
+
+    def test_heartbeat_aging_during_lock_acquisition_waits_for_normal_renewal(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            (root / 'control').mkdir(mode=0o700)
+            f = RuntimeFixture(root)
+            fixture.write(root / 'runtime.json', f.config)
+            record = {'pid': 123, 'start_identity': 'a' * 64}
+            fixture.publish(root / 'control' / 'enrollment-holder-course-peer.json', record)
+            f.heartbeat('worker-one', 'course-peer')
+            f.now += 0.9
+            locks = f.backend.locks
+            sleeps = []
+
+            @contextmanager
+            def delayed_lock(endpoints, **options):
+                with locks(endpoints, **options):
+                    f.now += 0.2
+                    yield
+
+            def sleep(seconds):
+                sleeps.append(seconds)
+                if seconds == .05:
+                    self.assertFalse((root / 'control' / 'enrollment-lock-course-peer.json').exists())
+                    f.heartbeat('worker-one', 'course-peer')
+
+            with patch.object(fixture, 'DockerBackend', return_value=f.backend), patch.object(f.backend, 'locks', delayed_lock), \
+                    patch.object(fixture.os, 'getpid', return_value=123), patch.object(fixture, 'process_identity', return_value='a' * 64), \
+                    patch.object(fixture.time, 'sleep', side_effect=sleep):
+                fixture._hold_endpoint(root, 'course-peer', 13)
+            self.assertEqual(sleeps, [.05, 13])
+            marker = fixture._contention_marker(root, 'course-peer')
+            self.assertEqual(marker['checked_at'], fixture._heartbeat_time(fixture._heartbeat(f.backend, 'course-peer')))
 
     def test_holder_refuses_expired_future_or_invalid_normal_heartbeat_before_hold(self):
         for delta in (-1, 4):

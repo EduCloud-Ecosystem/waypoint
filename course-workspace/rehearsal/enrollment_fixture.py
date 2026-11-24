@@ -101,26 +101,23 @@ def _hold_endpoint(root, course, seconds):
         raise ValueError('fixture_contention_process_changed')
     deadline = time.monotonic() + 5
     while True:
-        original = _heartbeat(backend, course)
-        checked_at = _heartbeat_time(original)
-        age = backend.clock() - checked_at
-        if 0 <= age <= 1: break
-        if (not math.isfinite(age) or age < 0
-                or age > backend.config['guardians']['worker-one']['heartbeat_seconds']
-                or time.monotonic() >= deadline): raise ValueError('fixture_contention_heartbeat_stale')
-        time.sleep(.05)  # Readonly readiness: only the actual Guardian renews.
-    with backend.locks([('worker-one', course)]):
-        original = _heartbeat(backend, course)
-        checked_at = _heartbeat_time(original)
-        if not 0 <= backend.clock() - checked_at <= 1: raise ValueError('fixture_contention_heartbeat_stale')
-        started = time.monotonic()
-        ready = {'held': True, 'holder': record, 'seconds': seconds, 'started': started,
-            'release_at': started + seconds, 'heartbeat_sha256': digest(original), 'checked_at': checked_at}
-        publish(marker, ready)
-        time.sleep(seconds)
-        # Publish release intent BEFORE unlocking; stale READY cannot prove a
-        # hold after exit. Exterior recovery additionally requires holder exit.
-        publish(root / 'control' / ('enrollment-release-' + course + '.json'), dict(ready, held=False))
+        with backend.locks([('worker-one', course)]):
+            original = _heartbeat(backend, course)
+            checked_at = _heartbeat_time(original)
+            age = backend.clock() - checked_at
+            started = time.monotonic()
+            if started >= deadline or not 0 <= age <= backend.config['guardians']['worker-one']['heartbeat_seconds']:
+                raise ValueError('fixture_contention_heartbeat_stale')
+            if age <= 1:
+                ready = {'held': True, 'holder': record, 'seconds': seconds, 'started': started,
+                    'release_at': started + seconds, 'heartbeat_sha256': digest(original), 'checked_at': checked_at}
+                publish(marker, ready)
+                time.sleep(seconds)
+                # Publish release intent before unlocking. Recovery also requires holder exit.
+                publish(root / 'control' / ('enrollment-release-' + course + '.json'), dict(ready, held=False))
+                return
+        # Allow the real Guardian to renew before sampling again under the lock.
+        time.sleep(.05)
 
 
 def _heartbeat_time(raw):
@@ -145,7 +142,10 @@ def _start_holder(root, course, seconds, *, monotonic=time.monotonic, sleep=time
     child.stdin.write(json.dumps({'course': course, 'seconds': seconds}).encode()); child.stdin.close()
     deadline = monotonic() + 10  # Initialization/readiness is outside the hold.
     while monotonic() < deadline:
-        if child.poll() is not None: raise ValueError('fixture_contention_holder_exited')
+        if child.poll() is not None:
+            failure = root / 'control' / ('enrollment-holder-failure-' + course + '.json')
+            code = read_record(failure)['code'] if failure.exists() else None
+            raise ValueError(code if code in CONTENTION_CODES else 'fixture_contention_holder_exited')
         if marker.exists(): return child
         sleep(.05)
     raise ValueError('fixture_contention_unavailable')
@@ -366,7 +366,15 @@ def _dispatch(root, action, payload):
     raise ValueError('fixture_enrollment_action_invalid')
 
 
-DIAGNOSTIC_CODES = frozenset({
+CONTENTION_CODES = frozenset({
+    'fixture_contention_heartbeat_changed', 'fixture_contention_heartbeat_invalid',
+    'fixture_contention_heartbeat_stale', 'fixture_contention_holder_exited',
+    'fixture_contention_marker_changed', 'fixture_contention_not_held',
+    'fixture_contention_probe_invalid', 'fixture_contention_process_changed',
+    'fixture_contention_reuse', 'fixture_contention_unavailable',
+    'fixture_contention_window_invalid', 'fixture_heartbeat_missing',
+})
+DIAGNOSTIC_CODES = CONTENTION_CODES | frozenset({
     'worker_enrollment_already_enrolled', 'worker_enrollment_binding_changed',
     'worker_enrollment_certificate_not_current', 'worker_enrollment_certificate_reuse',
     'worker_enrollment_clock_rollback', 'worker_enrollment_plan_consumed',
@@ -386,5 +394,10 @@ def dispatch(root, action, payload):
     try: return _dispatch(root, action, payload)
     except Exception as error:
         code = getattr(error, 'code', None)
-        write(root / 'enrollment-failure.json', {'code': code if isinstance(code, str) and code in DIAGNOSTIC_CODES else 'fixture_enrollment_refused'})
+        if isinstance(error, ValueError) and len(error.args) == 1 and isinstance(error.args[0], str) and error.args[0] in CONTENTION_CODES:
+            code = error.args[0]
+        record = {'code': code if isinstance(code, str) and code in DIAGNOSTIC_CODES else 'fixture_enrollment_refused'}
+        if action == 'enrollment-contention-hold' and payload.get('course') in ('course-main', 'course-peer'):
+            publish(root / 'control' / ('enrollment-holder-failure-' + payload['course'] + '.json'), record)
+        write(root / 'enrollment-failure.json', record)
         raise
