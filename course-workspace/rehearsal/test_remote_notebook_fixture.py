@@ -90,7 +90,7 @@ class FixtureTests(unittest.TestCase):
             self.assertEqual(fixture.allocation_for_host(cpu, 8 * 1024**3), expected)
 
     def test_lower_remote_profiles_keep_two_cpus_for_controls_without_changing_legacy(self):
-        expected = {4: ('four-cpu-remote', 4, .5, .1, 3.8), 5: ('five-cpu-remote', 5, .75, .2, 4.85),
+        expected = {4: ('four-cpu-remote', 4, .4, .25, 3.95), 5: ('five-cpu-remote', 5, .75, .2, 4.85),
             6: ('six-cpu-remote', 6, 1.0, .25, 5.75), 7: ('six-cpu-remote', 6, 1.0, .25, 5.75)}
         for cpu, (name, minimum, hub, learner, total) in expected.items():
             with self.subTest(cpu=cpu):
@@ -420,7 +420,7 @@ class ReportTests(unittest.TestCase):
             expected = name + '-' + suffix + '-hub'
             records[expected] = {'Name': '/' + expected, 'Id': format(index + 1, '064x'), 'Image': images['hub'],
                 'Config': {'Labels': {'educloud.workspace.instance': name + '-' + suffix, 'educloud.workspace.kind': 'hub'}},
-                'HostConfig': {'NanoCpus': 0, 'CpuPeriod': 100000, 'CpuQuota': 50000}}
+                'HostConfig': {'NanoCpus': 0, 'CpuPeriod': 100000, 'CpuQuota': 40000}}
         def inspect(expected): observed.append(expected); return records[expected]
         verifier.assert_hub_cpu_caps(name, images, 'b' * 32, allocation, inspect)
         self.assertEqual(observed, list(records))
@@ -429,7 +429,7 @@ class ReportTests(unittest.TestCase):
                 records[expected]['HostConfig']['CpuQuota'] = 100000
                 with self.assertRaisesRegex(ValueError, 'fixture_hub_cpu_unverified'):
                     verifier.assert_hub_cpu_caps(name, images, 'b' * 32, allocation, inspect)
-                records[expected]['HostConfig']['CpuQuota'] = 50000
+                records[expected]['HostConfig']['CpuQuota'] = 40000
         with self.assertRaisesRegex(ValueError, 'fixture_hub_cpu_unverified'):
             verifier.assert_hub_cpu_caps(name, images, 'b' * 32, allocation, lambda expected: records[next(reversed(records))])
         records[next(iter(records))]['Image'] = 'sha256:' + 'f' * 64
@@ -544,14 +544,18 @@ class ReportTests(unittest.TestCase):
         early['flags']['actual_python_r'] = True
         with self.assertRaises(ValueError): verifier.validate_report(early)
 
-    def test_v4_resource_reports_cannot_relabel_old_versions_or_lower_profiles(self):
-        self.assertEqual(verifier.VERSION, 'waypoint-remote-notebook-rehearsal-v4')
+    def test_v5_resource_reports_cannot_relabel_old_versions_or_lower_profiles(self):
+        self.assertEqual(verifier.VERSION, 'waypoint-remote-notebook-rehearsal-v5')
         for cpu in (4, 5, 6, 7, 8):
             current = self.report(); current['host']['cpu'] = cpu
             current['allocation'] = fixture.allocation_for_host(cpu, current['host']['memory_bytes'])
             verifier.validate_report(current)
-            historical = copy.deepcopy(current); historical['version'] = 'waypoint-remote-notebook-rehearsal-v2'
-            with self.assertRaises(ValueError): verifier.validate_report(historical)
+            for version in ('v2', 'v3', 'v4'):
+                historical = dict(current, version=f'waypoint-remote-notebook-rehearsal-{version}')
+                with self.assertRaises(ValueError): verifier.validate_report(historical)
+            if cpu == 4:
+                old_caps = dict(current['allocation'], hub_cpu=.5, learner_cpu=.1, reserved_cpu=3.8)
+                with self.assertRaises(ValueError): verifier.validate_report(dict(current, allocation=old_caps))
             if cpu < 8:
                 legacy = fixture.course_allocation(cpu); legacy.pop('controller_cpu')
                 central = .5 if cpu >= 6 else (.25 if cpu == 5 else .2)

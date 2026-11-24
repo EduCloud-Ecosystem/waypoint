@@ -30,7 +30,7 @@ from runtime_guardian import OBSERVATION_CODES
 from verify_authenticated_runtime import command, port, wait, configured_cpu_limit, request_notebook_start
 from remote_notebook_fixture import allocation_for_host, mount_plan, WORKERS, ENDPOINTS
 
-VERSION = 'waypoint-remote-notebook-rehearsal-v4'
+VERSION = 'waypoint-remote-notebook-rehearsal-v5'
 SCOPE = 'actual-local-docker-one-daemon-two-worker-services-synthetic-notebooks'
 PHASES = (
     'central_has_no_socket_homes_or_worker_state',
@@ -576,12 +576,18 @@ def run(args):
         session.get(base + '/hub/login', timeout=10).raise_for_status()
         session.post(base + '/hub/login', data={'username': 'alice', 'password': request['password'], '_xsrf': xsrf(session, base + '/hub/login')},
             timeout=30, allow_redirects=False).raise_for_status()
+        started = time.monotonic()
         request_notebook_start(session, base, previous_runtime_stopped=not learners(suffix))
         def established():
             session.get(base + '/user/alice/lab', timeout=10)
             response = session.get(base + '/user/alice/api/contents', timeout=10)
             return response.status_code == 200 and 'application/json' in response.headers.get('Content-Type', '')
-        wait(established, 180); return session
+        try:
+            wait(established, 180)
+        finally:
+            elapsed = time.monotonic() - started
+            print(f"Notebook startup observation ({suffix}): {elapsed:.1f}s", flush=True)
+        return session
     def read(session, suffix):
         value = session.get(bases[suffix] + '/user/alice/api/contents/coursework.txt', timeout=10)
         value.raise_for_status(); assert value.json()['content'] == 'synthetic remote-channel coursework\n'
